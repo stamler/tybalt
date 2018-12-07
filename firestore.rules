@@ -1,0 +1,12 @@
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+  	function isValidRawLogin() {
+  		return true;
+  	}
+    
+    match /RawLogins/{rawLogin} {
+      allow create: if isValidRawLogin();
+    }
+  }
+}
