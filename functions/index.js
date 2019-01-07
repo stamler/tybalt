@@ -33,3 +33,10 @@ exports.makeUppercase = functions.firestore.document('/messages/{addId}')
   // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
   return docSnap.ref.update({uppercase: uppercase});
 });
+
+// Get the raw login and update Computers and Users
+exports.rawLogins = functions.https.onRequest((req, res) => {
+  return db.collection('RawLogins').add(req.body).then((docRef) => {
+    return res.sendStatus(202)
+  })
+});
