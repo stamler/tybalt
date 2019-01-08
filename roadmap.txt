@@ -1,0 +1,26 @@
+Rules to write
+==============
+Locations
+Logins
+NetworkHardware
+SoftwareTitles
+Monitors
+Printers
+SoftwareKeys
+MonitorLocations
+MonitorUsers
+PrinterLocations
+ComputerLocations
+ComputerManagers
+ComputerSoftware
+ComputerUsers
+
+
+
+##Architecture
+
+1. Loading computer data
+
+RawLogins
+Computers
+Users
