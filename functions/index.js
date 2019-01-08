@@ -4,8 +4,8 @@ const functions = require('firebase-functions');
 // The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
 
-// TODO: get this programmatically so it can be installed on any tenant without modification
-const base = 'https://console.firebase.google.com/project/charade-ca63f/database/firestore/data'
+const base = 'https://console.firebase.google.com/project/' + 
+                process.env.GCLOUD_PROJECT +  '/database/firestore/data'
 
 admin.initializeApp();
 
