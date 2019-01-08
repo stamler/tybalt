@@ -41,13 +41,30 @@ exports.makeUppercase = functions.firestore.document('/messages/{addId}')
 // incomplete write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
 
+  // We expect the request to be sent with a content type application/json
+  if (req.get('Content-Type') !== "application/json") {
+    // per RFC 7231 https://tools.ietf.org/html/rfc7231#section-6.5.13
+    return res.sendStatus(415)
+  }
+
   let d = req.body
   // See https://github.com/angular/angularfire2/issues/1292
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
-  // req.body isn't parsing JSON for some reason, maybe because the 
-  // content type isn't being sent from powershell?
-  return db.collection('RawLogins').add(d).then((docRef) => {
-    return res.sendStatus(202)
-  })
+  // If the submission validates update Computers and Users
+  if (d.serial !== null && d.serial.length >= 4 && 
+      d.manufacturer !== null && d.manufacturer.length >= 2 &&
+      d.username !== null ) {
+    return db.collection('Computers').add(d)
+    .then((docRef) => { return res.sendStatus(202) })
+    .catch((error) => { return res.sendStatus(500) });
+  
+  } else {
+    // If the submission doesn't validate then 
+    // add to RawLogins for later processing
+    return db.collection('RawLogins').add(d)
+    .then((docRef) => { return res.sendStatus(202) })
+    .catch((error) => { return res.sendStatus(500) });  
+  }
+
 });
