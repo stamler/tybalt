@@ -37,9 +37,17 @@ exports.makeUppercase = functions.firestore.document('/messages/{addId}')
   return docSnap.ref.update({uppercase: uppercase});
 });
 
-// Get the raw login and update Computers and Users
+// Get a raw login and update Computers and Users. If it's somehow
+// incomplete write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
-  return db.collection('RawLogins').add(req.body).then((docRef) => {
+
+  let d = req.body
+  // See https://github.com/angular/angularfire2/issues/1292
+  d.datetime = admin.firestore.FieldValue.serverTimestamp()
+
+  // req.body isn't parsing JSON for some reason, maybe because the 
+  // content type isn't being sent from powershell?
+  return db.collection('RawLogins').add(d).then((docRef) => {
     return res.sendStatus(202)
   })
 });
