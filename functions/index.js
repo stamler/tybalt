@@ -12,7 +12,7 @@ admin.initializeApp();
 const db = admin.firestore()
 
 // Take the text parameter passed to this HTTP endpoint and insert it into the
-// Realtime Database under the path /messages/:addId/original
+// Firestore under the path /messages/:addId/original
 exports.addMessage = functions.https.onRequest((req, res) => {
     // Grab the text parameter.
     const original = req.query.text;
@@ -53,7 +53,7 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
   // If the submission validates write or update Computers and Users
-  if (validateRawLogin(d)) {
+  if (isValidLogin(d)) {
     // create a mfg-serial identifier slug
     const docRef = db.collection('Computers').doc(generateSlug(d.serial, d.manufacturer))
     return storeLoginEvent(docRef, d)
@@ -74,7 +74,7 @@ function generateSlug(serial, mfg) {
                           .trim().replace(' ','_');
 }
 
-function validateRawLogin(d) {
+function isValidLogin(d) {
   if (d.hasOwnProperty('serial') && d.hasOwnProperty('manufacturer') &&
         d.hasOwnProperty('username') ) {
     if (d.serial !== null && d.manufacturer !== null && d.username !== null ) {
@@ -86,23 +86,21 @@ function validateRawLogin(d) {
   return false
 }
 
+// Creates or updates Computers and Users collection (and maybe others)
 function storeLoginEvent(docRef, data) {
-  //  set(): overwrite a doc or create it if it doesn't exist yet
-  //  set() with merge: update fields in doc or create it if it doesn't exists
-  //  update(): update fields, fail if doc doesn't exist
-  //  create(): create the document, fail if doc already exists
-
-  // Creates or updates Computers and Users collection (and maybe others)
-  // TODO: attempt an update and do an add() instead on error
-  // This is probably a situation for async/await
-  // https://stackoverflow.com/questions/50008619/firestore-then-function-not-executing-after-set
+  
+  // TODO: also update Users, possibly with another docRef in a different function
 
   return docRef.get().then(function(doc) {
     if (doc.exists) {
       // Update and return void promise
+      // TODO: keep and validate only permitted properties 
+      // TODO: write to subcollections for historic data
       return docRef.update(data);
     } else {
       // Create and return void promise
+      // TODO: keep and validate only permitted properties
+      // TODO: initialize subcollection for historic data
       return docRef.set(data);
     }
   });
