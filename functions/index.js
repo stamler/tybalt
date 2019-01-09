@@ -22,14 +22,13 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
   let d = req.body
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
-  // If the submission validates write or update Computers and Users
   if (isValidLogin(d)) {
-    const docRef = db.collection('Computers').doc(generateSlug(d.serial, d.manufacturer))
-    return storeLoginEvent(docRef, d)
+    // The submission validates, write to Computers and Users
+    return storeValidLogin(d)
       .then((docRef) => { return res.sendStatus(202) })
       .catch((error) => { return res.sendStatus(500) });  
   } else {
-    // Otherwise add to RawLogins for later processing
+    // Invalid submission, add to RawLogins for later processing
     return db.collection('RawLogins').add(d)
       .then((docRef) => { return res.sendStatus(202) })
       .catch((error) => { return res.sendStatus(500) });  
@@ -56,19 +55,25 @@ function isValidLogin(d) {
 }
 
 // Creates or updates Computers and Users collection (and maybe others)
-function storeLoginEvent(docRef, data) {
-  // TODO: eliminate docRef argument and generate the slug in here
+function storeValidLogin(data) {
+  
   // TODO: also update Users, possibly with another docRef in a different function
-
+  const docRef = db.collection('Computers').doc(generateSlug(data.serial, data.manufacturer))
   return docRef.get().then(function(doc) {
     if (doc.exists) {
       // Update and return void promise
-      // TODO: keep and validate only permitted properties 
+      // TODO: keep and validate only permitted properties
       // TODO: write to subcollections for historic data
+        // 1. add valid properties that don't keep history to newObject
+        // 2. update with merge with newObject
+        // 3. update history in respective subcollections
+        // 4. update with merge for new current values
       return docRef.update(data);
     } else {
       // Create and return void promise
       // TODO: keep and validate only permitted properties
+        // 1. add valid properties to newObject
+        // 2. set(newObject)
       // TODO: initialize subcollection for historic data
       return docRef.set(data);
     }
