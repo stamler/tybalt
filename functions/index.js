@@ -1,7 +1,6 @@
-// The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
+// SDKs to create Cloud Functions and setup triggers,
+// and to access the Firebase Firestore.
 const functions = require('firebase-functions');
-
-// The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
 
 const base = 'https://console.firebase.google.com/project/' + 
@@ -88,7 +87,7 @@ function isValidLogin(d) {
 
 // Creates or updates Computers and Users collection (and maybe others)
 function storeLoginEvent(docRef, data) {
-  
+
   // TODO: also update Users, possibly with another docRef in a different function
 
   return docRef.get().then(function(doc) {
