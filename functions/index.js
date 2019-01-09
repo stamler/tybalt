@@ -57,7 +57,7 @@ function isValidLogin(d) {
 
 // Creates or updates Computers and Users collection (and maybe others)
 function storeLoginEvent(docRef, data) {
-
+  // TODO: eliminate docRef argument and generate the slug in here
   // TODO: also update Users, possibly with another docRef in a different function
 
   return docRef.get().then(function(doc) {
