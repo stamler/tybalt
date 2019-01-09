@@ -3,38 +3,9 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
-const base = 'https://console.firebase.google.com/project/' + 
-                process.env.GCLOUD_PROJECT +  '/database/firestore/data'
-
 admin.initializeApp();
 
 const db = admin.firestore()
-
-// Take the text parameter passed to this HTTP endpoint and insert it into the
-// Firestore under the path /messages/:addId/original
-exports.addMessage = functions.https.onRequest((req, res) => {
-    // Grab the text parameter.
-    const original = req.query.text;
-    // Add the message into the Cloud Firestore using the Firebase Admin SDK
-    return db.collection('/messages').add({original: original}).then((docRef) => {
-      // Redirect with 303 SEE OTHER to the URL of the pushed object in the Firebase console.
-      return res.redirect(303, base + docRef.path);
-    });
-  });
-  
-// Listens for new messages added to /messages/:addId/original and creates an
-// uppercase version of the message to /messages/:addId/uppercase
-exports.makeUppercase = functions.firestore.document('/messages/{addId}')
-.onCreate((docSnap, context) => {
-  // Grab the current value of what was written to the Realtime Database.
-  const original = docSnap.data().original
-  console.log('Uppercasing', context.params.addId, original);
-  const uppercase = original.toUpperCase();
-  // You must return a Promise when performing asynchronous tasks inside a Functions such as
-  // writing to the Firebase Realtime Database.
-  // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
-  return docSnap.ref.update({uppercase: uppercase});
-});
 
 // Get a raw login and update Computers and Users. If it's somehow
 // incomplete write it to RawLogins collection for later processing
@@ -53,7 +24,6 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 
   // If the submission validates write or update Computers and Users
   if (isValidLogin(d)) {
-    // create a mfg-serial identifier slug
     const docRef = db.collection('Computers').doc(generateSlug(d.serial, d.manufacturer))
     return storeLoginEvent(docRef, d)
       .then((docRef) => { return res.sendStatus(202) })
@@ -67,10 +37,10 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 
 });
 
+// create a serial,mfg identifier slug
 function generateSlug(serial, mfg) {
   return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
-                          .replace('inc','').replace('ltd','')
-                          .trim().replace(' ','_');
+    .replace('inc','').replace('ltd','').trim().replace(' ','_');
 }
 
 function isValidLogin(d) {
