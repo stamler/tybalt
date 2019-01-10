@@ -69,13 +69,13 @@ function storeValidLogin(d) {
   // not contained in 'd'. The current method does guarantee that these
   // properties exist, which is one useful method of validation and should
   // perhaps be preserved
-
   var computerObject = { 
     boot_drive: d.boot_drive, boot_drive_cap: d.boot_drive_cap, 
     boot_drive_free: d.boot_drive_free, boot_drive_fs: d.boot_drive_fs,
     manufacturer: d.manufacturer, model: d.model, name: d.name, 
     os_arch: d.os_arch, os_sku: d.os_sku, os_version: d.os_version, ram: d.ram,
-    serial: d.serial, type: d.type, last_user: d.username };
+    serial: d.serial, type: d.type, last_user: d.username, 
+    network_config: d.network_config };
 
   const slug = generateSlug(d.serial, d.manufacturer)
   
@@ -87,22 +87,23 @@ function storeValidLogin(d) {
   const loginRef = db.collection('Logins')
 
   return computerRef.get().then(function(doc) {
+    var batch = db.batch();
+
     if (doc.exists) {
-      // Update and return void promise
+      // Update existing Computer document
+      // TODO: update() has second parameter which may allow us to validate
+      // with preconditions or field paths
       computerObject.updated = admin.firestore.FieldValue.serverTimestamp()
-      computerRef.update(computerObject)
-      loginRef.add(loginObject)
-
-      // BROKEN TODO: Roll this into a transaction and replace this old return line
-      return computerRef.update(d);
+      batch.update(computerRef, computerObject);
     } else {
-      // Create and return void promise
+      // Create new Computer document
       computerObject.created = admin.firestore.FieldValue.serverTimestamp()
-      computerRef.set(computerObject)
-      loginRef.add(loginObject)
-
-      // BROKEN TODO: Roll this into a transaction and replace this old return line
-      return computerRef.set(d);
+      batch.set(computerRef,computerObject);
     }
+
+    // Create new Login document
+    batch.set(loginRef.doc(),loginObject);
+    return batch.commit();
+
   });
 }
