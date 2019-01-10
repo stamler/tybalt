@@ -94,8 +94,6 @@ function storeValidLogin(d) {
 
     if (doc.exists) {
       // Update existing Computer document
-      // TODO: update() has second parameter which may allow us to validate
-      // with preconditions or field paths
       computerObject.updated = admin.firestore.FieldValue.serverTimestamp()
       batch.update(computerRef, computerObject);
     } else {
