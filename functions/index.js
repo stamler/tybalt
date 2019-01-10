@@ -54,28 +54,55 @@ function isValidLogin(d) {
   return false
 }
 
-// Creates or updates Computers and Users collection (and maybe others)
-function storeValidLogin(data) {
+// Creates or updates Computers document, and creates Logins document
+// Logins are simple documents with three properties: timestamp, 
+// computer slug, and username. These can be queried quickly so we 
+// can see login history for a computer or user. The Computer
+// document only stores the last login user and updated timestamp
+// TODO: update corresponding Users document with id of last computer login?
+
+function storeValidLogin(d) {
+
+  // Load properties to computerObject, ignoring other properties
+  // TODO: validate the loaded properties
+  // TODO: handle exception when some of the properties are 
+  // not contained in 'd'. The current method does guarantee that these
+  // properties exist, which is one useful method of validation and should
+  // perhaps be preserved
+
+  var computerObject = { 
+    boot_drive: d.boot_drive, boot_drive_cap: d.boot_drive_cap, 
+    boot_drive_free: d.boot_drive_free, boot_drive_fs: d.boot_drive_fs,
+    manufacturer: d.manufacturer, model: d.model, name: d.name, 
+    os_arch: d.os_arch, os_sku: d.os_sku, os_version: d.os_version, ram: d.ram,
+    serial: d.serial, type: d.type, last_user: d.username };
+
+  const slug = generateSlug(d.serial, d.manufacturer)
   
-  // TODO: also update Users, possibly with another docRef in a different function
-  const docRef = db.collection('Computers').doc(generateSlug(data.serial, data.manufacturer))
-  return docRef.get().then(function(doc) {
+  var loginObject = { 
+    user: d.username, computer: slug, 
+    time: admin.firestore.FieldValue.serverTimestamp() };
+
+  const computerRef = db.collection('Computers').doc(slug)
+  const loginRef = db.collection('Logins')
+
+  return computerRef.get().then(function(doc) {
     if (doc.exists) {
       // Update and return void promise
-      // TODO: keep and validate only permitted properties
-      // TODO: write to subcollections for historic data
-        // 1. add valid properties that don't keep history to newObject
-        // 2. update with merge with newObject
-        // 3. update history in respective subcollections
-        // 4. update with merge for new current values
-      return docRef.update(data);
+      computerObject.updated = admin.firestore.FieldValue.serverTimestamp()
+      computerRef.update(computerObject)
+      loginRef.add(loginObject)
+
+      // BROKEN TODO: Roll this into a transaction and replace this old return line
+      return computerRef.update(d);
     } else {
       // Create and return void promise
-      // TODO: keep and validate only permitted properties
-        // 1. add valid properties to newObject
-        // 2. set(newObject)
-      // TODO: initialize subcollection for historic data
-      return docRef.set(data);
+      computerObject.created = admin.firestore.FieldValue.serverTimestamp()
+      computerRef.set(computerObject)
+      loginRef.add(loginObject)
+
+      // BROKEN TODO: Roll this into a transaction and replace this old return line
+      return computerRef.set(d);
     }
   });
 }
