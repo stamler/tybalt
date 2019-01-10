@@ -86,7 +86,7 @@ function storeValidLogin(d) {
   const computerRef = db.collection('Computers').doc(slug)
   const loginRef = db.collection('Logins')
 
-  return computerRef.get().then(function(doc) {
+  return computerRef.get().then((doc) => {
     var batch = db.batch();
 
     if (doc.exists) {
