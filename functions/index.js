@@ -64,6 +64,9 @@ function isValidLogin(d) {
 function storeValidLogin(d) {
 
   // Load properties to computerObject, ignoring other properties
+  // TODO: use upn instead of username and toLower() the upn first since email
+  // address username parts, though technically case sensitive, rarely are.
+  // This will permit simpler matching in the database
   // TODO: validate the loaded properties
   // TODO: handle exception when some of the properties are 
   // not contained in 'd'. The current method does guarantee that these
