@@ -69,6 +69,11 @@ function storeValidLogin(d) {
   // not contained in 'd'. The current method does guarantee that these
   // properties exist, which is one useful method of validation and could
   // be preserved. The upn is toLowerCase() so that it can be easily compared
+
+  // TODO: for validation and copying, iterate over the keys in the list
+  // that we need immediately after doing validation in isValidLogin() so d
+  // is immediately ready for storage
+  // http://bonsaiden.github.io/JavaScript-Garden/#object.forinloop
   var computerObject = { 
     boot_drive: d.boot_drive, boot_drive_cap: d.boot_drive_cap, 
     boot_drive_free: d.boot_drive_free, boot_drive_fs: d.boot_drive_fs,
