@@ -9,15 +9,13 @@ const db = admin.firestore()
 // incomplete write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
 
-  // Reject requests with wrong Content-Type
+  // Reject non-JSON requests — Unsupported Media Type rfc7231#section-6.5.13
   if (req.get('Content-Type') !== "application/json") {
-    // per RFC 7231 https://tools.ietf.org/html/rfc7231#section-6.5.13
-    return res.sendStatus(415)
+    return res.sendStatus(415) 
   }
 
-  // Add a timestamp sentinel to the body so it can be stored
-  // See https://github.com/angular/angularfire2/issues/1292
-  let d = req.body
+  // Filter submission for allowed properties then add timestamp
+  let d = filterLogin(req.body)
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
   if (isValidLogin(d)) {
@@ -35,17 +33,31 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 });
 
 // create a serial,mfg identifier slug
-function generateSlug(serial, mfg) {
+function makeSlug(serial, mfg) {
   return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
     .replace('inc','').replace('ltd','').trim().replace(' ','_');
 }
 
+function filterLogin(data) {
+  const validPropList = ["boot_drive", "boot_drive_cap", "boot_drive_free", 
+    "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
+     "os_version", "ram", "serial", "type", "upn", "user", "network_config"]
+  let filteredObject = {} 
+  for (let i = 0; i < validPropList.length; i++) {
+    let field = validPropList[i]
+    if ( data.hasOwnProperty( field ) ) {
+      filteredObject[ field ] = data[ field ]
+    }
+  }
+  return filteredObject
+}
+
 function isValidLogin(d) {
-  if (d.hasOwnProperty('serial') && d.hasOwnProperty('manufacturer') &&
+  if (d.hasOwnProperty('serial') && d.hasOwnProperty('mfg') &&
         d.hasOwnProperty('upn') && d.hasOwnProperty('user') ) {
-    if (d.serial !== null && d.manufacturer !== null && 
+    if (d.serial !== null && d.mfg !== null && 
       d.upn !== null && d.user !== null ) {
-      if (d.serial.length>=4 && d.manufacturer.length>=2 && 
+      if (d.serial.length>=4 && d.mfg.length>=2 && 
         d.upn.length>=6 && d.user.length >= 6) {
         return true
       }
@@ -70,22 +82,10 @@ function storeValidLogin(d) {
   // properties exist, which is one useful method of validation and could
   // be preserved. The upn is toLowerCase() so that it can be easily compared
 
-  // TODO: for validation and copying, iterate over the keys in the list
-  // that we need immediately after doing validation in isValidLogin() so d
-  // is immediately ready for storage
-  // http://bonsaiden.github.io/JavaScript-Garden/#object.forinloop
-  var computerObject = { 
-    boot_drive: d.boot_drive, boot_drive_cap: d.boot_drive_cap, 
-    boot_drive_free: d.boot_drive_free, boot_drive_fs: d.boot_drive_fs,
-    manufacturer: d.manufacturer, model: d.model, name: d.name, 
-    os_arch: d.os_arch, os_sku: d.os_sku, os_version: d.os_version, ram: d.ram,
-    serial: d.serial, type: d.type, last_upn: d.upn.toLowerCase(), 
-    last_user: d.user, network_config: d.network_config };
-
-  const slug = generateSlug(d.serial, d.manufacturer)
+  const slug = makeSlug(d.serial, d.mfg)
   
-  var loginObject = { 
-    upn: d.upn, user: d.user, computer: slug,
+  var loginObject = {
+    objectGUID: d.user_objectGUID, user: d.user, computer: slug,
     time: admin.firestore.FieldValue.serverTimestamp() };
 
   const computerRef = db.collection('Computers').doc(slug)
@@ -96,12 +96,12 @@ function storeValidLogin(d) {
 
     if (doc.exists) {
       // Update existing Computer document
-      computerObject.updated = admin.firestore.FieldValue.serverTimestamp()
-      batch.update(computerRef, computerObject);
+      d.updated = admin.firestore.FieldValue.serverTimestamp()
+      batch.update(computerRef, d);
     } else {
       // Create new Computer document
-      computerObject.created = admin.firestore.FieldValue.serverTimestamp()
-      batch.set(computerRef,computerObject);
+      d.created = admin.firestore.FieldValue.serverTimestamp()
+      batch.set(computerRef,d);
     }
 
     // Create new Login document
