@@ -48,6 +48,9 @@ function filterLogin(data) {
     let field = validPropList[i]
     if ( data.hasOwnProperty( field ) ) {
       filteredObject[ field ] = data[ field ]
+    } else {
+      // TODO: add null fields here if they're not present? 
+      // filteredObject [ field ] = null
     }
   }
   return filteredObject
