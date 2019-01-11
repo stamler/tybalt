@@ -1,5 +1,3 @@
-// SDKs to create Cloud Functions and setup triggers,
-// and to access the Firebase Firestore.
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -44,9 +42,11 @@ function generateSlug(serial, mfg) {
 
 function isValidLogin(d) {
   if (d.hasOwnProperty('serial') && d.hasOwnProperty('manufacturer') &&
-        d.hasOwnProperty('username') ) {
-    if (d.serial !== null && d.manufacturer !== null && d.username !== null ) {
-      if (d.serial.length>=4 && d.manufacturer.length>=2 && d.username.length>=4) {
+        d.hasOwnProperty('upn') && d.hasOwnProperty('user') ) {
+    if (d.serial !== null && d.manufacturer !== null && 
+      d.upn !== null && d.user !== null ) {
+      if (d.serial.length>=4 && d.manufacturer.length>=2 && 
+        d.upn.length>=6 && d.user.length >= 6) {
         return true
       }
     }
@@ -56,34 +56,31 @@ function isValidLogin(d) {
 
 // Creates or updates Computers document, and creates Logins document
 // Logins are simple documents with three properties: timestamp, 
-// computer slug, and username. These can be queried quickly so we 
-// can see login history for a computer or user. The Computer
-// document only stores the last login user and updated timestamp
+// computer slug, and upn. These can be queried quickly so we 
+// can see login history for a computer or upn. The Computer
+// document only stores the last login upn and updated timestamp
 // TODO: update corresponding Users document with id of last computer login?
 
 function storeValidLogin(d) {
 
   // Load properties to computerObject, ignoring other properties
-  // TODO: use upn instead of username and toLower() the upn first since email
-  // address username parts, though technically case sensitive, rarely are.
-  // This will permit simpler matching in the database
   // TODO: validate the loaded properties
   // TODO: handle exception when some of the properties are 
   // not contained in 'd'. The current method does guarantee that these
-  // properties exist, which is one useful method of validation and should
-  // perhaps be preserved
+  // properties exist, which is one useful method of validation and could
+  // be preserved. The upn is toLowerCase() so that it can be easily compared
   var computerObject = { 
     boot_drive: d.boot_drive, boot_drive_cap: d.boot_drive_cap, 
     boot_drive_free: d.boot_drive_free, boot_drive_fs: d.boot_drive_fs,
     manufacturer: d.manufacturer, model: d.model, name: d.name, 
     os_arch: d.os_arch, os_sku: d.os_sku, os_version: d.os_version, ram: d.ram,
-    serial: d.serial, type: d.type, last_user: d.username, 
-    network_config: d.network_config };
+    serial: d.serial, type: d.type, last_upn: d.upn.toLowerCase(), 
+    last_user: d.user, network_config: d.network_config };
 
   const slug = generateSlug(d.serial, d.manufacturer)
   
   var loginObject = { 
-    user: d.username, computer: slug, 
+    upn: d.upn, user: d.user, computer: slug,
     time: admin.firestore.FieldValue.serverTimestamp() };
 
   const computerRef = db.collection('Computers').doc(slug)
