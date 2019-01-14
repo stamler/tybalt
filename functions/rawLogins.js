@@ -17,6 +17,7 @@ exports.handler = async (req, res, db) => {
       await storeValidLogin(d, db)
     } else {
       // Invalid submission, add to RawLogins for later processing
+      d.datetime = serverTimestamp()
       docRef = await db.collection('RawLogins').add(d)
     }
     return res.sendStatus(202)
