@@ -72,20 +72,14 @@ function isValidLogin(d) {
 // Creates or updates Computers document, and creates Logins document
 // TODO: update corresponding Users document with slug of last computer login
 async function storeValidLogin(d) {
+
   // the key in the Computers collection
   const slug = makeSlug(d.serial, d.mfg)
-  
-  // Logins are documents with 4 properties: timestamp, computer slug, 
-  // upn, and user objectGUID. These can be queried quickly so we 
-  // can see login history for a computer or user. 
-  var loginObject = {
-    objectGUID: d.user_objectGUID, user: d.user, computer: slug,
-    time: admin.firestore.FieldValue.serverTimestamp() };
-
   const computerRef = db.collection('Computers').doc(slug)
-  const loginRef = db.collection('Logins')
 
   doc = await computerRef.get()
+
+  // Start a write batch
   var batch = db.batch();
 
   if (doc.exists) {
@@ -98,9 +92,13 @@ async function storeValidLogin(d) {
     batch.set(computerRef,d);
   }
 
-  // Create new Login document
-  batch.set(loginRef.doc(),loginObject);
+  // Create a new Login Document with 4 properties: timestamp, slug, 
+  // upn, and user objectGUID. These can be queried quickly to see 
+  // login history for a computer or user. 
+  batch.set(db.collection('Logins').doc(), 
+    { objectGUID: d.user_objectGUID, user: d.user, computer: slug, 
+      time: admin.firestore.FieldValue.serverTimestamp() } );
 
-  // commit() returns an array of WriteResults
+  // Commit the batch which returns an array of WriteResults
   return batch.commit();
 }
