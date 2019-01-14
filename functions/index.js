@@ -7,8 +7,7 @@ const db = admin.firestore()
 
 // Get a raw login and update Computers and Users. If it's somehow
 // incomplete write it to RawLogins collection for later processing
-exports.rawLogins = functions.https.onRequest((req, res) => {
-
+exports.rawLogins = functions.https.onRequest(async (req, res) => {
   // Reject non-JSON requests — Unsupported Media Type rfc7231#section-6.5.13
   if (req.get('Content-Type') !== "application/json") {
     return res.sendStatus(415) 
@@ -18,18 +17,18 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
   let d = filterLogin(req.body)
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
-  if (isValidLogin(d)) {
-    // The submission validates, write to Computers and Users
-    return storeValidLogin(d)
-      .then((docRef) => { return res.sendStatus(202) })
-      .catch((error) => { return res.sendStatus(500) });  
-  } else {
-    // Invalid submission, add to RawLogins for later processing
-    return db.collection('RawLogins').add(d)
-      .then((docRef) => { return res.sendStatus(202) })
-      .catch((error) => { return res.sendStatus(500) });  
+  try {
+    if (isValidLogin(d)) {
+      // The submission validates, write to Computers and Users
+      docRef = await storeValidLogin(d)
+    } else {
+      // Invalid submission, add to RawLogins for later processing
+      docRef = await db.collection('RawLogins').add(d)
+    }
+    return res.sendStatus(202)
+  } catch (e) {
+    return res.sendStatus(500)
   }
-
 });
 
 // create a serial,mfg identifier slug
