@@ -13,14 +13,14 @@ exports.rawLogins = functions.https.onRequest(async (req, res) => {
     return res.sendStatus(415) 
   }
 
-  // Filter submission for allowed properties then add timestamp
+  // Filter submission for allowed properties and add timestamp
   let d = filterLogin(req.body)
   d.datetime = admin.firestore.FieldValue.serverTimestamp()
 
   try {
     if (isValidLogin(d)) {
       // The submission validates, write to Computers and Users
-      docRef = await storeValidLogin(d)
+      await storeValidLogin(d)
     } else {
       // Invalid submission, add to RawLogins for later processing
       docRef = await db.collection('RawLogins').add(d)
@@ -76,7 +76,7 @@ function isValidLogin(d) {
 // document only stores the last login upn and updated timestamp
 // TODO: update corresponding Users document with id of last computer login?
 
-function storeValidLogin(d) {
+async function storeValidLogin(d) {
 
   // Load properties to computerObject, ignoring other properties
   // TODO: validate the loaded properties
@@ -94,22 +94,23 @@ function storeValidLogin(d) {
   const computerRef = db.collection('Computers').doc(slug)
   const loginRef = db.collection('Logins')
 
-  return computerRef.get().then((doc) => {
-    var batch = db.batch();
+  doc = await computerRef.get()
+  var batch = db.batch();
 
-    if (doc.exists) {
-      // Update existing Computer document
-      d.updated = admin.firestore.FieldValue.serverTimestamp()
-      batch.update(computerRef, d);
-    } else {
-      // Create new Computer document
-      d.created = admin.firestore.FieldValue.serverTimestamp()
-      batch.set(computerRef,d);
-    }
+  if (doc.exists) {
+    // Update existing Computer document
+    d.updated = admin.firestore.FieldValue.serverTimestamp()
+    batch.update(computerRef, d);
+  } else {
+    // Create new Computer document
+    d.created = admin.firestore.FieldValue.serverTimestamp()
+    batch.set(computerRef,d);
+  }
 
-    // Create new Login document
-    batch.set(loginRef.doc(),loginObject);
-    return batch.commit();
+  // Create new Login document
+  batch.set(loginRef.doc(),loginObject);
 
-  });
+  // commit() returns an array of WriteResults
+  return batch.commit();
+
 }
