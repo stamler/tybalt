@@ -70,23 +70,14 @@ function isValidLogin(d) {
 }
 
 // Creates or updates Computers document, and creates Logins document
-// Logins are simple documents with three properties: timestamp, 
-// computer slug, and upn. These can be queried quickly so we 
-// can see login history for a computer or upn. The Computer
-// document only stores the last login upn and updated timestamp
-// TODO: update corresponding Users document with id of last computer login?
-
+// TODO: update corresponding Users document with slug of last computer login
 async function storeValidLogin(d) {
-
-  // Load properties to computerObject, ignoring other properties
-  // TODO: validate the loaded properties
-  // TODO: handle exception when some of the properties are 
-  // not contained in 'd'. The current method does guarantee that these
-  // properties exist, which is one useful method of validation and could
-  // be preserved. The upn is toLowerCase() so that it can be easily compared
-
+  // the key in the Computers collection
   const slug = makeSlug(d.serial, d.mfg)
   
+  // Logins are documents with 4 properties: timestamp, computer slug, 
+  // upn, and user objectGUID. These can be queried quickly so we 
+  // can see login history for a computer or user. 
   var loginObject = {
     objectGUID: d.user_objectGUID, user: d.user, computer: slug,
     time: admin.firestore.FieldValue.serverTimestamp() };
@@ -112,5 +103,4 @@ async function storeValidLogin(d) {
 
   // commit() returns an array of WriteResults
   return batch.commit();
-
 }
