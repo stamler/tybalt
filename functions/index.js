@@ -4,11 +4,15 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 const rawLoginsModule = require('./rawLogins.js')
-
-// TODO: more es6 — https://codeburst.io/es6-in-cloud-functions-for-firebase-959b35e31cb0
+const azureModule = require('./azure.js')
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
   rawLoginsModule.handler(req, res, admin.firestore());
+});
+
+// Get a Custom Firebase token by sending the right info to this endpoint
+exports.getToken = functions.https.onRequest((req, res) => {
+  azureModule.handler(req, res, admin.firestore());
 });
