@@ -38,7 +38,7 @@ function filterLogin(data) {
   const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
       "os_version", "ram", "serial", "type", "upn", "user", "network_config",
-      "user_objectGUID", "radiator_version" ]
+      "user_objectGUID", "user_NativeGUID", "radiator_version" ]
   let filteredObject = {} 
   for (let i = 0; i < validPropList.length; i++) {
     let field = validPropList[i]
