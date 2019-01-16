@@ -80,7 +80,10 @@ function hasFreshCert(doc, timeout) {
   let certificates = doc.get('certificates');
 
   if ( retrieved !== undefined && certificates !== undefined) {
-    if (Date.now - retrieved < timeout ) {
+    // TODO: Date.now() is probably not comparing properly with retrieved
+    // due to mismatched types. This is probably the reason why Config/azure
+    // gets updated every time and thus the caching is useless right now.
+    if (Date.now() - retrieved < timeout ) {
       console.log("cached certificate is fresh enough");
       return true;
     }
