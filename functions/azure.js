@@ -4,7 +4,6 @@ const axios = require('axios');
 
 exports.handler = async (req, res, db) => {
   const certificates = await getCertificates(db);
-  console.log(certificates);
   
   // get azure token from request header or body
 
@@ -54,7 +53,6 @@ async function getCertificates(db) {
       // Then user open-id config to get the keys from Microsoft
       res = await axios.get(res.data.jwks_uri)
       console.log("obtained keys");
-      console.log(res.data.keys);      
       
       // (re)build the certificates object with data returned from Microsoft
       certificates = {};
