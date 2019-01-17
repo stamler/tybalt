@@ -17,8 +17,6 @@ access to the client application.
 
 */
 
-
-
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
