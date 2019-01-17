@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
+admin.firestore().settings({timestampsInSnapshots: true});
 
 const rawLoginsModule = require('./rawLogins.js')
 const azureModule = require('./azure.js')
