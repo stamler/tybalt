@@ -5,7 +5,12 @@ const axios = require('axios');
 // TODO: Try/Catch the awaits!!
 
 exports.handler = async (req, res, db) => {
-  
+
+  // TODO: enable restriction of HTTP method
+  if (req.method !== 'POST') {
+    res.status(403).send('You must POST to this endpoint');
+  }
+
   // for testing only
   var token = "";
 
@@ -14,7 +19,8 @@ exports.handler = async (req, res, db) => {
 
   if (valid) {
     // mint a firebase custom token with the information from token
-    console.log("Time to make a Firebase Custom Auth Token!");   
+    // admin.createCustomToken()?
+    console.log("Time to mint a Firebase Custom Auth Token!");   
   } else {
     console.log("Invalid token");    
     res.sendStatus(403);
@@ -57,8 +63,9 @@ async function getCertificates(db) {
     } else {
       // Load fresh certificates from Microsoft
 
-      // First get the open-id config 
-      let openIdConfigURI = 'https://login.microsoftonline.com/' + snap.data().tenant + '/.well-known/openid-configuration';
+      // First get the open-id config from the common URL
+      // https://docs.microsoft.com/en-us/azure/active-directory/develop/access-tokens#validating-the-signature
+      let openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';
       try {
         res = await axios.get(openIdConfigURI);
       } catch (error) {
@@ -87,6 +94,9 @@ async function getCertificates(db) {
       return certificates;
     }
   } else {
+      // TODO: now that the tenant property isn't used to load the 
+      // openid-config, perhaps this statement should change. Although
+      // in the future it may be useful to populate the client SPA
       console.log("No 'azure' document was found in Config.\n" +
         "At minimum this document should exist and have a 'tenant' property\n" +
         "containing a string representing the Azure tenant.");
