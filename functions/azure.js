@@ -1,3 +1,24 @@
+/*
+
+This module provides a handler() function that takes request and response
+objects and the admin firestore instance object as its arguments.
+
+The handler accepts only POST requests and examines them for an 
+id_token provided by Azure AD. If it finds a valid token, it creates a
+Firebase Custom Auth token that reflects the claims in the Azure token
+then returns this token to the client (somehow)
+
+About Azure ID tokens (from Microsoft):
+ID Tokens should be used to validate that a user is who they claim to be
+and get additional useful information about them - it should not be used 
+for authorization in place of an access token. The claims it provides can 
+be used for UX inside your application, keying a database, and providing 
+access to the client application. 
+
+*/
+
+
+
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
@@ -13,7 +34,7 @@ exports.handler = async (req, res, db) => {
   }
 
   // for testing only
-  var token = "";
+  var token = req.body.token;
 
   // get azure token from request header or body
   valid = await validAzureToken(token);
