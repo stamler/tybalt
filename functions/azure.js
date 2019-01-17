@@ -6,9 +6,10 @@ const axios = require('axios');
 
 exports.handler = async (req, res, db) => {
 
-  // TODO: enable restriction of HTTP method
   if (req.method !== 'POST') {
-    res.status(403).send('You must POST to this endpoint');
+    // TODO: also set Allow header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Allow
+    return res.status(405).send('You must POST to this endpoint');
   }
 
   // for testing only
@@ -20,10 +21,11 @@ exports.handler = async (req, res, db) => {
   if (valid) {
     // mint a firebase custom token with the information from token
     // admin.createCustomToken()?
-    console.log("Time to mint a Firebase Custom Auth Token!");   
+    console.log("Time to mint a Firebase Custom Auth Token!");
+    return res.sendStatus(200)
   } else {
-    console.log("Invalid token");    
-    res.sendStatus(403);
+    console.log("Invalid token");
+    return res.sendStatus(403);
   }
 }
 
