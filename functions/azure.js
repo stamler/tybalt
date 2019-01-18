@@ -57,7 +57,6 @@ async function validAzureToken(token, db) {
 
   // verify the token
   try {
-    // https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
     const verifyOptions = {};
     let decoded = jwt.verify(token, certificate, verifyOptions);
     return decoded
