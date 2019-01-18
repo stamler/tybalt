@@ -65,12 +65,12 @@ async function validAzureToken(token, db) {
     return null; 
   }
 }
-   
+
 // returns object with keys as cert kid and values as public certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
-  const azureRef = db.collection('Cache').doc('azure')
-  snap = await azureRef.get()
+  const azureRef = db.collection('Cache').doc('azure');
+  snap = await azureRef.get();
 
   if (hasFreshCert(snap, 86400)) {
     return snap.get('certificates');
