@@ -69,50 +69,40 @@ async function validAzureToken(token, db) {
 // returns object with keys as cert kid and values as public certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
-  const azureRef = db.collection('Config').doc('azure')
+  const azureRef = db.collection('Cache').doc('azure')
   snap = await azureRef.get()
 
-  if (snap.exists) {
-    if (hasFreshCert(snap, 86400)) {
-      return snap.get('certificates');
-    } else {
-      // Load fresh certificates from Microsoft
-
-      // Get the OpenID config from the Microsoft common URL
-      // Then use it to get Microsoft's up-to-date JWKs
-      let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
-        '.well-known/openid-configuration';
-      let res;
-      try {
-        res = await axios.get(openIdConfigURI);
-        res = await axios.get(res.data.jwks_uri);
-      } catch (error) {
-        console.log("Error making external HTTP request. You on a free plan?");
-        throw error;
-      }
-      
-      // (re)build the certificates object with data returned from Microsoft
-      certificates = {};
-      for (let key of res.data.keys) {
-        certificates[key.kid] = jwkToPem(key);
-      }
-
-      // Update certificates in existing Config/azure
-      // that we confirmed exists earlier
-      await azureRef.update({
-          retrieved: serverTimestamp(), certificates: certificates });
-      console.log("reloaded certificates");
-
-      return certificates;
-    }
+  if (hasFreshCert(snap, 86400)) {
+    return snap.get('certificates');
   } else {
-      // TODO: now that the tenant property isn't used to load the 
-      // openid-config, perhaps this statement should change. Although
-      // in the future it may be useful to populate the client SPA
-      console.log("No 'azure' document was found in Config.\n" +
-        "At minimum this document should exist and have a 'tenant' property\n" +
-        "containing a string representing the Azure tenant.");
-      return undefined;  
+    // Load and cache fresh certificates from Microsoft
+
+    // Get the OpenID config from the Microsoft common URL
+    // Then use it to get Microsoft's up-to-date JWKs
+    let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
+      '.well-known/openid-configuration';
+    let res;
+    try {
+      res = await axios.get(openIdConfigURI);
+      res = await axios.get(res.data.jwks_uri);
+    } catch (error) {
+      console.log("Error making external HTTP request. You on a free plan?");
+      throw error;
+    }
+    
+    // (re)build the certificates object with data returned from Microsoft
+    certificates = {};
+    for (let key of res.data.keys) {
+      certificates[key.kid] = jwkToPem(key);
+    }
+
+    // Update certificates in existing Cache/azure
+    // that we confirmed exists earlier
+    await azureRef.set({ retrieved: serverTimestamp(), 
+      certificates: certificates }, {merge: true} );
+    console.log("reloaded certificates");
+
+    return certificates;
   }
 }
 
