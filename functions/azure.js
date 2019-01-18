@@ -20,6 +20,7 @@ access to the client application.
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const jwkToPem = require('jwk-to-pem');
 
 // TODO: Try/Catch the awaits!!
 
@@ -31,11 +32,8 @@ exports.handler = async (req, res, db) => {
     return res.status(405).send('You must POST to this endpoint');
   }
 
-  // for testing only
-  var token = req.body.token;
-
-  // get azure token from request header or body
-  valid = await validAzureToken(token);
+  // validate azure token from request body
+  valid = await validAzureToken(req.body.token, db);
 
   if (valid) {
     // mint a firebase custom token with the information from token
@@ -51,19 +49,17 @@ exports.handler = async (req, res, db) => {
 async function validAzureToken(token, db) {
   let certificate;
   try {
-    let kid = jwt.decode(token)['kid'];
     let certificates = await getCertificates(db);
-    certificate = certificates[kid];
+    certificate = certificates[jwt.decode(token, {complete: true}).header.kid];    
   } catch (error) {
     console.log(error);
     return false;
   }
 
-  // https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
-  const verifyOptions = {};
-
   // verify the token
   try {
+    // https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
+    const verifyOptions = {};
     let decoded = jwt.verify(token, certificate, verifyOptions);
     return true
   } catch (error) {
@@ -90,7 +86,7 @@ async function getCertificates(db) {
       try {
         res = await axios.get(openIdConfigURI);
       } catch (error) {
-        console.log("Error making external HTTP request. Are you on a free plan?");
+        console.log("Error making external HTTP request. You on a free plan?");
         throw error;
       }
       
@@ -100,10 +96,7 @@ async function getCertificates(db) {
       // (re)build the certificates object with data returned from Microsoft
       certificates = {};
       for (let key of res.data.keys) {
-        let x5c = key.x5c;
-        let cert = '-----BEGIN CERTIFICATE-----\n' + x5c[0] +
-            '\n-----END CERTIFICATE-----\n';
-        certificates[key.kid] = cert
+        certificates[key.kid] = jwkToPem(key);
       }
 
       // Update certificates in existing Config/azure
