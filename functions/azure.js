@@ -22,8 +22,6 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 
-// TODO: Try/Catch the awaits!!
-
 exports.handler = async (req, res, db) => {
 
   if (req.method !== 'POST') {
@@ -36,13 +34,13 @@ exports.handler = async (req, res, db) => {
   valid = await validAzureToken(req.body.token, db);
 
   if (valid !== null) {
-    // mint a firebase custom token with the information from token
+    // TODO: mint a firebase custom token with the information from valid
     // admin.createCustomToken()?
     console.log(`Valid token received for ${valid.name}`);
     return res.sendStatus(200)
   } else {
     console.log("Invalid token");
-    return res.sendStatus(401);
+    return res.status(401).send("Couldn't validate a token");
   }
 }
 
@@ -81,18 +79,18 @@ async function getCertificates(db) {
     } else {
       // Load fresh certificates from Microsoft
 
-      // First get the open-id config from the common URL
-      // https://docs.microsoft.com/en-us/azure/active-directory/develop/access-tokens#validating-the-signature
-      let openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';
+      // Get the OpenID config from the Microsoft common URL
+      // Then use it to get Microsoft's up-to-date JWKs
+      let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
+        '.well-known/openid-configuration';
+      let res;
       try {
         res = await axios.get(openIdConfigURI);
+        res = await axios.get(res.data.jwks_uri);
       } catch (error) {
         console.log("Error making external HTTP request. You on a free plan?");
         throw error;
       }
-      
-      // Then user open-id config to get the keys from Microsoft
-      res = await axios.get(res.data.jwks_uri)
       
       // (re)build the certificates object with data returned from Microsoft
       certificates = {};
