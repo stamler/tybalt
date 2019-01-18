@@ -35,17 +35,18 @@ exports.handler = async (req, res, db) => {
   // validate azure token from request body
   valid = await validAzureToken(req.body.token, db);
 
-  if (valid) {
+  if (valid !== null) {
     // mint a firebase custom token with the information from token
     // admin.createCustomToken()?
-    console.log("Time to mint a Firebase Custom Auth Token!");
+    console.log(`Valid token received for ${valid.name}`);
     return res.sendStatus(200)
   } else {
     console.log("Invalid token");
-    return res.sendStatus(403);
+    return res.sendStatus(401);
   }
 }
 
+// returns the decoded token payload of valid, otherwise null
 async function validAzureToken(token, db) {
   let certificate;
   try {
@@ -53,7 +54,7 @@ async function validAzureToken(token, db) {
     certificate = certificates[jwt.decode(token, {complete: true}).header.kid];    
   } catch (error) {
     console.log(error);
-    return false;
+    return null;
   }
 
   // verify the token
@@ -61,15 +62,15 @@ async function validAzureToken(token, db) {
     // https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
     const verifyOptions = {};
     let decoded = jwt.verify(token, certificate, verifyOptions);
-    return true
+    return decoded
   } catch (error) {
     console.log(error);    
-    return false  
+    return null; 
   }
 }
    
-// get cached or fresh certificates depending on 
-// whether they're fresh or stale/missing
+// returns object with keys as cert kid and values as public certificate pems
+// uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
   const azureRef = db.collection('Config').doc('azure')
   snap = await azureRef.get()
@@ -118,6 +119,8 @@ async function getCertificates(db) {
   }
 }
 
+// returns true if the firestore Document 
+// contains fresh Azure AD keys keys
 function hasFreshCert(snapshot, timeout) {
   let retrieved = snapshot.get('retrieved');
   let certificates = snapshot.get('certificates');
