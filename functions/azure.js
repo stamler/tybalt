@@ -44,7 +44,7 @@ exports.handler = async (req, res, db) => {
   }
 }
 
-// returns the decoded token payload of valid, otherwise null
+// returns the decoded payload of valid token, otherwise null
 async function validAzureToken(token, db) {
   let certificate;
   try {
