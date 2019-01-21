@@ -39,6 +39,8 @@ exports.handler = async (req, res, db) => {
     console.log(`Valid token received for ${valid.name}`);
     return res.sendStatus(200)
   } else {
+    // TODO: indicate why the token failed in the 401 response
+    // IE. EXPIRED, COULDN'T PARSE, BAD SIGNATURE ETC.
     console.log(`Invalid token: ${req.body.token}`);
     return res.status(401).send("Couldn't validate a token");
   }
@@ -98,12 +100,10 @@ async function getCertificates(db) {
   }
   
   // build the certificates object with data from Microsoft
-  // at this point certificates should be undefined, confirm 
-  // and log if it isn't, probably a bug
   try {
     assert(certificates === undefined);    
   } catch (error) {
-    console.log(error);  
+    console.log("Stale certificates were loaded, fetching new ones...");
   }
 
   certificates = {};
