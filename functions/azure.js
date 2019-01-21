@@ -32,12 +32,8 @@ exports.handler = async (req, res, db) => {
 
   // validate azure token from request body
   let valid = null;
-  try {
-    valid = await validAzureToken(req.body.token, db);    
-  } catch (error) {
-    console.log(`TOKEN: ${req.body.token} ==> ${error}`);
-    return res.status(401).send(`${error}`);
-  }
+  try { valid = await validAzureToken(req.body.token, db); }
+  catch (error) { return res.status(401).send(`${error}`); }
 
   if (valid !== null) {
     // TODO: mint a firebase custom token with the information from valid
@@ -46,7 +42,6 @@ exports.handler = async (req, res, db) => {
     return res.sendStatus(200)
   }
 
-  console.log("End of function without resolution");
   return res.sendStatus(500);
 }
 
