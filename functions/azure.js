@@ -26,8 +26,7 @@ const assert = require('assert');
 exports.handler = async (req, res, db) => {
 
   if (req.method !== 'POST') {
-    // TODO: also set Allow header
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Allow
+    res.header('Allow', 'POST');
     return res.status(405).send('You must POST to this endpoint');
   }
 

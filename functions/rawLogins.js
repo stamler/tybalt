@@ -12,7 +12,7 @@ exports.handler = async (req, res, db) => {
   
   try {
     if (isValidLogin(d)) {
-      
+      // TODO: if a submission is received with no user information, update the Computer document only
       // The submission validates, write to Computers and Users
       await storeValidLogin(d, db)
     } else {
