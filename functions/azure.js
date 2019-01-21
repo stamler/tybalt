@@ -40,7 +40,9 @@ exports.handler = async (req, res, db) => {
     return res.sendStatus(200)
   } else {
     // TODO: indicate why the token failed in the 401 response
-    // IE. EXPIRED, COULDN'T PARSE, BAD SIGNATURE ETC.
+    // IE. EXPIRED, COULDN'T PARSE, BAD SIGNATURE ETC. One way is
+    // to catch validAzureToken() exceptions here rather than handle 
+    // internally
     console.log(`Invalid token: ${req.body.token}`);
     return res.status(401).send("Couldn't validate a token");
   }
