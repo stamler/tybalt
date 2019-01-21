@@ -31,43 +31,40 @@ exports.handler = async (req, res, db) => {
   }
 
   // validate azure token from request body
-  valid = await validAzureToken(req.body.token, db);
+  let valid = null;
+  try {
+    valid = await validAzureToken(req.body.token, db);    
+  } catch (error) {
+    console.log(`TOKEN: ${req.body.token} ==> ${error}`);
+    return res.status(401).send(`${error}`);
+  }
 
   if (valid !== null) {
     // TODO: mint a firebase custom token with the information from valid
     // admin.createCustomToken()?
     console.log(`Valid token received for ${valid.name}`);
     return res.sendStatus(200)
-  } else {
-    // TODO: indicate why the token failed in the 401 response
-    // IE. EXPIRED, COULDN'T PARSE, BAD SIGNATURE ETC. One way is
-    // to catch validAzureToken() exceptions here rather than handle 
-    // internally
-    console.log(`Invalid token: ${req.body.token}`);
-    return res.status(401).send("Couldn't validate a token");
   }
+
+  console.log("End of function without resolution");
+  return res.sendStatus(500);
 }
 
-// returns the decoded payload of valid token, otherwise null
+// returns the decoded payload of valid token. 
+// Caller must handle exceptions from both jwt.decode() and jwt.verify()
 async function validAzureToken(token, db) {
-  let certificate;
-  try {
-    let certificates = await getCertificates(db);
-    certificate = certificates[jwt.decode(token, {complete: true}).header.kid];    
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
+  if (token === undefined) { throw new Error("No token found"); }
+  let certificates = await getCertificates(db);
+  
+  let kid, certificate;
+  try { kid = jwt.decode(token, {complete: true}).header.kid; }
+  catch (error) { throw new Error("Can't decode the token"); }
 
-  // verify the token
-  try {
-    const verifyOptions = {};
-    let decoded = jwt.verify(token, certificate, verifyOptions);
-    return decoded
-  } catch (error) {
-    console.log(error);    
-    return null; 
-  }
+  try { certificate = certificates[kid]; } 
+  catch (error) { throw new Error("Can't find the token's certificate"); }
+
+  // return verified decoded token payload
+  return jwt.verify(token, certificate);
 }
 
 // returns object with keys as cert kid and values as public certificate pems
@@ -116,7 +113,7 @@ async function getCertificates(db) {
   // Save certificates in the Cache/azure
   await azureRef.set({ retrieved: serverTimestamp(), 
     certificates: certificates }, {merge: true} );
-  console.log("reloaded certificates");
+  console.log("Certificates updated");
 
   return certificates;  
 }
