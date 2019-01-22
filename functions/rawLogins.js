@@ -91,7 +91,8 @@ async function storeValidLogin(d, db) {
   // Create a new Login Document with 4 properties: timestamp, slug, 
   // upn, and user_objectGUID. These can be queried quickly to see 
   // login history for a computer or user. 
-  let loginObject = { user_objectGUID: d.user_objectGUID, user: d.user, 
+  let loginObject = { user_sourceAnchor: d.user_sourceAnchor, 
+    user_given_name: d.user_given_name, user_surname: d.user_surname, 
     computer: slug, time: serverTimestamp() }; 
   batch.set(db.collection('Logins').doc(), loginObject);
 
