@@ -11,7 +11,7 @@ exports.handler = async (req, res, db) => {
   let d = filterLogin(req.body)
   
   try {
-    if (isValidLogin(d)) {
+    if (isValidDomainLogin(d)) {
       // TODO: if a submission is received with no user information, update the Computer document only
       // The submission validates, write to Computers and Users
       await storeValidLogin(d, db)
@@ -37,8 +37,9 @@ function makeSlug(serial, mfg) {
 function filterLogin(data) {
   const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
-      "os_version", "ram", "serial", "type", "upn", "user", "network_config",
-      "user_objectGUID", "user_NativeGUID", "radiator_version" ]
+      "os_version", "ram", "serial", "type", "upn", "user_given_name", 
+      "user_surname", "network_config", "user_objectGUID", "user_sourceAnchor", 
+      "radiator_version" ]
   let filteredObject = {} 
   for (let i = 0; i < validPropList.length; i++) {
     let field = validPropList[i]
@@ -52,14 +53,13 @@ function filterLogin(data) {
   return filteredObject
 }
   
-function isValidLogin(d) {
+function isValidDomainLogin(d) {
+  // TODO: much more improvement of validation
   if (d.hasOwnProperty('serial') && d.hasOwnProperty('mfg') &&
-        d.hasOwnProperty('upn') && d.hasOwnProperty('user') &&
-        d.hasOwnProperty('user_objectGUID') ) {
-    if (d.serial !== null && d.mfg !== null && 
-      d.upn !== null && d.user !== null ) {
-      if (d.serial.length>=4 && d.mfg.length>=2 && 
-        d.upn.length>=6 && d.user.length >= 6) {
+        d.hasOwnProperty('user_sourceAnchor') ) {
+    if (d.serial !== null && d.mfg !== null && d.user_sourceAnchor !== null) {
+      // TODO: Verify user_sourceAnchor is a 128-bit base64-encoded string
+      if (d.serial.length>=4 && d.mfg.length>=2 ) {
         return true
       }
     }
