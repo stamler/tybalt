@@ -83,8 +83,9 @@ async function storeValidLogin(d, db) {
     d.updated = serverTimestamp()
     batch.update(computerRef, d);
   } else {
-    // Create new Computer document
+    // Create new Computer document, set both created and updated
     d.created = serverTimestamp()
+    d.updated = serverTimestamp()
     batch.set(computerRef,d);
   }
 
