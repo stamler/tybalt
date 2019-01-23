@@ -73,12 +73,14 @@ async function storeValidLogin(d, db) {
 
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
-  doc = await computerRef.get()
+  const userRef = db.collection('Users').doc(d.user_sourceAnchor)
+  computerSnapshot = await computerRef.get()
+  userSnapshot = await userRef.get()  
 
   // Start a write batch
   var batch = db.batch();
 
-  if (doc.exists) {
+  if (computerSnapshot.exists) {
     // Update existing Computer document
     d.updated = serverTimestamp()
     batch.update(computerRef, d);
@@ -87,6 +89,19 @@ async function storeValidLogin(d, db) {
     d.created = serverTimestamp()
     d.updated = serverTimestamp()
     batch.set(computerRef,d);
+  }
+
+  userInfo = { upn: d.upn, givenName: d.user_given_name, 
+    surname: d.user_surname, updated: serverTimestamp() };
+  // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
+  // try to match it with auth() users by upn/email (Soft match) and then
+  // write the key to azure_ObjectID property
+  if (userSnapshot.exists) {
+    // Update existing User document
+    batch.update(userRef, userInfo)
+  } else {
+    // Create new User document
+    batch.set(userRef, userInfo)
   }
 
   // Create a new Login Document with 4 properties: timestamp, slug, 
