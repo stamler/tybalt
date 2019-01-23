@@ -73,7 +73,10 @@ async function storeValidLogin(d, db) {
 
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
-  const userRef = db.collection('Users').doc(d.user_sourceAnchor)
+
+  // sourceAnchor in Base64 can contain '/' which is invalid for keys in
+  // Firebase and URLs. Fix this by URI-encoding the sourceAnchor
+  const userRef = db.collection('Users').doc(encodeURIComponent(d.user_sourceAnchor))
   computerSnapshot = await computerRef.get()
   userSnapshot = await userRef.get()  
 
@@ -96,7 +99,7 @@ async function storeValidLogin(d, db) {
   // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azure_ObjectID property
-  if (userSnapshot.exists) {
+    if (userSnapshot.exists) {
     // Update existing User document
     batch.update(userRef, userInfo)
   } else {
