@@ -37,7 +37,7 @@ function makeSlug(serial, mfg) {
 function filterLogin(data) {
   const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
-      "os_version", "ram", "serial", "type", "upn", "user_given_name", 
+      "os_version", "ram", "serial", "type", "upn", "email", "user_given_name", 
       "user_surname", "network_config", "user_sourceAnchor", 
       "radiator_version" ]
   let filteredObject = {} 
@@ -92,7 +92,7 @@ async function storeValidLogin(d, db) {
     batch.set(computerRef,d);
   }
 
-  userInfo = { upn: d.upn, givenName: d.user_given_name, 
+  userInfo = { upn: d.upn, email: d.email, givenName: d.user_given_name, 
     surname: d.user_surname, updated: serverTimestamp() };
   // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
