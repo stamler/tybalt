@@ -33,7 +33,9 @@ function makeSlug(serial, mfg) {
   return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
     .replace('inc','').replace('ltd','').trim().replace(' ','_');
 }
-  
+
+// TODO: make this function more generic by passing an object as second arg
+// and returning the filtered object
 function filterLogin(data) {
   const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
