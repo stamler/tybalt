@@ -38,7 +38,7 @@ function filterLogin(data) {
   const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
       "os_version", "ram", "serial", "type", "upn", "user_given_name", 
-      "user_surname", "network_config", "user_objectGUID", "user_sourceAnchor", 
+      "user_surname", "network_config", "user_sourceAnchor", 
       "radiator_version" ]
   let filteredObject = {} 
   for (let i = 0; i < validPropList.length; i++) {
@@ -105,9 +105,9 @@ async function storeValidLogin(d, db) {
     batch.set(userRef, userInfo)
   }
 
-  // Create a new Login Document with 4 properties: timestamp, slug, 
-  // upn, and user_objectGUID. These can be queried quickly to see 
-  // login history for a computer or user. 
+  // Create a new Login Document with 4 properties: timestamp, computer slug, 
+  // surname/givenName, and user_sourceAnchor. These can be queried for 
+  // login history 
   let loginObject = { user_sourceAnchor: d.user_sourceAnchor, 
     user_given_name: d.user_given_name, user_surname: d.user_surname, 
     computer: slug, time: serverTimestamp() }; 
