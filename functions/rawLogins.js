@@ -74,9 +74,7 @@ async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
 
-  // sourceAnchor in Base64 can contain '/' which is invalid for keys in
-  // Firebase and URLs. Fix this by URI-encoding the sourceAnchor
-  const userRef = db.collection('Users').doc(encodeURIComponent(d.user_sourceAnchor))
+  const userRef = db.collection('Users').doc(d.user_sourceAnchor)
   computerSnapshot = await computerRef.get()
   userSnapshot = await userRef.get()  
 
