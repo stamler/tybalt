@@ -31,6 +31,7 @@ exports.filterProperties = function (data, options={}) {
     // required field is missing
     let exists = data.hasOwnProperty( field )
     if (!exists && addRequiredNulls) {
+      // TODO: Bug: logical error here, likely with if statement
       filteredObject [ field ] = null;
       continue;
     } else {
