@@ -58,3 +58,9 @@ exports.filterProperties = function (data, options={}) {
 
   return filteredObject;
 }
+
+// create a serial,mfg identifier slug
+exports.makeSlug = function (serial, mfg) {
+  return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
+    .replace('inc','').replace('ltd','').trim().replace(' ','_');
+}
