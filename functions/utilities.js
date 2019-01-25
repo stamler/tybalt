@@ -4,10 +4,8 @@
   are missing unless addRequiredNulls is true. Errors if any 
   required properties have null values unless allowRequiredNulls is true.
 
-  Errors if allowRequiredNulls=false whilte addRequiredNulls=true
+  Errors if allowRequiredNulls=false while addRequiredNulls=true
 */
-
-// TODO: optimize using short-circuit operators?
 
 exports.filterProperties = function (data, options={}) {
 
