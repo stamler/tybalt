@@ -32,5 +32,14 @@ describe("utilities module", () => {
       const expected = {vegetable: "carrot"};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
+    it("fails by default when required properties have null values", () => {
+      const options = {required:["taste", "apple"]};
+      // first arg of throws() must be function, so wrap it with params
+      const wrapped = function() { filterProperties(data, options) };
+      return assert.throws(wrapped, Error);
+    });
+    it("", () => {});
+    it("", () => {});
+    it("", () => {});
   })    
 })
