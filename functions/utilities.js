@@ -1,12 +1,10 @@
 /* 
-  Returns an object containing any properties in validProps and
-  all properties in requiredProps. Errors if any required properties 
-  are missing unless addRequiredNulls is true. Errors if any 
-  required properties have null values unless allowRequiredNulls is true.
-
-  Errors if allowRequiredNulls=false while addRequiredNulls=true
+  Returns an object containing any properties in validProps and all properties in requiredProps. 
+  Errors if any required properties are missing unless addRequiredNulls is true. 
+  Errors if any required properties have null values unless allowRequiredNulls is true.
+  removes otherwise valid null properties if stripValidNulls is true
+  allowRequiredNulls is forced true if addRequiredNulls is true
 */
-
 exports.filterProperties = function (data, options={}) {
 
   // Get options and fall back to defaults using ES6 destructuring assignment
@@ -59,7 +57,13 @@ exports.filterProperties = function (data, options={}) {
   return filteredObject;
 }
 
-// create a serial,mfg identifier slug
+/*
+  Returns a slug string that uniquely identifies a computer based on serial and manufacturer
+  The serial is trimmed and a comma added to the end
+  The manufacturer is then lower-cased and characters ., and the words inc and ltd are removed
+  The manufacturer is then trimmed and spaces are replaced with underscores
+  The processed serial and manufacturer are then concatenated 
+*/
 exports.makeSlug = function (serial, mfg) {
   return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
     .replace('inc','').replace('ltd','').trim().replace(' ','_');
