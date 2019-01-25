@@ -15,8 +15,13 @@ exports.filterProperties = function (data, options={}) {
   const { valid = [], required = [], keepValidNulls = true,
     allowRequiredNulls = false, addRequiredNulls = false } = options;
 
-  // Verify args
-  if (!allowRequiredNulls && addRequiredNulls) { throw new Error(`bad args`); }
+  // allowRequiredNulls is const so use a mutable internal variable 
+  // to force a change in the invalid state tested next
+  let _allowRequiredNulls = allowRequiredNulls;
+  if (!allowRequiredNulls && addRequiredNulls) {
+    // addRequiredNulls necesitates allowRequiredNulls
+    _allowRequiredNulls = true;
+  }
 
   // Valid properties are a superset of required properties. Eliminate overlap
   let _requiredSet = new Set(required);  
@@ -27,7 +32,7 @@ exports.filterProperties = function (data, options={}) {
   // Handle required properties
   for (let field of _requiredSet) {
     if (data.hasOwnProperty( field )) {
-      if ( data [ field ] !== null || allowRequiredNulls ) {
+      if ( data [ field ] !== null || _allowRequiredNulls ) {
         filteredObject [ field ] = data [ field ];
       } else {
         throw new Error(`required property ${field} is null`);
