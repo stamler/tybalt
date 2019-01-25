@@ -5,11 +5,11 @@ const assert = chai.assert;
 describe("utilities module", () => {
   const utilitiesModule = require('../utilities.js')
   describe("filterProperties()", () => {
-    // Test setup for filterProperties() in rawLogins.js
+    // Test setup for filterProperties() in utilities.js
     const data = { taste:null, fruit: "apple", vegetable: "carrot", mineral: null };
     const validProps = ["fruit", "vegetable", "mineral"];
     const requiredProps = ["vegetable"];
-    const filterProperties = utilitiesModule.filterProperties
+    const filterProperties = utilitiesModule.filterProperties;
     it("returns empty object if no options are provided", () => {
       const expected = {};
       return assert.deepEqual(filterProperties(data), expected);
@@ -50,5 +50,12 @@ describe("utilities module", () => {
       const expected = {fruit:"apple", vegetable:"carrot", taste:null, extra:null}
       return assert.deepEqual(filterProperties(data, options), expected);
     });
-  })    
+  });
+  describe("makeSlug()", () => {
+    // Test setup for makeSlug() in utilities.js
+    const makeSlug = utilitiesModule.makeSlug;
+    it("makes a slug from a serial number and manufactuer string", () => {
+      // TODO: write several tests with different input values
+    });
+  });    
 })
