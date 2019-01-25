@@ -2,9 +2,6 @@
 const chai = require('chai');
 const assert = chai.assert;
 
-// https://firebase.google.com/docs/functions/unit-testing
-// const test = require('firebase-functions-test')(); // offline-only, no args
-
 describe("utilities module", () => {
   const utilitiesModule = require('../utilities.js')
   describe("filterProperties()", () => {
@@ -13,7 +10,7 @@ describe("utilities module", () => {
     const validProps = ["fruit", "vegetable", "mineral"];
     const requiredProps = ["vegetable"];
     const filterProperties = utilitiesModule.filterProperties
-    it("strips everything if no options are provided", () => {
+    it("returns empty object if no options are provided", () => {
       const expected = {};
       return assert.deepEqual(filterProperties(data), expected);
     });
@@ -22,8 +19,8 @@ describe("utilities module", () => {
       const expected = {fruit: "apple", vegetable: "carrot", mineral: null};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
-    it("strips valid null properties with keepValidNulls is false", () => {
-      const options = {valid: validProps, keepValidNulls: false};
+    it("strips valid null properties if stripValidNulls is true", () => {
+      const options = {valid: validProps, stripValidNulls: true};
       const expected = {fruit: "apple", vegetable: "carrot"};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
@@ -43,7 +40,7 @@ describe("utilities module", () => {
       const expected = {taste: null, fruit:"apple"};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
-    it("creates required null properties if addRequiredNulls is true", () => {
+    it("adds missing required properties as null if addRequiredNulls is true", () => {
       const options = {required:["taste", "fruit", "extra"], addRequiredNulls:true};
       const expected = {taste: null, fruit:"apple", "extra":null};
       return assert.deepEqual(filterProperties(data, options), expected);
