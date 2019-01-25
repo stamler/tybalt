@@ -26,14 +26,19 @@ exports.filterProperties = function (data, options={}) {
 
   // Handle required properties
   for (let field of _requiredSet) {
-    // required field is missing
     if (data.hasOwnProperty( field )) {
       if ( data [ field ] !== null || allowRequiredNulls ) {
         filteredObject [ field ] = data [ field ];
       } else {
         throw new Error(`required property ${field} is null`);
       }
-    } else {
+    }
+    else if (addRequiredNulls) {
+      // required field is missing, add null field
+      filteredObject [ field ] = null;
+    } 
+    else {
+      // required field is missing, fail
       throw new Error(`required property ${field} is missing`);
     }
   }
