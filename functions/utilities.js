@@ -12,7 +12,7 @@ exports.filterProperties = function (data, options={}) {
   // Get options and fall back to defaults using ES6 destructuring assignment
   // booleans preserve valid null-valued properties, allow null-valued 
   // required properties, and add null property if required property missing
-  const { valid = [], required = [], keepValidNulls = true,
+  const { valid = [], required = [], stripValidNulls = false,
     allowRequiredNulls = false, addRequiredNulls = false } = options;
 
   // allowRequiredNulls is const so use a mutable internal variable 
@@ -51,7 +51,7 @@ exports.filterProperties = function (data, options={}) {
   // Handle valid (but not required) properties
   for (let field of _validSet) {
     if ( data.hasOwnProperty( field ) ) {
-      if ( data [ field ] === null && !keepValidNulls ) { continue; }
+      if ( data [ field ] === null && stripValidNulls ) { continue; }
       filteredObject [ field ] = data [ field ]
     }
   }
