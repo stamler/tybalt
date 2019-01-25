@@ -6,7 +6,7 @@ describe("utilities module", () => {
   const utilitiesModule = require('../utilities.js')
   describe("filterProperties()", () => {
     // Test setup for filterProperties() in rawLogins.js
-    const data = { smell:"pungent", taste:null, fruit: "apple", vegetable: "carrot", mineral: null };
+    const data = { taste:null, fruit: "apple", vegetable: "carrot", mineral: null };
     const validProps = ["fruit", "vegetable", "mineral"];
     const requiredProps = ["vegetable"];
     const filterProperties = utilitiesModule.filterProperties
@@ -45,6 +45,10 @@ describe("utilities module", () => {
       const expected = {taste: null, fruit:"apple", "extra":null};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
-    it("", () => {});
+    it("strips valid null properties while adding required null properties", () => {
+      const options = {valid: validProps, required: ["vegetable", "taste", "extra"], stripValidNulls: true, addRequiredNulls:true};
+      const expected = {fruit:"apple", vegetable:"carrot", taste:null, extra:null}
+      return assert.deepEqual(filterProperties(data, options), expected);
+    });
   })    
 })
