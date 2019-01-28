@@ -8,31 +8,28 @@ exports.handler = async (req, res, db) => {
   // Reject non-JSON requests — Unsupported Media Type rfc7231#section-6.5.13
   // This allows use of req.body directly
   if (req.get('Content-Type') !== "application/json") {
-    return res.sendStatus(415) 
+    return res.sendStatus(415);
   }
 
   const validationOptions = { 
-    validProps: [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
+    valid: [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
     "boot_drive_fs", "model", "computer_name", "os_arch", "os_sku",
     "os_version", "ram", "type", "upn", "email", "user_given_name", 
     "user_surname", "network_config", "radiator_version" ],
-    requiredProps: ["serial", "mfg", "user_sourceAnchor"],
+    required: ["serial", "mfg", "user_sourceAnchor"],
     allowAndAddRequiredNulls: false
   };
   
+  let raw = true, d = req.body;
   try {
     // TODO: if a submission is received with no user information, 
     // update the Computer document only?
 
     // Validate the submission
-    let d = filterProperties(req.body, validationOptions);
-    let raw = false;
+    d = filterProperties(req.body, validationOptions);
+    raw = false;
   }
-  catch (error) {
-    console.log(error);
-    let d = req.body;
-    let raw = true;
-  }
+  catch (error) { console.log(error); }
 
   try {
     if(raw) {
@@ -51,14 +48,14 @@ exports.handler = async (req, res, db) => {
  
 // Creates or updates Computers document, and creates Logins document
 // TODO: update corresponding Users document with slug of last computer login
-async function storeValidLogin(d, db) {
-
+async function storeValidLogin(d, db) { 
+  console.log(`serial: ${d.serial}, mfg: ${d.mfg}`);
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
 
   const userRef = db.collection('Users').doc(d.user_sourceAnchor)
   computerSnapshot = await computerRef.get()
-  userSnapshot = await userRef.get()  
+  userSnapshot = await userRef.get()
 
   // Start a write batch
   var batch = db.batch();
