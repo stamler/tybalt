@@ -15,8 +15,8 @@ exports.handler = async (req, res, db) => {
     valid: [ "bootDrive", "bootDriveCap", "bootDriveFree",
     "bootDriveFS", "model", "computerName", "osArch", "osSku",
     "osVersion", "ram", "type", "upn", "email", "userGivenName", 
-    "userSurname", "networkConfig", "radiatorVersion" ],
-    required: ["serial", "mfg", "userSourceAnchor"],
+    "userSurname", "radiatorVersion" ],
+    required: ["serial", "mfg", "userSourceAnchor", "networkConfig"],
     allowAndAddRequiredNulls: false
   };
   
