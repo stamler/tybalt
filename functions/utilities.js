@@ -4,6 +4,8 @@
   Errors if any required properties have null if allowAndAddRequiredNulls is false.
   Preserves null-values for required properties by default
   removes otherwise valid null properties if stripValidNulls is true
+
+  TODO: validate actual values with, for example, RegExes
 */
 exports.filterProperties = function (data, options={}) {
 
