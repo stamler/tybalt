@@ -46,8 +46,7 @@ exports.handler = async (req, res, db) => {
   }
 }
 
-// Creates or updates Computers document, and creates Logins document
-// TODO: update corresponding Users document with slug of last computer login
+// Creates or updates Computers and Users document, creates Logins document
 async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
@@ -64,30 +63,27 @@ async function storeValidLogin(d, db) {
     d.updated = serverTimestamp()
     batch.update(computerRef, d);
   } else {
-    // Create new Computer document, set both created and updated
-    d.created = serverTimestamp()
-    d.updated = serverTimestamp()
+    // Create new Computer document
+    d.created = d.updated = serverTimestamp();
     batch.set(computerRef,d);
   }
 
-  userInfo = { upn: d.upn, email: d.email, givenName: d.user_given_name, 
-    surname: d.user_surname, updated: serverTimestamp() };
+  userObject = { upn: d.upn, email: d.email, givenName: d.user_given_name, 
+    surname: d.user_surname, lastComputer: slug, updated: serverTimestamp() };
   // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azure_ObjectID property
   if (userSnapshot.exists) {
     // Update existing User document
-    batch.update(userRef, userInfo)
+    batch.update(userRef, userObject)
   } else {
     // Create new User document
-    batch.set(userRef, userInfo)
+    batch.set(userRef, userObject)
   }
 
-  // Create a new Login Document with 4 properties: timestamp, computer slug, 
-  // surname/givenName, and user_sourceAnchor. These can be queried for 
-  // login history 
-  let loginObject = { user_sourceAnchor: d.user_sourceAnchor, 
-    user_given_name: d.user_given_name, user_surname: d.user_surname, 
+  // Create new Login document
+  let loginObject = { userSourceAnchor: d.user_sourceAnchor, 
+    givenName: d.user_given_name, surname: d.user_surname, 
     computer: slug, time: serverTimestamp() }; 
   batch.set(db.collection('Logins').doc(), loginObject);
 
