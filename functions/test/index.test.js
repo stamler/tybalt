@@ -60,8 +60,11 @@ describe("utilities module", () => {
   describe("makeSlug()", () => {
     // Test setup for makeSlug() in utilities.js
     const makeSlug = utilitiesModule.makeSlug;
-    it("makes a slug from a serial number and manufactuer string", () => {
-      // TODO: write several tests with different input values
+    const mfg = " Smell Computer, Corporation, Inc.   ";
+    const serial = " QKF3421 ";
+    const expected = "QKF3421,smell_computer_corporation"
+    it("makes a slug from serial number and manufactuer strings", () => {
+      return assert.strictEqual(makeSlug(serial,mfg), expected);
     });
-  });    
+  });
 })

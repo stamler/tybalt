@@ -57,6 +57,5 @@ exports.filterProperties = function (data, options={}) {
   The processed serial and manufacturer are then concatenated 
 */
 exports.makeSlug = function (serial, mfg) {
-  return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
-    .replace('inc','').replace('ltd','').trim().replace(' ','_');
+  return serial.trim() + ',' + mfg.toLowerCase().replace(/\.|,|inc|ltd/gi,"").trim().replace(/ /g,"_");
 }
