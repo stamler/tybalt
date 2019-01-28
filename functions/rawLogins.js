@@ -1,74 +1,54 @@
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
+const utilities = require('./utilities.js')
+const filterProperties = utilities.filterProperties
+const makeSlug = utilities.makeSlug
 
 exports.handler = async (req, res, db) => {
   
   // Reject non-JSON requests — Unsupported Media Type rfc7231#section-6.5.13
+  // This allows use of req.body directly
   if (req.get('Content-Type') !== "application/json") {
     return res.sendStatus(415) 
   }
 
-  // Filter submission for allowed properties
-  let d = filterLogin(req.body)
+  const validationOptions = { 
+    validProps: [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
+    "boot_drive_fs", "model", "computer_name", "os_arch", "os_sku",
+    "os_version", "ram", "type", "upn", "email", "user_given_name", 
+    "user_surname", "network_config", "radiator_version" ],
+    requiredProps: ["serial", "mfg", "user_sourceAnchor"],
+    allowAndAddRequiredNulls: false
+  };
   
   try {
-    if (isValidDomainLogin(d)) {
-      // TODO: if a submission is received with no user information, update the Computer document only
-      // The submission validates, write to Computers and Users
-      await storeValidLogin(d, db)
-    } else {
+    // TODO: if a submission is received with no user information, 
+    // update the Computer document only?
+
+    // Validate the submission
+    let d = filterProperties(req.body, validationOptions);
+    let raw = false;
+  }
+  catch (error) {
+    console.log(error);
+    let d = req.body;
+    let raw = true;
+  }
+
+  try {
+    if(raw) {
       // Invalid submission, add to RawLogins for later processing
       d.datetime = serverTimestamp()
-      docRef = await db.collection('RawLogins').add(d)
-    }
-    return res.sendStatus(202)
-  } catch (e) {
-    console.log(e);
-    return res.sendStatus(500)
-  }
-}
-
-
-// create a serial,mfg identifier slug
-function makeSlug(serial, mfg) {
-  return serial.trim() + ',' + mfg.toLowerCase().replace('.','').replace(',','')
-    .replace('inc','').replace('ltd','').trim().replace(' ','_');
-}
-
-// TODO: make this function more generic by passing an object as second arg
-// and returning the filtered object
-function filterLogin(data) {
-  const validPropList = [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
-    "boot_drive_fs", "mfg", "model", "computer_name", "os_arch", "os_sku",
-      "os_version", "ram", "serial", "type", "upn", "email", "user_given_name", 
-      "user_surname", "network_config", "user_sourceAnchor", 
-      "radiator_version" ]
-  let filteredObject = {} 
-  for (let i = 0; i < validPropList.length; i++) {
-    let field = validPropList[i]
-    if ( data.hasOwnProperty( field ) ) {
-      filteredObject[ field ] = data[ field ]
+      await db.collection('RawLogins').add(d)
     } else {
-      // TODO: add null fields here if they're not present? 
-      // filteredObject [ field ] = null
+      await storeValidLogin(d, db); //write valid object to database
     }
+    return res.sendStatus(202);     
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500);
   }
-  return filteredObject
 }
-  
-function isValidDomainLogin(d) {
-  // TODO: much more improvement of validation
-  if (d.hasOwnProperty('serial') && d.hasOwnProperty('mfg') &&
-        d.hasOwnProperty('user_sourceAnchor') ) {
-    if (d.serial !== null && d.mfg !== null && d.user_sourceAnchor !== null) {
-      // TODO: Verify user_sourceAnchor is a 128-bit base64-encoded string
-      if (d.serial.length>=4 && d.mfg.length>=2 ) {
-        return true
-      }
-    }
-  }
-  return false
-}
-  
+ 
 // Creates or updates Computers document, and creates Logins document
 // TODO: update corresponding Users document with slug of last computer login
 async function storeValidLogin(d, db) {
@@ -99,7 +79,7 @@ async function storeValidLogin(d, db) {
   // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azure_ObjectID property
-    if (userSnapshot.exists) {
+  if (userSnapshot.exists) {
     // Update existing User document
     batch.update(userRef, userInfo)
   } else {
