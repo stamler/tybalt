@@ -1,9 +1,9 @@
 /* 
   Returns an object containing any properties in validProps and all properties in requiredProps. 
-  Errors if any required properties are missing unless addRequiredNulls is true. 
-  Errors if any required properties have null values unless allowRequiredNulls is true.
+  Errors if any required properties are missing unless allowAndAddRequiredNulls is true. 
+  Errors if any required properties have null if allowAndAddRequiredNulls is false.
+  Preserves null-values for required properties by default
   removes otherwise valid null properties if stripValidNulls is true
-  allowRequiredNulls is forced true if addRequiredNulls is true
 */
 exports.filterProperties = function (data, options={}) {
 
@@ -11,15 +11,7 @@ exports.filterProperties = function (data, options={}) {
   // booleans preserve valid null-valued properties, allow null-valued 
   // required properties, and add null property if required property missing
   const { valid = [], required = [], stripValidNulls = false,
-    allowRequiredNulls = false, addRequiredNulls = false } = options;
-
-  // allowRequiredNulls is const so use a mutable internal variable 
-  // to force a change in the invalid state tested next
-  let _allowRequiredNulls = allowRequiredNulls;
-  if (!allowRequiredNulls && addRequiredNulls) {
-    // addRequiredNulls necesitates allowRequiredNulls
-    _allowRequiredNulls = true;
-  }
+    allowAndAddRequiredNulls = undefined } = options;
 
   // Valid properties are a superset of required properties. Eliminate overlap
   let _requiredSet = new Set(required);  
@@ -30,13 +22,13 @@ exports.filterProperties = function (data, options={}) {
   // Handle required properties
   for (let field of _requiredSet) {
     if (data.hasOwnProperty( field )) {
-      if ( data [ field ] !== null || _allowRequiredNulls ) {
+      if ( data [ field ] !== null || allowAndAddRequiredNulls !== false ) {
         filteredObject [ field ] = data [ field ];
       } else {
         throw new Error(`required property ${field} is null`);
       }
     }
-    else if (addRequiredNulls) {
+    else if (allowAndAddRequiredNulls === true) {
       // required field is missing, add null field
       filteredObject [ field ] = null;
     } 
