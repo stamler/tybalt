@@ -1,9 +1,5 @@
-
 const chai = require('chai');
 const assert = chai.assert;
-
-// TODO: break tests into sub-modules
-// TODO: write tests for azure.js module
 
 describe("utilities module", () => {
   const utilitiesModule = require('../utilities.js')
