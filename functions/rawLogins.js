@@ -12,11 +12,11 @@ exports.handler = async (req, res, db) => {
   }
 
   const validationOptions = { 
-    valid: [ "boot_drive", "boot_drive_cap", "boot_drive_free", 
-    "boot_drive_fs", "model", "computer_name", "os_arch", "os_sku",
-    "os_version", "ram", "type", "upn", "email", "user_given_name", 
-    "user_surname", "network_config", "radiator_version" ],
-    required: ["serial", "mfg", "user_sourceAnchor"],
+    valid: [ "bootDrive", "bootDriveCap", "bootDriveFree",
+    "bootDriveFS", "model", "computerName", "osArch", "osSku",
+    "osVersion", "ram", "type", "upn", "email", "userGivenName", 
+    "userSurname", "networkConfig", "radiatorVersion" ],
+    required: ["serial", "mfg", "userSourceAnchor"],
     allowAndAddRequiredNulls: false
   };
   
@@ -51,7 +51,7 @@ async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
 
-  const userRef = db.collection('Users').doc(d.user_sourceAnchor)
+  const userRef = db.collection('Users').doc(d.userSourceAnchor)
   computerSnapshot = await computerRef.get()
   userSnapshot = await userRef.get()
 
@@ -68,11 +68,11 @@ async function storeValidLogin(d, db) {
     batch.set(computerRef,d);
   }
 
-  userObject = { upn: d.upn, email: d.email, givenName: d.user_given_name, 
-    surname: d.user_surname, lastComputer: slug, updated: serverTimestamp() };
-  // TODO: Check if userSnapshot contains azure_ObjectID. If it doesn't,
+  userObject = { upn: d.upn, email: d.email, givenName: d.userGivenName, 
+    surname: d.userSurname, lastComputer: slug, updated: serverTimestamp() };
+  // TODO: Check if userSnapshot contains azureObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
-  // write the key to azure_ObjectID property
+  // write the key to azureObjectID property
   if (userSnapshot.exists) {
     // Update existing User document
     batch.update(userRef, userObject)
@@ -82,9 +82,9 @@ async function storeValidLogin(d, db) {
   }
 
   // Create new Login document
-  let loginObject = { userSourceAnchor: d.user_sourceAnchor, 
-    givenName: d.user_given_name, surname: d.user_surname, 
-    computer: slug, time: serverTimestamp() }; 
+  let loginObject = { userSourceAnchor: d.userSourceAnchor,
+    givenName: d.userGivenName, surname: d.userSurname,
+    computer: slug, time: serverTimestamp() };
   batch.set(db.collection('Logins').doc(), loginObject);
 
   // Commit the batch which returns an array of WriteResults
