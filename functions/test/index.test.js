@@ -32,13 +32,13 @@ describe("utilities module", () => {
     it("throws error if required value(s) are null while allowAndAddRequiredNulls is false", () => {
       const options = {required:["taste", "fruit"], allowAndAddRequiredNulls: false };
       // first arg of throws() must be function, so wrap it with params
-      const wrapped = function() { filterProperties(data, options) };
+      const wrapped = () => { filterProperties(data, options) };
       return assert.throws(wrapped, Error);
     });
     it("throws error if required value(s) are missing while allowAndAddRequiredNulls is false", () => {
       const options = {required:["taste", "fruit", "extra"], allowAndAddRequiredNulls: false };
       // first arg of throws() must be function, so wrap it with params
-      const wrapped = function() { filterProperties(data, options) };
+      const wrapped = () => { filterProperties(data, options) };
       return assert.throws(wrapped, Error);
     });
     it("keeps required null properties by default", () => {
@@ -69,7 +69,7 @@ describe("utilities module", () => {
       assert.strictEqual(makeSlug("QK/F34,21","Dell/Inc.     "), "QKF3421,dell");
     });
     it("throws error if serial or mfg components are too short", () => {
-      assert.throws(function() { makeSlug(" P1E  ", " J. inc") }, Error);
+      assert.throws(() => { makeSlug(" P1E  ", " J. inc") }, Error);
     });
   });
 })
