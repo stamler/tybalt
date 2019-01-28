@@ -135,7 +135,7 @@ async function getCertificates(db) {
     if (Date.now() - retrieved.toDate() < 86400 * 1000 ) {
       return certificates;
     }
-  } 
+  }
   
   // Load and cache fresh certificates from Microsoft
 
