@@ -29,13 +29,13 @@ describe("utilities module", () => {
       const expected = {vegetable: "carrot"};
       return assert.deepEqual(filterProperties(data, options), expected);
     });
-    it("fails if required value(s) are null while allowAndAddRequiredNulls is false", () => {
+    it("throws error if required value(s) are null while allowAndAddRequiredNulls is false", () => {
       const options = {required:["taste", "fruit"], allowAndAddRequiredNulls: false };
       // first arg of throws() must be function, so wrap it with params
       const wrapped = function() { filterProperties(data, options) };
       return assert.throws(wrapped, Error);
     });
-    it("fails if required value(s) are missing while allowAndAddRequiredNulls is false", () => {
+    it("throws error if required value(s) are missing while allowAndAddRequiredNulls is false", () => {
       const options = {required:["taste", "fruit", "extra"], allowAndAddRequiredNulls: false };
       // first arg of throws() must be function, so wrap it with params
       const wrapped = function() { filterProperties(data, options) };
@@ -66,6 +66,9 @@ describe("utilities module", () => {
       assert.strictEqual(makeSlug(" QKF34 21 ","Phoenix Techno, LTD"), "QKF3421,phoenix_techno");
       assert.strictEqual(makeSlug(" Q-KF3421 ","Dell Inc.  "), "Q-KF3421,dell");
       assert.strictEqual(makeSlug("QKF34,21","Dell Inc.     "), "QKF3421,dell");
+    });
+    it("throws error if processed serial or manufacturer components are too short", () => {
+      assert.throws(function() { makeSlug(" P1E  ", " J. inc") }, Error);
     });
   });
 })
