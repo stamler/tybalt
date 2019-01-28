@@ -45,11 +45,10 @@ exports.handler = async (req, res, db) => {
     return res.sendStatus(500);
   }
 }
- 
+
 // Creates or updates Computers document, and creates Logins document
 // TODO: update corresponding Users document with slug of last computer login
-async function storeValidLogin(d, db) { 
-  console.log(`serial: ${d.serial}, mfg: ${d.mfg}`);
+async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
 
@@ -95,4 +94,3 @@ async function storeValidLogin(d, db) {
   // Commit the batch which returns an array of WriteResults
   return batch.commit();
 }
-  
