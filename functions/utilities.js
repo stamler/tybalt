@@ -49,13 +49,7 @@ exports.filterProperties = function (data, options={}) {
   return filteredObject;
 }
 
-/*
-  Returns a slug string that uniquely identifies a computer based on serial and manufacturer
-  The serial is trimmed and a comma added to the end
-  The manufacturer is then lower-cased and characters ., and the words inc and ltd are removed
-  The manufacturer is then trimmed and spaces are replaced with underscores
-  The processed serial and manufacturer are then concatenated 
-*/
+// make a string with serial & manufacturer that uniquely identifies a computer
 exports.makeSlug = function (serial, mfg) {
-  return serial.trim() + ',' + mfg.toLowerCase().replace(/\.|,|inc|ltd/gi,"").trim().replace(/ /g,"_");
+  return serial.replace(/\s|,/g,"") + ',' + mfg.toLowerCase().replace(/\.|,|inc|ltd/gi,"").trim().replace(/ /g,"_");
 }

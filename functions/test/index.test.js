@@ -60,11 +60,12 @@ describe("utilities module", () => {
   describe("makeSlug()", () => {
     // Test setup for makeSlug() in utilities.js
     const makeSlug = utilitiesModule.makeSlug;
-    const mfg = " Smell Computer, Corporation, Inc.   ";
-    const serial = " QKF3421 ";
-    const expected = "QKF3421,smell_computer_corporation"
     it("makes a slug from serial number and manufactuer strings", () => {
-      return assert.strictEqual(makeSlug(serial,mfg), expected);
+      assert.strictEqual(makeSlug(" QKF3421 "," Smell Computer, Corporation, Inc.   "), "QKF3421,smell_computer_corporation");
+      assert.strictEqual(makeSlug(" QK F3421 ","Award Software International, Inc."), "QKF3421,award_software_international");
+      assert.strictEqual(makeSlug(" QKF34 21 ","Phoenix Techno, LTD"), "QKF3421,phoenix_techno");
+      assert.strictEqual(makeSlug(" Q-KF3421 ","Dell Inc.  "), "Q-KF3421,dell");
+      assert.strictEqual(makeSlug("QKF34,21","Dell Inc.     "), "QKF3421,dell");
     });
   });
 })
