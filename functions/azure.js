@@ -28,7 +28,11 @@ exports.handler = async (req, res, db) => {
 
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
-    return res.status(405).send('You must POST to this endpoint');
+    return res.sendStatus(405);
+  }
+
+  if (req.get('Content-Type') !== "application/json") {
+    return res.sendStatus(415);
   }
 
   // validate azure token from request body
