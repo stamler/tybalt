@@ -1,5 +1,4 @@
-const chai = require('chai');
-const assert = chai.assert;
+const assert = require('chai').assert;
 
 describe("utilities module", () => {
   const utilitiesModule = require('../utilities.js')
