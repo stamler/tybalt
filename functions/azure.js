@@ -35,13 +35,17 @@ exports.handler = async (req, res, db) => {
     return res.sendStatus(415);
   }
 
+  if (!req.body.hasOwnProperty("id_token")) {
+    return res.status(401).send("no id_token provided");
+  }
+
   // validate azure token from request body
   let valid = null;
-  try { valid = await validAzureToken(req.body.token, db); }
+  try { valid = await validAzureToken(req.body.id_token, db); }
   catch (error) { return res.status(401).send(`${error}`); }
 
   if (valid !== null) {
-    // TODO: Get Azure Application ID from Firestore and verify
+    // TODO: Get Azure Application ID from Firestore OR ENVIRONMENT and verify
     // that it matches valid.aud so we're not minting tokens for the wrong
     // application. If there's no match, return HTTP 401 unauthorized with
     // a message of "This token is valid but won't work for this Application"
