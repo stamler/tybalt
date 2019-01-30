@@ -39,29 +39,22 @@ describe("azure module", () => {
 
     // TODO: stub out getCertificates() for testing the rest of the handler
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
-      const req = {}; const db = {};
+      const req = {};
       const res = { header: sinon.spy(), sendStatus: sinon.stub().returnsThis() };
-      let result = await handler(req, res, db);      
+      let result = await handler(req, res);      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.sendStatus.args[0], 405);
     });
-
     it("responds (415 Unsupported Media Type) if Content-Type is not application/json", async () => {
-      const req = { method:'POST',
-        get: function (field) { assert.equal(field, 'Content-Type'); return "not/json"; } 
-      };
+      const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
       const res = { sendStatus: sinon.stub().returnsThis() };
-      const db = {};
-      let result = await handler(req, res, db);
+      let result = await handler(req, res);
       assert.equal(result.sendStatus.args[0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
-      const req = { method:'POST', body: {},
-        get: function (field) { assert.equal(field, 'Content-Type'); return "application/json"; } 
-      };
+      const req = { method:'POST', body: {}, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
       const res = { status: sinon.stub().returnsThis(), send: sinon.stub().returnsThis() };
-      const db = {};
-      let result = await handler(req, res, db);
+      let result = await handler(req, res);
       assert.equal(result.status.args[0],401);
       assert.equal(result.send.args[0],"no id_token provided");
             
