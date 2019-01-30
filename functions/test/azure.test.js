@@ -12,7 +12,7 @@ describe("azure module", () => {
   // Keypair generated at https://8gwifi.org/jwkfunctions.jsp
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
   const key = fs.readFileSync(path.join(__dirname, 'key.pem'), 'ascii');
-  const cert = fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii');
+  const certificates = {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') };
   const jwk_cert = JSON.parse(fs.readFileSync(path.join(__dirname, 'jwk.json')));
   const azure_id_token_payload = {
     // Azure Application ID
@@ -56,13 +56,29 @@ describe("azure module", () => {
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
       const req = { method:'POST', body: { id_token: "fhqwhgads" }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
       // TODO: stub out getCertificates() for testing so db can be empty object
+      let result = await handler(req, makeResponseObject(), certificates);
+      assert.equal(result.status.args[0],401);
+      assert.equal(result.send.args.toString(),"Error: Can't decode the token");
+    });
+    it("responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
+      const req = { method:'POST', body: { id_token: id_token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
       let result = await handler(req, makeResponseObject());
+      assert.equal(result.status.args[0],401);
+      assert.equal(result.send.args.toString(),"Error: Can't find the token's certificate");
     });
-    it("responds (401 Unauthorized) if id_token in request is expired", () => {
+    it("responds (401 Unauthorized) if id_token in request is expired", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
+      const req = { method:'POST', body: { id_token: id_token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
+      let result = await handler(req, makeResponseObject(), certificates);
+      assert.equal(result.status.args[0],401);
+      assert.equal(result.send.args.toString(),"TokenExpiredError: jwt expired");
     });
-    it("responds (401 Unauthorized) if id_token in request is unverifiable", () => {
+    it("responds (401 Unauthorized) if id_token has invalid signature", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      const req = { method:'POST', body: { id_token: id_token.substring(0, id_token.length - 5) }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
+      let result = await handler(req, makeResponseObject(), certificates);
+      assert.equal(result.status.args[0],401);
+      assert.equal(result.send.args.toString(),"JsonWebTokenError: invalid signature");
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
