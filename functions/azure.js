@@ -106,10 +106,10 @@ exports.handler = async (req, res, db) => {
     // admin.auth().createUser()
     // admin.auth().createCustomToken()
     console.log(`Valid token received for ${valid.name}`);
-    return res.sendStatus(200)
+    return res.status(200).send();
   }
 
-  return res.sendStatus(500);
+  return res.status(500).send();
 }
 
 // returns the decoded payload of valid token. 
