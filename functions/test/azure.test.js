@@ -42,7 +42,7 @@ describe("azure module", () => {
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0],405);
     });
-    it("responds (415 Unsupported Media Type) if Content-Type is not application/json", async () => {
+    it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
       const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
       let result = await handler(req, makeResponseObject());
       assert.equal(result.status.args[0], 415);
