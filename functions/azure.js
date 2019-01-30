@@ -115,11 +115,11 @@ exports.handler = async (req, res, certificates) => {
 }
 
 // returns the decoded payload of valid token. 
-// Caller must handle exceptions from both jwt.decode() and jwt.verify()
+// Caller handles exceptions from both jwt.decode() and jwt.verify()
 async function validAzureToken(token, certificates) {
   // certificates is an object with kid properties that reference strings
   // which are pem-encoded certificates. 
-  if (token === undefined) { throw new Error("No token found"); }
+  if (token === undefined) { throw new Error("No token provided"); }
   
   let kid, certificate;
   try { kid = jwt.decode(token, {complete: true}).header.kid; }
