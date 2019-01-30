@@ -11,7 +11,7 @@ describe("azure module", () => {
   const key = fs.readFileSync(path.join(__dirname, 'key.pem'), 'ascii');
   const certificates = {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') };
   const jwk_cert = JSON.parse(fs.readFileSync(path.join(__dirname, 'jwk.json')));
-  const azure_id_token_payload = {
+  const payload = {
     // Azure Application ID
     "aud": "12354894-507e-4095-9d42-1c5ebb952856",
 
@@ -26,7 +26,7 @@ describe("azure module", () => {
     "email": "ttesterson@company.com", "name": "Testy Testerson",
     "sub": "RcMorzOb7Jm4mimarvKUnGsBDOGquydhqOF7JeZTfpI", "ver": "2.0"
   };
-  const id_token = jwt.sign(azure_id_token_payload, key, {algorithm: 'RS256', keyid:'1234'});
+  const id_token = jwt.sign(payload, key, {algorithm: 'RS256', keyid:'1234'});
   
   describe("handler()", () => {
     const handler = azureModule.handler;
@@ -47,45 +47,45 @@ describe("azure module", () => {
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
-    it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
+    it("01 responds (405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler({}, makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
     });
-    it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
+    it("02 responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
       const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
       let result = await handler(req, makeResObject());
       assert.equal(result.status.args[0][0], 415);
     });
-    it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
+    it("03 responds (401 Unauthorized) if id_token property is missing from request", async () => {
       let result = await handler(makeReqObject(), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0],"no id_token provided");
     });
-    it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
+    it("04 responds (401 Unauthorized) if id_token in request is unparseable", async () => {
       let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), certificates);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"Error: Can't decode the token");
     });
-    it("responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
+    it("05 responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
       let result = await handler(makeReqObject(id_token), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"Error: Can't find the token's certificate");
     });
-    it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
+    it("06 responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
     });
-    it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
+    it("07 responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
       // TODO: create a new testing id_token that has a different audience claim
       assert.equal(result.status.args[0][0],403);
     });
-    it("responds (200 OK) with a new firebase token if id_token in request is verified", () => {
+    it("08 responds (200 OK) with a new firebase token if id_token in request is verified", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       assert.equal(true, false);
     });  
