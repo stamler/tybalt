@@ -129,7 +129,7 @@ async function validAzureToken(token, db) {
   return jwt.verify(token, certificate);
 }
 
-// returns object with keys as cert kid and values as public certificate pems
+// returns object with keys as cert kid and values as certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
   const azureRef = db.collection('Cache').doc('azure');
