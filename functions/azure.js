@@ -116,15 +116,34 @@ exports.handler = async (req, res, certificates) => {
 
 // returns the decoded payload of valid token. Caller must handle exceptions
 // certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
-async function validAzureToken(token, certificates) {
+async function validAzureToken(token, certificates, options={}) {
+  const { app_id = null, tenant_id = null } = options;
+
   if (token === undefined) { throw new Error("No token provided"); }
   
-  let kid, certificate;
-  try { kid = jwt.decode(token, {complete: true}).header.kid; }
+  let kid, decoded, certificate;
+  try { 
+    decoded = jwt.decode(token, {complete: true});
+    kid = decoded.header.kid; 
+  }
   catch (error) { throw new Error("Can't decode the token"); }
 
   try { certificate = certificates[kid]; } 
   catch (error) { throw new Error("Can't find the token's certificate"); }
+
+  // Check the app_id
+  if ( app_id && decoded.payload.aud !== app_id ) {
+    throw new Error("AudienceError: Provided token invalid for this application");
+  }
+  
+  // Check the tenant_id
+  if (tenant_id) {
+    // extract the GUID from iss
+    const iss_guid = decoded.payload.iss.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
+    if (iss_guid && iss_guid[0] !== tenant_id) {
+      throw new Error("IssuerError: Provided token issued by foreign tenant");
+    }
+  }
 
   // return verified decoded token payload
   return jwt.verify(token, certificate);
