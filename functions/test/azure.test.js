@@ -35,7 +35,7 @@ describe("azure module", () => {
     const handler = azureModule.handler;
     const makeResponseObject = () => { return { header: sinon.spy(), status: sinon.stub().returnsThis(), send: sinon.stub().returnsThis() }; }; 
     let clock; // declare sinon's clock and try to restore after each test
-    afterEach(() => { try { clock.restore(); } catch (e) {} }); 
+    afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler({}, makeResponseObject());      

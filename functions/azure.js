@@ -41,7 +41,8 @@ exports.handler = async (req, res, db) => {
 
   // validate azure token from request body
   let valid = null;
-  try { valid = await validAzureToken(req.body.id_token, db); }
+  let certificates = await getCertificates(db);
+  try { valid = await validAzureToken(req.body.id_token, certificates); }
   catch (error) { return res.status(401).send(`${error}`); }
 
   if (valid !== null) {
@@ -58,8 +59,8 @@ exports.handler = async (req, res, db) => {
     /*
 
     About The Firebase Auth collection:
-    Firebase Auth will use Azure Object ID as the key (uid, oid ) as this value
-    never changes. Upon receiving a valid Azure id_token with a previously 
+    Firebase Auth will use Azure Object ID as the key as it never changes. 
+    Upon receiving a valid Azure id_token with a previously 
     unused oid, we will create a new user in Firebase auth with this value as
     the key. We will also update properties related to the user, specifically
     name and email. At this point the auth user will not be correlated with
@@ -114,9 +115,10 @@ exports.handler = async (req, res, db) => {
 
 // returns the decoded payload of valid token. 
 // Caller must handle exceptions from both jwt.decode() and jwt.verify()
-async function validAzureToken(token, db) {
+async function validAzureToken(token, certificates) {
+  // certificates is an object with kid properties that reference strings
+  // which are pem-encoded certificates. 
   if (token === undefined) { throw new Error("No token found"); }
-  let certificates = await getCertificates(db);
   
   let kid, certificate;
   try { kid = jwt.decode(token, {complete: true}).header.kid; }
