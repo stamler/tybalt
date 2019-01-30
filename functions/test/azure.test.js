@@ -30,8 +30,20 @@ describe("azure module", () => {
   
   describe("handler()", () => {
     const handler = azureModule.handler;
-    const makeResObject = () => { return { header: sinon.spy(), status: sinon.stub().returnsThis(), send: sinon.stub().returnsThis() }; };
-    const makeReqObject = (token) => { return { method:'POST', body: { id_token: token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') }; }; 
+    const makeResObject = () => { 
+      return { 
+        header: sinon.spy(), status: sinon.stub().returnsThis(), 
+        send: sinon.stub().returnsThis() 
+      }; 
+    };
+    const makeReqObject = (token) => { 
+      req = { 
+        method:'POST', body: {}, 
+        get: sinon.stub().withArgs('Content-Type').returns('application/json') 
+      };
+      if (token) { req.body.id_token = token }
+      return req;
+    }; 
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
@@ -46,8 +58,7 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
-      const req = { method:'POST', body: {}, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      let result = await handler(req, makeResObject());
+      let result = await handler(makeReqObject(), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0],"no id_token provided");
     });
