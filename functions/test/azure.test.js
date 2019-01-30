@@ -5,9 +5,6 @@ const fs = require('fs');
 const path = require('path');
 const azureModule = require('../azure.js');
 
-// TODO: Create a fake "Azure id_token" signed by the generated fake keys for testing. 
-// https://github.com/auth0/node-jsonwebtoken/blob/master/test/verify.tests.js#L81
-
 describe("azure module", () => {
   // Keypair generated at https://8gwifi.org/jwkfunctions.jsp
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
@@ -33,58 +30,53 @@ describe("azure module", () => {
   
   describe("handler()", () => {
     const handler = azureModule.handler;
-    const makeResponseObject = () => { return { header: sinon.spy(), status: sinon.stub().returnsThis(), send: sinon.stub().returnsThis() }; }; 
+    const makeResObject = () => { return { header: sinon.spy(), status: sinon.stub().returnsThis(), send: sinon.stub().returnsThis() }; };
+    const makeReqObject = (token) => { return { method:'POST', body: { id_token: token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') }; }; 
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
-      let result = await handler({}, makeResponseObject());      
+      let result = await handler({}, makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
-      assert.equal(result.status.args[0],405);
+      assert.equal(result.status.args[0][0],405);
     });
     it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
       const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
-      let result = await handler(req, makeResponseObject());
-      assert.equal(result.status.args[0], 415);
+      let result = await handler(req, makeResObject());
+      assert.equal(result.status.args[0][0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
       const req = { method:'POST', body: {}, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      let result = await handler(req, makeResponseObject());
-      assert.equal(result.status.args[0],401);
+      let result = await handler(req, makeResObject());
+      assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0],"no id_token provided");
     });
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
-      const req = { method:'POST', body: { id_token: "fhqwhgads" }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      // TODO: stub out getCertificates() for testing so db can be empty object
-      let result = await handler(req, makeResponseObject(), certificates);
-      assert.equal(result.status.args[0],401);
+      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), certificates);
+      assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"Error: Can't decode the token");
     });
     it("responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
-      const req = { method:'POST', body: { id_token: id_token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      let result = await handler(req, makeResponseObject());
-      assert.equal(result.status.args[0],401);
+      let result = await handler(makeReqObject(id_token), makeResObject());
+      assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"Error: Can't find the token's certificate");
     });
-    it("responds (401 Unauthorized) if id_token in request is expired", async () => {
+    it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      const req = { method:'POST', body: { id_token: id_token }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      let result = await handler(req, makeResponseObject(), certificates);
-      assert.equal(result.status.args[0],401);
+      let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
+      assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"TokenExpiredError: jwt expired");
+      // TODO: assert that the body of the result is not a token
     });
-    it("responds (401 Unauthorized) if id_token has invalid signature", async () => {
+    it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      const req = { method:'POST', body: { id_token: id_token.substring(0, id_token.length - 5) }, get: sinon.stub().withArgs('Content-Type').returns('application/json') };
-      let result = await handler(req, makeResponseObject(), certificates);
-      assert.equal(result.status.args[0],401);
-      assert.equal(result.send.args.toString(),"JsonWebTokenError: invalid signature");
-    });
-    it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", () => {
-      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
+      // TODO: create a new testing id_token that has a different audience claim
+      assert.equal(result.status.args[0][0],403);
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      assert.equal(true, false);
     });  
   });
 });
