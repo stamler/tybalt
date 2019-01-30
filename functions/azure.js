@@ -24,7 +24,7 @@ const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 const assert = require('assert');
 
-exports.handler = async (req, res, db) => {
+exports.handler = async (req, res, certificates) => {
 
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
@@ -41,7 +41,6 @@ exports.handler = async (req, res, db) => {
 
   // validate azure token from request body
   let valid = null;
-  let certificates = await getCertificates(db);
   try { valid = await validAzureToken(req.body.id_token, certificates); }
   catch (error) { return res.status(401).send(`${error}`); }
 
@@ -133,7 +132,7 @@ async function validAzureToken(token, certificates) {
 
 // returns object with keys as cert kid and values as certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
-async function getCertificates(db) {
+exports.getCertificates = async function (db) {
   const azureRef = db.collection('Cache').doc('azure');
   snap = await azureRef.get();
 
