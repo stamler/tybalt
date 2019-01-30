@@ -28,11 +28,11 @@ exports.handler = async (req, res, db) => {
 
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
-    return res.sendStatus(405);
+    return res.status(405).send();
   }
 
   if (req.get('Content-Type') !== "application/json") {
-    return res.sendStatus(415);
+    return res.status(415).send();
   }
 
   if (!req.body.hasOwnProperty("id_token")) {
