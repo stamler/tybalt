@@ -117,7 +117,7 @@ exports.handler = async (req, res, certificates) => {
 // returns the decoded payload of valid token. Caller must handle exceptions
 // certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
 async function validAzureToken(token, certificates, options={}) {
-  const { app_id = null, tenant_id = null } = options;
+  const { app_id = null, tenant_ids = [] } = options;
 
   if (token === undefined) { throw new Error("No token provided"); }
   
@@ -136,11 +136,11 @@ async function validAzureToken(token, certificates, options={}) {
     throw new Error("AudienceError: Provided token invalid for this application");
   }
   
-  // Check the tenant_id
-  if (tenant_id) {
+  // Check the tenant_ids array
+  if (tenant_ids.length > 0) {
     // extract the GUID from iss
     const iss_guid = decoded.payload.iss.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
-    if (iss_guid && iss_guid[0] !== tenant_id) {
+    if (iss_guid && tenant_ids.includes(iss_guid[0])) {
       throw new Error("IssuerError: Provided token issued by foreign tenant");
     }
   }
