@@ -30,17 +30,46 @@ describe("azure module", () => {
     "sub": "RcMorzOb7Jm4mimarvKUnGsBDOGquydhqOF7JeZTfpI", "ver": "2.0"
   };
   const id_token = jwt.sign(azure_id_token_payload, key, {algorithm: 'RS256', keyid:'1234'});
-
-  //console.log(id_token);
-  //console.log(cert);
   
   describe("handler()", () => {
+    const handler = azureModule.handler;
+
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) {} }); 
 
-    // TODO: stub out getCertificates() for testing the rest of the handler (which is otherwise synchronous)
-
-    it("responds (401 Unauthorized) if id_token property is missing from request", () => {});
+    // TODO: stub out getCertificates() for testing the rest of the handler
+    it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
+      const req = {}; const db = {};
+      const res = {
+        header: sinon.spy(),
+        sendStatus: function (status) { assert.equal(status, 405); return this; }
+      };
+      let result = await handler(req, res, db);      
+      assert.deepEqual(result.header.args[0], ['Allow','POST']);
+    });
+    it("responds (415 Unsupported Media Type) if Content-Type is not application/json", async () => {
+      const req = { method:'POST',
+        get: function (field) { assert.equal(field, 'Content-Type'); return "not/json"; } 
+      };
+      const res = {
+        sendStatus: function (status) { assert.equal(status, 415); return this; }
+      };
+      const db = {};
+      let result = await handler(req, res, db);
+    });
+    it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
+      const req = { method:'POST', body: {},
+        get: function (field) { assert.equal(field, 'Content-Type'); return "application/json"; } 
+      };
+      const res = {
+        status: function (status) { assert.equal(status, 401); return this; },
+        send: sinon.spy()
+      };
+      const db = {};
+      let result = await handler(req, res, db);
+      assert.isTrue(result.send.calledOnce());
+            
+    });
     it("responds (401 Unauthorized) if id_token in request is unparseable", () => {});
     it("responds (401 Unauthorized) if id_token in request is expired", () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
