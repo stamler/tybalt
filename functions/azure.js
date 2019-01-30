@@ -16,6 +16,8 @@ for authorization in place of an access token. The claims it provides can
 be used for UX inside your application, keying a database, and providing 
 access to the client application. 
 
+TODO: build custom errors to throw
+
 */
 
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
