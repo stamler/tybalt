@@ -1,7 +1,10 @@
 {
   "parserOptions": {
     // Required for certain syntax usages
-    "ecmaVersion": 8
+    "ecmaVersion": 9
+  },
+  "env": {
+    "node":true
   },
   "plugins": [
     "promise"
