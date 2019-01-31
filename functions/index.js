@@ -18,7 +18,7 @@ exports.getToken = functions.https.onRequest(async (req, res) => {
   const options = {
     certificates: await azureModule.getCertificates(admin.firestore()),
     app_id: functions.config().azure_app_id || null,
-    tenant_ids: functions.config().azure_allowed_tenants || null
+    tenant_ids: functions.config().azure_allowed_tenants || []
   };
   azureModule.handler(req, res, options);
 });
