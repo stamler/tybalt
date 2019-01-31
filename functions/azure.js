@@ -20,7 +20,8 @@ TODO: build custom errors to throw
 
 */
 
-const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
+const admin = require('firebase-admin');
+const serverTimestamp = admin.firestore.FieldValue.serverTimestamp
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
@@ -110,15 +111,27 @@ exports.handler = async (req, res, options={}) => {
 
     */
 
-    // TODO: mint a firebase custom token with the information from valid
-    // 1. First get claims about the user from the valid token
-    const oid = valid.oid;
-    const claims = {name: valid.name, email: valid.email};
+    // Create or update the user then mint a firebase custom token for the user
+    // TODO: consider breaking this into a function for testability. Specific 
+    // issues include depending on firebase admin functions
+    const uid = valid.oid;
+    const properties = {displayName: valid.name, email: valid.email};
 
-    // admin.auth().updateUser()
-    // admin.auth().createUser()
-    // admin.auth().createCustomToken()
-    return res.status(200).send();
+    let userRecord;
+    try {
+      // try updating the user first
+      userRecord = await admin.auth().updateUser(uid, properties);      
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        // if the user doesn't exist then create it
+        userRecord = await admin.auth().createUser({ uid, ...properties});
+      } else if (error.code === 'auth/email-already-exists') {
+        return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
+      }
+    }
+
+    const firebaseCustomToken = admin.auth().createCustomToken(uid);
+    return res.status(200).send(firebaseCustomToken);
   }
 
   return res.status(500).send();
