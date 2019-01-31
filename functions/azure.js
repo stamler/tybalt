@@ -56,9 +56,9 @@ exports.handler = async (req, res, options={}) => {
   
     // Check the tenant_ids array
     if (tenant_ids.length > 0) {
-      // extract the GUID from iss
       const iss_guid = valid.iss.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
-      if (iss_guid && tenant_ids.includes(iss_guid[0])) {
+      if (iss_guid && !tenant_ids.includes(iss_guid[0])) {
+        // GUID extracted from the iss claim IS NOT in the array of tenant_ids
         return res.status(403).send("IssuerError: Provided token issued by foreign tenant");
       }
     }
