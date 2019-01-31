@@ -90,14 +90,23 @@ describe("azure module", () => {
     it("08 responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
-      handlerOptions.tenant_ids = ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"];      
+      handlerOptions.tenant_ids = ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"];
       let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
-    it("09 responds (200 OK) with a new firebase token if id_token in request is verified", () => {
+    it("09 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      assert.equal(true, false);
-    });  
+      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      assert.equal(result.status.args[0][0],200);
+      // TODO: test for a valid new firebase token
+    });
+    it("10 creates a new auth user if token is valid and this is the first time seeing this user", () => {
+      // TODO: write this test
+    });
+    it("11 updates auth user if token is valid and this is not the first time seeing this user", () => {
+      // TODO: write this test
+    });
+
   });
 });
