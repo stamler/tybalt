@@ -9,7 +9,7 @@ describe("azure module", () => {
   // Keypair generated at https://8gwifi.org/jwkfunctions.jsp
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
   const key = fs.readFileSync(path.join(__dirname, 'key.pem'), 'ascii');
-  const certificates = {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') };
+  const options = { certificates: {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') }, app_id: null, tenant_ids: [] };
   const jwk_cert = JSON.parse(fs.readFileSync(path.join(__dirname, 'jwk.json')));
   const payload = {
     // Azure Application ID
@@ -63,7 +63,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0],"no id_token provided");
     });
     it("04 responds (401 Unauthorized) if id_token in request is unparseable", async () => {
-      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), certificates);
+      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), options);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"Error: Can't decode the token");
     });
@@ -74,15 +74,16 @@ describe("azure module", () => {
     });
     it("06 responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
+      let result = await handler(makeReqObject(id_token), makeResObject(), options);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args.toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
     });
     it("07 responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), certificates);
-      // TODO: create a new testing id_token that has a different audience claim
+      let handlerOptions = options;
+      handlerOptions.app_id = "d574aed2-db53-4228-9686-31f9fb423d22";
+      let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
       assert.equal(result.status.args[0][0],403);
     });
     it("08 responds (200 OK) with a new firebase token if id_token in request is verified", () => {

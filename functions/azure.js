@@ -26,7 +26,8 @@ const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 const assert = require('assert');
 
-exports.handler = async (req, res, certificates) => {
+exports.handler = async (req, res, options={}) => {
+  const { app_id = null, tenant_ids = [], certificates = null } = options;
 
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
@@ -47,10 +48,20 @@ exports.handler = async (req, res, certificates) => {
   catch (error) { return res.status(401).send(`${error}`); }
 
   if (valid !== null) {
-    // TODO: Get Azure Application ID from Firestore OR ENVIRONMENT and verify
-    // that it matches valid.aud so we're not minting tokens for the wrong
-    // application. If there's no match, return HTTP 401 unauthorized with
-    // a message of "This token is valid but won't work for this Application"
+
+    // Check the app_id
+    if ( app_id && valid.aud !== app_id ) {
+      return res.status(403).send("AudienceError: Provided token invalid for this application");
+    }
+  
+    // Check the tenant_ids array
+    if (tenant_ids.length > 0) {
+      // extract the GUID from iss
+      const iss_guid = valid.iss.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
+      if (iss_guid && tenant_ids.includes(iss_guid[0])) {
+        return res.status(403).send("IssuerError: Provided token issued by foreign tenant");
+      }
+    }
 
     // TODO: validate valid.nonce matches submitted value in the client app
 
@@ -116,8 +127,7 @@ exports.handler = async (req, res, certificates) => {
 
 // returns the decoded payload of valid token. Caller must handle exceptions
 // certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
-async function validAzureToken(token, certificates, options={}) {
-  const { app_id = null, tenant_ids = [] } = options;
+async function validAzureToken(token, certificates) {
 
   if (token === undefined) { throw new Error("No token provided"); }
   
@@ -130,20 +140,6 @@ async function validAzureToken(token, certificates, options={}) {
 
   try { certificate = certificates[kid]; } 
   catch (error) { throw new Error("Can't find the token's certificate"); }
-
-  // Check the app_id
-  if ( app_id && decoded.payload.aud !== app_id ) {
-    throw new Error("AudienceError: Provided token invalid for this application");
-  }
-  
-  // Check the tenant_ids array
-  if (tenant_ids.length > 0) {
-    // extract the GUID from iss
-    const iss_guid = decoded.payload.iss.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
-    if (iss_guid && tenant_ids.includes(iss_guid[0])) {
-      throw new Error("IssuerError: Provided token issued by foreign tenant");
-    }
-  }
 
   // return verified decoded token payload
   return jwt.verify(token, certificate);
