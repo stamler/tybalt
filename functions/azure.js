@@ -129,8 +129,7 @@ exports.handler = async (req, res, options={}) => {
         return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
       }
     }
-
-    const firebaseCustomToken = admin.auth().createCustomToken(uid);
+    const firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
     return res.status(200).send(firebaseCustomToken);
   }
 
