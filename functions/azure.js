@@ -118,7 +118,6 @@ exports.handler = async (req, res, options={}) => {
     // admin.auth().updateUser()
     // admin.auth().createUser()
     // admin.auth().createCustomToken()
-    console.log(`Valid token received for ${valid.name}`);
     return res.status(200).send();
   }
 
