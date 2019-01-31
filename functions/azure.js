@@ -16,8 +16,6 @@ for authorization in place of an access token. The claims it provides can
 be used for UX inside your application, keying a database, and providing 
 access to the client application. 
 
-TODO: build custom errors to throw
-
 */
 
 const admin = require('firebase-admin');
@@ -63,33 +61,20 @@ exports.handler = async (req, res, options={}) => {
         return res.status(403).send("IssuerError: Provided token issued by foreign tenant");
       }
     }
-
-    // TODO: validate valid.nonce matches submitted value in the client app
-
-    // TODO: when minting the firebase token, include roles assigned in
-    // the firebase Users collection document for this user.
     
     /*
-
-    About The Firebase Auth collection:
-    Firebase Auth will use Azure Object ID as the key as it never changes. 
-    Upon receiving a valid Azure id_token with a previously 
-    unused oid, we will create a new user in Firebase auth with this value as
-    the key. We will also update properties related to the user, specifically
-    name and email. At this point the auth user will not be correlated with
-    the rest of the database.
     
     Issue: we need to have some way to durably correlate the auth user with 
     properties in the Cloud Firestore database. However since the Azure 
     Object ID isn't present in on-premesis logins and also since the ImmutableID
-    found in Azure (which does map to On-prem ms-DS-ConsistencyGuid) isn't 
-    exporable in the token, we cannot set up the correlation right away.
+    found in Azure (which does map to On-prem sourceAnchor) isn't 
+    a claim in the token, we cannot set up the correlation right away.
 
     Instead, we correlate them in a Users collection with a key of 
-    ms-DS-ConsistencyGuid which contains a document for each User and can be 
+    sourceAnchor which contains a document for each User and can be 
     populated by either computer Logins, Manually, or via Logins throught the
     web app. The synchronized state is that a document contains at least an
-    Azure Object ID and an AD ms-DS-ConsistencyGuid. It can have other useful 
+    Azure Object ID and an AD sourceAnchor. It can have other useful 
     information for a profile including links to profile pictures.
 
     A Users document can only be created by the rawLogins function or manually
@@ -104,7 +89,7 @@ exports.handler = async (req, res, options={}) => {
       ==> https://docs.microsoft.com/en-us/azure/active-directory/hybrid/how-to-connect-install-existing-tenant#sync-with-existing-users-in-azure-ad
 
     When rawLogins is triggered if a document in Users already exists with a
-    key that matches the ms-DS-ConsistencyGuid that document is updated, 
+    key that matches the sourceAnchor that document is updated, 
     otherwise it is created. If an auth user exists with the same upn/email,
     that auth user's key will be written to the Users document and a soft-match
     flag will be set.
@@ -129,6 +114,10 @@ exports.handler = async (req, res, options={}) => {
         return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
       }
     }
+    
+    // TODO: when minting the firebase token, include roles assigned in
+    // the firebase Users collection document for this user.
+    // mint the token
     const firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
     return res.status(200).send(firebaseCustomToken);
   }
