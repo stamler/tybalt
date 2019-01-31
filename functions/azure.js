@@ -82,8 +82,12 @@ exports.handler = async (req, res, options={}) => {
     and if that object exists assigns its key to its own azure_oid property
 
     An auth() user can only be created by the auth().createUser() method. 
-    Perhaps we can observe it's creation and trigger updating a corresponding
-    Users document with matching email if it exists.
+    Using functions.auth.user().onCreate() event handler to updating the
+    corresponding Users document with matching email is one approach.
+
+    Similarly functions.auth.user().onDelete() could be used to strip the 
+    Azure Object ID from the corresponding Users document were a deletion to
+    occur
 
     /// Follow the soft match / hard match model
       ==> https://docs.microsoft.com/en-us/azure/active-directory/hybrid/how-to-connect-install-existing-tenant#sync-with-existing-users-in-azure-ad
