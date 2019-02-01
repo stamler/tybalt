@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const sinon = require('sinon');
 const fs = require('fs');
 const path = require('path');
+const admin = require('firebase-admin');
 const azureModule = require('../azure.js');
 
 describe("azure module", () => {
@@ -43,7 +44,46 @@ describe("azure module", () => {
       };
       if (token) { req.body.id_token = token }
       return req;
-    }; 
+    };
+    const makeAuthStub = (options={}) => {
+      const {uidExists = true, emailExists = false, otherError = false} = options;
+      // Stub out functions in admin.auth()
+      // TODO: test condition where updateUser() throws Errors
+      // Wrap stubbing into a function that can simulate the existence or 
+      // non-existence of a given uid and also whether email address is
+      // already taken
+      const userRecord = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com"};
+      let authStub;
+      if (emailExists) {
+        authStub = sinon.stub().returns({
+          updateUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
+          createUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
+          createCustomToken: sinon.stub() });
+      } else if (otherError) {
+        authStub = sinon.stub().returns({
+          updateUser: sinon.stub().throws({code: 'auth/something-else'}),
+          createUser: sinon.stub().throws({code: 'auth/something-else'}),
+          createCustomToken: sinon.stub() });        
+      } else {
+        authStub = sinon.stub().returns({
+          updateUser: uidExists ? sinon.stub().returns(userRecord) : sinon.stub().throws({code: 'auth/user-not-found'}),
+          createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
+          createCustomToken: sinon.stub() });  
+      }
+      return authStub;
+    };
+
+    let oldAuth;
+    before(() => {
+      console.log(`before admin.auth: ${admin.auth}`);
+      oldAuth = admin.auth; // Save admin.auth() for restore after test
+    });
+    after(() => {
+      // TODO BUG: The next line isn't restoring admin.auth to firebase object 
+      admin.auth = oldAuth; // Restore admin.auth()
+      console.log(`after admin.auth: ${admin.auth}`);
+    });
+
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
@@ -96,6 +136,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("09 responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
+      Object.defineProperty(admin, 'auth', { get: () => makeAuthStub({uidExists:false}), configurable:true });
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.tenant_ids = ["337cf715-4186-4563-9583-423014c5e269"];
@@ -104,16 +145,23 @@ describe("azure module", () => {
       // TODO: test for a valid new firebase token
     });
     it("10 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
+      Object.defineProperty(admin, 'auth', { get: () => makeAuthStub({uidExists:true}), configurable: true });
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
     });
-    it("11 creates a new auth user if token is valid and this is the first time seeing this user", () => {
-      // TODO: write this test
+    it("11 respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
+      Object.defineProperty(admin, 'auth', { get: () => makeAuthStub({emailExists:true}), configurable: true });
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      assert.equal(result.status.args[0][0],501);
     });
-    it("12 updates auth user if token is valid and this is not the first time seeing this user", () => {
-      // TODO: write this test
+    it("12 responds (500 Internal Server Error) if creating or updating a user fails", async () => {
+      Object.defineProperty(admin, 'auth', { get: () => makeAuthStub({otherError:true}), configurable: true });
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      assert.equal(result.status.args[0][0],500);
     });
 
   });
