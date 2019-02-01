@@ -116,7 +116,7 @@ exports.handler = async (req, res, options={}) => {
     } else if (error.code === 'auth/email-already-exists') {
       return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
     } else {
-      console.log(JSON.stringify(error));
+      console.log(error);
       return res.status(500).send();
     }
   }
