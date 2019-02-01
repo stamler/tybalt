@@ -68,7 +68,7 @@ describe("azure module", () => {
           createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
           createCustomToken: sinon.stub() });  
       }
-      return authStub;
+      return function getterFn(){ return authStub; }
     };
 
     let clock; // declare sinon's clock and try to restore after each test
@@ -123,9 +123,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("09 responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
-      let stub = sinon.stub(admin, 'auth').get(function getterFn(){
-        return makeAuthStub({uidExists:false});
-      });
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.tenant_ids = ["337cf715-4186-4563-9583-423014c5e269"];
@@ -135,9 +133,7 @@ describe("azure module", () => {
       // TODO: test for a valid new firebase token
     });
     it("10 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
-      let stub = sinon.stub(admin, 'auth').get(function getterFn(){
-        return makeAuthStub({uidExists:true});
-      });
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       stub.restore();
@@ -145,23 +141,26 @@ describe("azure module", () => {
       // TODO: test for a valid new firebase token
     });
     it("11 respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
-      let stub = sinon.stub(admin, 'auth').get(function getterFn(){
-        return makeAuthStub({emailExists:true});
-      });
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       stub.restore();
       assert.equal(result.status.args[0][0],501);
     });
     it("12 responds (500 Internal Server Error) if creating or updating a user fails", async () => {
-      let stub = sinon.stub(admin, 'auth').get(function getterFn(){
-        return makeAuthStub({otherError:true});
-      });
+      // TODO: this test could pass for pretty much any reason. Make sure it passes 
+      // because an error that was thrown was an auth/xxxx error  
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       stub.restore();
       assert.equal(result.status.args[0][0],500);
     });
+
+  });
+
+  describe("getCertificates()", () => {
+    const getCertificates = azureModule.getCertificates;
 
   });
 });
