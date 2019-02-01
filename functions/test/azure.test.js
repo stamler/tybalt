@@ -45,6 +45,9 @@ describe("azure module", () => {
       if (token) { req.body.id_token = token }
       return req;
     };
+
+    // See link for stubbing admin.auth()
+    // https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
     const makeAuthStub = (options={}) => {
       const {uidExists = true, emailExists = false, otherError = false} = options;
       // Stub out functions in admin.auth()
