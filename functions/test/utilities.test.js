@@ -5,7 +5,7 @@ describe("utilities module", () => {
   describe("filterProperties()", () => {
     // Test setup for filterProperties() in utilities.js
     const data = { taste:null, fruit: "apple", vegetable: "carrot", mineral: null };
-    const validProps = ["fruit", "vegetable", "mineral"];
+    const validProps = ["fruit", "vegetable", "mineral", "missing"];
     const requiredProps = ["vegetable"];
     const filterProperties = utilitiesModule.filterProperties;
     it("returns empty object if no options are provided", () => {
@@ -34,7 +34,7 @@ describe("utilities module", () => {
       return assert.throws(wrapped, Error);
     });
     it("throws error if required value(s) are missing while allowAndAddRequiredNulls is false", () => {
-      const options = {required:["taste", "fruit", "extra"], allowAndAddRequiredNulls: false };
+      const options = {required:["fruit", "extra"], allowAndAddRequiredNulls: false };
       // first arg of throws() must be function, so wrap it with params
       const wrapped = () => { filterProperties(data, options) };
       return assert.throws(wrapped, Error);
