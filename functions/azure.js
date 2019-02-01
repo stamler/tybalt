@@ -48,6 +48,7 @@ exports.handler = async (req, res, options={}) => {
 
   // Check the app_id
   // This functionality can be rolled into options on jwt.verify()
+  // but is kept here to provide better errors to the client
   if ( app_id && valid.aud !== app_id ) {
     return res.status(403).send("AudienceError: Provided token invalid for this application");
   }
