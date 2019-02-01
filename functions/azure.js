@@ -19,7 +19,6 @@ access to the client application.
 */
 
 const admin = require('firebase-admin');
-const serverTimestamp = admin.firestore.FieldValue.serverTimestamp
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
@@ -116,6 +115,9 @@ exports.handler = async (req, res, options={}) => {
       userRecord = await admin.auth().createUser({ uid, ...properties});
     } else if (error.code === 'auth/email-already-exists') {
       return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
+    } else {
+      console.log(JSON.stringify(error));
+      return res.status(500).send();
     }
   }
   
@@ -129,8 +131,6 @@ exports.handler = async (req, res, options={}) => {
 // returns the decoded payload of valid token. Caller must handle exceptions
 // certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
 async function validAzureToken(token, certificates) {
-
-  if (token === undefined) { throw new Error("No token provided"); }
   
   let kid, decoded, certificate;
   try { 
@@ -190,7 +190,7 @@ exports.getCertificates = async function (db) {
   }
 
   // Save certificates in the Cache/azure
-  await azureRef.set({ retrieved: serverTimestamp(), 
+  await azureRef.set({ retrieved: admin.firestore.FieldValue.serverTimestamp(),
     certificates: certificates }, {merge: true} );
   console.log("Certificates updated");
 
