@@ -95,16 +95,24 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
-    it("09 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
+    it("09 responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let handlerOptions = { ...options };
+      handlerOptions.tenant_ids = ["337cf715-4186-4563-9583-423014c5e269"];
+      let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
+      assert.equal(result.status.args[0][0],200);
+      // TODO: test for a valid new firebase token
+    });
+    it("10 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
     });
-    it("10 creates a new auth user if token is valid and this is the first time seeing this user", () => {
+    it("11 creates a new auth user if token is valid and this is the first time seeing this user", () => {
       // TODO: write this test
     });
-    it("11 updates auth user if token is valid and this is not the first time seeing this user", () => {
+    it("12 updates auth user if token is valid and this is not the first time seeing this user", () => {
       // TODO: write this test
     });
 
