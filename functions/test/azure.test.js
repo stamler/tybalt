@@ -46,15 +46,10 @@ describe("azure module", () => {
       return req;
     };
 
-    // See link for stubbing admin.auth()
-    // https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
+    // Stub out functions in admin.auth()
+    // See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
     const makeAuthStub = (options={}) => {
       const {uidExists = true, emailExists = false, otherError = false} = options;
-      // Stub out functions in admin.auth()
-      // TODO: test condition where updateUser() throws Errors
-      // Wrap stubbing into a function that can simulate the existence or 
-      // non-existence of a given uid and also whether email address is
-      // already taken
       const userRecord = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com"};
       let authStub;
       if (emailExists) {
