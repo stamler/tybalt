@@ -148,13 +148,12 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],501);
     });
     it("12 responds (500 Internal Server Error) if creating or updating a user fails", async () => {
-      // TODO: this test could pass for pretty much any reason. Make sure it passes 
-      // because an error that was thrown was an auth/xxxx error  
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       stub.restore();
       assert.equal(result.status.args[0][0],500);
+      assert.equal(result.send.args[0][0],"auth/something-else");
     });
 
   });
