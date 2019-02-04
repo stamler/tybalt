@@ -188,19 +188,31 @@ describe("azure module", () => {
     const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
     const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
     const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
+    const certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
 
-    it("reloads certificates from Microsoft if they're stale", async () => {
-      const stub = sinon.stub(axios, 'get');
+    let stub;
+    before(function() {
+      stub = sinon.stub(axios, 'get');
       stub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
       stub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      
-      let db = makeFirestoreStub();    
-      let certificates = await getCertificates(db);
-      // assert the certificates match test values (create those test values)
+    });
+
+    after(function() {
       stub.restore();
     });
-    it("returns cached certificates from the database if they're fresh");
-    it("loads certificates from Microsoft if they're missing");
+    
+    it("refreshes the cache if it's stale, overwriting previously cached certificates", async () => {
+      
+      const db = makeFirestoreStub();
+      const certificates = await getCertificates(db);
 
+      assert.deepEqual(certificates, certStrings.certificates);
+      // TODO: Test that stale cache certificates are actually overwritten
+    });
+    it("returns cached certificates from the database if they're fresh", async () => {
+      clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
+      assert.equal(true,false);
+    });
+    it("loads certificates from Microsoft if they're missing");
   });
 });
