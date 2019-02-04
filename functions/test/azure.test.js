@@ -170,11 +170,15 @@ describe("azure module", () => {
       // returns 'retrieved' and 'certificates' properties.
 
       // Stub the DocumentSnapshot returned by DocRef.get()
+      const retrieved = { toDate: function () { return new Date(1546300800000) } }; // Jan 1, 2019 00:00:00 UTC
       const getSnapStub = sinon.stub();
-      getSnapStub.withArgs('retrieved').returns("retrieved DateTime"); 
+      getSnapStub.withArgs('retrieved').returns(retrieved); 
       getSnapStub.withArgs('certificates').returns("--- CERTS ---");
       const azureSnap = { get: getSnapStub };
-      const azureRef = { get: sinon.stub().resolves(azureSnap) };
+      const azureRef = { 
+        get: sinon.stub().resolves(azureSnap),
+        set: sinon.stub().resolves()
+      };
 
       // Stub the DocumentReference returned by collection().doc()
       const docStub = sinon.stub();
@@ -183,19 +187,16 @@ describe("azure module", () => {
       const collectionStub = sinon.stub();
       collectionStub.withArgs('Cache').returns({doc: docStub})
 
-      let firestoreStub = sinon.stub().returns({ collection: collectionStub });
-      return function getterFn(){ return firestoreStub; }
+      return {collection: collectionStub };
     }
+
     const getCertificates = azureModule.getCertificates;
+
     it("Does a thing!", async () => {
-      let stub = sinon.stub(admin, 'firestore').get( makeFirestoreStub());
-      let azureRef = admin.firestore().collection('Cache').doc('azure');
-      let snap = await azureRef.get();
-
-      let retrieved = snap.get('retrieved');
-      let certificates = snap.get('certificates');
-
-      console.log(retrieved, certificates);
+      let db = makeFirestoreStub();
+    
+      let certificates = await getCertificates(db);
+      console.log(certificates);
       
     });
   });
