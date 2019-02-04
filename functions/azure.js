@@ -150,7 +150,7 @@ async function validAzureToken(token, certificates) {
 // uses cached certificates if available and fresh, otherwise fetches from 
 exports.getCertificates = async function (db) {
   const azureRef = db.collection('Cache').doc('azure');
-  snap = await azureRef.get();
+  let snap = await azureRef.get();
 
   let retrieved = snap.get('retrieved');
   let certificates = snap.get('certificates');
