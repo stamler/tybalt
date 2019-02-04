@@ -159,7 +159,44 @@ describe("azure module", () => {
   });
 
   describe("getCertificates()", () => {
-    const getCertificates = azureModule.getCertificates;
+    
+    // Stub out functions in admin.firestore()
+    // Stub azureRef = db.collection('Cache').doc('azure');
+    const makeFirestoreStub = (options={}) => {
+      const { timestampsInSnapshots = true } = options;
+      // azureRef needs to be a DocumentReference with a .get() method that 
+      // returns a Promise which resolves to a DocumentSnapshot 
+      // This DocumentSnapshot has a synchronous .get() method that
+      // returns 'retrieved' and 'certificates' properties.
 
+      // Stub the DocumentSnapshot returned by DocRef.get()
+      const getSnapStub = sinon.stub();
+      getSnapStub.withArgs('retrieved').returns("retrieved DateTime"); 
+      getSnapStub.withArgs('certificates').returns("--- CERTS ---");
+      const azureSnap = { get: getSnapStub };
+      const azureRef = { get: sinon.stub().resolves(azureSnap) };
+
+      // Stub the DocumentReference returned by collection().doc()
+      const docStub = sinon.stub();
+      docStub.withArgs('azure').returns(azureRef); 
+
+      const collectionStub = sinon.stub();
+      collectionStub.withArgs('Cache').returns({doc: docStub})
+
+      let firestoreStub = sinon.stub().returns({ collection: collectionStub });
+      return function getterFn(){ return firestoreStub; }
+    }
+    const getCertificates = azureModule.getCertificates;
+    it("Does a thing!", async () => {
+      let stub = sinon.stub(admin, 'firestore').get( makeFirestoreStub());
+      let azureRef = admin.firestore().collection('Cache').doc('azure');
+      let snap = await azureRef.get();
+
+      let retrieved = snap.get('retrieved');
+      let certificates = snap.get('certificates');
+
+      console.log(retrieved, certificates);
+      
+    });
   });
 });
