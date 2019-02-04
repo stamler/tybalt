@@ -190,8 +190,12 @@ exports.getCertificates = async function (db) {
   }
 
   // Save certificates in the Cache/azure
-  await azureRef.set({ retrieved: admin.firestore.FieldValue.serverTimestamp(),
-    certificates: certificates }, {merge: true} );
+  // TODO: BUG !!! make sure to OVERWRITE existing certificates completely when doing 
+  // a cache refresh otherwise old certificates will behave in a valid way
+  await azureRef.set({
+    retrieved: admin.firestore.FieldValue.serverTimestamp(),
+    certificates: certificates
+  });
   console.log("Certificates updated");
 
   return certificates;  
