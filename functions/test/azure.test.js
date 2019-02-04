@@ -4,6 +4,7 @@ const sinon = require('sinon');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const axios = require('axios');
 const azureModule = require('../azure.js');
 
 describe("azure module", () => {
@@ -11,7 +12,6 @@ describe("azure module", () => {
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
   const key = fs.readFileSync(path.join(__dirname, 'key.pem'), 'ascii');
   const options = { certificates: {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') }, app_id: null, tenant_ids: [] };
-  const jwk_cert = JSON.parse(fs.readFileSync(path.join(__dirname, 'jwk.json')));
   const payload = {
     // Azure Application ID
     "aud": "12354894-507e-4095-9d42-1c5ebb952856",
@@ -159,18 +159,13 @@ describe("azure module", () => {
   });
 
   describe("getCertificates()", () => {
-    
-    // Stub out functions in admin.firestore()
-    // Stub azureRef = db.collection('Cache').doc('azure');
+    // Stub out db = admin.firestore()
     const makeFirestoreStub = (options={}) => {
       const { timestampsInSnapshots = true } = options;
-      // azureRef needs to be a DocumentReference with a .get() method that 
-      // returns a Promise which resolves to a DocumentSnapshot 
-      // This DocumentSnapshot has a synchronous .get() method that
-      // returns 'retrieved' and 'certificates' properties.
 
       // Stub the DocumentSnapshot returned by DocRef.get()
-      const retrieved = { toDate: function () { return new Date(1546300800000) } }; // Jan 1, 2019 00:00:00 UTC
+      // Jan 1, 2019 00:00:00 UTC will be the "retrieved" time in the data
+      const retrieved = {toDate: function () {return new Date(1546300800000)}};
       const getSnapStub = sinon.stub();
       getSnapStub.withArgs('retrieved').returns(retrieved); 
       getSnapStub.withArgs('certificates').returns("--- CERTS ---");
@@ -183,7 +178,6 @@ describe("azure module", () => {
       // Stub the DocumentReference returned by collection().doc()
       const docStub = sinon.stub();
       docStub.withArgs('azure').returns(azureRef); 
-
       const collectionStub = sinon.stub();
       collectionStub.withArgs('Cache').returns({doc: docStub})
 
@@ -191,13 +185,22 @@ describe("azure module", () => {
     }
 
     const getCertificates = azureModule.getCertificates;
+    const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
+    const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
+    const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
 
-    it("Does a thing!", async () => {
-      let db = makeFirestoreStub();
-    
-      let certificates = await getCertificates(db);
-      console.log(certificates);
+    it("reloads certificates from Microsoft if they're stale", async () => {
+      const stub = sinon.stub(axios, 'get');
+      stub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
+      stub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
       
+      let db = makeFirestoreStub();    
+      let certificates = await getCertificates(db);
+      // assert the certificates match test values (create those test values)
+      stub.restore();
     });
+    it("returns cached certificates from the database if they're fresh");
+    it("loads certificates from Microsoft if they're missing");
+
   });
 });
