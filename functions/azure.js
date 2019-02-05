@@ -183,12 +183,6 @@ exports.getCertificates = async function (db) {
   }
   
   // build the certificates object with data from Microsoft
-  try {
-    assert(certificates === undefined);    
-  } catch (error) {
-    console.log("Stale certificates were loaded, fetching new ones...");
-  }
-
   certificates = {};
   for (let key of res.data.keys) {
     certificates[key.kid] = jwkToPem(key);
