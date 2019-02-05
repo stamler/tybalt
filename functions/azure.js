@@ -173,8 +173,13 @@ exports.getCertificates = async function (db) {
     res = await axios.get(openIdConfigURI);
     res = await axios.get(res.data.jwks_uri);
   } catch (error) {
-    console.log("Error making external HTTP request. You on a free plan?");
-    throw error;
+    /* 
+      This thrown error is wrapped in a rejected Promise
+      https://thecodebarbarian.com/unhandled-promise-rejections-in-node.js.html
+      https://www.valentinog.com/blog/throw-errors-async-functions-javascript/
+      https://dev.to/ccleary00/why-isnt-this-unit-test-catching-an-error-from-this-asyncawait-function-3oae
+    */
+    throw new Error("Failed to fetch certificates from Microsoft");
   }
   
   // build the certificates object with data from Microsoft

@@ -1,4 +1,8 @@
-const assert = require('chai').assert;
+const chai = require('chai')
+const chaiAsPromised = require('chai-as-promised');
+const assert = chai.assert;
+chai.use(chaiAsPromised)
+
 const jwt = require('jsonwebtoken');
 const sinon = require('sinon');
 const fs = require('fs');
@@ -6,7 +10,6 @@ const path = require('path');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const azureModule = require('../azure.js');
-
 describe("azure module", () => {
   // Keypair generated at https://8gwifi.org/jwkfunctions.jsp
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
@@ -197,27 +200,25 @@ describe("azure module", () => {
       return {collection: collectionStub };
     }
 
-    let stub;
-    before(function() {
-      stub = sinon.stub(axios, 'get');
-      stub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
-      stub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
+    let sandbox, axiosStub;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      axiosStub = sandbox.stub(axios, 'get');
+      axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
     });
 
-    after(function() {
-      stub.restore();
-    });
+    afterEach(function() { sandbox.restore(); });
     
     it("refreshes the cache if it's stale, overwriting previously cached certificates", async () => {
-      
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
       const db = makeFirestoreStub({ certStrings });
       const certificates = await getCertificates(db);
-
       assert.deepEqual(certificates, certStrings);
       // TODO: Test that stale cache certificates are actually overwritten
       // Confirm that the right branch was taken in code since it looks otherwise identical to next test
     });
     it("returns cached certificates from the database if they're fresh", async () => {
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
       const db = makeFirestoreStub({ certStrings });
       const certificates = await getCertificates(db);
@@ -225,11 +226,15 @@ describe("azure module", () => {
       // Confirm that the right branch was taken in code since it looks otherwise identical to previous test
     });
     it("loads certificates from Microsoft if they're missing", async () => {
-      const db = makeFirestoreStub();
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
+      const db = makeFirestoreStub(); // no certificates cached in firestore
       const certificates = await getCertificates(db);
-
       assert.deepEqual(certificates, certStrings);
-
+    });
+    it("fails miserably if it can't get data from Microsoft", async () => {
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects();
+      const db = makeFirestoreStub(); // no certificates cached in firestore
+      assert.isRejected(getCertificates(db));
     });
   });
 });
