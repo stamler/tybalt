@@ -74,39 +74,39 @@ describe("azure module", () => {
     let clock; // declare sinon's clock and try to restore after each test
     afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
 
-    it("01 responds (405 Method Not Allowed) if request method isn't POST", async () => {
+    it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler({}, makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
     });
-    it("02 responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
+    it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
       const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
       let result = await handler(req, makeResObject());
       assert.equal(result.status.args[0][0], 415);
     });
-    it("03 responds (401 Unauthorized) if id_token property is missing from request", async () => {
+    it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
       let result = await handler(makeReqObject(), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0],"no id_token provided");
     });
-    it("04 responds (401 Unauthorized) if id_token in request is unparseable", async () => {
+    it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
       let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), options);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
-    it("05 responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
+    it("responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
       let result = await handler(makeReqObject(id_token), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
-    it("06 responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
+    it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
     });
-    it("07 responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
+    it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.app_id = "d574aed2-db53-4228-9686-31f9fb423d22";
@@ -114,7 +114,7 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
-    it("08 responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
+    it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.tenant_ids = ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"];
@@ -122,7 +122,7 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
-    it("09 responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
+    it("responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
@@ -132,7 +132,7 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
     });
-    it("10 responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
+    it("responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
@@ -140,14 +140,14 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
     });
-    it("11 respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
+    it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
       stub.restore();
       assert.equal(result.status.args[0][0],501);
     });
-    it("12 responds (500 Internal Server Error) if creating or updating a user fails", async () => {
+    it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), options);
@@ -159,16 +159,29 @@ describe("azure module", () => {
   });
 
   describe("getCertificates()", () => {
+    const getCertificates = azureModule.getCertificates;
+    const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
+    const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
+    const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
+    const certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
+
     // Stub out db = admin.firestore()
     const makeFirestoreStub = (options={}) => {
-      const { timestampsInSnapshots = true } = options;
+      const { 
+        timestampsInSnapshots = true,
+        certStrings = null
+      } = options;
 
       // Stub the DocumentSnapshot returned by DocRef.get()
       // Jan 1, 2019 00:00:00 UTC will be the "retrieved" time in the data
       const retrieved = {toDate: function () {return new Date(1546300800000)}};
       const getSnapStub = sinon.stub();
-      getSnapStub.withArgs('retrieved').returns(retrieved); 
-      getSnapStub.withArgs('certificates').returns("--- CERTS ---");
+      if (certStrings) {
+        getSnapStub.withArgs('retrieved').returns(retrieved); 
+        getSnapStub.withArgs('certificates').returns(certStrings);  
+      } else {
+        getSnapStub.returns(undefined);
+      }
       const azureSnap = { get: getSnapStub };
       const azureRef = { 
         get: sinon.stub().resolves(azureSnap),
@@ -184,12 +197,6 @@ describe("azure module", () => {
       return {collection: collectionStub };
     }
 
-    const getCertificates = azureModule.getCertificates;
-    const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
-    const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
-    const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
-    const certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
-
     let stub;
     before(function() {
       stub = sinon.stub(axios, 'get');
@@ -203,16 +210,26 @@ describe("azure module", () => {
     
     it("refreshes the cache if it's stale, overwriting previously cached certificates", async () => {
       
-      const db = makeFirestoreStub();
+      const db = makeFirestoreStub({ certStrings });
       const certificates = await getCertificates(db);
 
-      assert.deepEqual(certificates, certStrings.certificates);
+      assert.deepEqual(certificates, certStrings);
       // TODO: Test that stale cache certificates are actually overwritten
+      // Confirm that the right branch was taken in code since it looks otherwise identical to next test
     });
     it("returns cached certificates from the database if they're fresh", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      assert.equal(true,false);
+      const db = makeFirestoreStub({ certStrings });
+      const certificates = await getCertificates(db);
+      assert.deepEqual(certificates, certStrings);
+      // Confirm that the right branch was taken in code since it looks otherwise identical to previous test
     });
-    it("loads certificates from Microsoft if they're missing");
+    it("loads certificates from Microsoft if they're missing", async () => {
+      const db = makeFirestoreStub();
+      const certificates = await getCertificates(db);
+
+      assert.deepEqual(certificates, certStrings);
+
+    });
   });
 });
