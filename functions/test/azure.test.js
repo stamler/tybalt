@@ -214,8 +214,7 @@ describe("azure module", () => {
       const db = makeFirestoreStub({ certStrings });
       const certificates = await getCertificates(db);
       assert.deepEqual(certificates, certStrings);
-      // TODO: Test that stale cache certificates are actually overwritten
-      // Confirm that the right branch was taken in code since it looks otherwise identical to next test
+      // TODO: Test that any stale cached certificates are removed by the overwrite
     });
     it("returns cached certificates from the database if they're fresh", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
@@ -223,7 +222,6 @@ describe("azure module", () => {
       const db = makeFirestoreStub({ certStrings });
       const certificates = await getCertificates(db);
       assert.deepEqual(certificates, certStrings);
-      // Confirm that the right branch was taken in code since it looks otherwise identical to previous test
     });
     it("loads certificates from Microsoft if they're missing", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
