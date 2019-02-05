@@ -155,6 +155,7 @@ exports.getCertificates = async function (db) {
   let retrieved = snap.get('retrieved');
   let certificates = snap.get('certificates');
 
+  // Return cached certificates if they're not stale
   if ( retrieved !== undefined && certificates !== undefined) {
     // 1 day timeout in msec
     if (Date.now() - retrieved.toDate() < 86400 * 1000 ) {
@@ -162,16 +163,13 @@ exports.getCertificates = async function (db) {
     }
   }
   
-  // Load and cache fresh certificates from Microsoft
-
-  // Get the OpenID config from the Microsoft common URL
-  // Then use it to get Microsoft's up-to-date JWKs
+  // Get fresh certificates from Microsoft
   let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
     '.well-known/openid-configuration';
   let res;
   try {
-    res = await axios.get(openIdConfigURI);
-    res = await axios.get(res.data.jwks_uri);
+    res = await axios.get(openIdConfigURI); // Get the OpenID config
+    res = await axios.get(res.data.jwks_uri); // Get up-to-date JWKs
   } catch (error) {
     /* 
       This thrown error is wrapped in a rejected Promise
@@ -182,20 +180,19 @@ exports.getCertificates = async function (db) {
     throw new Error("Failed to fetch certificates from Microsoft");
   }
   
-  // build the certificates object with data from Microsoft
+  // build a certificates object with data from Microsoft
   certificates = {};
   for (let key of res.data.keys) {
     certificates[key.kid] = jwkToPem(key);
   }
 
-  // Save certificates in the Cache/azure
+  // Cache certificates in Cloud Firestore
   // TODO: BUG !!! make sure to OVERWRITE existing certificates completely when doing 
   // a cache refresh otherwise old certificates will behave in a valid way
   await azureRef.set({
     retrieved: admin.firestore.FieldValue.serverTimestamp(),
     certificates: certificates
   });
-  console.log("Certificates updated");
 
   return certificates;  
 }
