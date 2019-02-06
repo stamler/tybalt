@@ -14,7 +14,6 @@ describe("azure module", () => {
   // Keypair generated at https://8gwifi.org/jwkfunctions.jsp
   // Reference set from Microsoft https://login.microsoftonline.com/common/discovery/keys
   const key = fs.readFileSync(path.join(__dirname, 'key.pem'), 'ascii');
-  const options = { certificates: {'1234': fs.readFileSync(path.join(__dirname, 'cert.pem'), 'ascii') }, app_id: null, tenant_ids: [] };
   const payload = {
     // Azure Application ID
     "aud": "12354894-507e-4095-9d42-1c5ebb952856",
@@ -144,18 +143,11 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
     it("responds (401 Unauthorized) if matching public key for id_token cannot be found", async () => {
-      // This stubbing is unnecessary. There's a flow issue in the program and it's coming back 200.
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       // remove the correct key from jwks.data.keys[]
-      //console.log(jwks.data.keys);
-      missingTheKey = jwks.data.keys.filter(jwk => jwk.kid !== '1234');
-      //console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
-      //console.log(missingTheKey);
-      
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves({ data: { keys: missingTheKey}});
+      jwksN = { data: { keys: jwks.data.keys.filter(jwk => jwk.kid !== '1234') }};
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwksN);
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub() );
-      stub.restore();
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
@@ -168,26 +160,20 @@ describe("azure module", () => {
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let handlerOptions = { ...options };
-      handlerOptions.app_id = "d574aed2-db53-4228-9686-31f9fb423d22";
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {app_id: "d574aed2-db53-4228-9686-31f9fb423d22"});
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
     it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let handlerOptions = { ...options };
-      handlerOptions.tenant_ids = ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"];
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {tenant_ids: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]});
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let handlerOptions = { ...options };
-      handlerOptions.tenant_ids = ["337cf715-4186-4563-9583-423014c5e269"];
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]});
       stub.restore();
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
