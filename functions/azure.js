@@ -144,11 +144,9 @@ async function validAzureToken(token, db) {
     kid = decoded.header.kid; 
   }
   catch (error) { throw new Error("Can't decode the token"); }
-
-  console.log(`${certificate} = ${JSON.stringify(certificates)}[${kid}]`);
   
-  try { certificate = certificates[kid]; }
-  catch (error) { throw new Error("Can't find the token's certificate"); }
+  certificate = certificates[kid];
+  if (certificate === undefined) { throw new Error("Can't find the token's certificate"); }
 
   // return verified decoded token payload
   return jwt.verify(token, certificate);
