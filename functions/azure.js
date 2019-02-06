@@ -24,8 +24,8 @@ const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 const assert = require('assert');
 
-exports.handler = async (req, res, options={}) => {
-  const { app_id = null, tenant_ids = [], certificates = null } = options;
+exports.handler = async (req, res, db, options={}) => {
+  const { app_id = null, tenant_ids = [] } = options;
 
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
@@ -42,7 +42,7 @@ exports.handler = async (req, res, options={}) => {
 
   // validate azure token from request body
   let valid;
-  try { valid = await validAzureToken(req.body.id_token, certificates); }
+  try { valid = await validAzureToken(req.body.id_token, db); }
   catch (error) { return res.status(401).send(`${error}`); }
 
   // Check the app_id
@@ -128,10 +128,16 @@ exports.handler = async (req, res, options={}) => {
   return res.status(200).send(firebaseCustomToken);
 }
 
-// returns the decoded payload of valid token. Caller must handle exceptions
-// certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
-async function validAzureToken(token, certificates) {
-  
+// returns the decoded payload of valid token. Caller must handle promise rejection
+async function validAzureToken(token, db) {
+
+  // certificates is an object of format { kid1: pem_cert1, kid2: pem_cert2 }
+  let certificates;
+  try { certificates = await getCertificates(db); } 
+  catch (error) {     
+    throw new Error("Missing certificates to validate token"); 
+  }
+
   let kid, decoded, certificate;
   try { 
     decoded = jwt.decode(token, {complete: true});
@@ -139,7 +145,9 @@ async function validAzureToken(token, certificates) {
   }
   catch (error) { throw new Error("Can't decode the token"); }
 
-  try { certificate = certificates[kid]; } 
+  console.log(`${certificate} = ${JSON.stringify(certificates)}[${kid}]`);
+  
+  try { certificate = certificates[kid]; }
   catch (error) { throw new Error("Can't find the token's certificate"); }
 
   // return verified decoded token payload
@@ -148,7 +156,7 @@ async function validAzureToken(token, certificates) {
 
 // returns object with keys as cert kid and values as certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
-exports.getCertificates = async function (db) {
+async function getCertificates(db) {
   const azureRef = db.collection('Cache').doc('azure');
   let snap = await azureRef.get();
 

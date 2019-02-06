@@ -16,13 +16,8 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 // Get a Custom Firebase token by sending the right info to this endpoint
 exports.getToken = functions.https.onRequest(async (req, res) => {
   const options = {
-    // TODO: a .catch() (or try/catch block) is necessary around 
-    // getCertificates() call as so a rejected promise is handled
-    // It would be wise to fold getCertificates() back into azure.js
-    // at some point and handle the rejected promise there.
-    certificates: await azureModule.getCertificates(admin.firestore()),
     app_id: functions.config().azure_app_id || null,
     tenant_ids: functions.config().azure_allowed_tenants || []
   };
-  azureModule.handler(req, res, options);
+  azureModule.handler(req, res, admin.firestore(), options);
 });

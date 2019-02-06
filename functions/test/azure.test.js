@@ -31,6 +31,42 @@ describe("azure module", () => {
     "sub": "RcMorzOb7Jm4mimarvKUnGsBDOGquydhqOF7JeZTfpI", "ver": "2.0"
   };
   const id_token = jwt.sign(payload, key, {algorithm: 'RS256', keyid:'1234'});
+  const certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
+  const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
+  const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
+  const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
+
+  // Stub out db = admin.firestore()
+  const makeFirestoreStub = (options={}) => {
+    const { 
+      timestampsInSnapshots = true,
+      certStrings = null
+    } = options;
+
+    // Stub the DocumentSnapshot returned by DocRef.get()
+    // Jan 1, 2019 00:00:00 UTC will be the "retrieved" time in the data
+    const retrieved = {toDate: function () {return new Date(1546300800000)}};
+    const getSnapStub = sinon.stub();
+    if (certStrings) {
+      getSnapStub.withArgs('retrieved').returns(retrieved); 
+      getSnapStub.withArgs('certificates').returns(certStrings);  
+    } else {
+      getSnapStub.returns(undefined);
+    }
+    const azureSnap = { get: getSnapStub };
+    const azureRef = { 
+      get: sinon.stub().resolves(azureSnap),
+      set: sinon.stub().resolves()
+    };
+
+    // Stub the DocumentReference returned by collection().doc()
+    const docStub = sinon.stub();
+    docStub.withArgs('azure').returns(azureRef); 
+    const collectionStub = sinon.stub();
+    collectionStub.withArgs('Cache').returns({doc: docStub})
+
+    return {collection: collectionStub };
+  }
   
   describe("handler()", () => {
     const handler = azureModule.handler;
@@ -74,8 +110,17 @@ describe("azure module", () => {
       return function getterFn(){ return authStub; }
     };
 
-    let clock; // declare sinon's clock and try to restore after each test
-    afterEach(() => { try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ } }); 
+    let clock, sandbox, axiosStub;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      axiosStub = sandbox.stub(axios, 'get');
+      axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
+    });
+
+    afterEach(function() { 
+      sandbox.restore(); 
+      try { clock.restore(); } catch (e) { /* useFakeTimers() wasn't used */ }
+    });
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler({}, makeResObject());      
@@ -93,18 +138,30 @@ describe("azure module", () => {
       assert.equal(result.send.args[0],"no id_token provided");
     });
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
-      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), options);
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
+      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), makeFirestoreStub({ certStrings }) );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
-    it("responds (401 Unauthorized) if matching certificate for id_token cannot be found", async () => {
-      let result = await handler(makeReqObject(id_token), makeResObject());
+    it("responds (401 Unauthorized) if matching public key for id_token cannot be found", async () => {
+      // This stubbing is unnecessary. There's a flow issue in the program and it's coming back 200.
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      // remove the correct key from jwks.data.keys[]
+      //console.log(jwks.data.keys);
+      missingTheKey = jwks.data.keys.filter(jwk => jwk.kid !== '1234');
+      //console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+      //console.log(missingTheKey);
+      
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves({ data: { keys: missingTheKey}});
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub() );
+      stub.restore();
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
     it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
@@ -113,7 +170,7 @@ describe("azure module", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.app_id = "d574aed2-db53-4228-9686-31f9fb423d22";
-      let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
@@ -121,7 +178,7 @@ describe("azure module", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.tenant_ids = ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"];
-      let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
@@ -130,7 +187,7 @@ describe("azure module", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let handlerOptions = { ...options };
       handlerOptions.tenant_ids = ["337cf715-4186-4563-9583-423014c5e269"];
-      let result = await handler(makeReqObject(id_token), makeResObject(), handlerOptions);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), handlerOptions);
       stub.restore();
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
@@ -138,7 +195,7 @@ describe("azure module", () => {
     it("responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
       stub.restore();
       assert.equal(result.status.args[0][0],200);
       // TODO: test for a valid new firebase token
@@ -146,14 +203,14 @@ describe("azure module", () => {
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
       stub.restore();
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), options);
+      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
       stub.restore();
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
@@ -162,53 +219,7 @@ describe("azure module", () => {
   });
 
   describe("getCertificates()", () => {
-    const getCertificates = azureModule.getCertificates;
-    const openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
-    const openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
-    const jwks = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-keys.json'))) };
-    const certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
-
-    // Stub out db = admin.firestore()
-    const makeFirestoreStub = (options={}) => {
-      const { 
-        timestampsInSnapshots = true,
-        certStrings = null
-      } = options;
-
-      // Stub the DocumentSnapshot returned by DocRef.get()
-      // Jan 1, 2019 00:00:00 UTC will be the "retrieved" time in the data
-      const retrieved = {toDate: function () {return new Date(1546300800000)}};
-      const getSnapStub = sinon.stub();
-      if (certStrings) {
-        getSnapStub.withArgs('retrieved').returns(retrieved); 
-        getSnapStub.withArgs('certificates').returns(certStrings);  
-      } else {
-        getSnapStub.returns(undefined);
-      }
-      const azureSnap = { get: getSnapStub };
-      const azureRef = { 
-        get: sinon.stub().resolves(azureSnap),
-        set: sinon.stub().resolves()
-      };
-
-      // Stub the DocumentReference returned by collection().doc()
-      const docStub = sinon.stub();
-      docStub.withArgs('azure').returns(azureRef); 
-      const collectionStub = sinon.stub();
-      collectionStub.withArgs('Cache').returns({doc: docStub})
-
-      return {collection: collectionStub };
-    }
-
-    let sandbox, axiosStub;
-    beforeEach(function() {
-      sandbox = sinon.createSandbox();
-      axiosStub = sandbox.stub(axios, 'get');
-      axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
-    });
-
-    afterEach(function() { sandbox.restore(); });
-    
+      
     it("refreshes the cache if it's stale, overwriting previously cached certificates", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
       const db = makeFirestoreStub({ certStrings });

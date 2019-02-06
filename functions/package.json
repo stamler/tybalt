@@ -11,7 +11,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "nyc --reporter=lcov --reporter=text mocha --reporter spec"
+    "test": "nyc --produce-source-map=true --reporter=lcov --reporter=text mocha --reporter spec",
+    "test_only": "mocha --reporter spec"
   },
   "dependencies": {
     "firebase-admin": "~6.0.0",
