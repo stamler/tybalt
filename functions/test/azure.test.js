@@ -3,6 +3,11 @@ const chaiAsPromised = require('chai-as-promised');
 const assert = chai.assert;
 chai.use(chaiAsPromised)
 
+process.env.CLOUD_RUNTIME_CONFIG = JSON.stringify({
+  app_id: "d574aed2-db53-4228-9686-31f9fb423d22",
+  tenant_ids: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]
+});
+
 const sinon = require('sinon');
 const admin = require('firebase-admin');
 const axios = require('axios');
@@ -74,19 +79,25 @@ describe("azure module", () => {
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {app_id: "d574aed2-db53-4228-9686-31f9fb423d22"});
+      const db = makeFirestoreStub({ certStrings });
+      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      let result = await handler(makeReqObject(id_token), makeResObject(), db);
+      authStub.restore();
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
     it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {tenant_ids: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]});
+      const db = makeFirestoreStub({ certStrings });
+      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      let result = await handler(makeReqObject(id_token), makeResObject(), db);
+      authStub.restore();
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
       const options = {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]};
-      const authStubUserDoesNotExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      const authStubUserDoesNotExist = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       const db_cache_hit = makeFirestoreStub({ certStrings });
       const db_cache_miss = makeFirestoreStub();
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
@@ -106,7 +117,7 @@ describe("azure module", () => {
       result = await handler(makeReqObject(id_token), makeResObject(), db_cache_hit, options);
       assert.equal(result.status.args[0][0],200);
       
-      authStubUserDoesNotExists.restore(); // restore auth stub, we're going to reset it next
+      authStubUserDoesNotExist.restore(); // restore auth stub, we're going to reset it next
 
       const authStubUserExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       // Test with cached certificates, tenant options not provided, user already exists
@@ -119,13 +130,13 @@ describe("azure module", () => {
     });
     it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
-      const authStubUserDoesNotExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
-      const db_cache_miss = makeFirestoreStub();
-      let result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss);
+      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      const db = makeFirestoreStub();
+      let result = await handler(makeReqObject(id_token), makeResObject(), db);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Missing certificates to validate token");
 
-      authStubUserDoesNotExists.restore();
+      authStub.restore();
     });
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
@@ -135,10 +146,10 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
+      let authStub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
-      stub.restore();
+      authStub.restore();
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
     });

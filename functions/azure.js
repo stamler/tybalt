@@ -19,14 +19,17 @@ access to the client application.
 */
 
 const admin = require('firebase-admin');
+const functions = require('firebase-functions');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
-const assert = require('assert');
 
-exports.handler = async (req, res, db, options={}) => {
-  const { app_id = null, tenant_ids = [] } = options;
+exports.handler = async (req, res, db) => {
+  app_id = functions.config().azure_app_id || null;
+  tenant_ids = functions.config().azure_allowed_tenants || [];
 
+  console.log(`app_id:${app_id}, tenant_ids:${tenant_ids}`);
+  
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
     return res.status(405).send();
@@ -108,7 +111,7 @@ exports.handler = async (req, res, db, options={}) => {
   let userRecord;
   try {
     // try updating the user first
-    userRecord = await admin.auth().updateUser(uid, properties);      
+    userRecord = await admin.auth().updateUser(uid, properties);
   } catch (error) {
     if (error.code === 'auth/user-not-found') {
       // if the user doesn't exist then create it

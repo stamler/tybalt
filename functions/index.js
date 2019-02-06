@@ -15,10 +15,5 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 
 // Get a Custom Firebase token by sending the right info to this endpoint
 exports.getToken = functions.https.onRequest(async (req, res) => {
-  const options = {
-    // TODO: fold this into the handler() and update tests
-    app_id: functions.config().azure_app_id || null,
-    tenant_ids: functions.config().azure_allowed_tenants || []
-  };
-  azureModule.handler(req, res, admin.firestore(), options);
+  azureModule.handler(req, res, admin.firestore());
 });
