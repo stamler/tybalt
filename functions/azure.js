@@ -172,19 +172,9 @@ async function getCertificates(db) {
   // Get fresh certificates from Microsoft
   let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
     '.well-known/openid-configuration';
-  let res;
-  try {
-    res = await axios.get(openIdConfigURI); // Get the OpenID config
-    res = await axios.get(res.data.jwks_uri); // Get up-to-date JWKs
-  } catch (error) {
-    /* 
-      This thrown error is wrapped in a rejected Promise
-      https://thecodebarbarian.com/unhandled-promise-rejections-in-node.js.html
-      https://www.valentinog.com/blog/throw-errors-async-functions-javascript/
-      https://dev.to/ccleary00/why-isnt-this-unit-test-catching-an-error-from-this-asyncawait-function-3oae
-    */
-    throw new Error("Failed to fetch certificates from Microsoft");
-  }
+
+  let res = await axios.get(openIdConfigURI); // Get the OpenID config
+  res = await axios.get(res.data.jwks_uri); // Get up-to-date JWKs
   
   // build a certificates object with data from Microsoft
   certificates = {};
@@ -193,8 +183,6 @@ async function getCertificates(db) {
   }
 
   // Cache certificates in Cloud Firestore
-  // TODO: BUG !!! make sure to OVERWRITE existing certificates completely when doing 
-  // a cache refresh otherwise old certificates will behave in a valid way
   await azureRef.set({
     retrieved: admin.firestore.FieldValue.serverTimestamp(),
     certificates: certificates

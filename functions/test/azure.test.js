@@ -84,21 +84,48 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
-    it("responds (200 OK) with a new firebase token if id_token in request is verified and tenant_ids are provided", async () => {
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+    it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
+      const options = {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]};
+      const authStubUserDoesNotExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      const db_cache_hit = makeFirestoreStub({ certStrings });
+      const db_cache_miss = makeFirestoreStub();
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }), {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]});
-      stub.restore();
+      let result;
+
+      // Test with no cached certificates, tenant options provided
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks); // microsoft responds with keys
+      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss, options);
       assert.equal(result.status.args[0][0],200);
+
+      // Test with no cached certificates, tenant options not provided
+      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss);
+      assert.equal(result.status.args[0][0],200);
+
+      // Test with cached certificates, succeeds even though jwks can't be fetched
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
+      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_hit, options);
+      assert.equal(result.status.args[0][0],200);
+      
+      authStubUserDoesNotExists.restore(); // restore auth stub, we're going to reset it next
+
+      const authStubUserExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      // Test with cached certificates, tenant options not provided, user already exists
+      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_hit);
+      assert.equal(result.status.args[0][0],200);
+
+      authStubUserExists.restore();
+
       // TODO: test for a valid new firebase token
     });
-    it("responds (200 OK) with a new firebase token if id_token in request is verified", async () => {
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
-      stub.restore();
-      assert.equal(result.status.args[0][0],200);
-      // TODO: test for a valid new firebase token
+    it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
+      const authStubUserDoesNotExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      const db_cache_miss = makeFirestoreStub();
+      let result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss);
+      assert.equal(result.status.args[0][0],401);
+      assert.equal(result.send.args[0].toString(),"Error: Missing certificates to validate token");
+
+      authStubUserDoesNotExists.restore();
     });
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
@@ -114,36 +141,6 @@ describe("azure module", () => {
       stub.restore();
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
-    });
-
-  });
-
-  describe("getCertificates()", () => {
-      
-    it("refreshes the cache if it's stale, overwriting previously cached certificates", async () => {
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      const db = makeFirestoreStub({ certStrings });
-      const certificates = await getCertificates(db);
-      assert.deepEqual(certificates, certStrings);
-      // TODO: Test that any stale cached certificates are removed by the overwrite
-    });
-    it("returns cached certificates from the database if they're fresh", async () => {
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      const db = makeFirestoreStub({ certStrings });
-      const certificates = await getCertificates(db);
-      assert.deepEqual(certificates, certStrings);
-    });
-    it("loads certificates from Microsoft if they're missing", async () => {
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      const db = makeFirestoreStub(); // no certificates cached in firestore
-      const certificates = await getCertificates(db);
-      assert.deepEqual(certificates, certStrings);
-    });
-    it("fails miserably if it can't get data from Microsoft", async () => {
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects();
-      const db = makeFirestoreStub(); // no certificates cached in firestore
-      assert.isRejected(getCertificates(db));
     });
   });
 });
