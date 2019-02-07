@@ -36,6 +36,7 @@ describe("azure module", () => {
       authStub = sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       db_cache_hit = makeFirestoreStub({ certStrings });
       db_cache_miss = makeFirestoreStub();
+      db_cache_expired = makeFirestoreStub({ certStrings, retrievedDate: new Date(1545300800000) }); // Dec 20, 2018 10:13:20 UTC
     });
 
     afterEach(function() { 
@@ -108,6 +109,10 @@ describe("azure module", () => {
       
       // Cached certificates, user already exists
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
+      assert.equal(result.status.args[0][0],200);
+
+      // Cached stale certificates, user already exists
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_expired);
       assert.equal(result.status.args[0][0],200);
       
       sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
