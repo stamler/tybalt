@@ -4,9 +4,12 @@ const assert = chai.assert;
 chai.use(chaiAsPromised)
 
 process.env.CLOUD_RUNTIME_CONFIG = JSON.stringify({
-  app_id: "d574aed2-db53-4228-9686-31f9fb423d22",
-  tenant_ids: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]
+  azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22",
+  azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]
 });
+
+// hack out Warning about FIREBASE_CONFIG missing during testing
+process.env.FIREBASE_CONFIG = '{}';
 
 const sinon = require('sinon');
 const admin = require('firebase-admin');
