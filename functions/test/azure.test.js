@@ -19,7 +19,6 @@ describe("azure module", () => {
   const envVarsTenantsDontMatch = JSON.stringify({ azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
   const envVarsTenantsMatch = JSON.stringify({azure_allowed_tenants: ["non-GUID", "337cf715-4186-4563-9583-423014c5e269"]});
 
-  
   describe("handler() responses", () => {
     const makeReqObject = azureTestData.makeReqObject; // Stub request object
     const makeResObject = azureTestData.makeResObject; // Stub response object
