@@ -25,23 +25,27 @@ describe("azure module", () => {
     const makeResObject = azureTestData.makeResObject; // Stub response object
     const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
 
-    let sandbox, axiosStub;
+    let sandbox, axiosStub, authStub, db_cache_hit, db_cache_miss;
     beforeEach(function() {
       sandbox = sinon.createSandbox();
       sandbox.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       axiosStub = sandbox.stub(axios, 'get');
-      axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);      
+      axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);
+      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
+      authStub = sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      db_cache_hit = makeFirestoreStub({ certStrings });
+      db_cache_miss = makeFirestoreStub();
     });
 
     afterEach(function() { sandbox.restore(); });
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
-      let result = await handler(makeReqObject({method:'GET', token:id_token}), makeResObject());      
+      let result = await handler(makeReqObject({token:id_token, method:'GET'}), makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
     });
     it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
-      let result = await handler(makeReqObject({contentType:'not/json', token:id_token}), makeResObject());
+      let result = await handler(makeReqObject({token:id_token, contentType:'not/json'}), makeResObject());
       assert.equal(result.status.args[0][0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
@@ -50,8 +54,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0],"no id_token provided");
     });
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      let result = await handler(makeReqObject({token:"fhqwhgads"}), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:"fhqwhgads"}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
@@ -59,13 +62,13 @@ describe("azure module", () => {
       // remove the correct key from jwks.data.keys[]
       jwksN = { data: { keys: jwks.data.keys.filter(jwk => jwk.kid !== '1234') }};
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwksN);
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub() );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
     it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       sandbox.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
@@ -77,9 +80,8 @@ describe("azure module", () => {
       handler = require('../azure.js').handler;
 */
       
-      const db = makeFirestoreStub({ certStrings });
-      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
+      //const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       authStub.restore();
     /*  
       process.env.CLOUD_RUNTIME_CONFIG = '{}';
@@ -90,22 +92,23 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
     it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
-      const db = makeFirestoreStub({ certStrings });
-      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
+      //const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       authStub.restore();
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
       const options = {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]};
-      const authStubUserDoesNotExist = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
-      const db_cache_hit = makeFirestoreStub({ certStrings });
-      const db_cache_miss = makeFirestoreStub();
       let result;
+      
+      // Test with cached certificates, tenant options not provided, user already exists
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
+      assert.equal(result.status.args[0][0],200);
+      
+      sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
 
       // Test with no cached certificates, tenant options provided
-      axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks); // microsoft responds with keys
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss, options);
       assert.equal(result.status.args[0][0],200);
 
@@ -118,36 +121,23 @@ describe("azure module", () => {
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit, options);
       assert.equal(result.status.args[0][0],200);
       
-      authStubUserDoesNotExist.restore(); // restore auth stub, we're going to reset it next
-
-      const authStubUserExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      // Test with cached certificates, tenant options not provided, user already exists
-      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
-      assert.equal(result.status.args[0][0],200);
-
-      authStubUserExists.restore();
-
       // TODO: test for a valid new firebase token
     });
     it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
-      const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
-      const db = makeFirestoreStub();
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
+      sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Missing certificates to validate token");
-      authStub.restore();
     });
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
-      stub.restore();
+      sandbox.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
-      let authStub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
-      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
-      authStub.restore();
+      sandbox.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
     });
