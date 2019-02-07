@@ -38,30 +38,34 @@ describe("azure module", () => {
     });
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
-      let result = await handler({}, makeResObject());      
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject({method:'GET', token:id_token}), makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
     });
     it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
-      let result = await handler(makeReqObject({contentType:'not/json'}), makeResObject());
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let result = await handler(makeReqObject({contentType:'not/json', token:id_token}), makeResObject());
       assert.equal(result.status.args[0][0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject(), makeResObject());
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0],"no id_token provided");
     });
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
       let result = await handler(makeReqObject({token:"fhqwhgads"}), makeResObject(), makeFirestoreStub({ certStrings }) );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
     it("responds (401 Unauthorized) if matching public key for id_token cannot be found", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       // remove the correct key from jwks.data.keys[]
       jwksN = { data: { keys: jwks.data.keys.filter(jwk => jwk.kid !== '1234') }};
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwksN);
-      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub() );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
@@ -102,11 +106,11 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       const options = {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]};
       const authStubUserDoesNotExist = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       const db_cache_hit = makeFirestoreStub({ certStrings });
       const db_cache_miss = makeFirestoreStub();
-      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       let result;
 
       // Test with no cached certificates, tenant options provided
@@ -135,6 +139,7 @@ describe("azure module", () => {
       // TODO: test for a valid new firebase token
     });
     it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
+      clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
       const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       const db = makeFirestoreStub();
@@ -145,15 +150,15 @@ describe("azure module", () => {
       authStub.restore();
     });
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
-      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
       stub.restore();
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
-      let authStub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
+      let authStub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
       authStub.restore();
       assert.equal(result.status.args[0][0],500);

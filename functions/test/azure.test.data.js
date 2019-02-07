@@ -69,9 +69,9 @@ exports.makeResObject = () => {
 };
 
 exports.makeReqObject = (options={}) => {
-  const { token = null, contentType = 'application/json' } = options;
+  const { method = 'POST', token = null, contentType = 'application/json' } = options;
   req = { 
-    method:'POST', body: {}, 
+    method:method, body: {}, 
     get: sinon.stub().withArgs('Content-Type').returns(contentType)
   };
   if (token) { req.body.id_token = token }
