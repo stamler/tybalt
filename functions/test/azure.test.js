@@ -20,13 +20,13 @@ describe("azure module", () => {
   const cloudRuntimeConfig = JSON.stringify({ azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22", azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
 
   describe("handler()", () => {
-    let handler = require('../azure.js').handler;
     const makeReqObject = azureTestData.makeReqObject; // Stub request object
     const makeResObject = azureTestData.makeResObject; // Stub response object
     const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
 
-    let sandbox, axiosStub, authStub, db_cache_hit, db_cache_miss;
+    let handler, sandbox, axiosStub, authStub, db_cache_hit, db_cache_miss;
     beforeEach(function() {
+      handler = require('../azure.js').handler;
       sandbox = sinon.createSandbox();
       sandbox.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       axiosStub = sandbox.stub(axios, 'get');
@@ -37,7 +37,11 @@ describe("azure module", () => {
       db_cache_miss = makeFirestoreStub();
     });
 
-    afterEach(function() { sandbox.restore(); });
+    afterEach(function() { 
+      sandbox.restore();
+      // TODO: decache('../azure.js') here without breaking everything
+      // so that environment variables can be set per test
+    });
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler(makeReqObject({token:id_token, method:'GET'}), makeResObject());      
@@ -59,7 +63,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
     it("responds (401 Unauthorized) if matching public key for id_token cannot be found", async () => {
-      // remove the correct key from jwks.data.keys[]
+      // remove signing public key (kid '1234')
       jwksN = { data: { keys: jwks.data.keys.filter(jwk => jwk.kid !== '1234') }};
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwksN);
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss );
@@ -67,7 +71,7 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
     it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
-      sandbox.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
+      sandbox.useFakeTimers(1546305800000); // After 00h30, Jan 1, 2019 UTC
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"TokenExpiredError: jwt expired");
@@ -75,52 +79,45 @@ describe("azure module", () => {
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
       // Set environment variables to test audience and issuers
-/*      process.env.CLOUD_RUNTIME_CONFIG = cloudRuntimeConfig;
+    /*
+      process.env.CLOUD_RUNTIME_CONFIG = cloudRuntimeConfig;
       decache('../azure.js');
       handler = require('../azure.js').handler;
-*/
+    */
       
-      //const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
-      authStub.restore();
+      assert.equal(result.status.args[0][0],403);
+      assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     /*  
       process.env.CLOUD_RUNTIME_CONFIG = '{}';
       decache('../azure.js');
       handler = require('../azure.js').handler;
-*/
-      assert.equal(result.status.args[0][0],403);
-      assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
+    */
     });
     it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
-      //const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
-      authStub.restore();
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
-      const options = {tenant_ids: ["337cf715-4186-4563-9583-423014c5e269"]};
       let result;
       
-      // Test with cached certificates, tenant options not provided, user already exists
+      // Cached certificates, user already exists
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
       
       sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
 
-      // Test with no cached certificates, tenant options provided
-      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss, options);
-      assert.equal(result.status.args[0][0],200);
-
-      // Test with no cached certificates, tenant options not provided
+      // No cached certificates, user already exists
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss);
       assert.equal(result.status.args[0][0],200);
 
-      // Test with cached certificates, succeeds even though jwks can't be fetched
+      // Cached certificates, user already exists, jwks can't be fetched
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
-      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit, options);
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
       
+      // TODO: test with environment variables
       // TODO: test for a valid new firebase token
     });
     it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
