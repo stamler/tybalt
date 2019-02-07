@@ -27,8 +27,6 @@ const jwkToPem = require('jwk-to-pem');
 exports.handler = async (req, res, db) => {
   app_id = functions.config().azure_app_id || null;
   tenant_ids = functions.config().azure_allowed_tenants || [];
-
-  console.log(`app_id:${app_id}, tenant_ids:${tenant_ids}`);
   
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
