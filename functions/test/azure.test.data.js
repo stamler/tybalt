@@ -68,10 +68,11 @@ exports.makeResObject = () => {
   }; 
 };
 
-exports.makeReqObject = (token) => { 
+exports.makeReqObject = (options={}) => {
+  const { token = null, contentType = 'application/json' } = options;
   req = { 
     method:'POST', body: {}, 
-    get: sinon.stub().withArgs('Content-Type').returns('application/json') 
+    get: sinon.stub().withArgs('Content-Type').returns(contentType)
   };
   if (token) { req.body.id_token = token }
   return req;

@@ -3,30 +3,24 @@ const chaiAsPromised = require('chai-as-promised');
 const assert = chai.assert;
 chai.use(chaiAsPromised)
 
-process.env.CLOUD_RUNTIME_CONFIG = JSON.stringify({
-  azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22",
-  azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]
-});
-
-// hack out Warning about FIREBASE_CONFIG missing during testing
-process.env.FIREBASE_CONFIG = '{}';
-
+const decache = require('decache');
 const sinon = require('sinon');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const azureTestData = require('./azure.test.data.js');
-const azureModule = require('../azure.js');
 
 describe("azure module", () => {
+  process.env.FIREBASE_CONFIG = '{}'; // hack out missing FIREBASE_CONFIG warning
   const id_token = azureTestData.id_token;
   const certStrings = azureTestData.certStrings;
   const openIdConfigURI = azureTestData.openIdConfigURI;
   const openIdConfigResponse = azureTestData.openIdConfigResponse;
   const jwks = azureTestData.jwks;
   const makeFirestoreStub = azureTestData.makeFirestoreStub; // Stub db = admin.firestore()
+  const cloudRuntimeConfig = JSON.stringify({ azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22", azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
 
   describe("handler()", () => {
-    const handler = azureModule.handler;
+    let handler = require('../azure.js').handler;
     const makeReqObject = azureTestData.makeReqObject; // Stub request object
     const makeResObject = azureTestData.makeResObject; // Stub response object
     const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
@@ -49,8 +43,7 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],405);
     });
     it("responds (415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
-      const req = { method:'POST', get: sinon.stub().withArgs('Content-Type').returns('not/json') };
-      let result = await handler(req, makeResObject());
+      let result = await handler(makeReqObject({contentType:'not/json'}), makeResObject());
       assert.equal(result.status.args[0][0], 415);
     });
     it("responds (401 Unauthorized) if id_token property is missing from request", async () => {
@@ -60,7 +53,7 @@ describe("azure module", () => {
     });
     it("responds (401 Unauthorized) if id_token in request is unparseable", async () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      let result = await handler(makeReqObject("fhqwhgads"), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:"fhqwhgads"}), makeResObject(), makeFirestoreStub({ certStrings }) );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't decode the token");
     });
@@ -69,23 +62,33 @@ describe("azure module", () => {
       jwksN = { data: { keys: jwks.data.keys.filter(jwk => jwk.kid !== '1234') }};
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwksN);
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub() );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub() );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Can't find the token's certificate");
     });
     it("responds (401 Unauthorized) if id_token in request fails jwt.verify()", async () => {
       clock = sinon.useFakeTimers(1546305800000); // Jan 1, 2019 01:23:20 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"TokenExpiredError: jwt expired");
       // TODO: assert that the body of the result is not a token
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
+      // Set environment variables to test audience and issuers
+/*      process.env.CLOUD_RUNTIME_CONFIG = cloudRuntimeConfig;
+      decache('../azure.js');
+      handler = require('../azure.js').handler;
+*/
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       const db = makeFirestoreStub({ certStrings });
       const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      let result = await handler(makeReqObject(id_token), makeResObject(), db);
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
       authStub.restore();
+    /*  
+      process.env.CLOUD_RUNTIME_CONFIG = '{}';
+      decache('../azure.js');
+      handler = require('../azure.js').handler;
+*/
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
     });
@@ -93,7 +96,7 @@ describe("azure module", () => {
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       const db = makeFirestoreStub({ certStrings });
       const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
-      let result = await handler(makeReqObject(id_token), makeResObject(), db);
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
       authStub.restore();
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
@@ -108,23 +111,23 @@ describe("azure module", () => {
 
       // Test with no cached certificates, tenant options provided
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks); // microsoft responds with keys
-      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss, options);
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss, options);
       assert.equal(result.status.args[0][0],200);
 
       // Test with no cached certificates, tenant options not provided
-      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_miss);
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss);
       assert.equal(result.status.args[0][0],200);
 
       // Test with cached certificates, succeeds even though jwks can't be fetched
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
-      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_hit, options);
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit, options);
       assert.equal(result.status.args[0][0],200);
       
       authStubUserDoesNotExist.restore(); // restore auth stub, we're going to reset it next
 
       const authStubUserExists = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
       // Test with cached certificates, tenant options not provided, user already exists
-      result = await handler(makeReqObject(id_token), makeResObject(), db_cache_hit);
+      result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
 
       authStubUserExists.restore();
@@ -135,7 +138,7 @@ describe("azure module", () => {
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
       const authStub = sinon.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       const db = makeFirestoreStub();
-      let result = await handler(makeReqObject(id_token), makeResObject(), db);
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), db);
       assert.equal(result.status.args[0][0],401);
       assert.equal(result.send.args[0].toString(),"Error: Missing certificates to validate token");
 
@@ -144,14 +147,14 @@ describe("azure module", () => {
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
       let stub = sinon.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
       stub.restore();
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
       let authStub = sinon.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       clock = sinon.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
-      let result = await handler(makeReqObject(id_token), makeResObject(), makeFirestoreStub({ certStrings }) );
+      let result = await handler(makeReqObject({token:id_token}), makeResObject(), makeFirestoreStub({ certStrings }) );
       authStub.restore();
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
