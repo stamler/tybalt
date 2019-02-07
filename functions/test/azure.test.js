@@ -5,8 +5,6 @@ chai.use(chaiAsPromised)
 
 const decache = require('decache');
 const sinon = require('sinon');
-const admin = require('firebase-admin');
-const axios = require('axios');
 const azureTestData = require('./azure.test.data.js');
 
 describe("azure module", () => {
@@ -17,16 +15,19 @@ describe("azure module", () => {
   const openIdConfigResponse = azureTestData.openIdConfigResponse;
   const jwks = azureTestData.jwks;
   const makeFirestoreStub = azureTestData.makeFirestoreStub; // Stub db = admin.firestore()
-  const cloudRuntimeConfig = JSON.stringify({ azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22", azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
-
+  const envVarsAppId = JSON.stringify({ azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22" });
+  const envVarsTenants = JSON.stringify({ azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
+  
   describe("handler()", () => {
     const makeReqObject = azureTestData.makeReqObject; // Stub request object
     const makeResObject = azureTestData.makeResObject; // Stub response object
     const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
 
-    let handler, sandbox, axiosStub, authStub, db_cache_hit, db_cache_miss;
+    let admin, axios, handler, sandbox, axiosStub, authStub, db_cache_hit, db_cache_miss;
     beforeEach(function() {
-      handler = require('../azure.js').handler;
+      admin = require('firebase-admin');
+      axios = require('axios');
+
       sandbox = sinon.createSandbox();
       sandbox.useFakeTimers(1546300800000); // Jan 1, 2019 00:00:00 UTC
       axiosStub = sandbox.stub(axios, 'get');
@@ -39,11 +40,15 @@ describe("azure module", () => {
 
     afterEach(function() { 
       sandbox.restore();
+      decache('../azure.js');
+      process.env.CLOUD_RUNTIME_CONFIG = '{}';
+
       // TODO: decache('../azure.js') here without breaking everything
       // so that environment variables can be set per test
     });
 
     it("responds (405 Method Not Allowed) if request method isn't POST", async () => {
+      handler = require('../azure.js').handler;
       let result = await handler(makeReqObject({token:id_token, method:'GET'}), makeResObject());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
@@ -78,29 +83,28 @@ describe("azure module", () => {
       // TODO: assert that the body of the result is not a token
     });
     it("responds (403 Forbidden) if id_token in request is verified but audience isn't this app", async () => {
-      // Set environment variables to test audience and issuers
-    /*
-      process.env.CLOUD_RUNTIME_CONFIG = cloudRuntimeConfig;
-      decache('../azure.js');
+
+      // Set environment variables to test audience
+      process.env.CLOUD_RUNTIME_CONFIG = envVarsAppId;
       handler = require('../azure.js').handler;
-    */
       
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"AudienceError: Provided token invalid for this application");
-    /*  
-      process.env.CLOUD_RUNTIME_CONFIG = '{}';
-      decache('../azure.js');
-      handler = require('../azure.js').handler;
-    */
     });
     it("responds (403 Forbidden) if id_token in request is verified but issuer (tenant) isn't permitted by this app", async () => {
+
+      // Set environment variables to test issuers
+      process.env.CLOUD_RUNTIME_CONFIG = envVarsTenants;
+      handler = require('../azure.js').handler;
+
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("responds (200 OK) with a new firebase token if id_token in request is verified whether tenant_ids are provided or not and whether fresh tokens are pulled from the cache or loaded from Microsoft", async () => {
       let result;
+      handler = require('../azure.js').handler;
       
       // Cached certificates, user already exists
       result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit);
@@ -121,6 +125,8 @@ describe("azure module", () => {
       // TODO: test for a valid new firebase token
     });
     it("fails if there are no cached certificates and it cannot fetch fresh ones", async () => {
+      handler = require('../azure.js').handler;
+
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
       sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_miss);
@@ -128,11 +134,15 @@ describe("azure module", () => {
       assert.equal(result.send.args[0].toString(),"Error: Missing certificates to validate token");
     });
     it("respondes (501 Not Implemented) if creating or updating a user when another user has the same email", async () => {
+      handler = require('../azure.js').handler;
+
       sandbox.stub(admin, 'auth').get( makeAuthStub({emailExists:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],501);
     });
     it("responds (500 Internal Server Error) if creating or updating a user fails", async () => {
+      handler = require('../azure.js').handler;
+
       sandbox.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
       let result = await handler(makeReqObject({token:id_token}), makeResObject(), db_cache_hit );
       assert.equal(result.status.args[0][0],500);
