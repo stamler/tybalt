@@ -51,6 +51,24 @@ async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
 
+  // TODO: rather than just use the userSourceAnchor as the key:
+  //  1. query Users for a user with a matching userSourceAnchor
+  //  2. if more than one result is returned, log an error and send to raw logins
+  //  3. if exactly one result is returned, get the document ID and assign it
+  //     to userRef and proceed.
+  //  4. if zero results are returned, query Users for a user with a matching upn
+  //     (make sure to lowercase all upns stored in the database)
+  //  5. if more than one result is returned, log an error and send to raw logins
+  //  6. if exactly one resut is returned, get the document ID and assign it
+  //     to userRef and proceed.
+  //  7. if zero results are returned, use the existing code
+  
+  // Rationale for this change:
+  // If I user was deleted from the directory then recreated we don't want to
+  // represent them twice in the database. Rather we reuse the same one and
+  // maintain the previous ID. NB THIS REQUIRES THAT WE STORE d.userSourceAnchor 
+  // in Users documents
+
   const userRef = db.collection('Users').doc(d.userSourceAnchor)
   computerSnapshot = await computerRef.get()
   userSnapshot = await userRef.get()
@@ -68,8 +86,10 @@ async function storeValidLogin(d, db) {
     batch.set(computerRef,d);
   }
 
-  userObject = { upn: d.upn, email: d.email, givenName: d.userGivenName, 
-    surname: d.userSurname, lastComputer: slug, updated: serverTimestamp() };
+  userObject = { upn: d.upn.toLowerCase(), email: d.email.toLowerCase(), 
+    givenName: d.userGivenName, surname: d.userSurname, 
+    lastComputer: slug, updated: serverTimestamp(),
+    userSourceAnchor: d.userSourceAnchor.toLowerCase() };
   // TODO: Check if userSnapshot contains azureObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azureObjectID property
@@ -82,7 +102,7 @@ async function storeValidLogin(d, db) {
   }
 
   // Create new Login document
-  let loginObject = { userSourceAnchor: d.userSourceAnchor,
+  let loginObject = { userSourceAnchor: d.userSourceAnchor.toLowerCase(),
     givenName: d.userGivenName, surname: d.userSurname,
     computer: slug, time: serverTimestamp() };
   batch.set(db.collection('Logins').doc(), loginObject);
