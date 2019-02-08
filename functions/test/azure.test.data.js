@@ -22,7 +22,7 @@ const payload = {
   "sub": "RcMorzOb7Jm4mimarvKUnGsBDOGquydhqOF7JeZTfpI", "ver": "2.0"
 };
 exports.id_token = jwt.sign(payload, key, {algorithm: 'RS256', keyid:'1234'});
-
+exports.stubFirebaseToken = "eyREALTOKENVALUE";
 exports.certStrings = JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-derived-certs.json')) );
 exports.openIdConfigURI = 'https://login.microsoftonline.com/common/.well-known/openid-configuration';    
 exports.openIdConfigResponse = { data: JSON.parse( fs.readFileSync( path.join(__dirname, 'ms-openid-configuration.json'))) };
@@ -84,6 +84,8 @@ exports.makeAuthStub = (options={}) => {
   const {uidExists = true, emailExists = false, otherError = false} = options;
   const userRecord = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com"};
   let authStub;
+  const customTokenStub = sinon.stub();
+  customTokenStub.withArgs(userRecord.uid).returns(this.stubFirebaseToken);
   if (emailExists) {
     authStub = sinon.stub().returns({
       updateUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
@@ -98,7 +100,7 @@ exports.makeAuthStub = (options={}) => {
     authStub = sinon.stub().returns({
       updateUser: uidExists ? sinon.stub().returns(userRecord) : sinon.stub().throws({code: 'auth/user-not-found'}),
       createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
-      createCustomToken: sinon.stub() });  
+      createCustomToken: customTokenStub });  
   }
   return function getterFn(){ return authStub; }
 };
