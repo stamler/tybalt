@@ -159,37 +159,37 @@ async function getCertificates(db) {
   // TODO: allow no argument (undefined) and then just skip caching activity
 
   const azureRef = db.collection('Cache').doc('azure');
-  let snap = await azureRef.get();
+  const snap = await azureRef.get();
 
-  let retrieved = snap.get('retrieved');
-  let certificates = snap.get('certificates');
+  const retrieved = snap.get('retrieved');
+  const cachedCerts = snap.get('certificates');
 
   // Return cached certificates if they're not stale
-  if ( retrieved !== undefined && certificates !== undefined) {
+  if ( retrieved !== undefined && cachedCerts !== undefined) {
     // 1 day timeout in msec
     if (Date.now() - retrieved.toDate() < 86400 * 1000 ) {
-      return certificates;
+      return cachedCerts;
     }
   }
   
   // Get fresh certificates from Microsoft
-  let openIdConfigURI = 'https://login.microsoftonline.com/common/' +
+  const openIdConfigURI = 'https://login.microsoftonline.com/common/' +
     '.well-known/openid-configuration';
 
   let res = await axios.get(openIdConfigURI); // Get the OpenID config
   res = await axios.get(res.data.jwks_uri); // Get up-to-date JWKs
   
-  // build a certificates object with data from Microsoft
-  certificates = {};
+  // build a fresh certificates object with data from Microsoft
+  const freshCerts = {};
   for (let key of res.data.keys) {
-    certificates[key.kid] = jwkToPem(key);
+    freshCerts[key.kid] = jwkToPem(key);
   }
 
   // Cache certificates in Cloud Firestore
   await azureRef.set({
     retrieved: admin.firestore.FieldValue.serverTimestamp(),
-    certificates: certificates
+    certificates: freshCerts
   });
 
-  return certificates;  
+  return freshCerts;
 }
