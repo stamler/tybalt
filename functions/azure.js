@@ -156,6 +156,8 @@ async function validAzureToken(token, db) {
 // returns object with keys as cert kid and values as certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
+  // TODO: allow no argument (undefined) and then just skip caching activity
+
   const azureRef = db.collection('Cache').doc('azure');
   let snap = await azureRef.get();
 
