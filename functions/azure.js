@@ -156,22 +156,25 @@ async function validAzureToken(token, db) {
 // returns object with keys as cert kid and values as certificate pems
 // uses cached certificates if available and fresh, otherwise fetches from 
 async function getCertificates(db) {
-  // TODO: allow no argument (undefined) and then just skip caching activity
+  
+  let azureRef;
+  if (db) {
+    // attempt cache retrieval
+    azureRef = db.collection('Cache').doc('azure');
+    const snap = await azureRef.get();
 
-  const azureRef = db.collection('Cache').doc('azure');
-  const snap = await azureRef.get();
+    const retrieved = snap.get('retrieved');
+    const cachedCerts = snap.get('certificates');
 
-  const retrieved = snap.get('retrieved');
-  const cachedCerts = snap.get('certificates');
-
-  // Return cached certificates if they're not stale
-  if ( retrieved !== undefined && cachedCerts !== undefined) {
-    // 1 day timeout in msec
-    if (Date.now() - retrieved.toDate() < 86400 * 1000 ) {
-      return cachedCerts;
+    // Return cached certificates if they're not stale
+    if ( retrieved !== undefined && cachedCerts !== undefined) {
+      // 1 day timeout in msec
+      if (Date.now() - retrieved.toDate() < 86400 * 1000 ) {
+        return cachedCerts;
+      }
     }
   }
-  
+
   // Get fresh certificates from Microsoft
   const openIdConfigURI = 'https://login.microsoftonline.com/common/' +
     '.well-known/openid-configuration';
@@ -185,11 +188,13 @@ async function getCertificates(db) {
     freshCerts[key.kid] = jwkToPem(key);
   }
 
-  // Cache certificates in Cloud Firestore
-  await azureRef.set({
-    retrieved: admin.firestore.FieldValue.serverTimestamp(),
-    certificates: freshCerts
-  });
+  if (db) {
+    // cache fresh certs 
+    await azureRef.set({
+      retrieved: admin.firestore.FieldValue.serverTimestamp(),
+      certificates: freshCerts
+    });
+  }
 
   return freshCerts;
 }
