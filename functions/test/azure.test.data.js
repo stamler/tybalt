@@ -61,23 +61,6 @@ exports.makeFirestoreStub = (options={}) => {
   return {collection: collectionStub };
 };
 
-exports.makeResObject = () => { 
-  return { 
-    header: sinon.spy(), status: sinon.stub().returnsThis(), 
-    send: sinon.stub().returnsThis() 
-  }; 
-};
-
-exports.makeReqObject = (options={}) => {
-  const { method = 'POST', token = null, contentType = 'application/json' } = options;
-  req = { 
-    method:method, body: {}, 
-    get: sinon.stub().withArgs('Content-Type').returns(contentType)
-  };
-  if (token) { req.body.id_token = token }
-  return req;
-};
-
 // Stub out functions in admin.auth()
 // See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
 exports.makeAuthStub = (options={}) => {
