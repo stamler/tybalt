@@ -53,7 +53,8 @@ exports.makeFirestoreStub = (options={}) => {
     where: sinon.stub().returns({
       get: sinon.stub().resolves({ 
         size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: true}) } }] })
-    })
+    }),
+    add: sinon.stub()
   });
 
   return { 

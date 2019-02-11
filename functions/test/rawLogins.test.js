@@ -29,10 +29,17 @@ describe("rawLogins module", () => {
       let result = await handler(Req({contentType:'not/json'}), Res(), db);
       assert.equal(result.status.args[0][0], 415);
     });
-    it("(202 Accepted) if a JSON object is POSTed", async () => {
+    it("(202 Accepted) if a valid JSON login is POSTed", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
+      // assert set() was called once with args data
+    });
+    it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
+      handler = require('../rawLogins.js').handler;
+      let result = await handler(Req({body: {}}),Res(), db);
+      assert.equal(result.status.args[0][0], 202);
+      // assert add() was called once with args {} 
     });
     it("(500 Internal Server Error) if databse write fails");
   });
