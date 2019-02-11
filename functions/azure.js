@@ -37,13 +37,15 @@ exports.handler = async (req, res, db) => {
     return res.status(415).send();
   }
 
-  if (!req.body.hasOwnProperty("id_token")) {
+  // Get id_token from Authorization header by parsing Bearer <ID_TOKEN>
+  const id_token = req.get('Authorization').substring(7).trim();
+  if (id_token.length < 8) { // arbitrary minimum length of accepted JWT
     return res.status(401).send("no id_token provided");
   }
 
   // validate azure token from request body
   let valid;
-  try { valid = await validAzureToken(req.body.id_token, db); }
+  try { valid = await validAzureToken(id_token, db); }
   catch (error) { return res.status(401).send(`${error}`); }
 
   // Check the app_id

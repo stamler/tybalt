@@ -8,11 +8,9 @@ exports.makeResObject = () => {
 };
 
 exports.makeReqObject = (options={}) => {
-  const { method = 'POST', token = null, contentType = 'application/json' } = options;
-  req = { 
-    method:method, body: {}, 
-    get: sinon.stub().withArgs('Content-Type').returns(contentType)
-  };
-  if (token) { req.body.id_token = token }
-  return req;
+  const { method='POST', token=null, contentType='application/json', body={} } = options;
+  const getStub = sinon.stub();
+  getStub.withArgs('Content-Type').returns(contentType);
+  getStub.withArgs('Authorization').returns(`Bearer ${token}`);
+  return { method:method, body: body, get: getStub };
 };
