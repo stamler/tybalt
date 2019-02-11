@@ -32,6 +32,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a JSON object is POSTed", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db);
+      assert.equal(result.status.args[0][0], 202);
     });
     it("(500 Internal Server Error) if databse write fails");
   });

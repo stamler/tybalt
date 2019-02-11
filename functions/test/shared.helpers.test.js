@@ -44,7 +44,7 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs('azure').returns(azureRef);
   docStub.withArgs('SN123,manufac').returns(azureRef);
   docStub.withArgs('f25d2a25').returns(azureRef);
-  docStub.withArgs(undefined).returns(azureRef);
+  docStub.returns(azureRef);
 
   const collectionStub = sinon.stub();
   collectionStub.withArgs('Cache').returns({doc: docStub})
