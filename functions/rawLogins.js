@@ -5,10 +5,14 @@ const makeSlug = utilities.makeSlug
 
 exports.handler = async (req, res, db) => {
   
-  // Reject non-JSON requests — Unsupported Media Type rfc7231#section-6.5.13
-  // This allows use of req.body directly
+  // req.body can be used directly as JSON if this passes
   if (req.get('Content-Type') !== "application/json") {
-    return res.sendStatus(415);
+    return res.status(415).send();
+  }
+
+  if (req.method !== 'POST') {
+    res.header('Allow', 'POST');
+    return res.status(405).send();
   }
 
   const validationOptions = { 
@@ -29,20 +33,21 @@ exports.handler = async (req, res, db) => {
     d = filterProperties(req.body, validationOptions);
     raw = false;
   }
-  catch (error) { console.log(error); }
+  catch (error) { 
+    console.log(`filterProperties(): ${error.message}, will storeRawLogin()`); 
+  }
 
   try {
     if(raw) {
       // Invalid submission, add to RawLogins for later processing
-      d.datetime = serverTimestamp()
-      await db.collection('RawLogins').add(d)
+      await storeRawLogin(d, db);
     } else {
       await storeValidLogin(d, db); //write valid object to database
     }
-    return res.sendStatus(202);     
+    return res.status(202).send();     
   } catch (error) {
     console.log(error);
-    return res.sendStatus(500);
+    return res.status(500).send();
   }
 }
 
