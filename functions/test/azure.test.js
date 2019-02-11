@@ -15,7 +15,7 @@ describe("azure module", () => {
   const openIdConfigURI = azureTestData.openIdConfigURI;
   const openIdConfigResponse = azureTestData.openIdConfigResponse;
   const jwks = azureTestData.jwks;
-  const makeFirestoreStub = azureTestData.makeFirestoreStub; // Stub db = admin.firestore()
+  const makeFirestoreStub = shared.makeFirestoreStub; // Stub db = admin.firestore()
   const envVarsAppId = JSON.stringify({ azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22" });
   const envVarsTenantsDontMatch = JSON.stringify({ azure_allowed_tenants: ["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"] });
   const envVarsTenantsMatch = JSON.stringify({azure_allowed_tenants: ["non-GUID", "337cf715-4186-4563-9583-423014c5e269"]});
