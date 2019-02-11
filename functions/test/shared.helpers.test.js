@@ -38,11 +38,30 @@ exports.makeFirestoreStub = (options={}) => {
     set: sinon.stub().resolves()
   };
 
+  //TODO: stub DocSnaps for doc() arguments slug, userSourceAnchor, and no args
   // Stub the DocumentReference returned by collection().doc()
   const docStub = sinon.stub();
-  docStub.withArgs('azure').returns(azureRef); 
+  docStub.withArgs('azure').returns(azureRef);
+  docStub.withArgs('SN123,manufac').returns(azureRef);
+  docStub.withArgs('f25d2a25').returns(azureRef);
+  docStub.withArgs(undefined).returns(azureRef);
+
   const collectionStub = sinon.stub();
   collectionStub.withArgs('Cache').returns({doc: docStub})
+  collectionStub.returns({
+    doc: docStub,
+    where: sinon.stub().returns({
+      get: sinon.stub().resolves({ 
+        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: true}) } }] })
+    })
+  });
 
-  return {collection: collectionStub };
+  return { 
+    collection: collectionStub, 
+    batch: sinon.stub().returns({
+      set: sinon.stub(),
+      update: sinon.stub(),
+      commit: sinon.stub()
+    }) 
+  };
 };
