@@ -28,15 +28,27 @@ describe("rawLogins module", () => {
       let result = await handler(Req({contentType:'not/json'}), Res(), db());
       assert.equal(result.status.args[0][0], 415);
     });
-    it("(202 Accepted) if a valid JSON login is POSTed", async () => {
+    it("(202 Accepted) if a valid JSON login is POSTed, neither computer nor user exists", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db());
       assert.equal(result.status.args[0][0], 202);
       // assert set() was called once with args data
     });
-    it("(202 Accepted) if a valid JSON login is POSTed", async () => {
+    it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
       handler = require('../rawLogins.js').handler;
-      let result = await handler(Req({body: data}),Res(), db({exists: false}));
+      let result = await handler(Req({body: data}),Res(), db({userExists: true}));
+      assert.equal(result.status.args[0][0], 202);
+      // assert set() was called once with args data
+    });
+    it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
+      handler = require('../rawLogins.js').handler;
+      let result = await handler(Req({body: data}),Res(), db({computerExists: true}));
+      assert.equal(result.status.args[0][0], 202);
+      // assert set() was called once with args data
+    });
+    it("(202 Accepted) if a valid JSON login is POSTed, both computer and user exist", async () => {
+      handler = require('../rawLogins.js').handler;
+      let result = await handler(Req({body: data}),Res(), db({computerExists: true, userExists: true}));
       assert.equal(result.status.args[0][0], 202);
       // assert set() was called once with args data
     });

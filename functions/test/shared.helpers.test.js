@@ -19,9 +19,9 @@ exports.makeReqObject = (options={}) => {
 exports.makeFirestoreStub = (options={}) => {
   const {
     writeFail = false,
-    exists = true,
+    userExists = false,
+    computerExists = false,
     retrievedDate = new Date(1546300800000), // Jan 1, 2019 00:00:00 UTC
-    timestampsInSnapshots = true,
     certStrings = null
   } = options;
 
@@ -34,19 +34,22 @@ exports.makeFirestoreStub = (options={}) => {
   } else {
     getSnapStub.returns(undefined);
   }
-  const azureSnap = { get: getSnapStub };
+
   const azureRef = {
-    get: sinon.stub().resolves(azureSnap),
+    get: sinon.stub().resolves({ get: getSnapStub }),
     set: sinon.stub().resolves()
   };
 
-  //TODO: stub DocSnaps for doc() arguments slug, userSourceAnchor, and no args
+  const computerRef = {
+    get: sinon.stub().resolves({ exists: computerExists }),
+  };
+
   // Stub the DocumentReference returned by collection().doc()
   const docStub = sinon.stub();
   docStub.withArgs('azure').returns(azureRef);
-  docStub.withArgs('SN123,manufac').returns(azureRef);
+  docStub.withArgs('SN123,manufac').returns(computerRef);
   docStub.withArgs('f25d2a25').returns(azureRef);
-  docStub.returns(azureRef);
+  docStub.withArgs('azure').returns(azureRef);
 
   const collectionStub = sinon.stub();
   collectionStub.withArgs('Cache').returns({doc: docStub})
@@ -54,17 +57,20 @@ exports.makeFirestoreStub = (options={}) => {
     doc: docStub,
     where: sinon.stub().returns({
       get: sinon.stub().resolves({ 
-        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: exists}) } }] })
+        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: userExists}) } }] })
     }),
-    add: writeFail? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
+    add: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
+  });
+
+  const batchStub = sinon.stub();
+  batchStub.returns({
+    set: sinon.stub(),
+    update: sinon.stub(),
+    commit: sinon.stub()
   });
 
   return { 
     collection: collectionStub, 
-    batch: sinon.stub().returns({
-      set: sinon.stub(),
-      update: sinon.stub(),
-      commit: sinon.stub()
-    }) 
+    batch: batchStub 
   };
 };
