@@ -57,6 +57,7 @@ exports.makeFirestoreStub = (options={}) => {
     doc: docStub,
     where: sinon.stub().returns({
       get: sinon.stub().resolves({ 
+        // TODO: control size for both computers and users, derive 'exists' props from this number
         size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: userExists}) } }] })
     }),
     add: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
