@@ -18,6 +18,8 @@ exports.makeReqObject = (options={}) => {
 // Stub out db = admin.firestore()
 exports.makeFirestoreStub = (options={}) => {
   const {
+    writeFail = false,
+    exists = true,
     retrievedDate = new Date(1546300800000), // Jan 1, 2019 00:00:00 UTC
     timestampsInSnapshots = true,
     certStrings = null
@@ -52,9 +54,9 @@ exports.makeFirestoreStub = (options={}) => {
     doc: docStub,
     where: sinon.stub().returns({
       get: sinon.stub().resolves({ 
-        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: true}) } }] })
+        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: exists}) } }] })
     }),
-    add: sinon.stub()
+    add: writeFail? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
   });
 
   return { 
