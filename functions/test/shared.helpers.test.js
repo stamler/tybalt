@@ -19,7 +19,7 @@ exports.makeReqObject = (options={}) => {
 exports.makeFirestoreStub = (options={}) => {
   const {
     writeFail = false,
-    userExists = false,
+    userMatches = 0,
     computerExists = false,
     retrievedDate = new Date(1546300800000), // Jan 1, 2019 00:00:00 UTC
     certStrings = null
@@ -56,9 +56,10 @@ exports.makeFirestoreStub = (options={}) => {
   collectionStub.returns({
     doc: docStub,
     where: sinon.stub().returns({
-      get: sinon.stub().resolves({ 
-        // TODO: control size for both computers and users, derive 'exists' props from this number
-        size:1, docs:[{ ref:{ get: sinon.stub().returns({exists: userExists}) } }] })
+      get: sinon.stub().resolves({
+        // TODO: user_matches_returned used to derive number of items in array
+        size:userMatches, 
+        docs: Array(userMatches).fill({ ref:{ get: sinon.stub()} }) })
     }),
     add: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
   });
