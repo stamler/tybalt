@@ -39,10 +39,11 @@ exports.handler = async (req, res, db) => {
 
   try {
     if(raw) {
-      // Invalid submission, add to RawLogins for later processing
+      // Invalid submission, store RawLogin for later processing
       await storeRawLogin(d, db);
     } else {
-      await storeValidLogin(d, db); //write valid object to database
+      // write valid object to database
+      await storeValidLogin(d, db);
     }
     return res.status(202).send();     
   } catch (error) {
@@ -92,7 +93,7 @@ async function storeValidLogin(d, db) {
 
 async function storeRawLogin(d, db) {
   d.datetime = serverTimestamp()
-  return db.collection('RawLogins').add(d);
+  return db.collection('RawLogins').doc().set(d);
 }
 
 async function getUserRef(d, db) {
