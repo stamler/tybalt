@@ -34,7 +34,7 @@ exports.handler = async (req, res, db) => {
     raw = false;
   }
   catch (error) { 
-    console.log(`filterProperties(): ${error.message}, will storeRawLogin()`); 
+    //console.log(`filterProperties(): ${error.message}, will storeRawLogin()`); 
   }
 
   try {
@@ -46,7 +46,7 @@ exports.handler = async (req, res, db) => {
     }
     return res.status(202).send();     
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     return res.status(500).send();
   }
 }
@@ -55,56 +55,33 @@ exports.handler = async (req, res, db) => {
 async function storeValidLogin(d, db) {
   const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
-
-  // TODO: rather than just use the userSourceAnchor as the key:
-  //  1. query Users for a user with a matching userSourceAnchor
-  //  2. if more than one result is returned, log an error and send to raw logins
-  //  3. if exactly one result is returned, get the document ID and assign it
-  //     to userRef and proceed.
-  //  4. if zero results are returned, query Users for a user with a matching upn
-  //     (make sure to lowercase all upns stored in the database)
-  //  5. if more than one result is returned, log an error and send to raw logins
-  //  6. if exactly one resut is returned, get the document ID and assign it
-  //     to userRef and proceed.
-  //  7. if zero results are returned, use the existing code
-  
-  // Rationale for this change:
-  // If I user was deleted from the directory then recreated we don't want to
-  // represent them twice in the database. Rather we reuse the same one and
-  // maintain the previous ID. NB THIS REQUIRES THAT WE STORE d.userSourceAnchor 
-  // in Users documents
-
-  const userRef = db.collection('Users').doc(d.userSourceAnchor)
-  computerSnapshot = await computerRef.get()
-  userSnapshot = await userRef.get()
+  let userRef;
+  try {
+    // try to match existing user, otherwise make a new one. If database
+    // inconsistencies are found (i.e. multiple matches) store RawLogin
+    userRef = await getUserRef(d, db);
+  } catch (error) {
+    d.error = error.message;
+    return storeRawLogin(d, db);
+  }
 
   // Start a write batch
   var batch = db.batch();
 
-  if (computerSnapshot.exists) {
-    // Update existing Computer document
-    d.updated = serverTimestamp()
-    batch.update(computerRef, d);
-  } else {
-    // Create new Computer document
-    d.created = d.updated = serverTimestamp();
-    batch.set(computerRef,d);
-  }
+  // TODO: replace this test with a simple set with merge:true with updated
+  // set the created() timestamp in a triggered cloud function instead
+  // d.created = serverTimestamp();
+  d.updated = serverTimestamp()
+  batch.set(computerRef,d, {merge: true});
 
   userObject = { upn: d.upn.toLowerCase(), email: d.email.toLowerCase(), 
     givenName: d.userGivenName, surname: d.userSurname, 
     lastComputer: slug, updated: serverTimestamp(),
     userSourceAnchor: d.userSourceAnchor.toLowerCase() };
-  // TODO: Check if userSnapshot contains azureObjectID. If it doesn't,
+  // TODO: Check if User has azureObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azureObjectID property
-  if (userSnapshot.exists) {
-    // Update existing User document
-    batch.update(userRef, userObject)
-  } else {
-    // Create new User document
-    batch.set(userRef, userObject)
-  }
+  batch.set(userRef, userObject, {merge: true});
 
   // Create new Login document
   let loginObject = { userSourceAnchor: d.userSourceAnchor.toLowerCase(),
@@ -114,4 +91,40 @@ async function storeValidLogin(d, db) {
 
   // Commit the batch which returns an array of WriteResults
   return batch.commit();
+}
+
+async function storeRawLogin(d, db) {
+  d.datetime = serverTimestamp()
+  return db.collection('RawLogins').add(d);
+}
+
+async function getUserRef(d, db) {
+  // If I user was deleted from the directory then recreated we don't want to
+  // represent them twice in the database. We reuse the same user entry and
+  // keep the previous ID/Document. 
+  // NB THIS REQUIRES THAT WE STORE d.userSourceAnchor in Users documents
+  // The situation where a document exists with a key that matches another 
+  // document's userSourceAnchor property is problematic and needs to be 
+  // handled in this code. Essentially the key should only coincidentally match
+  // a userSourceAnchor
+
+  const usersRef = db.collection('Users');
+  for (let prop of ["userSourceAnchor", "upn"]) { 
+    //  1. query Users for a user with a matching userSourceAnchor
+    // eslint-disable-next-line no-await-in-loop
+    let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
+
+    //  2. throw if >1 result is returned, caller will storeRawLogin()
+    if ( result.size > 1 ) {
+      throw new Error(`Multiple users have ${prop}:${d[prop].toLowerCase()}`);
+    }
+
+    //  3. if exactly one result is returned, return its DocumentReference
+    else if ( result.size === 1 ) {
+      return result.docs[0].ref;
+    }
+  }
+
+  //  4. if zero results are returned, use the existing code
+  return db.collection('Users').doc(d.userSourceAnchor)
 }
