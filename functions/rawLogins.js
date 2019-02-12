@@ -109,22 +109,23 @@ async function getUserRef(d, db) {
   // a userSourceAnchor
 
   const usersRef = db.collection('Users');
-  for (let prop of ["userSourceAnchor", "upn"]) { 
-    //  1. query Users for a user with a matching userSourceAnchor
+  for (let prop of ["userSourceAnchor", "upn", "email"]) {
+    // query for a user with matching prop
     // eslint-disable-next-line no-await-in-loop
     let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
 
-    //  2. throw if >1 result is returned, caller will storeRawLogin()
+    // throw if >1 result is returned, caller will storeRawLogin()
     if ( result.size > 1 ) {
       throw new Error(`Multiple users have ${prop}:${d[prop].toLowerCase()}`);
     }
 
-    //  3. if exactly one result is returned, return its DocumentReference
+    // if exactly one result is returned, return its DocumentReference
     else if ( result.size === 1 ) {
       return result.docs[0].ref;
     }
   }
 
-  //  4. if zero results are returned, use the existing code
-  return db.collection('Users').doc(d.userSourceAnchor)
+  // if zero results are returned, return a ref to a new document
+  // otherwise we'll overwrite an existing user.
+  return db.collection('Users').doc();
 }
