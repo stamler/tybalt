@@ -68,9 +68,6 @@ async function storeValidLogin(d, db) {
   // Start a write batch
   var batch = db.batch();
 
-  // TODO: replace this test with a simple set with merge:true with updated
-  // set the created() timestamp in a triggered cloud function instead
-  // d.created = serverTimestamp();
   d.updated = serverTimestamp()
   batch.set(computerRef,d, {merge: true});
 
