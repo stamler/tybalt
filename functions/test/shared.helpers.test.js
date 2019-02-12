@@ -67,7 +67,6 @@ exports.makeFirestoreStub = (options={}) => {
   const batchStub = sinon.stub();
   batchStub.returns({
     set: sinon.stub(),
-    update: sinon.stub(),
     commit: sinon.stub()
   });
 
