@@ -67,14 +67,22 @@ exports.makeFirestoreStub = (options={}) => {
     })
   });
 
+  const setStub = sinon.stub();
+  const commitStub = sinon.stub();
   const batchStub = sinon.stub();
-  batchStub.returns({
-    set: sinon.stub(),
-    commit: sinon.stub()
-  });
+  batchStub.returns({ set: setStub, commit: commitStub });
 
-  return { 
+  return {
     collection: collectionStub, 
-    batch: batchStub 
+    batch: batchStub,
+    batchStubs: {
+      set: setStub,
+      commit: commitStub
+    }
   };
 };
+
+exports.stripTimestamps = (obj) => {
+  const { created, updated, time, ...noTimestamps} = obj;
+  return noTimestamps; 
+}
