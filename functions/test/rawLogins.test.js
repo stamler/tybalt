@@ -32,45 +32,60 @@ describe("rawLogins module", () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db());
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args data
+      // assert batch.set() was called once with args data
+      // assert batch.set() was called once with args for user
+      // assert batch.set() was called once with args for login
+      // assert batch.commit() was called once
     });
     it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db({userMatches: 1}));
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args data
+      // assert batch.set() was called once with args data
+      // assert batch.set() was called once with args for user
+      // assert batch.set() was called once with args for login
+      // assert batch.commit() was called once
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db({computerExists: true}));
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args data
+      // assert batch.set() was called once with args data
+      // assert batch.set() was called once with args for user
+      // assert batch.set() was called once with args for login
+      // assert batch.commit() was called once
     });
     it("(202 Accepted) if a valid JSON login is POSTed, both computer and user exist", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db({computerExists: true, userMatches: 1}));
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args data
+      // assert batch.set() was called once with args data
+      // assert batch.set() was called once with args for user
+      // assert batch.set() was called once with args for login
+      // assert batch.commit() was called once
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists, multiple users match", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: data}),Res(), db({computerExists: true, userMatches: 2}));
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args data
+      // assert batch.set() WASN'T CALLED with args for user
+      // assert batch.set() was called once with args for login
+      // assert batch.set() was called once with args for data
+      // assert batch.commit() was called once
     });
     it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: {}}),Res(), db());
       assert.equal(result.status.args[0][0], 202);
-      // assert add() was called once with args {} / confirm RawLogin
+      // assert set() was called once with args {} outside of batch
+      // confirm RawLogin
+      // assert batch.set() wasn't called
+      // assert batch.commit() wasn't called
     });
     it("(500 Internal Server Error) if database write fails", async () => {
       handler = require('../rawLogins.js').handler;
       let result = await handler(Req({body: {}}),Res(), db({writeFail: true}));
       assert.equal(result.status.args[0][0], 500);
     });
-  });
-  describe("handler() firebase I/O", () => {
-    // TODO: stub batch.set() batch.update(), spy batch.commit(), db
   });
 });
