@@ -6,6 +6,7 @@
   removes otherwise valid null properties if stripValidNulls is true
 
   TODO: validate actual values with, for example, RegExes
+  TODO: likely replace with ajv or another JSON Schema validator
 */
 exports.filterProperties = function (data, options={}) {
 
