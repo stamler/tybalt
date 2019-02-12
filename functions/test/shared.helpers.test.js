@@ -25,18 +25,18 @@ exports.makeFirestoreStub = (options={}) => {
     certStrings = null
   } = options;
 
-  // Stub the DocumentSnapshot returned by DocRef.get()
-  const retrieved = {toDate: function () {return retrievedDate}};
-  const getSnapStub = sinon.stub();
+  // Stub get() method from a DocumentReference obj mocking the azure cache doc
+  const getAzureDocSnapStub = sinon.stub();
   if (certStrings) {
-    getSnapStub.withArgs('retrieved').returns(retrieved); 
-    getSnapStub.withArgs('certificates').returns(certStrings);  
+    getAzureDocSnapStub.withArgs('retrieved').returns({toDate: function () {return retrievedDate}}); 
+    getAzureDocSnapStub.withArgs('certificates').returns(certStrings);  
   } else {
-    getSnapStub.returns(undefined);
+    getAzureDocSnapStub.returns(undefined);
   }
 
-  const azureRef = {
-    get: sinon.stub().resolves({ get: getSnapStub }),
+  // A DocumentReference obj mocking behaviour needed for the azure cache doc
+  const docRef = {
+    get: sinon.stub().resolves({ get: getAzureDocSnapStub }),
     set: sinon.stub().resolves()
   };
 
@@ -44,12 +44,16 @@ exports.makeFirestoreStub = (options={}) => {
     get: sinon.stub().resolves({ exists: computerExists }),
   };
 
-  // Stub the DocumentReference returned by collection().doc()
+  // Stub the doc() method in a DocumentCollection object
   const docStub = sinon.stub();
-  docStub.withArgs('azure').returns(azureRef);
+  docStub.withArgs('azure').returns(docRef);
   docStub.withArgs('SN123,manufac').returns(computerRef);
-  docStub.withArgs('f25d2a25').returns(azureRef);
-  docStub.withArgs('azure').returns(azureRef);
+  docStub.withArgs('f25d2a25').returns(docRef);
+  docStub.withArgs('azure').returns(docRef);
+  docStub.returns({
+    // default to simulate "generating" a new document reference to call set()
+    set: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
+  });
 
   const collectionStub = sinon.stub();
   collectionStub.withArgs('Cache').returns({doc: docStub})
@@ -60,8 +64,7 @@ exports.makeFirestoreStub = (options={}) => {
         // TODO: user_matches_returned used to derive number of items in array
         size:userMatches, 
         docs: Array(userMatches).fill({ ref:{ get: sinon.stub()} }) })
-    }),
-    add: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
+    })
   });
 
   const batchStub = sinon.stub();
