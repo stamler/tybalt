@@ -17,3 +17,9 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 exports.getToken = functions.https.onRequest(async (req, res) => {
   azureModule.handler(req, res, admin.firestore());
 });
+
+// Write the created timestamp on creation of a computers document
+exports.computersCreatedDate = functions.firestore.document('Computers/{computerId}').onCreate(
+  (snap, context) => {
+    return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
+});
