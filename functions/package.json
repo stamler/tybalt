@@ -15,6 +15,7 @@
     "test_only": "mocha --reporter spec"
   },
   "dependencies": {
+    "ajv": "^6.9.1",
     "firebase-admin": "~6.0.0",
     "firebase-functions": "^2.1.0",
     "jsonwebtoken": "^8.4.0",

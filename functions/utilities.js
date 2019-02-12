@@ -7,6 +7,8 @@
 
   TODO: validate actual values with, for example, RegExes
   TODO: likely replace with ajv or another JSON Schema validator
+  https://ajv.js.org
+  
 */
 exports.filterProperties = function (data, options={}) {
 
