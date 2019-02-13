@@ -67,7 +67,7 @@ exports.makeFirestoreStub = (options={}) => {
     })
   });
 
-  const setStub = sinon.stub();
+  const setStub = writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub();
   const commitStub = sinon.stub();
   const batchStub = sinon.stub();
   batchStub.returns({ set: setStub, commit: commitStub });
