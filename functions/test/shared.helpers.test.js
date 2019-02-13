@@ -61,7 +61,7 @@ exports.makeFirestoreStub = (options={}) => {
     doc: docStub,
     where: sinon.stub().returns({
       get: sinon.stub().resolves({
-        // TODO: user_matches_returned used to derive number of items in array
+        // derive size of Array from userMatches
         size:userMatches, 
         docs: Array(userMatches).fill({ ref:{ get: sinon.stub()} }) })
     })
