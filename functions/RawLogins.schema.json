@@ -1,0 +1,194 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://tbte.ca/RawLogins.schema.json",
+  "type": "object",
+  "title": "RawLogin",
+  "required": [
+    "serial",
+    "networkConfig",
+    "userSourceAnchor",
+    "radiatorVersion",
+    "mfg"
+  ],
+  "properties": {
+    "bootDriveFS": {
+      "$id": "#/properties/bootDriveFS",
+      "type": "string",
+      "title": "Filesystem of the boot drive",
+      "examples": [
+        "NTFS"
+      ],
+      "minLength": 2,
+      "maxLength": 32
+    },
+    "serial": {
+      "$id": "#/properties/serial",
+      "type": "string",
+      "title": "Serial number",
+      "examples": [
+        "41KE281PH"
+      ],
+      "minLength": 4,
+      "maxLength": 48
+    },
+    "computerName": {
+      "$id": "#/properties/computerName",
+      "type": "string",
+      "title": "Computer name",
+      "examples": [
+        "MHE-41KE281PH"
+      ],
+      "minLength": 1,
+      "maxLength": 48
+    },
+    "model": {
+      "$id": "#/properties/model",
+      "type": "string",
+      "title": "Model",
+      "examples": [
+        "PowerEdge 2950"
+      ],
+      "minLength": 0,
+      "maxLength": 48
+    },
+    "systemType": {
+      "$id": "#/properties/systemType",
+      "type": "integer",
+      "title": "Windows reported System Type number",
+      "examples": [
+        4
+      ]
+    },
+    "osSku": {
+      "$id": "#/properties/osSku",
+      "type": "integer",
+      "title": "Windows reported OS SKU number",
+      "examples": [
+        7
+      ]
+    },
+    "bootDriveFree": {
+      "$id": "#/properties/bootDriveFree",
+      "type": "integer",
+      "title": "Boot drive free space (bytes)",
+      "examples": [
+        3548332032
+      ]
+    },
+    "userGivenName": {
+      "$id": "#/properties/userGivenName",
+      "type": "string",
+      "title": "Users's given (first) name",
+      "examples": [
+        "John"
+      ],
+      "minLength": 1,
+      "maxLength": 24
+    },
+    "upn": {
+      "$id": "#/properties/upn",
+      "type": "string",
+      "title": "User principal name",
+      "examples": [
+        "human@domain"
+      ],
+      "pattern": "^(.+?@.+?)$"
+    },
+    "userSourceAnchor": {
+      "$id": "#/properties/userSourceAnchor",
+      "type": "string",
+      "title": "userSourceAnchor, a hexidecimal GUID",
+      "examples": [
+        "326ad589df8dbb49b7da3946cf0697dc"
+      ],
+      "pattern": "^([a-fA-F0-9]{32})$"
+    },
+    "osArch": {
+      "$id": "#/properties/osArch",
+      "type": "string",
+      "title": "OS Architecture",
+      "examples": [
+        "64-bit"
+      ],
+      "minLength": 2,
+      "maxLength": 16
+    },
+    "bootDrive": {
+      "$id": "#/properties/bootDrive",
+      "type": "string",
+      "title": "Boot drive letter",
+      "examples": [
+        "C:"
+      ],
+      "pattern": "^[A-Za-z]:$"
+    },
+    "osVersion": {
+      "$id": "#/properties/osVersion",
+      "type": "string",
+      "title": "OS version string",
+      "examples": [
+        "6.2.9200"
+      ],
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)*$"
+    },
+    "radiatorVersion": {
+      "$id": "#/properties/radiatorVersion",
+      "type": "integer",
+      "title": "Radiator version",
+      "examples": [
+        7
+      ]
+    },
+    "mfg": {
+      "$id": "#/properties/mfg",
+      "type": "string",
+      "title": "Manufacturer",
+      "examples": [
+        "Dell Inc."
+      ],
+      "minLength": 2,
+      "maxLength": 32
+    },
+    "email": {
+      "$id": "#/properties/email",
+      "type": "string",
+      "title": "User email address",
+      "examples": [
+        "jsmith@company.ca"
+      ],
+      "format": "email"
+    },
+    "ram": {
+      "$id": "#/properties/ram",
+      "type": "integer",
+      "title": "Ram amount (bytes)",
+      "examples": [
+        34354425856
+      ]
+    },
+    "userSurname": {
+      "$id": "#/properties/userSurname",
+      "type": "string",
+      "title": "User surname (last name)",
+      "examples": [
+        "Wolfeschlegelsteinhausenbergerdorff"
+      ],
+      "minLength": 2,
+      "maxLength": 35
+    },
+    "bootDriveCap": {
+      "$id": "#/properties/bootDriveCap",
+      "type": "integer",
+      "title": "Boot drive capacity (bytes)",
+      "examples": [
+        68719472640
+      ]
+    },
+    "networkConfig": {
+      "$id": "#/properties/networkConfig",
+      "type": "object",
+      "title": "Network Configuration"
+    }
+  }
+}
