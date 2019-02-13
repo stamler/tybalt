@@ -12,7 +12,7 @@ describe("rawLogins module", () => {
   // It's OK to use an object rather than string for body here since Req
   // objects that are received in Firebase (like Express) with Content-Type
   // set to JSON are parsed with a JSON body parser.
-  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{}, radiatorVersion: 7 };
+  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7 };
   describe("handler() responses", () => {
     const Req = shared.makeReqObject; // Stub request object
     const Res = shared.makeResObject; // Stub response object
