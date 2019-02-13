@@ -1,7 +1,10 @@
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
-const utilities = require('./utilities.js')
-const filterProperties = utilities.filterProperties
-const makeSlug = utilities.makeSlug
+const makeSlug = require('./utilities.js').makeSlug;
+const Ajv = require('ajv')
+const schema = require('./RawLogins.schema.json')
+
+const ajv = new Ajv({ removeAdditional: true });
+const validate = ajv.compile(schema);
 
 exports.handler = async (req, res, db) => {
   
@@ -14,32 +17,16 @@ exports.handler = async (req, res, db) => {
     res.header('Allow', 'POST');
     return res.status(405).send();
   }
-
-  const validationOptions = { 
-    valid: [ "bootDrive", "bootDriveCap", "bootDriveFree",
-    "bootDriveFS", "model", "computerName", "osArch", "osSku",
-    "osVersion", "ram", "type", "upn", "email", "userGivenName", 
-    "userSurname", "radiatorVersion" ],
-    required: ["serial", "mfg", "userSourceAnchor", "networkConfig"],
-    allowAndAddRequiredNulls: false
-  };
   
-  let raw = true, d = req.body;
-  try {
-    // TODO: if a submission is received with no user information, 
-    // update the Computer document only?
+  const d = req.body;
 
-    // Validate the submission
-    d = filterProperties(req.body, validationOptions);
-    raw = false;
-  }
-  catch (error) { 
-    //console.log(`filterProperties(): ${error.message}, will storeRawLogin()`); 
-  }
+  // Validate the submission
+  const valid = validate(d);
 
   try {
-    if(raw) {
+    if(!valid) {
       // Invalid submission, store RawLogin for later processing
+      console.log(validate.errors);      
       await storeRawLogin(d, db);
     } else {
       // write valid object to database
