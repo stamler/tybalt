@@ -4,6 +4,7 @@
   "$id": "http://tbte.ca/RawLogins.schema.json",
   "type": "object",
   "title": "RawLogin",
+  "additionalProperties": false,
   "required": [
     "serial",
     "networkConfig",
