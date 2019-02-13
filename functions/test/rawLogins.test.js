@@ -12,13 +12,13 @@ describe("rawLogins module", () => {
   // It's OK to use an object rather than string for body here since Req
   // objects that are received in Firebase (like Express) with Content-Type
   // set to JSON are parsed with a JSON body parser.
-  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25", networkConfig:{}};
+  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{}, radiatorVersion: 7 };
   describe("handler() responses", () => {
     const Req = shared.makeReqObject; // Stub request object
     const Res = shared.makeResObject; // Stub response object
     const sts = shared.stripTimestamps; // utility function to strip timestamp props
-    const userObjArg = { givenName: undefined, surname: undefined, upn: "ttesterson@testco.co" , email: "ttesterson@testco.co", lastComputer:"SN123,manufac", userSourceAnchor:"f25d2a25" };
-    const loginObjArg = {computer: "SN123,manufac", givenName: undefined, surname: undefined, userSourceAnchor: "f25d2a25" };
+    const userObjArg = { givenName: undefined, surname: undefined, upn: "ttesterson@testco.co" , email: "ttesterson@testco.co", lastComputer:"SN123,manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25" };
+    const loginObjArg = {computer: "SN123,manufac", givenName: undefined, surname: undefined, userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25" };
 
     it("(405 Method Not Allowed) if request method isn't POST", async () => {
       handler = require('../rawLogins.js').handler;
@@ -34,7 +34,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a valid JSON login is POSTed, neither computer nor user exists", async () => {
       handler = require('../rawLogins.js').handler;
       const db = makeDb();
-      let result = await handler(Req({body: data}),Res(), db);
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -44,7 +44,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
       handler = require('../rawLogins.js').handler;
       const db = makeDb({userMatches: 1});
-      let result = await handler(Req({body: data}),Res(), db);
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -54,7 +54,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
       handler = require('../rawLogins.js').handler;
       const db = makeDb({computerExists: true});
-      let result = await handler(Req({body: data}),Res(), db);
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -64,7 +64,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a valid JSON login is POSTed, both computer and user exist", async () => {
       handler = require('../rawLogins.js').handler;
       const db = makeDb({computerExists: true, userMatches: 1});
-      let result = await handler(Req({body: data}),Res(), db);
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -74,7 +74,7 @@ describe("rawLogins module", () => {
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists, multiple users match", async () => {
       handler = require('../rawLogins.js').handler;
       const db = makeDb({computerExists: true, userMatches: 2});
-      let result = await handler(Req({body: data}),Res(), db);
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       // assert batch.set() WASN'T CALLED with args for user
       // assert batch.set() was called once with args for login
@@ -92,7 +92,8 @@ describe("rawLogins module", () => {
     });
     it("(500 Internal Server Error) if database write fails", async () => {
       handler = require('../rawLogins.js').handler;
-      let result = await handler(Req({body: {}}),Res(), makeDb({writeFail: true}));
+      const db = makeDb({writeFail: true});
+      let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 500);
     });
   });
