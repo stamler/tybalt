@@ -19,7 +19,11 @@ exports.getToken = functions.https.onRequest(async (req, res) => {
 });
 
 // Write the created timestamp on creation of a computers document
+// TODO: write the time property on creation of Logins and RawLogins documents
 exports.computersCreatedDate = functions.firestore.document('Computers/{computerId}').onCreate(
   (snap, context) => {
     return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
 });
+
+// TODO: Write the updated property on update of Computers, Users, and Cache documents
+// then remove corresponding code from within the modules
