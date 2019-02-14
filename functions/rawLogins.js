@@ -4,6 +4,16 @@ const Ajv = require('ajv')
 const schema = require('./RawLogins.schema.json')
 
 const ajv = new Ajv({ removeAdditional: true, coerceTypes: true });
+/*
+ TODO: create a 'removeIfFails' keyword to remove a property if invalid. 
+ Use this for email prop https://github.com/epoberezkin/ajv/issues/300
+
+ajv.addKeyword('removeIfFails', {
+  inline: function (it, keyword, schema, parentSchema) {},
+  metaSchema: { type: 'boolean' }
+})
+*/
+
 const validate = ajv.compile(schema);
 
 exports.handler = async (req, res, db) => {
