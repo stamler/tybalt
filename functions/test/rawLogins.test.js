@@ -12,7 +12,8 @@ describe("rawLogins module", () => {
   // It's OK to use an object rather than string for body here since Req
   // objects that are received in Firebase (like Express) with Content-Type
   // set to JSON are parsed with a JSON body parser.
-  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7 };
+  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:" 5.", osSku:"48" };
+  const expected = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:5, osSku:48 };
   describe("handler() responses", () => {
     const Req = shared.makeReqObject; // Stub request object
     const Res = shared.makeResObject; // Stub response object
@@ -34,7 +35,7 @@ describe("rawLogins module", () => {
       const db = makeDb();
       let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
+      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);
@@ -43,7 +44,7 @@ describe("rawLogins module", () => {
       const db = makeDb({userMatches: 1});
       let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
+      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);
@@ -52,7 +53,7 @@ describe("rawLogins module", () => {
       const db = makeDb({computerExists: true});
       let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
+      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);
@@ -61,7 +62,7 @@ describe("rawLogins module", () => {
       const db = makeDb({computerExists: true, userMatches: 1});
       let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), data); // batch.set() called with computer
+      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);

@@ -3,7 +3,7 @@ const makeSlug = require('./utilities.js').makeSlug;
 const Ajv = require('ajv')
 const schema = require('./RawLogins.schema.json')
 
-const ajv = new Ajv({ removeAdditional: true });
+const ajv = new Ajv({ removeAdditional: true, coerceTypes: true });
 const validate = ajv.compile(schema);
 
 exports.handler = async (req, res, db) => {
