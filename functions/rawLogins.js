@@ -88,7 +88,6 @@ async function storeValidLogin(d, db) {
 }
 
 async function storeRawLogin(d, db) {
-  d.datetime = serverTimestamp()
   return db.collection('RawLogins').doc().set(d);
 }
 
