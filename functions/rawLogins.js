@@ -8,6 +8,7 @@ const ajv = new Ajv({ removeAdditional: true, coerceTypes: true });
  TODO: create a 'removeIfFails' keyword to remove a property if invalid. 
  Use this for email prop https://github.com/epoberezkin/ajv/issues/300
  in the RawLogins schema
+ // https://ajv.js.org/custom.html
 
 ajv.addKeyword('removeIfFails', {
   inline: function (it, keyword, schema, parentSchema) {
