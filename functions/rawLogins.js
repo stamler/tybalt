@@ -70,8 +70,7 @@ async function storeValidLogin(d, db) {
 
   // Create new Login document
   let loginObject = { userSourceAnchor: d.userSourceAnchor.toLowerCase(),
-    givenName: d.userGivenName, surname: d.userSurname,
-    computer: slug, time: serverTimestamp() };
+    givenName: d.userGivenName, surname: d.userSurname, computer: slug };
   batch.set(db.collection('Logins').doc(), loginObject);
 
   // Commit the batch which returns an array of WriteResults
