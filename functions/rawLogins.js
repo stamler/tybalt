@@ -37,7 +37,7 @@ exports.handler = async (req, res, db) => {
     if(!valid) {
       // Invalid submission, store RawLogin for later processing
       console.log(validate.errors);      
-      await storeRawLogin(d, db);
+      await db.collection('RawLogins').doc().set(d);
     } else {
       // write valid object to database
       await storeValidLogin(d, db);
@@ -60,7 +60,7 @@ async function storeValidLogin(d, db) {
     userRef = await getUserRef(d, db);
   } catch (error) {
     d.error = error.message;
-    return storeRawLogin(d, db);
+    return db.collection('RawLogins').doc().set(d);
   }
 
   // Start a write batch
@@ -87,10 +87,6 @@ async function storeValidLogin(d, db) {
   return batch.commit();
 }
 
-async function storeRawLogin(d, db) {
-  return db.collection('RawLogins').doc().set(d);
-}
-
 async function getUserRef(d, db) {
   // If I user was deleted from the directory then recreated we don't want to
   // represent them twice in the database. We reuse the same user entry and
@@ -107,7 +103,7 @@ async function getUserRef(d, db) {
     // eslint-disable-next-line no-await-in-loop
     let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
 
-    // throw if >1 result is returned, caller will storeRawLogin()
+    // throw if >1 result is returned, caller will set RawLogin
     if ( result.size > 1 ) {
       throw new Error(`Multiple users have ${prop}:${d[prop].toLowerCase()}`);
     }
