@@ -7,9 +7,13 @@ const ajv = new Ajv({ removeAdditional: true, coerceTypes: true });
 /*
  TODO: create a 'removeIfFails' keyword to remove a property if invalid. 
  Use this for email prop https://github.com/epoberezkin/ajv/issues/300
+ in the RawLogins schema
 
 ajv.addKeyword('removeIfFails', {
-  inline: function (it, keyword, schema, parentSchema) {},
+  inline: function (it, keyword, schema, parentSchema) {
+    // check if the property fails / has failed validation
+    // if it isnt' required, delete it
+  },
   metaSchema: { type: 'boolean' }
 })
 */
@@ -17,6 +21,9 @@ ajv.addKeyword('removeIfFails', {
 const validate = ajv.compile(schema);
 
 exports.handler = async (req, res, db) => {
+  // TODO: validate a secret key sent in the header from the client.
+  // This will be stored in the environment so it's not super secure,
+  // but provides added protection from receiving data from outside sources 
   
   // req.body can be used directly as JSON if this passes
   if (req.get('Content-Type') !== "application/json") {
