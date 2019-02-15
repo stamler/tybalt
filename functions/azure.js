@@ -38,8 +38,12 @@ exports.handler = async (req, res, db) => {
   }
 
   // Get id_token from Authorization header by parsing Bearer <ID_TOKEN>
-  const id_token = req.get('Authorization').substring(7).trim();
-  if (id_token.length < 8) { // arbitrary minimum length of accepted JWT
+  const authHeader = req.get('Authorization');
+  let id_token = null;
+  if (authHeader !== undefined) {
+    id_token = authHeader.replace('Bearer ','').trim();
+  }
+  if (id_token === null || id_token.length < 8) { // arbitrary minimum length of accepted JWT
     return res.status(401).send("no id_token provided");
   }
 
