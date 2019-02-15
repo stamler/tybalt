@@ -21,6 +21,7 @@ describe("rawLogins module", () => {
     const userObjArg = { givenName: undefined, surname: undefined, upn: "ttesterson@testco.co" , email: "ttesterson@testco.co", lastComputer:"SN123,manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25" };
     const loginObjArg = {computer: "SN123,manufac", givenName: undefined, surname: undefined, userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25" };
     const handler = require('../rawLogins.js').handler;
+    it("(401 Unauthorized) if request header doesn't include the env secret");
 
     it("(405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler(Req({method:'GET'}), Res(), makeDb());      

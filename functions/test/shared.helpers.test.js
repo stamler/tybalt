@@ -8,10 +8,10 @@ exports.makeResObject = () => {
 };
 
 exports.makeReqObject = (options={}) => {
-  const { method='POST', token=null, contentType='application/json', body={} } = options;
+  const { authType='Bearer', method='POST', token=null, contentType='application/json', body={} } = options;
   const getStub = sinon.stub();
   getStub.withArgs('Content-Type').returns(contentType);
-  getStub.withArgs('Authorization').returns(`Bearer ${token}`);
+  getStub.withArgs('Authorization').returns(`${authType} ${token}`);
   return { method:method, body: body, get: getStub };
 };
 
