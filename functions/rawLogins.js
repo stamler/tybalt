@@ -2,8 +2,12 @@ const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTim
 const makeSlug = require('./utilities.js').makeSlug;
 const Ajv = require('ajv')
 const schema = require('./RawLogins.schema.json')
+const functions = require('firebase-functions');
 
-const ajv = new Ajv({ removeAdditional: true, coerceTypes: true });
+const ajv = new Ajv({
+  removeAdditional: true,
+  coerceTypes: true
+});
 /*
  TODO: create a 'removeIfFails' keyword to remove a property if invalid. 
  Use this for email prop https://github.com/epoberezkin/ajv/issues/300
@@ -22,10 +26,14 @@ ajv.addKeyword('removeIfFails', {
 const validate = ajv.compile(schema);
 
 exports.handler = async (req, res, db) => {
+
   // TODO: validate a secret key sent in the header from the client.
-  // This will be stored in the environment so it's not super secure,
-  // but provides added protection from receiving data from outside sources 
-  
+  const secret = req.get('Authorization').substring(7).trim();
+  if ( secret !== null ) {// functions.config().tybaltSecret ) {
+    console.log(secret);
+    //  return res.status(401).send();
+  }
+
   // req.body can be used directly as JSON if this passes
   if (req.get('Content-Type') !== "application/json") {
     return res.status(415).send();
@@ -35,22 +43,22 @@ exports.handler = async (req, res, db) => {
     res.header('Allow', 'POST');
     return res.status(405).send();
   }
-  
+
   const d = req.body;
 
   // Validate the submission
   const valid = validate(d);
 
   try {
-    if(!valid) {
+    if (!valid) {
       // Invalid submission, store RawLogin for later processing
-      console.log(validate.errors);      
+      console.log(validate.errors);
       await db.collection('RawLogins').doc().set(d);
     } else {
       // write valid object to database
       await storeValidLogin(d, db);
     }
-    return res.status(202).send();     
+    return res.status(202).send();
   } catch (error) {
     console.log(error.message);
     return res.status(500).send();
@@ -59,7 +67,7 @@ exports.handler = async (req, res, db) => {
 
 // Creates or updates Computers and Users document, creates Logins document
 async function storeValidLogin(d, db) {
-  const slug = makeSlug(d.serial, d.mfg)  // key for Computers collection
+  const slug = makeSlug(d.serial, d.mfg) // key for Computers collection
   const computerRef = db.collection('Computers').doc(slug)
   let userRef;
   try {
@@ -75,20 +83,33 @@ async function storeValidLogin(d, db) {
   var batch = db.batch();
 
   d.updated = serverTimestamp()
-  batch.set(computerRef,d, {merge: true});
+  batch.set(computerRef, d, {
+    merge: true
+  });
 
-  userObject = { upn: d.upn.toLowerCase(), email: d.email.toLowerCase(), 
-    givenName: d.userGivenName, surname: d.userSurname, 
-    lastComputer: slug, updated: serverTimestamp(),
-    userSourceAnchor: d.userSourceAnchor.toLowerCase() };
+  userObject = {
+    upn: d.upn.toLowerCase(),
+    email: d.email.toLowerCase(),
+    givenName: d.userGivenName,
+    surname: d.userSurname,
+    lastComputer: slug,
+    updated: serverTimestamp(),
+    userSourceAnchor: d.userSourceAnchor.toLowerCase()
+  };
   // TODO: Check if User has azureObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azureObjectID property
-  batch.set(userRef, userObject, {merge: true});
+  batch.set(userRef, userObject, {
+    merge: true
+  });
 
   // Create new Login document
-  let loginObject = { userSourceAnchor: d.userSourceAnchor.toLowerCase(),
-    givenName: d.userGivenName, surname: d.userSurname, computer: slug };
+  let loginObject = {
+    userSourceAnchor: d.userSourceAnchor.toLowerCase(),
+    givenName: d.userGivenName,
+    surname: d.userSurname,
+    computer: slug
+  };
   batch.set(db.collection('Logins').doc(), loginObject);
 
   // Commit the batch which returns an array of WriteResults
@@ -112,12 +133,12 @@ async function getUserRef(d, db) {
     let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
 
     // throw if >1 result is returned, caller will set RawLogin
-    if ( result.size > 1 ) {
+    if (result.size > 1) {
       throw new Error(`Multiple users have ${prop}:${d[prop].toLowerCase()}`);
     }
 
     // if exactly one result is returned, return its DocumentReference
-    else if ( result.size === 1 ) {
+    else if (result.size === 1) {
       return result.docs[0].ref;
     }
   }
