@@ -29,8 +29,9 @@ exports.handler = async (req, res, db) => {
 
   // TODO: validate a secret key sent in the header from the client.
   const authHeader = req.get('Authorization');
-  if (authHeader !== undefined) { // functions.config().tybaltSecret ) {
-    console.log(authHeader.substring(8).trim());
+  const secret = typeof authHeader === 'string' ? authHeader.substring(8).trim() : null;
+  if (secret !== functions.config().tybalt.secret ) {
+    console.log(`received secret ${secret} doesn't match expected ${functions.config().tybaltSecret}`);
     //  return res.status(401).send();
   }
 
