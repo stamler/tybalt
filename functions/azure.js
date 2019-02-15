@@ -25,9 +25,15 @@ const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 
 exports.handler = async (req, res, db) => {
+
+  // get environment variables
   app_id = functions.config().azure_app_id || null;
-  tenant_ids = functions.config().azure_allowed_tenants || [];
-  
+  const tenant_string = functions.config().azure_allowed_tenants;
+  let tenant_ids = [];
+  if (tenant_string !== undefined) {
+    tenant_ids = JSON.parse(functions.config().azure_allowed_tenants);
+  }  
+
   if (req.method !== 'POST') {
     res.header('Allow', 'POST');
     return res.status(405).send();
