@@ -38,7 +38,8 @@ describe("azure module", () => {
       axiosStub = sandbox.stub(axios, 'get');
       axiosStub.withArgs(openIdConfigURI).resolves(openIdConfigResponse);
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).resolves(jwks);
-      sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) ); 
+      sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:true}) );
+      sandbox.stub(functions, 'config').returns({tybalt: {azure: {}}});
     });
 
     // eslint-disable-next-line prefer-arrow-callback
@@ -82,32 +83,35 @@ describe("azure module", () => {
     });
     it("(403 Forbidden) if id_token is verified but audience isn't this app", async () => {
       // stub environment variables for audience
-      sandbox.stub(functions, 'config').returns({azure_app_id: "d574aed2-db53-4228-9686-31f9fb423d22"});
+      functions.config.restore();
+      sandbox.stub(functions, 'config').returns({tybalt: {azure: {appid: "d574aed2-db53-4228-9686-31f9fb423d22"}}});
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0][0].toString(),"AudienceError: Provided token invalid for this application");
     });
     it("(403 Forbidden) if id_token is verified but issuer (tenant) isn't permitted by this app", async () => {
       // stub environment variables for audience and tenants
-      sandbox.stub(functions, 'config').returns({
-        azure_app_id: "12354894-507e-4095-9d42-1c5ebb952856",
-        azure_allowed_tenants: JSON.stringify(["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"])
-      });
+      functions.config.restore()
+      sandbox.stub(functions, 'config').returns({tybalt: {azure: {
+        appid: "12354894-507e-4095-9d42-1c5ebb952856",
+        allowedtenants: JSON.stringify(["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"])
+      }}});
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0][0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
     it("(200 OK) with a new firebase token if id_token is verified & tenant_ids match", async () => {
       // stub environment variables for tenants
-      sandbox.stub(functions, 'config').returns({
-        azure_allowed_tenants: JSON.stringify(["non-GUID", "337cf715-4186-4563-9583-423014c5e269"])
-      });      
+      functions.config.restore()
+      sandbox.stub(functions, 'config').returns({tybalt: {azure: {
+        allowedtenants: JSON.stringify(["non-GUID", "337cf715-4186-4563-9583-423014c5e269"])
+      }}});      
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
       assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
     });
     it("(200 OK) with a new firebase token if id_token is verified against cache or refreshed keys", async () => {
-      
+
       // Cached certificates, user already exists
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
