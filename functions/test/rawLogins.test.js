@@ -25,7 +25,7 @@ describe("rawLogins module", () => {
     // eslint-disable-next-line prefer-arrow-callback
     beforeEach( function () {
       sandbox = sinon.createSandbox();
-      sandbox.stub(functions, 'config').returns({tybalt:{secret:'asdf'}});    
+      sandbox.stub(functions, 'config').returns({tybalt_secret:'asdf'});    
     });
 
     // eslint-disable-next-line prefer-arrow-callback
@@ -38,7 +38,14 @@ describe("rawLogins module", () => {
       let result = await handler(Req({body: {...data}}),Res(), db);
       assert.equal(result.status.args[0][0], 401);
     });
-
+    it("(202 Accepted) if request header doesn't include the env secret and environment variable isn't set", async () => {
+      const db = makeDb();
+      sandbox.restore();
+      sandbox = sinon.createSandbox();
+      sandbox.stub(functions, 'config').returns({});
+      let result = await handler(Req({body: {...data}}),Res(), db);
+      assert.equal(result.status.args[0][0], 202);
+    });
     it("(405 Method Not Allowed) if request method isn't POST", async () => {
       let result = await handler(Req({method:'GET', authType:'TYBALT', token:'asdf'}), Res(), makeDb());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
