@@ -28,9 +28,9 @@ const validate = ajv.compile(schema);
 exports.handler = async (req, res, db) => {
 
   // TODO: validate a secret key sent in the header from the client.
-  const secret = req.get('Authorization').substring(7).trim();
-  if ( secret !== null ) {// functions.config().tybaltSecret ) {
-    console.log(secret);
+  const authHeader = req.get('Authorization');
+  if (authHeader !== undefined) { // functions.config().tybaltSecret ) {
+    console.log(authHeader.substring(8).trim());
     //  return res.status(401).send();
   }
 
