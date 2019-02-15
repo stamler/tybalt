@@ -28,7 +28,7 @@ const validate = ajv.compile(schema);
 exports.handler = async (req, res, db) => {
 
   // Validate the secret sent in the header from the client.
-  const appSecret = functions.config().tybalt_secret;
+  const appSecret = functions.config().tybalt.radiator.secret;
   if (appSecret !== undefined) {
     const authHeader = req.get('Authorization');
 

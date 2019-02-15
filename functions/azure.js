@@ -27,11 +27,11 @@ const jwkToPem = require('jwk-to-pem');
 exports.handler = async (req, res, db) => {
 
   // get environment variables
-  app_id = functions.config().azure_app_id || null;
-  const tenant_string = functions.config().azure_allowed_tenants;
+  app_id = functions.config().tybalt.azure.appid || null;
+  const tenant_string = functions.config().tybalt.azure.allowedtenants;
   let tenant_ids = [];
   if (tenant_string !== undefined) {
-    tenant_ids = JSON.parse(functions.config().azure_allowed_tenants);
+    tenant_ids = JSON.parse(functions.config().tybalt.azure.allowedtenants);
   }  
 
   if (req.method !== 'POST') {
