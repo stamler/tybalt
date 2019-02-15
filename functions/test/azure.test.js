@@ -94,7 +94,7 @@ describe("azure module", () => {
       functions.config.restore()
       sandbox.stub(functions, 'config').returns({tybalt: {azure: {
         appid: "12354894-507e-4095-9d42-1c5ebb952856",
-        allowedtenants: JSON.stringify(["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"])
+        allowedtenants: '["non-GUID","9614d80a-2b3f-4ce4-bad3-7c022c06269e"]'
       }}});
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],403);
@@ -104,7 +104,7 @@ describe("azure module", () => {
       // stub environment variables for tenants
       functions.config.restore()
       sandbox.stub(functions, 'config').returns({tybalt: {azure: {
-        allowedtenants: JSON.stringify(["non-GUID", "337cf715-4186-4563-9583-423014c5e269"])
+        allowedtenants: '["non-GUID", "337cf715-4186-4563-9583-423014c5e269"]'
       }}});      
       let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
