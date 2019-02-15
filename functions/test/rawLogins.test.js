@@ -40,17 +40,17 @@ describe("rawLogins module", () => {
     });
 
     it("(405 Method Not Allowed) if request method isn't POST", async () => {
-      let result = await handler(Req({method:'GET', authType:'TYBAULT', token:'asdf'}), Res(), makeDb());      
+      let result = await handler(Req({method:'GET', authType:'TYBALT', token:'asdf'}), Res(), makeDb());      
       assert.deepEqual(result.header.args[0], ['Allow','POST']);
       assert.equal(result.status.args[0][0],405);
     });
     it("(415 Unsupported Media Type) if Content-Type isn't application/json", async () => {
-      let result = await handler(Req({contentType:'not/json', authType:'TYBAULT', token:'asdf'}), Res(), makeDb());
+      let result = await handler(Req({contentType:'not/json', authType:'TYBALT', token:'asdf'}), Res(), makeDb());
       assert.equal(result.status.args[0][0], 415);
     });
     it("(202 Accepted) if a valid JSON login is POSTed, neither computer nor user exists", async () => {
       const db = makeDb();
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -59,7 +59,7 @@ describe("rawLogins module", () => {
     });
     it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
       const db = makeDb({userMatches: 1});
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -68,7 +68,7 @@ describe("rawLogins module", () => {
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
       const db = makeDb({computerExists: true});
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -77,7 +77,7 @@ describe("rawLogins module", () => {
     });
     it("(202 Accepted) if a valid JSON login is POSTed, both computer and user exist", async () => {
       const db = makeDb({computerExists: true, userMatches: 1});
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
@@ -86,7 +86,7 @@ describe("rawLogins module", () => {
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists, multiple users match", async () => {
       const db = makeDb({computerExists: true, userMatches: 2});
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
       // assert batch.set() WASN'T CALLED with args for user
       // assert batch.set() was called once with args for login
@@ -94,7 +94,7 @@ describe("rawLogins module", () => {
       // assert batch.commit() was called once
     });
     it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
-      let result = await handler(Req({body: {}, authType:'TYBAULT', token:'asdf'}),Res(), makeDb());
+      let result = await handler(Req({body: {}, authType:'TYBALT', token:'asdf'}),Res(), makeDb());
       assert.equal(result.status.args[0][0], 202);
       // assert set() was called once with args {} outside of batch
       // confirm RawLogin
@@ -103,7 +103,7 @@ describe("rawLogins module", () => {
     });
     it("(500 Internal Server Error) if database write fails", async () => {
       const db = makeDb({writeFail: true});
-      let result = await handler(Req({body: {...data}, authType:'TYBAULT', token:'asdf'}),Res(), db);
+      let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 500);
     });
   });

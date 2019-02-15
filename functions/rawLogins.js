@@ -31,7 +31,7 @@ exports.handler = async (req, res, db) => {
   const authHeader = req.get('Authorization');
   let secret = null;
   if (authHeader !== undefined) {
-    secret = authHeader.replace('TYBAULT ','').trim();
+    secret = authHeader.replace('TYBALT ','').trim();
   }
   if (secret !== functions.config().tybalt.secret ) {
     console.log(`received secret ${secret} doesn't match expected ${functions.config().tybalt.secret}`);
