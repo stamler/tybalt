@@ -11,7 +11,9 @@ exports.makeReqObject = (options={}) => {
   const { authType='Bearer', method='POST', token=null, contentType='application/json', body={} } = options;
   const getStub = sinon.stub();
   getStub.withArgs('Content-Type').returns(contentType);
-  getStub.withArgs('Authorization').returns(`${authType} ${token}`);
+  if (token) {
+    getStub.withArgs('Authorization').returns(`${authType} ${token}`);
+  }
   return { method:method, body: body, get: getStub };
 };
 

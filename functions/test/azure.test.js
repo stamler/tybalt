@@ -26,6 +26,8 @@ describe("azure module", () => {
     const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
 
     let admin, axios, handler, sandbox, axiosStub, db_cache_hit, db_cache_miss;
+
+    // eslint-disable-next-line prefer-arrow-callback
     beforeEach(function() {
       admin = require('firebase-admin');
       axios = require('axios');
@@ -44,6 +46,7 @@ describe("azure module", () => {
       }); 
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     afterEach(function() { 
       sandbox.restore();
       decache('../azure.js');
@@ -61,7 +64,7 @@ describe("azure module", () => {
       let result = await handler(Req({token:id_token, contentType:'not/json'}), Res());
       assert.equal(result.status.args[0][0], 415);
     });
-    it("(401 Unauthorized) if id_token property is missing from request", async () => {
+    it("(401 Unauthorized) if Authorization header is missing from request", async () => {
       handler = require('../azure.js').handler;
       let result = await handler(Req(), Res());
       assert.equal(result.status.args[0][0],401);
