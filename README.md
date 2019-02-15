@@ -10,8 +10,9 @@ Log in to firebase with credentials presented by Azure AD
 
 0. edit `.firebaserc`
 1. Set environment variables
-    `firebase functions:config:set tybalt.secret="tybalt secret"
-     firebase functions:config:set azure_allowed_tenants="JSON string representing array of tenant GUID strings"
-     firebase functions:config:set azure_app_id="Azure Application ID (GUID)"`
-
+    ```
+    firebase functions:config:set tybalt.secret="tybalt secret"
+    firebase functions:config:set azure_allowed_tenants='["tenantGUID1","tenantGUID2"]'
+    firebase functions:config:set azure_app_id="Azure Application ID (GUID)"
+    ```
 2. `firebase deploy`
