@@ -7,6 +7,7 @@
   "additionalProperties": false,
   "required": [
     "serial",
+    "upn",
     "networkConfig",
     "userSourceAnchor",
     "radiatorVersion",
@@ -41,7 +42,8 @@
         "MHE-41KE281PH"
       ],
       "minLength": 1,
-      "maxLength": 48
+      "maxLength": 48,
+      "removeIfFails": true
     },
     "model": {
       "$id": "#/properties/model",
@@ -158,7 +160,8 @@
       "examples": [
         "jsmith@company.ca"
       ],
-      "format": "email"
+      "format": "email",
+      "removeIfFails": true
     },
     "ram": {
       "$id": "#/properties/ram",

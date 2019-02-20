@@ -6,22 +6,39 @@ const functions = require('firebase-functions');
 
 const ajv = new Ajv({
   removeAdditional: true,
-  coerceTypes: true
+  coerceTypes: true,
+  allErrors: true // required for 'removeIfFails' keyword
 });
-/*
- TODO: create a 'removeIfFails' keyword to remove a property if invalid. 
- Use this for email prop https://github.com/epoberezkin/ajv/issues/300
- in the RawLogins schema
- // https://ajv.js.org/custom.html
+
+// The 'removeIfFails' keyword deletes a property if it is invalid. Created to
+// remove email properties that don't validate, i.e. empty strings. 
+// See https://github.com/epoberezkin/ajv/issues/300
+// Uses inline validator since aggregated errors cannot be accessed otherwise
+// https://github.com/epoberezkin/ajv/issues/208#issuecomment-225445407
 
 ajv.addKeyword('removeIfFails', {
-  inline: function (it, keyword, schema, parentSchema) {
-    // check if the property fails / has failed validation
-    // if it isnt' required, delete it
+  inline: function (it) {
+    // TODO: verify that removeIfFails is set to 'true';
+    // TODO: verify that the wrong errors aren't being deleted
+    // TODO: use doT template ? 
+    // TODO: figure out how to test validation-time code
+    return `if (errs__${(it.dataLevel || '')} > 0) {
+      // What is the difference between errors, errs_ and errs__ ?
+      // and which one should I be using ?
+      console.log(errors)
+      console.log(errs_${(it.dataLevel || '')});
+      console.log(errs__${(it.dataLevel || '')});
+      // remove the last error (by reducing length) and decrement count
+      vErrors.length = --errors;
+      // delete the failing element
+      delete data${(it.dataLevel - 1 || '')}[${it.dataPathArr[it.dataLevel]}];
+    }`;
   },
-  metaSchema: { type: 'boolean' }
+  metaSchema: { type: 'boolean' },
+  statements: true, // allow side-effects and modification
+  valid: true,
+  modifying: true
 })
-*/
 
 const validate = ajv.compile(schema);
 
@@ -97,13 +114,17 @@ async function storeValidLogin(d, db) {
 
   userObject = {
     upn: d.upn.toLowerCase(),
-    email: d.email.toLowerCase(),
     givenName: d.userGivenName,
     surname: d.userSurname,
     lastComputer: slug,
     updated: serverTimestamp(),
     userSourceAnchor: d.userSourceAnchor.toLowerCase()
   };
+
+  // Confirm optional email prop exists before calling .toLowerCase()
+  if (d.email) {
+    userObject.email = d.email.toLowerCase()
+  }
   // TODO: Check if User has azureObjectID. If it doesn't,
   // try to match it with auth() users by upn/email (Soft match) and then
   // write the key to azureObjectID property
@@ -136,6 +157,9 @@ async function getUserRef(d, db) {
 
   const usersRef = db.collection('Users');
   for (let prop of ["userSourceAnchor", "upn", "email"]) {
+    // skip a property if it doesn't exist in d
+    if ( d[prop] === null || d[prop] === undefined ) { continue; }
+    
     // query for a user with matching prop
     // eslint-disable-next-line no-await-in-loop
     let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();

@@ -11,8 +11,8 @@ describe("rawLogins module", () => {
   const makeDb = shared.makeFirestoreStub;
   // Use object rather than string for body since requests w/ JSON Content-Type
   // are parsed with a JSON body parser in express / firebase functions.
-  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:" 5.", osSku:"48" };
-  const expected = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:5, osSku:48 };
+  const data = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:" 5.", osSku:"48", computerName:"Tromsø" };
+  const expected = {upn: "TTesterson@testco.co" , email: "TTesterson@testco.co", serial:"SN123", mfg:"manufac", userSourceAnchor:"f25d2a25f25d2a25f25d2a25f25d2a25", networkConfig:{ "DC:4A:3E:E0:45:00": {} }, radiatorVersion: 7, systemType:5, osSku:48, computerName:"Tromsø" };
   describe("handler() responses", () => {
     const Req = shared.makeReqObject; // Stub request object
     const Res = shared.makeResObject; // Stub response object
@@ -32,7 +32,17 @@ describe("rawLogins module", () => {
     afterEach( function () {
       sandbox.restore();
     });
-
+    it("(202 Accepted) if an otherwise valid login is submitted with an empty email", async () => {
+      const db = makeDb();
+      let result = await handler(Req({body: {...data, email:''}, authType:'TYBALT', token:'asdf'}),Res(), db);
+      assert.equal(result.status.args[0][0], 202);
+      const { email:_, ...expectedNoEmail } = expected;
+      const { email:_2, ...userNoEmail } = userObjArg;
+      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expectedNoEmail); // batch.set() called with computer
+      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userNoEmail); // batch.set() called with user
+      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
+      sinon.assert.calledOnce(db.batchStubs.commit);
+    });
     it("(401 Unauthorized) if request header doesn't include the env secret", async () => {
       const db = makeDb();
       let result = await handler(Req({body: {...data}}),Res(), db);
@@ -101,7 +111,7 @@ describe("rawLogins module", () => {
       // assert batch.commit() was called once
     });
     it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
-      let result = await handler(Req({body: {}, authType:'TYBALT', token:'asdf'}),Res(), makeDb());
+      let result = await handler(Req({body: { ...data, networkConfig:{}}, authType:'TYBALT', token:'asdf'}),Res(), makeDb());
       assert.equal(result.status.args[0][0], 202);
       // assert set() was called once with args {} outside of batch
       // confirm RawLogin
