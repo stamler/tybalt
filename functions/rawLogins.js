@@ -17,25 +17,25 @@ const ajv = new Ajv({
 // https://github.com/epoberezkin/ajv/issues/208#issuecomment-225445407
 
 ajv.addKeyword('removeIfFails', {
-  inline: function (it) {
+  inline: function (it, keyword) {
     // verify that removeIfFails is set to 'true';
     if (it.schema.removeIfFails === true) {
-      return `if (errs__${(it.dataLevel || '')} > 0) {
-        // What is the difference between errors, errs_ and errs__ ?
-        // and which one should I be using ?
-        console.log(errors);
-        console.log(errs_${(it.dataLevel || '')});
-        console.log(errs__${(it.dataLevel || '')});
-        // remove the last error (by reducing length) and decrement count
-        vErrors.length = --errors;
+      // TODO replace errs_ and errs__ with errors and vErrors and 
+      // find the error(s) that match the current schema item
+      return `if (errors > 0) {
+        // only keep errors whose dataPaths don't match this dataPath
+        vErrors = vErrors.filter(
+          e => e.dataPath !== ('.' + ${
+            it.dataPathArr[it.dataLevel]
+          }));
+        errors = vErrors.length;
+
         // delete the failing element
         delete data${(it.dataLevel - 1 || '')}[${it.dataPathArr[it.dataLevel]}];
       }`;
-    } else {
-      return ``;
     }
-    // TODO: verify that the wrong errors aren't being deleted
-    // TODO: test validation-time code
+    return ``;
+    // TODO: test validation-time code and branching
   },
   metaSchema: { type: 'boolean' },
   statements: true, // allow side-effects and modification
