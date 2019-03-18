@@ -39,8 +39,8 @@ exports.handler = async (req, res, db) => {
     console.log(`some or all env variables missing: ${error}`);
   }
 
-  if (req.method !== 'POST') {
-    res.header('Allow', 'POST');
+  if (req.method !== 'GET') {
+    res.header('Allow', 'GET');
     return res.status(405).send();
   }
 
