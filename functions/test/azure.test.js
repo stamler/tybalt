@@ -100,6 +100,13 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],403);
       assert.equal(result.send.args[0][0].toString(),"IssuerError: Provided token issued by foreign tenant");
     });
+    it("(200 OK) with a new firebase token if id_token is verified and there is no environment config", async () => {
+      functions.config.restore()
+      sandbox.stub(functions, 'config').returns({});
+      let result = await handler(Req({token:id_token}), Res(), db_cache_hit);
+      assert.equal(result.status.args[0][0],200);
+      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+    });
     it("(200 OK) with a new firebase token if id_token is verified & tenant_ids match", async () => {
       // stub environment variables for tenants
       functions.config.restore()
