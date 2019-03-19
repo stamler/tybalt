@@ -39,6 +39,15 @@ exports.handler = async (req, res, db) => {
     console.log(`some or all env variables missing: ${error}`);
   }
 
+  if (req.method === 'OPTIONS') {
+    // Preflight response for CORS
+    // TODO: restrict this further instead of '*'
+    res.set('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    return res.status(200).send();
+  } 
+
   if (req.method !== 'GET') {
     res.header('Allow', 'GET');
     return res.status(405).send();
@@ -58,7 +67,7 @@ exports.handler = async (req, res, db) => {
     return res.status(401).send("no id_token provided");
   }
 
-  // validate azure token from request body
+  // validate azure token from request
   let valid;
   try { valid = await validAzureToken(id_token, db); }
   catch (error) { return res.status(401).send(`${error}`); }
@@ -143,6 +152,8 @@ exports.handler = async (req, res, db) => {
   // the firebase Users collection document for this user.
   // mint the token
   const firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
+  // TODO: restrict this further instead of '*'
+  res.header('Access-Control-Allow-Origin', '*');
   return res.status(200).send(firebaseCustomToken);
 }
 
