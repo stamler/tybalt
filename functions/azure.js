@@ -148,8 +148,6 @@ exports.handler = async (req, res, db) => {
     }
   }
   
-  // TODO: when minting the firebase token, include roles assigned in
-  // the firebase Users collection document for this user.
   // mint the token
   const firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
   // TODO: restrict this further instead of '*'

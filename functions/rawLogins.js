@@ -76,6 +76,14 @@ exports.handler = async (req, res, db) => {
 
   // Validate the submission
   const valid = validate(d);
+  // TODO: CUSTOM processing should be done here such as:
+  /* 
+    if (mfg === 'Red Hat' && model === 'KVM') {
+      set serial to dnsHostname
+    }
+    const valid = validate(d);
+  */
+
 
   try {
     if (!valid) {
