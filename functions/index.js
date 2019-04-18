@@ -8,6 +8,7 @@ admin.firestore().settings({timestampsInSnapshots: true});
 
 const rawLoginsModule = require('./rawLogins.js')
 const azureModule = require('./azure.js')
+const claimsModule = require('./claims.js')
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
