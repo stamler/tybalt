@@ -51,7 +51,7 @@ exports.claimsToProfiles = async (data, context) => {
       "Caller must have admin role");
   }
   // Pre-conditions, data must be empty
-  if (data) {
+  if (Object.keys(data).length === 0 && data.constructor === Object) {
     throw new functions.https.HttpsError("invalid-argument",
       "No arguments are to be provided for this callable function");
   }
