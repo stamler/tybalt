@@ -1,0 +1,33 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://tbte.ca/ModClaimsActions.schema.json",
+  "type": "object",
+  "title": "ModClaimsActions",
+  "additionalProperties": false,
+  "required": [
+    "action",
+    "claims"
+  ],
+  "properties": {
+    "action": {
+      "$id": "#/properties/action",
+      "type": "string",
+      "enum": ["add", "remove"],
+      "title": "Action to perform",
+      "examples": [ "add", "remove" ]
+    },
+    "claims": {
+      "$id": "#/properties/claims",
+      "type": "object",
+      "propertyNames": {
+        "enum": ["admin","standard"]
+      },
+      "patternProperties": {
+        ".": { "type": "array" }
+      },
+      "minProperties": 1,
+      "title": "Claims to perform action upon"
+    }
+  }
+}
