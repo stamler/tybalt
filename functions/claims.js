@@ -6,8 +6,6 @@ https://firebase.google.com/docs/functions/callable
 */
 
 const admin = require('firebase-admin');
-const db = admin.firestore();
-admin.firestore().settings({timestampsInSnapshots: true});
 const functions = require('firebase-functions');
 
 // JSON schema validation
@@ -40,7 +38,7 @@ exports.claimsHandler = async (data, context) => {
 }
 
 // Dump all claims from firebase auth() users to corresponding profiles
-exports.claimsToProfiles = async (data, context) => {
+exports.claimsToProfiles = async (data, context, db) => {
   // Pre-conditions, caller must be authenticated admin role-holder
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated",

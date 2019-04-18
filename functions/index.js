@@ -24,7 +24,7 @@ exports.getToken = functions.https.onRequest(async (req, res) => {
 // Dump the claims for each user in firebase Authentication to corresponding
 // document in 'Profiles' collection.
 exports.claimsToProfiles = functions.https.onCall(async (data, context) => {
-  return claimsModule.claimsToProfiles(data,context);
+  return claimsModule.claimsToProfiles(data,context, admin.firestore());
 });
 
 const writeCreated = function (snap, context) {
