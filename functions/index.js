@@ -21,6 +21,12 @@ exports.getToken = functions.https.onRequest(async (req, res) => {
   azureModule.handler(req, res, admin.firestore());
 });
 
+// Dump the claims for each user in firebase Authentication to corresponding
+// document in 'Profiles' collection.
+exports.claimsToProfiles = functions.https.onCall(async (data, context) => {
+  return claimsModule.claimsToProfiles(data,context);
+});
+
 const writeCreated = function (snap, context) {
   return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
 }
