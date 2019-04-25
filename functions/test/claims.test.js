@@ -73,5 +73,9 @@ describe("claims module", () => {
       const result = modClaims({}, context, db);
       return assert.isRejected(result, /Caller must have admin role/);
     });
+    it("rejects if the data object doesn't validate", async () => {
+      const result = modClaims({}, contextWithAdminClaim, db);
+      return assert.isRejected(result, /The provided data failed validation/);
+    });
   });
 });
