@@ -99,6 +99,8 @@ describe("rawLogins module", () => {
       const db = makeDb({computerExists: true, userMatches: 2});
       let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
       assert.equal(result.status.args[0][0], 202);
+
+      // TODO: 
       // assert batch.set() WASN'T CALLED with args for user
       // assert batch.set() was called once with args for login
       // assert batch.set() was called once with args for data
