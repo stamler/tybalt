@@ -1,5 +1,7 @@
 const sinon = require('sinon');
 
+exports.stubFirebaseToken = "eyREALTOKENVALUE";
+
 exports.makeResObject = () => { 
   return { 
     header: sinon.spy(), status: sinon.stub().returnsThis(), 
@@ -88,3 +90,33 @@ exports.stripTimestamps = (obj) => {
   const { created, updated, time, ...noTimestamps} = obj;
   return noTimestamps; 
 }
+
+// Stub out functions in admin.auth()
+// See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
+exports.makeAuthStub = (options={}) => {
+  const {uidExists = true, emailExists = false, otherError = false} = options;
+  const userRecord = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com"};
+  let authStub;
+  const customTokenStub = sinon.stub();
+  customTokenStub.withArgs(userRecord.uid).returns(this.stubFirebaseToken);
+  if (emailExists) {
+    authStub = sinon.stub().returns({
+      updateUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
+      createUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
+      createCustomToken: sinon.stub(),
+      listUsers: sinon.stub()  });
+  } else if (otherError) {
+    authStub = sinon.stub().returns({
+      updateUser: sinon.stub().throws({code: 'auth/something-else'}),
+      createUser: sinon.stub().throws({code: 'auth/something-else'}),
+      createCustomToken: sinon.stub(),
+      listUsers: sinon.stub()  });
+  } else {
+    authStub = sinon.stub().returns({
+      updateUser: uidExists ? sinon.stub().returns(userRecord) : sinon.stub().throws({code: 'auth/user-not-found'}),
+      createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
+      createCustomToken: customTokenStub,
+      listUsers: sinon.stub()  });
+  }
+  return function getterFn(){ return authStub; }
+};

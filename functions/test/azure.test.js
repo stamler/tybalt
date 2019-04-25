@@ -16,11 +16,12 @@ describe("azure module", () => {
   const openIdConfigResponse = azureTestData.openIdConfigResponse;
   const jwks = azureTestData.jwks;
   const makeFirestoreStub = shared.makeFirestoreStub; // Stub db = admin.firestore()
+  const stubFirebaseToken = shared.stubFirebaseToken;
 
   describe("handler() responses", () => {
     const Req = shared.makeReqObject; // Stub request object
     const Res = shared.makeResObject; // Stub response object
-    const makeAuthStub = azureTestData.makeAuthStub; // Stub admin.auth()
+    const makeAuthStub = shared.makeAuthStub; // Stub admin.auth()
     const handler = require('../azure.js').handler;
     const db_cache_hit = makeFirestoreStub({ certStrings });
     const db_cache_miss = makeFirestoreStub();
@@ -105,7 +106,7 @@ describe("azure module", () => {
       sandbox.stub(functions, 'config').returns({});
       let result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
     });
     it("(200 OK) with a new firebase token if id_token is verified & tenant_ids match", async () => {
       // stub environment variables for tenants
@@ -115,32 +116,32 @@ describe("azure module", () => {
       }}});      
       let result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
     });
     it("(200 OK) with a new firebase token if id_token is verified against cache or refreshed keys", async () => {
 
       // Cached certificates, user already exists
       let result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
 
       // Cached stale certificates, user already exists
       result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_expired);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
       
       sandbox.stub(admin, 'auth').get( makeAuthStub({uidExists:false}) );
 
       // No cached certificates, user already exists
       result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_miss);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
 
       // Cached certificates, user already exists, jwks can't be fetched
       axiosStub.withArgs(openIdConfigResponse.data.jwks_uri).rejects(); // microsoft fails to respond
       result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit);
       assert.equal(result.status.args[0][0],200);
-      assert.equal(result.send.args[0][0],azureTestData.stubFirebaseToken);
+      assert.equal(result.send.args[0][0],stubFirebaseToken);
       
     });
     it("(401 unauthorized) if there are no cached certificates and fresh ones cannot be fetched", async () => {
