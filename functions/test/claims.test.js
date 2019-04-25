@@ -26,9 +26,11 @@ describe("claims module", () => {
       db = makeDb();
     });
   
+    it("rejects if the user isn't authenticated", async () => {
+      const result = claimsToProfiles(undefined, {}, db);
+      return assert.isRejected(result,/Caller must be authenticated/)
+    });
     it("rejects if the user doesn't have the admin claim (role)", async () => {
-      const error = new functions.https.HttpsError("unauthenticated",
-      "Caller must be authenticated");
       const result = claimsToProfiles({}, context, db);
       return assert.isRejected(result, /Caller must have admin role/);
     });
@@ -39,10 +41,6 @@ describe("claims module", () => {
     it("rejects if data argument is not an object", async () => {
       const result = claimsToProfiles(null, contextWithAdminClaim, db);
       return assert.isRejected(result, /No arguments are to be provided for this callable function/);
-    });
-    it("rejects if the user isn't authenticated", async () => {
-      const result = claimsToProfiles(undefined, {}, db);
-      return assert.isRejected(result,/Caller must be authenticated/)
     });
     it("copies all customClaims from auth users to respective profiles", async () => {
       const result = await claimsToProfiles({}, contextWithAdminClaim, db);
@@ -58,9 +56,22 @@ describe("claims module", () => {
     it("creates profiles if they don't exist for all auth users");
   });
 
-  describe("claimsHandler()", () => {
-    const claimsHandler = require('../claims.js').claimsHandler;
+  describe("modClaims()", () => {
+    const modClaims = require('../claims.js').modClaims;
 
-    it("reports if request object is invalid");
+    let db;
+    // eslint-disable-next-line prefer-arrow-callback
+    beforeEach(function() {
+      db = makeDb();
+    });
+
+    it("rejects if the user isn't authenticated", async () => {
+      const result = modClaims(undefined, {}, db);
+      return assert.isRejected(result,/Caller must be authenticated/)
+    });
+    it("rejects if the user doesn't have the admin claim (role)", async () => {
+      const result = modClaims({}, context, db);
+      return assert.isRejected(result, /Caller must have admin role/);
+    });
   });
 });

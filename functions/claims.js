@@ -15,13 +15,15 @@ const ajv = new Ajv()
 const validate = ajv.compile(schema);
 
 // The claimsHandler adds or removes claims to one or more firebase auth() users
-exports.claimsHandler = async (data, context) => {
+exports.modClaims = async (data, context, db) => {
   // Pre-conditions, caller must be authenticated admin role-holder
   if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("unauthenticated",
       "Caller must be authenticated");
   }
   if (!context.auth.token.customClaims.admin) {
+    // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
       "Caller must have admin role");
   }
