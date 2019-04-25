@@ -41,15 +41,19 @@ exports.claimsHandler = async (data, context) => {
 exports.claimsToProfiles = async (data, context, db) => {
   // Pre-conditions, caller must be authenticated admin role-holder
   if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("unauthenticated",
       "Caller must be authenticated");
   }
   if (!context.auth.token.customClaims.admin) {
+    // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
       "Caller must have admin role");
   }
-  // Pre-conditions, data must be empty
-  if (Object.keys(data).length === 0 && data.constructor === Object) {
+  // Pre-conditions, data must be empty object
+  if (!data || // not null or undefined
+    !(data === Object(data)) ||// not an object  
+    Object.keys(data).length !== 0) { // not an empty object
     throw new functions.https.HttpsError("invalid-argument",
       "No arguments are to be provided for this callable function");
   }
