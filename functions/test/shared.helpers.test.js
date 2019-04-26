@@ -58,7 +58,7 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs(userRecord.uid).returns(docRef);
   docStub.returns({
     // default to simulate "generating" a new document reference to call set()
-    set: writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub()
+    set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub()
   });
 
   const collectionStub = sinon.stub();
@@ -75,7 +75,7 @@ exports.makeFirestoreStub = (options={}) => {
   });
 
   const set = sinon.stub();
-  const commit = writeFail ? sinon.stub().throws(new Error("can't write to firestore")) : sinon.stub();
+  const commit = writeFail ? sinon.stub().throws(new Error("commit to firestore failed")) : sinon.stub();
   const batch = sinon.stub();
   batch.returns({ set, commit });
 
