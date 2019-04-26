@@ -69,24 +69,19 @@ exports.claimsToProfiles = async (data, context, db) => {
       const profile = db.collection("Profiles").doc(user.uid);
       batch.set(profile, { roles: user.customClaims },{merge: true});
     });
-    try {
-      await batch.commit();
-    } catch (error) {
-      // TODO: error handling within recursion may yield strange results.
-      // study this and make sure it works properly.
-      console.log(`Batch commit failed: ${error}`);
-    }
-    if (listUsersResult.pageToken) {      
+    await batch.commit();
+    if (listUsersResult.pageToken) {
       iterateAllUsers(listUsersResult.pageToken); // get next batch of users
     }
   }
 
+  // TODO: Is return needed here?
   return iterateAllUsers().then(() => {
-    console.log("success copying auth claims to profiles");
     return {message: "Successfully copied auth() claims to profiles"};
   }).catch((error) => {
     console.log("failed copying auth claims to profiles");
-    throw new functions.https.HttpsError("internal",
-      error.message, error);
+    // TODO: ISSUE this throw isn't being turned into a promise!?
+    // https://stackoverflow.com/questions/33445415/javascript-promises-reject-vs-throw
+    return Promise.reject(new functions.https.HttpsError("internal", error.message));
   });
 }
