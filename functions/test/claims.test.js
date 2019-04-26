@@ -51,8 +51,13 @@ describe("claims module", () => {
       sinon.assert.calledOnce(db.batchStubs.commit); // batch.commit() called ?
 
     });
+    it("rejects if any batch commits fail", async () => {
+      db = makeDb({writeFail: true});
+      const result = await claimsToProfiles({}, contextWithAdminClaim, db)
+      return assert.isRejected(result)
+
+    });
     it("properly iterates over large collections");
-    it("reports if one or more batch commits fail");
     it("creates profiles if they don't exist for all auth users");
   });
 
