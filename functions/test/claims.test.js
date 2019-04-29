@@ -14,17 +14,21 @@ describe("claims module", () => {
   const sts = shared.stripTimestamps; // utility function to strip timestamp props
   const contextWithAdminClaim = {auth: { token: { customClaims: {admin: true}}}};
   const context = {auth: { token: { customClaims: {}}}};
-  
-  sandbox.stub(admin, 'auth').get( makeAuthStub() );
-  
+
+  let db;
+  // eslint-disable-next-line prefer-arrow-callback
+  beforeEach(function() {
+    db = makeDb();
+    sandbox.stub(admin, 'auth').get( makeAuthStub() );
+  });
+
+  // eslint-disable-next-line prefer-arrow-callback
+  afterEach(function() { 
+    sandbox.restore();
+  });
+
   describe("claimsToProfiles()", () => {
     const claimsToProfiles = require('../claims.js').claimsToProfiles;
-
-    let db;
-    // eslint-disable-next-line prefer-arrow-callback
-    beforeEach(function() {
-      db = makeDb();
-    });
   
     it("rejects if the user isn't authenticated", async () => {
       const result = claimsToProfiles(undefined, {}, db);
@@ -64,12 +68,6 @@ describe("claims module", () => {
   describe("modClaims()", () => {
     const modClaims = require('../claims.js').modClaims;
 
-    let db;
-    // eslint-disable-next-line prefer-arrow-callback
-    beforeEach(function() {
-      db = makeDb();
-    });
-
     it("rejects if the user isn't authenticated", async () => {
       const result = modClaims(undefined, {}, db);
       return assert.isRejected(result,/Caller must be authenticated/)
@@ -83,25 +81,25 @@ describe("claims module", () => {
       return assert.isRejected(result, /The provided data failed validation/);
     });
     it("doesn't change claims when adding an already-existing claim", async () => {
-      const data = {action:"add", claims:{ admin:["678"] } };
+      const data = {action:"add", users:{ "678":["admin"] } };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin: true, standard: true}]);
       // TODO: test the returned promise is resolved.
     });
     it("removes a single claim from a single user", async() => {
-      const data = {action:"remove", claims:{ admin:["678"] } };
+      const data = {action:"remove", users:{ "678":["admin"] } };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {standard: true}]);
       // TODO: test the returned promise is resolved.
     });
     it("removes multiple claims from one user", async () => {
-      const data = {action:"remove", claims:{ admin:["678"], standard:["678"] } };
+      const data = {action:"remove", users:{ "678":["admin", "standard"] } };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {}]);
       // TODO: test the returned promise is resolved.
     });
     it("adds multiple claims to one user", async () => {
-      const data = {action:"add", claims:{ audit:["678"], admin:["678"] } };
+      const data = {action:"add", users:{ "678": ["audit", "admin"] } };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin:true, standard: true, audit:true}]);
       // TODO: test the returned promise is resolved.

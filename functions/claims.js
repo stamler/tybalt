@@ -36,11 +36,10 @@ exports.modClaims = async (data, context, db) => {
   } 
 
   // perform the add or remove of claims based on data
-  Object.keys(data.claims).forEach((claim) => {
-    data.claims[claim].forEach(async (uid) => {
-      const user = await admin.auth().getUser(uid);
-      const customClaims = user.customClaims || {}; // preserve existing claims
-    
+  Object.keys(data.users).forEach(async (uid) => {
+    const user = await admin.auth().getUser(uid);
+    const customClaims = user.customClaims || {}; // preserve existing claims
+    data.users[uid].forEach((claim) => {
       if (data.action === "add") {
         customClaims[claim] = true; // add the claim to existing claims
       } else if (data.action === "remove") {
