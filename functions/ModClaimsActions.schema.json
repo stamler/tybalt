@@ -21,7 +21,7 @@
       "$id": "#/properties/claims",
       "type": "object",
       "propertyNames": {
-        "enum": ["admin","standard"]
+        "enum": ["admin", "audit", "standard"]
       },
       "patternProperties": {
         ".": { "type": "array" }
