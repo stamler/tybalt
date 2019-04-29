@@ -99,32 +99,36 @@ exports.stripTimestamps = (obj) => {
 exports.makeAuthStub = (options={}) => {
   const {uidExists = true, emailExists = false, otherError = false} = options;
   let authStub;
-  const customTokenStub = sinon.stub();
-  customTokenStub.withArgs(userRecord.uid).returns(this.stubFirebaseToken);
 
-  // TODO: buid out listUsersStub with return Promise
-  const listUsersStub = sinon.stub();
-  listUsersStub.resolves({users: [userRecord]});
+  const createCustomToken = sinon.stub();
+  createCustomToken.withArgs(userRecord.uid).returns(this.stubFirebaseToken);
 
+  const listUsers = sinon.stub();
+  listUsers.resolves({users: [userRecord]});
+  // TODO: build out listUsers with return Promise
+
+  const getUser = sinon.stub();
+  getUser.withArgs(userRecord.uid).resolves();
+  // TODO: build out getUser
+
+  const setCustomUserClaims = sinon.stub();
+  // TODO: build out setCustomUserClaims
 
   if (emailExists) {
     authStub = sinon.stub().returns({
       updateUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
       createUser: sinon.stub().throws({code: 'auth/email-already-exists'}),
-      createCustomToken: customTokenStub,
-      listUsers: listUsersStub  });
+      createCustomToken, listUsers, getUser, setCustomUserClaims });
   } else if (otherError) {
     authStub = sinon.stub().returns({
       updateUser: sinon.stub().throws({code: 'auth/something-else'}),
       createUser: sinon.stub().throws({code: 'auth/something-else'}),
-      createCustomToken: customTokenStub,
-      listUsers: listUsersStub  });
+      createCustomToken, listUsers, getUser, setCustomUserClaims });
   } else {
     authStub = sinon.stub().returns({
       updateUser: uidExists ? sinon.stub().returns(userRecord) : sinon.stub().throws({code: 'auth/user-not-found'}),
       createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
-      createCustomToken: customTokenStub,
-      listUsers: listUsersStub  });
+      createCustomToken, listUsers, getUser, setCustomUserClaims });
   }
   return function getterFn(){ return authStub; }
 };
