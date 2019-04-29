@@ -82,19 +82,29 @@ describe("claims module", () => {
       const result = modClaims({bogus: "data"}, contextWithAdminClaim, db);
       return assert.isRejected(result, /The provided data failed validation/);
     });
-    it("adds a single claim", async () => {
-      const data = {
-        "action":"add",
-        "claims":{ "admin":["user1"] }
-      };
-      const result = modClaims(data, contextWithAdminClaim, db);
-
-
-      // THIS TEST PROVES NOTHING YET.
-      assert.isFulfilled(result);
+    it("doesn't change claims when adding an already-existing claim", async () => {
+      const data = {action:"add", claims:{ admin:["678"] } };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin: true, standard: true}]);
+      // TODO: test the returned promise is resolved.
     });
-    it("adds multiple claims");
-    it("removes a single claim");
-    it("removes multiple claims");
+    it("removes a single claim from a single user", async() => {
+      const data = {action:"remove", claims:{ admin:["678"] } };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {standard: true}]);
+      // TODO: test the returned promise is resolved.
+    });
+    it("removes multiple claims from one user", async () => {
+      const data = {action:"remove", claims:{ admin:["678"], standard:["678"] } };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {}]);
+      // TODO: test the returned promise is resolved.
+    });
+    it("adds multiple claims to one user", async () => {
+      const data = {action:"add", claims:{ audit:["678"], admin:["678"] } };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin:true, standard: true, audit:true}]);
+      // TODO: test the returned promise is resolved.
+    });
   });
 });

@@ -35,8 +35,22 @@ exports.modClaims = async (data, context, db) => {
       "The provided data failed validation");
   } 
 
-  // TODO: implement here. Data is valid, user is authed
-
+  // perform the add or remove of claims based on data
+  Object.keys(data.claims).forEach((claim) => {
+    data.claims[claim].forEach(async (uid) => {
+      const user = await admin.auth().getUser(uid);
+      const customClaims = user.customClaims || {}; // preserve existing claims
+    
+      if (data.action === "add") {
+        customClaims[claim] = true; // add the claim to existing claims
+      } else if (data.action === "remove") {
+        if (customClaims[claim] === true) {
+          delete customClaims[claim]; // remove the claim from existing claims
+        }
+      }
+      admin.auth().setCustomUserClaims(uid, customClaims);
+    });
+  });
 }
 
 // Dump all claims from firebase auth() users to corresponding profiles
@@ -69,19 +83,15 @@ exports.claimsToProfiles = async (data, context, db) => {
       const profile = db.collection("Profiles").doc(user.uid);
       batch.set(profile, { roles: user.customClaims },{merge: true});
     });
-    await batch.commit();
+    try {
+      batch.commit();
+    } catch (error) {
+      throw new functions.https.HttpsError("internal", "failed to commit custom Claims to Profiles");
+    }
     if (listUsersResult.pageToken) {
       iterateAllUsers(listUsersResult.pageToken); // get next batch of users
     }
   }
 
-  // TODO: Is return needed here?
-  return iterateAllUsers().then(() => {
-    return {message: "Successfully copied auth() claims to profiles"};
-  }).catch((error) => {
-    console.log("failed copying auth claims to profiles");
-    // TODO: ISSUE this throw isn't being turned into a promise!?
-    // https://stackoverflow.com/questions/33445415/javascript-promises-reject-vs-throw
-    return Promise.reject(new functions.https.HttpsError("internal", error.message));
-  });
+  return iterateAllUsers();
 }

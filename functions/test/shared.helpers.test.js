@@ -108,7 +108,7 @@ exports.makeAuthStub = (options={}) => {
   // TODO: build out listUsers with return Promise
 
   const getUser = sinon.stub();
-  getUser.withArgs(userRecord.uid).resolves();
+  getUser.withArgs(userRecord.uid).resolves(userRecord);
   // TODO: build out getUser
 
   const setCustomUserClaims = sinon.stub();
