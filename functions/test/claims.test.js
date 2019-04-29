@@ -53,8 +53,8 @@ describe("claims module", () => {
     });
     it("rejects if any batch commits fail", async () => {
       db = makeDb({writeFail: true});
-      const result = await claimsToProfiles({}, contextWithAdminClaim, db)
-      return assert.isRejected(result)
+      const result = claimsToProfiles({}, contextWithAdminClaim, db)
+      return assert.isRejected(result,/failed to commit custom Claims to Profiles/)
 
     });
     it("properly iterates over large collections");
@@ -79,8 +79,22 @@ describe("claims module", () => {
       return assert.isRejected(result, /Caller must have admin role/);
     });
     it("rejects if the data object doesn't validate", async () => {
-      const result = modClaims({}, contextWithAdminClaim, db);
+      const result = modClaims({bogus: "data"}, contextWithAdminClaim, db);
       return assert.isRejected(result, /The provided data failed validation/);
     });
+    it("adds a single claim", async () => {
+      const data = {
+        "action":"add",
+        "claims":{ "admin":["user1"] }
+      };
+      const result = modClaims(data, contextWithAdminClaim, db);
+
+
+      // THIS TEST PROVES NOTHING YET.
+      assert.isFulfilled(result);
+    });
+    it("adds multiple claims");
+    it("removes a single claim");
+    it("removes multiple claims");
   });
 });
