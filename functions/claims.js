@@ -47,8 +47,8 @@ exports.modClaims = async (data, context, db) => {
           delete customClaims[claim]; // remove the claim from existing claims
         }
       }
-      admin.auth().setCustomUserClaims(uid, customClaims);
     });
+    admin.auth().setCustomUserClaims(uid, customClaims);
   });
 }
 

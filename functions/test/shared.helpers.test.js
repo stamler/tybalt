@@ -1,7 +1,10 @@
 const sinon = require('sinon');
 const _ = require('lodash');
 
-const userRecordMaster = {uid: '67891011', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {"admin": true, "standard": true}};
+const userRecordsMaster = [
+  {uid: '67891011', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {admin: true, standard: true}},
+  {uid: '32517281', displayName: 'Testacular Test', email:"ttest@company.com", customClaims: {standard: true}}
+];
 exports.stubFirebaseToken = "eyREALTOKENVALUE";
 
 exports.makeResObject = () => { 
@@ -56,7 +59,7 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs('SN123,manufac').returns(computerRef);
   docStub.withArgs('f25d2a25').returns(docRef);
   docStub.withArgs('azure').returns(docRef);
-  docStub.withArgs(userRecordMaster.uid).returns(docRef);
+  docStub.withArgs(userRecordsMaster[0].uid).returns(docRef);
   docStub.returns({
     // default to simulate "generating" a new document reference to call set()
     set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub()
@@ -98,19 +101,20 @@ exports.stripTimestamps = (obj) => {
 // Stub out functions in admin.auth()
 // See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
 exports.makeAuthStub = (options={}) => {
-  const userRecord = _.cloneDeep(userRecordMaster);
+  const userRecords = _.cloneDeep(userRecordsMaster);
   const {uidExists = true, emailExists = false, otherError = false} = options;
   let authStub;
 
   const createCustomToken = sinon.stub();
-  createCustomToken.withArgs(userRecord.uid).returns(this.stubFirebaseToken);
+  createCustomToken.withArgs(userRecords[0].uid).returns(this.stubFirebaseToken);
 
   const listUsers = sinon.stub();
-  listUsers.resolves({users: [userRecord]});
+  listUsers.resolves({users: userRecords });
   // TODO: build out listUsers with return Promise
 
   const getUser = sinon.stub();
-  getUser.withArgs(userRecord.uid).resolves(userRecord);
+  getUser.withArgs(userRecords[0].uid).resolves(userRecords[0]);
+  getUser.withArgs(userRecords[1].uid).resolves(userRecords[1]);
   // TODO: build out getUser
 
   const setCustomUserClaims = sinon.stub();
@@ -128,8 +132,8 @@ exports.makeAuthStub = (options={}) => {
       createCustomToken, listUsers, getUser, setCustomUserClaims });
   } else {
     authStub = sinon.stub().returns({
-      updateUser: uidExists ? sinon.stub().returns(userRecord) : sinon.stub().throws({code: 'auth/user-not-found'}),
-      createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecord),
+      updateUser: uidExists ? sinon.stub().returns(userRecords[0]) : sinon.stub().throws({code: 'auth/user-not-found'}),
+      createUser: uidExists ? sinon.stub().throws({code: 'auth/uid-already-exists'}) : sinon.stub().returns(userRecords[0]),
       createCustomToken, listUsers, getUser, setCustomUserClaims });
   }
   return function getterFn(){ return authStub; }

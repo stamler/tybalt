@@ -103,5 +103,17 @@ describe("claims module", () => {
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true, standard: true, audit:true}]);
       // TODO: test the returned promise is resolved.
     });
+    it("adds claims to multiple users", async () => {
+      const data = {action:"add", users:["67891011","32517281"], claims: ["audit", "admin"] };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true, standard: true, audit:true}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(1).args,["32517281", {admin:true, standard: true, audit:true}]);
+    });
+    it("removes claims from multiple users", async () => {
+      const data = {action:"remove", users:["67891011","32517281"], claims: ["audit", "standard"] };
+      await modClaims(data, contextWithAdminClaim, db);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(1).args,["32517281", {}]);
+    });
   });
 });
