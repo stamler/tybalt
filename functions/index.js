@@ -27,6 +27,10 @@ exports.claimsToProfiles = functions.https.onCall(async (data, context) => {
   return claimsModule.claimsToProfiles(data,context, admin.firestore());
 });
 
+exports.modClaims = functions.https.onCall(async (data, context) => {
+  return claimsModule.modClaims(data, context);
+});
+
 const writeCreated = function (snap, context) {
   return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
 }
