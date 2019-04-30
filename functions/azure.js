@@ -42,9 +42,9 @@ exports.handler = async (req, res, db) => {
   if (req.method === 'OPTIONS') {
     // Preflight response for CORS
     // TODO: restrict this further instead of '*'
-    res.set('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET");
     return res.status(200).send();
   } 
 

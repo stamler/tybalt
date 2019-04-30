@@ -7,7 +7,7 @@ exports.stubFirebaseToken = "eyREALTOKENVALUE";
 exports.makeResObject = () => { 
   return { 
     header: sinon.spy(), status: sinon.stub().returnsThis(), 
-    send: sinon.stub().returnsThis() 
+    send: sinon.stub().returnsThis(), set: sinon.stub() 
   }; 
 };
 

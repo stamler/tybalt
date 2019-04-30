@@ -48,8 +48,15 @@ describe("azure module", () => {
       sandbox.restore();
     });
 
+    it("(200 OK) if request is OPTIONS", async () => {
+      let result = await handler(Req({method:'OPTIONS'}), Res());
+      assert.deepEqual(result.header.args[0], ["Access-Control-Allow-Headers","Content-Type, Authorization"]);
+      assert.deepEqual(result.header.args[1], ["Access-Control-Allow-Methods","GET"]);
+      assert.deepEqual(result.set.args[0], ["Access-Control-Allow-Origin","*"]);
+      assert.equal(result.status.args[0][0],200);
+    });
     it("(405 Method Not Allowed) if request method isn't GET", async () => {
-      let result = await handler(Req({token:id_token}), Res());      
+      let result = await handler(Req({token:id_token}), Res());
       assert.deepEqual(result.header.args[0], ['Allow','GET']);
       assert.equal(result.status.args[0][0],405);
     });
