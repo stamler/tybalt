@@ -1,7 +1,6 @@
 const chai = require('chai')
 chai.use(require('chai-as-promised'))
 const assert = chai.assert;
-const functions = require('firebase-functions');
 const sinon = require('sinon');
 const shared = require('./shared.helpers.test');
 
