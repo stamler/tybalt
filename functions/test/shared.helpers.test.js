@@ -1,6 +1,7 @@
 const sinon = require('sinon');
+const _ = require('lodash');
 
-const userRecord = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {"admin": true, "standard": true}};
+const userRecordMaster = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {"admin": true, "standard": true}};
 exports.stubFirebaseToken = "eyREALTOKENVALUE";
 
 exports.makeResObject = () => { 
@@ -55,7 +56,7 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs('SN123,manufac').returns(computerRef);
   docStub.withArgs('f25d2a25').returns(docRef);
   docStub.withArgs('azure').returns(docRef);
-  docStub.withArgs(userRecord.uid).returns(docRef);
+  docStub.withArgs(userRecordMaster.uid).returns(docRef);
   docStub.returns({
     // default to simulate "generating" a new document reference to call set()
     set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub()
@@ -97,6 +98,7 @@ exports.stripTimestamps = (obj) => {
 // Stub out functions in admin.auth()
 // See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
 exports.makeAuthStub = (options={}) => {
+  const userRecord = _.cloneDeep(userRecordMaster);
   const {uidExists = true, emailExists = false, otherError = false} = options;
   let authStub;
 
