@@ -39,7 +39,9 @@ describe("rawLogins module", () => {
 
     it("(401 Unauthorized) if request header doesn't include the env secret", async () => {
       const db = makeDb();
+      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({body: {...data}}),Res(), db);
+      sinon.assert.calledOnce(constub);
       assert.equal(result.status.args[0][0], 401);
     });
     it("(202 Accepted) if request header doesn't include the env secret and environment variable isn't set", async () => {
@@ -107,7 +109,9 @@ describe("rawLogins module", () => {
       // assert batch.commit() was called once
     });
     it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
+      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({body: { ...data, networkConfig:{}}, authType:'TYBALT', token:'asdf'}),Res(), makeDb());
+      sinon.assert.calledTwice(constub);
       assert.equal(result.status.args[0][0], 202);
       // assert set() was called once with args {} outside of batch
       // confirm RawLogin
@@ -116,7 +120,9 @@ describe("rawLogins module", () => {
     });
     it("(500 Internal Server Error) if database write fails", async () => {
       const db = makeDb({writeFail: true});
+      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
+      constub.calledWith("commit to firestore failed");
       assert.equal(result.status.args[0][0], 500);
     });
   });

@@ -88,6 +88,7 @@ exports.handler = async (req, res, db) => {
   try {
     if (!valid) {
       // Invalid submission, store RawLogin for later processing
+      console.log("rawLogins: submission doesn't validate");
       console.log(validate.errors);
       await db.collection('RawLogins').doc().set(d);
     } else {
