@@ -1,7 +1,7 @@
 const sinon = require('sinon');
 const _ = require('lodash');
 
-const userRecordMaster = {uid: '678', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {"admin": true, "standard": true}};
+const userRecordMaster = {uid: '67891011', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {"admin": true, "standard": true}};
 exports.stubFirebaseToken = "eyREALTOKENVALUE";
 
 exports.makeResObject = () => { 

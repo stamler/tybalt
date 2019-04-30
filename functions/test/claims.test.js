@@ -80,27 +80,27 @@ describe("claims module", () => {
       return assert.isRejected(result, /The provided data failed validation/);
     });
     it("doesn't change claims when adding an already-existing claim", async () => {
-      const data = {action:"add", users:{ "678":["admin"] } };
+      const data = {action:"add", users:["67891011"], claims:["admin"] };
       await modClaims(data, contextWithAdminClaim, db);
-      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin: true, standard: true}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin: true, standard: true}]);
       // TODO: test the returned promise is resolved.
     });
     it("removes a single claim from a single user", async() => {
-      const data = {action:"remove", users:{ "678":["admin"] } };
+      const data = {action:"remove", users:["67891011"], claims:["admin"] };
       await modClaims(data, contextWithAdminClaim, db);
-      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {standard: true}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {standard: true}]);
       // TODO: test the returned promise is resolved.
     });
     it("removes multiple claims from one user", async () => {
-      const data = {action:"remove", users:{ "678":["admin", "standard"] } };
+      const data = {action:"remove", users:["67891011"], claims:["admin", "standard"] };
       await modClaims(data, contextWithAdminClaim, db);
-      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {}]);
       // TODO: test the returned promise is resolved.
     });
     it("adds multiple claims to one user", async () => {
-      const data = {action:"add", users:{ "678": ["audit", "admin"] } };
+      const data = {action:"add", users:["67891011"], claims: ["audit", "admin"] };
       await modClaims(data, contextWithAdminClaim, db);
-      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["678", {admin:true, standard: true, audit:true}]);
+      assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true, standard: true, audit:true}]);
       // TODO: test the returned promise is resolved.
     });
   });
