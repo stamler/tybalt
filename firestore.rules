@@ -7,6 +7,9 @@ service cloud.firestore {
     match /Profiles/{profile} {
       allow read: if request.auth.uid != null;
     }
+    match /Computers/{computer} {
+      allow read: if request.auth.uid != null;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
