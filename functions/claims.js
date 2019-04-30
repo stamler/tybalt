@@ -15,7 +15,7 @@ const ajv = new Ajv()
 const validate = ajv.compile(schema);
 
 // The claimsHandler adds or removes claims to one or more firebase auth() users
-exports.modClaims = async (data, context, db) => {
+exports.modClaims = async (data, context) => {
   // Pre-conditions, caller must be authenticated admin role-holder
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
@@ -49,6 +49,7 @@ exports.modClaims = async (data, context, db) => {
       }
     });
     admin.auth().setCustomUserClaims(uid, customClaims);
+    // TODO: possibly update the corresponding Profiles document here
   });
 }
 
