@@ -17,6 +17,7 @@ exports.rawLogins = functions.https.onRequest((req, res) => {
 });
 
 // Get a Custom Firebase token by sending the right info to this endpoint
+// TODO: remove this function and use the new built-in Microsoft provider
 exports.getToken = functions.https.onRequest(async (req, res) => {
   azureModule.handler(req, res, admin.firestore());
 });
