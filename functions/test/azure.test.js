@@ -111,7 +111,9 @@ describe("azure module", () => {
     it("(200 OK) with a new firebase token if id_token is verified and there is no environment config", async () => {
       functions.config.restore()
       sandbox.stub(functions, 'config').returns({});
+      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit);
+      assert.deepEqual(constub.args[0][0],"some or all env variables missing: TypeError: Cannot read property 'azure' of undefined");
       assert.equal(result.status.args[0][0],200);
       assert.equal(result.send.args[0][0],stubFirebaseToken);
     });
@@ -165,7 +167,9 @@ describe("azure module", () => {
     });
     it("(500 Internal Server Error) if creating or updating a user fails", async () => {
       sandbox.stub(admin, 'auth').get( makeAuthStub({otherError:true}) );
+      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({method:'GET', token:id_token}), Res(), db_cache_hit );
+      sinon.assert.calledOnce(constub);
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
     });
