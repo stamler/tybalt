@@ -4,6 +4,9 @@ service cloud.firestore {
       allow read: if request.auth.uid != null;
       allow write: if request.auth.token.admin == true;
     }
+    match /Logins/{login} {
+      allow read: if request.auth.uid != null;
+    }
     match /Profiles/{profile} {
       allow read: if request.auth.uid != null;
     }
