@@ -81,7 +81,7 @@ exports.claimsToProfiles = async (data, context, db) => {
     listUsersResult.users.forEach((user) => {
       // Add this user's profile update to the batch
       const profile = db.collection("Profiles").doc(user.uid);
-      batch.set(profile, { roles: user.customClaims },{merge: true});
+      batch.set(profile, { customClaims: user.customClaims },{merge: true});
     });
     try {
       batch.commit();
