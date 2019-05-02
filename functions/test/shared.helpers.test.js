@@ -46,7 +46,8 @@ exports.makeFirestoreStub = (options={}) => {
   // A DocumentReference obj mocking behaviour needed for the azure cache doc
   const docRef = {
     get: sinon.stub().resolves({ get: getAzureDocSnapStub }),
-    set: sinon.stub().resolves()
+    set: sinon.stub().resolves(),
+    update: sinon.stub().resolves()
   };
 
   const computerRef = {
@@ -62,7 +63,8 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs(userRecordsMaster[0].uid).returns(docRef);
   docStub.returns({
     // default to simulate "generating" a new document reference to call set()
-    set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub()
+    set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub(),
+    update: writeFail ? sinon.stub().throws(new Error("update to firestore failed")) : sinon.stub(),
   });
 
   const collectionStub = sinon.stub();
