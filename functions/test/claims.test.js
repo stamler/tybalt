@@ -11,8 +11,8 @@ describe("claims module", () => {
   const makeDb = shared.makeFirestoreStub; // Stub admin.firestore()
   const sandbox = sinon.createSandbox();
   const sts = shared.stripTimestamps; // utility function to strip timestamp props
-  const contextWithAdminClaim = {auth: { token: { customClaims: {admin: true}}}};
-  const context = {auth: { token: { customClaims: {}}}};
+  const contextWithAdminClaim = {auth: { token: { admin: true}}};
+  const context = {auth: { token: {}}};
 
   let db;
   // eslint-disable-next-line prefer-arrow-callback

@@ -22,7 +22,7 @@ exports.modClaims = async (data, context) => {
     throw new functions.https.HttpsError("unauthenticated",
       "Caller must be authenticated");
   }
-  if (!context.auth.token.customClaims.admin) {
+  if (!context.auth.token.admin) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
       "Caller must have admin role");
@@ -61,7 +61,7 @@ exports.claimsToProfiles = async (data, context, db) => {
     throw new functions.https.HttpsError("unauthenticated",
       "Caller must be authenticated");
   }
-  if (!context.auth.token.customClaims.admin) {
+  if (!context.auth.token.admin) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
       "Caller must have admin role");
