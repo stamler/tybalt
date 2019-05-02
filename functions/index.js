@@ -29,7 +29,7 @@ exports.claimsToProfiles = functions.https.onCall(async (data, context) => {
 });
 
 exports.modClaims = functions.https.onCall(async (data, context) => {
-  return claimsModule.modClaims(data, context);
+  return claimsModule.modClaims(data, context, admin.firestore());
 });
 
 const writeCreated = function (snap, context) {

@@ -83,6 +83,7 @@ describe("claims module", () => {
       const data = {action:"add", users:["67891011"], claims:["admin"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin: true, standard: true}]);
+      // TODO: assert profiles.set() was called with expected args
       // TODO: test the returned promise is resolved.
     });
     it("removes a single claim from a single user", async() => {
@@ -90,30 +91,38 @@ describe("claims module", () => {
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {standard: true}]);
       // TODO: test the returned promise is resolved.
+      // TODO: assert profiles.set() was called with expected args
     });
     it("removes multiple claims from one user", async () => {
       const data = {action:"remove", users:["67891011"], claims:["admin", "standard"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {}]);
       // TODO: test the returned promise is resolved.
+      // TODO: assert profiles.set() was called with expected args
     });
     it("adds multiple claims to one user", async () => {
       const data = {action:"add", users:["67891011"], claims: ["audit", "admin"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true, standard: true, audit:true}]);
       // TODO: test the returned promise is resolved.
+      // TODO: assert profiles.set() was called with expected args
     });
     it("adds claims to multiple users", async () => {
       const data = {action:"add", users:["67891011","32517281"], claims: ["audit", "admin"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true, standard: true, audit:true}]);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(1).args,["32517281", {admin:true, standard: true, audit:true}]);
+      // TODO: test the returned promise is resolved.
+      // TODO: assert profiles.set() was called with expected args
     });
     it("removes claims from multiple users", async () => {
       const data = {action:"remove", users:["67891011","32517281"], claims: ["audit", "standard"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true}]);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(1).args,["32517281", {}]);
+      // TODO: test the returned promise is resolved.
+      // TODO: assert profiles.set() was called with expected args
     });
+    it("reports if an error occurs");
   });
 });

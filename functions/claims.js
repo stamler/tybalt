@@ -15,7 +15,7 @@ const ajv = new Ajv()
 const validate = ajv.compile(schema);
 
 // The claimsHandler adds or removes claims to one or more firebase auth() users
-exports.modClaims = async (data, context) => {
+exports.modClaims = async (data, context, db) => {
   // Pre-conditions, caller must be authenticated admin role-holder
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
@@ -36,6 +36,7 @@ exports.modClaims = async (data, context) => {
   } 
 
   // perform the add or remove of claims based on data
+  // TODO: promise / return / error management
   data.users.forEach(async (uid) => {
     const user = await admin.auth().getUser(uid);
     const customClaims = user.customClaims || {}; // preserve existing claims
@@ -48,8 +49,14 @@ exports.modClaims = async (data, context) => {
         }
       }
     });
-    admin.auth().setCustomUserClaims(uid, customClaims);
-    // TODO: possibly update the corresponding Profiles document here
+    await admin.auth().setCustomUserClaims(uid, customClaims);
+
+    // update the corresponding Profiles document
+    // must use update rather than set with merge:true because
+    // otherwise removal of claims will not be reflected
+    // https://stackoverflow.com/questions/46597327/difference-between-set-with-merge-true-and-update
+    const profile = db.collection("Profiles").doc(uid);
+    profile.update({ customClaims });
   });
 }
 
