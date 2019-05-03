@@ -48,10 +48,9 @@ describe("claims module", () => {
     it("copies all customClaims from auth users to respective profiles", async () => {
       const result = await claimsToProfiles({}, contextWithAdminClaim, db);
       // verify args sent to batch.set()
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), {customClaims: {admin: true, standard: true}}); 
-      assert.deepEqual(sts(db.batchStubs.set.args[0][2]), {merge: true});
-        
-      sinon.assert.calledOnce(db.batchStubs.commit); // batch.commit() called ?
+      assert.deepEqual(sts(db.batch().set.args[0][1]), shared.userRecordsMaster[0] );
+      assert.deepEqual(sts(db.batch().update.args[0][1]), {customClaims: {standard: true}});
+      sinon.assert.calledOnce(db.batch().commit); // batch.commit() called ?
 
     });
     it("rejects if any batch commits fail", async () => {

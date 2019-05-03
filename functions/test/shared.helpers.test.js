@@ -1,7 +1,7 @@
 const sinon = require('sinon');
 const _ = require('lodash');
 
-const userRecordsMaster = [
+exports.userRecordsMaster = [
   {uid: '67891011', displayName: 'Testy Testerson', email:"ttesterson@company.com", customClaims: {admin: true, standard: true}},
   {uid: '32517281', displayName: 'Testacular Test', email:"ttest@company.com", customClaims: {standard: true}}
 ];
@@ -30,6 +30,7 @@ exports.makeFirestoreStub = (options={}) => {
     writeFail = false,
     userMatches = 0,
     computerExists = false,
+    profileExists = true,
     retrievedDate = new Date(1546300800000), // Jan 1, 2019 00:00:00 UTC
     certStrings = null
   } = options;
@@ -60,11 +61,12 @@ exports.makeFirestoreStub = (options={}) => {
   docStub.withArgs('SN123,manufac').returns(computerRef);
   docStub.withArgs('f25d2a25').returns(docRef);
   docStub.withArgs('azure').returns(docRef);
-  docStub.withArgs(userRecordsMaster[0].uid).returns(docRef);
+  docStub.withArgs(this.userRecordsMaster[0].uid).returns(docRef);
   docStub.returns({
     // default to simulate "generating" a new document reference to call set()
     set: writeFail ? sinon.stub().throws(new Error("set to firestore failed")) : sinon.stub(),
     update: writeFail ? sinon.stub().throws(new Error("update to firestore failed")) : sinon.stub(),
+    get: sinon.stub().resolves({exists: profileExists})
   });
 
   const collectionStub = sinon.stub();
@@ -81,9 +83,10 @@ exports.makeFirestoreStub = (options={}) => {
   });
 
   const set = sinon.stub();
+  const update = sinon.stub();
   const commit = writeFail ? sinon.stub().throws(new Error("commit to firestore failed")) : sinon.stub();
   const batch = sinon.stub();
-  batch.returns({ set, commit });
+  batch.returns({ set, update, commit });
 
   return {
     collection: collectionStub, 
@@ -103,7 +106,7 @@ exports.stripTimestamps = (obj) => {
 // Stub out functions in admin.auth()
 // See https://github.com/firebase/firebase-admin-node/issues/122#issuecomment-339586082
 exports.makeAuthStub = (options={}) => {
-  const userRecords = _.cloneDeep(userRecordsMaster);
+  const userRecords = _.cloneDeep(this.userRecordsMaster);
   const {uidExists = true, emailExists = false, otherError = false} = options;
   let authStub;
 

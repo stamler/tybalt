@@ -88,7 +88,24 @@ exports.claimsToProfiles = async (data, context, db) => {
     listUsersResult.users.forEach((user) => {
       // Add this user's profile update to the batch
       const profile = db.collection("Profiles").doc(user.uid);
-      batch.set(profile, { customClaims: user.customClaims },{merge: true});
+      if (user.customClaims) {
+        // update will fail if the profile doesn't already exist
+        // but set with merge will keep deleted claims!
+        // Thus if the profile exists we update, otherwise we set
+        // without merge.
+        profile.get()
+          .then((snap) => {
+            // eslint-disable-next-line promise/always-return
+            if (snap.exists) {
+              batch.update(profile, { customClaims: user.customClaims });
+            } else {
+              batch.set(profile, {...user});
+            }
+          })
+          .catch((error) => { 
+            console.log(error)
+          });
+      }
     });
     try {
       batch.commit();
