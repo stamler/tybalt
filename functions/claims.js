@@ -37,7 +37,7 @@ exports.modClaims = async (data, context, db) => {
 
   // perform the add or remove of claims based on data
   // TODO: promise / return / error management
-  data.users.forEach(async (uid) => {
+  return Promise.all(data.users.map(async (uid) => {
     const user = await admin.auth().getUser(uid);
     const customClaims = user.customClaims || {}; // preserve existing claims
     data.claims.forEach((claim) => {
@@ -55,9 +55,10 @@ exports.modClaims = async (data, context, db) => {
     // must use update rather than set with merge:true because
     // otherwise removal of claims will not be reflected
     // https://stackoverflow.com/questions/46597327/difference-between-set-with-merge-true-and-update
+    // TODO: create profile if it doesn't exist?
     const profile = db.collection("Profiles").doc(uid);
-    profile.update({ customClaims });
-  });
+    return profile.update({ customClaims });
+  }))
 }
 
 // Dump all claims from firebase auth() users to corresponding profiles
