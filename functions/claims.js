@@ -85,28 +85,27 @@ exports.claimsToProfiles = async (data, context, db) => {
     listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
     
     const batch = db.batch();
-    listUsersResult.users.forEach((user) => {
-      // Add this user's profile update to the batch
-      const profile = db.collection("Profiles").doc(user.uid);
-      if (user.customClaims) {
-        // update will fail if the profile doesn't already exist
-        // but set with merge will keep deleted claims!
-        // Thus if the profile exists we update, otherwise we set
-        // without merge.
-        profile.get()
-          .then((snap) => {
-            // eslint-disable-next-line promise/always-return
-            if (snap.exists) {
-              batch.update(profile, { customClaims: user.customClaims });
-            } else {
-              batch.set(profile, {...user});
-            }
-          })
-          .catch((error) => { 
-            console.log(error)
-          });
-      }
-    });
+    await Promise.all(
+      listUsersResult.users.map((user) => {
+        const profile = db.collection("Profiles").doc(user.uid);
+        if (user.customClaims) {
+          // the auth() user has custom claims
+          return profile.get()
+            .then((snap) => {
+              if (snap.exists) {
+                return batch.update(profile, { customClaims: user.customClaims });
+              } else {
+                return batch.set(profile, {...user});
+              }
+            })
+            .catch(error => Promise.reject(error));
+        }
+        else {
+          // the auth() user has no custom claims
+          return Promise.resolve();
+        }
+      })
+    );
     try {
       batch.commit();
     } catch (error) {
@@ -117,5 +116,6 @@ exports.claimsToProfiles = async (data, context, db) => {
     }
   }
 
+  // TODO: this return value needs to be populated with errors, success etc.
   return iterateAllUsers();
 }
