@@ -54,6 +54,8 @@ exports.assignComputerToUser = async (data, context, db) => {
   
   // write the assignment
   const computer = db.collection("Computers").doc(data.computer);
+
+  // TODO: add assignedBy: username
   return computer.update({
     "assigned.userSourceAnchor": data.user,
     "assigned.time": admin.firestore.FieldValue.serverTimestamp(),
