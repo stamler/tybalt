@@ -45,7 +45,7 @@ exports.assignComputerToUser = async (data, context, db) => {
     "The provided userSourceAnchor doesn't exist");
   }
   
-  if (shapshot.size > 1) {
+  if (snapshot.size > 1) {
     throw new functions.https.HttpsError("internal",
     `Something is broken; ${snapshot.size} users have userSourceAnchor ${data.user}`);
   }
