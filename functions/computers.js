@@ -50,15 +50,15 @@ exports.assignComputerToUser = async (data, context, db) => {
     `Something is broken; ${snapshot.size} users have userSourceAnchor ${data.user}`);
   }
   
-  const user = snapshot.docs[0];
+  const user = snapshot.docs[0].data();
   
   // write the assignment
   const computer = db.collection("Computers").doc(data.computer);
-  return computer.update({assigned: {
-    userSourceAnchor: data.user,
-    time: admin.firestore.FieldValue.serverTimestamp(),
-    upn: user.upn,
-    givenName: user.givenName,
-    surname: user.surname
-  }});
+  return computer.update({
+    "assigned.userSourceAnchor": data.user,
+    "assigned.time": admin.firestore.FieldValue.serverTimestamp(),
+    "assigned.upn": user.upn,
+    "assigned.givenName": user.givenName,
+    "assigned.surname": user.surname
+  });
 };
