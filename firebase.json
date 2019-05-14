@@ -10,7 +10,7 @@
     "source": "functions"
   },
   "hosting": {
-    "public": "dist",
+    "public": "frontend/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
