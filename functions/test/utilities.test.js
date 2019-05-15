@@ -20,27 +20,32 @@ describe("utilities module", () => {
 
   describe("callableIsAuthorized()", () => {
     // Test setup for makeSlug() in utilities.js
+    const Ajv = require('ajv')
+    const ajv = new Ajv()
+
     const callableIsAuthorized = utilitiesModule.callableIsAuthorized;
-    const ctxAdmin = {auth: { token: { admin: true}}}
+    const ctxAdmin = {auth: { token: { admin: true}}};
+    const validateAllFn = ajv.compile(true);
+    const validateNoneFn = ajv.compile(false);
     it("returns true if data validates & context has a required claim", () => {
       assert.strictEqual(
-        callableIsAuthorized(ctxAdmin,['admin'], true, "test"),
+        callableIsAuthorized(ctxAdmin,['admin'], validateAllFn, "test"),
         true
       );
     });
     it("throws if the context isn't authenticated", () => {
       assert.throws(() => {
-        callableIsAuthorized({},['admin'], true, "test")
+        callableIsAuthorized({},['admin'], validateAllFn, "test")
       });
     });
     it("throws if the context doesn't have a matching claim", () => {
       assert.throws(() => {
-        callableIsAuthorized(ctxAdmin,['foo'], true, "test")
+        callableIsAuthorized(ctxAdmin,['foo'], validateAllFn, "test")
       });
     });
     it("throws if data doesn't validate", () => {
       assert.throws(() => {
-        callableIsAuthorized(ctxAdmin,['admin'], false, "test")
+        callableIsAuthorized(ctxAdmin,['admin'], validateNoneFn, "test")
       });
     });
   });

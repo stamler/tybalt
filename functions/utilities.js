@@ -16,8 +16,9 @@ exports.makeSlug = function (serial, mfg) {
 // as auth state, custom claims, and whether the data matches the schema
 // context: the callable context
 // claims: an array of custom claims that are authorized for this callable
-// schema: a JSON schema that the data arg object should validate against
-exports.callableIsAuthorized = function(context, claims, schema, data) {
+// validate: ajv validation function
+// data: the data object to validate
+exports.callableIsAuthorized = function(context, claims, validate, data) {
   // caller must be authenticated
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
@@ -35,7 +36,6 @@ exports.callableIsAuthorized = function(context, claims, schema, data) {
   }
 
   // the shape of data must match the schema
-  const validate = ajv.compile(schema);
   const valid = validate(data);
   if (!valid) {
     throw new functions.https.HttpsError("invalid-argument",
