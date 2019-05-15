@@ -1,5 +1,5 @@
 const chai = require('chai')
-chai.use(require('chai-as-promised'))
+chai.use(require('chai-as-promised'));
 const assert = chai.assert;
 const sinon = require('sinon');
 const shared = require('./shared.helpers.test');
