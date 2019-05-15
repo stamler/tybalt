@@ -17,4 +17,31 @@ describe("utilities module", () => {
       assert.throws(() => { makeSlug(" P1E  ", " J. inc") }, Error);
     });
   });
+
+  describe("callableIsAuthorized()", () => {
+    // Test setup for makeSlug() in utilities.js
+    const callableIsAuthorized = utilitiesModule.callableIsAuthorized;
+    const ctxAdmin = {auth: { token: { admin: true}}}
+    it("returns true if data validates & context has a required claim", () => {
+      assert.strictEqual(
+        callableIsAuthorized(ctxAdmin,['admin'], true, "test"),
+        true
+      );
+    });
+    it("throws if the context isn't authenticated", () => {
+      assert.throws(() => {
+        callableIsAuthorized({},['admin'], true, "test")
+      });
+    });
+    it("throws if the context doesn't have a matching claim", () => {
+      assert.throws(() => {
+        callableIsAuthorized(ctxAdmin,['foo'], true, "test")
+      });
+    });
+    it("throws if data doesn't validate", () => {
+      assert.throws(() => {
+        callableIsAuthorized(ctxAdmin,['admin'], false, "test")
+      });
+    });
+  });
 })
