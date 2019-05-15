@@ -7,33 +7,22 @@ https://firebase.google.com/docs/functions/callable
 
 const admin = require('firebase-admin');
 const functions = require('firebase-functions');
+const callableIsAuthorized = require('./utilities.js').callableIsAuthorized;
 
 // JSON schema validation
 const Ajv = require('ajv')
 const schema = require('./ModClaimsActions.schema.json')
 const ajv = new Ajv()
-const validate = ajv.compile(schema);
+const validateModClaims = ajv.compile(schema);
+const validateClaimsToProfiles = ajv.compile({
+  "type": "object",
+  "additionalProperties": false,
+   "properties": {}
+ });
 
 // The claimsHandler adds or removes claims to one or more firebase auth() users
 exports.modClaims = async (data, context, db) => {
-  // Pre-conditions, caller must be authenticated admin role-holder
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("unauthenticated",
-      "Caller must be authenticated");
-  }
-  if (!context.auth.token.admin) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("permission-denied",
-      "Caller must have admin role");
-  }
-
-  // validate the shape of data (with ajv) to make sure the request is sound
-  const valid = validate(data);
-  if (!valid) {
-    throw new functions.https.HttpsError("invalid-argument",
-      "The provided data failed validation");
-  } 
+  callableIsAuthorized(context, ['admin'], validateModClaims, data);
 
   // perform the add or remove of claims based on data
   // TODO: promise / return / error management
@@ -63,24 +52,7 @@ exports.modClaims = async (data, context, db) => {
 
 // Dump all claims from firebase auth() users to corresponding profiles
 exports.claimsToProfiles = async (data, context, db) => {
-  // Pre-conditions, caller must be authenticated admin role-holder
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("unauthenticated",
-      "Caller must be authenticated");
-  }
-  if (!context.auth.token.admin) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("permission-denied",
-      "Caller must have admin role");
-  }
-  // Pre-conditions, data must be empty object
-  if (!data || // not null or undefined
-    !(data === Object(data)) ||// not an object  
-    Object.keys(data).length !== 0) { // not an empty object
-    throw new functions.https.HttpsError("invalid-argument",
-      "No arguments are to be provided for this callable function");
-  }
+  callableIsAuthorized(context, ['admin'], validateClaimsToProfiles, data);
 
   async function iterateAllUsers(nextPageToken) {
     listUsersResult = await admin.auth().listUsers(1000, nextPageToken);

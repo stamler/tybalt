@@ -39,11 +39,11 @@ describe("claims module", () => {
     });
     it("rejects if data argument is a non-empty object", async () => {
       const result = claimsToProfiles({non: "empty"}, contextWithAdminClaim, db);
-      return assert.isRejected(result, /No arguments are to be provided for this callable function/);
+      return assert.isRejected(result, /The provided data failed validation/);
     });
     it("rejects if data argument is not an object", async () => {
       const result = claimsToProfiles(null, contextWithAdminClaim, db);
-      return assert.isRejected(result, /No arguments are to be provided for this callable function/);
+      return assert.isRejected(result, /The provided data failed validation/);
     });
     it("copies all customClaims from auth users to respective profiles", async () => {
       const result = await claimsToProfiles({}, contextWithAdminClaim, db);
