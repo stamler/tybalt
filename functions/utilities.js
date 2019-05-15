@@ -1,5 +1,4 @@
-const Ajv = require('ajv')
-const ajv = new Ajv()
+const functions = require('firebase-functions');
 
 // make a string with serial & manufacturer that uniquely identifies a computer
 exports.makeSlug = function (serial, mfg) {
