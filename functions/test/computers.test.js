@@ -1,4 +1,7 @@
 const chai = require('chai');
+chai.use(require('chai-as-promised'));
+const assert = chai.assert;
+
 const sinon = require('sinon');
 const shared = require('./shared.helpers.test');
 
@@ -25,7 +28,7 @@ describe("computers module", () => {
     const assignComputerToUser = require('../computers.js').assignComputerToUser;
     it("rejects if the user isn't authenticated", async () => {
       const result = assignComputerToUser(undefined, {}, db);
-
+      return assert.isRejected(result,/Caller must be authenticated/)
     });
   });
 });

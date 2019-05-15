@@ -3,11 +3,11 @@
 This module exports callable handlers (functions.https.onCall(<handler_func>))
 https://firebase.google.com/docs/functions/callable
 
-
 */
 
-const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const functions = require('firebase-functions');
+const callableIsAuthorized = require('./utilities.js').callableIsAuthorized;
 
 // JSON schema validation
 const Ajv = require('ajv')
@@ -18,24 +18,7 @@ const validate = ajv.compile(schema);
 // The claimsHandler writes user information under the assigned property of a 
 // computer based on a userSourceAnchor and Computer ID
 exports.assignComputerToUser = async (data, context, db) => {
-  // Pre-conditions, caller must be authenticated admin role-holder
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("unauthenticated",
-      "Caller must be authenticated");
-  }
-  if (!context.auth.token.admin) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError("permission-denied",
-      "Caller must have admin role");
-  }
-
-  // validate the shape of data (with ajv) to make sure the request is sound
-  const valid = validate(data);
-  if (!valid) {
-    throw new functions.https.HttpsError("invalid-argument",
-      "The provided data failed validation");
-  }
+  callableIsAuthorized(context, ['admin'], validate, data);
   
   // Get the user docRef
   let snapshot = await db.collection("Users").where("userSourceAnchor", "==", data.user).get();
