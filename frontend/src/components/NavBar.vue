@@ -1,6 +1,8 @@
 <template>
   <nav id="nav">
     <router-link to="/dashboard">Dashboard</router-link> |
+    <router-link to="/projects">Projects</router-link> |
+    <router-link to="/time">Time</router-link> |
     <router-link to="/about">About</router-link> |
     <router-link to="/admin">Admin</router-link> |
 
