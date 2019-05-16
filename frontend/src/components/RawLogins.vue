@@ -2,14 +2,16 @@
   <div id="container">
     <div>
       <input type="textbox" placeholder="search..." />
-      <button v-on:click="deleteSelected()">Delete {{ selected.length }} items</button>
+      <button v-if="claims.rawlogins === true" v-on:click="deleteSelected()">
+        Delete {{ selected.length }} items
+      </button>
     </div>
     <table>
       <thead>
         <tr>
           <th>
             <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
-            {{ selected.length }}/{{ items.length }} 
+            {{ selected.length }}/{{ items.length }}
           </th>
           <th><a href="#" v-on:click="sort('mfg')">mfg</a></th>
           <th><a href="#" v-on:click="sort('model')">model</a></th>
@@ -22,7 +24,7 @@
       </thead>
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
-          <input type="checkbox" v-bind:value="item.id" v-model="selected">
+          <input type="checkbox" v-bind:value="item.id" v-model="selected"/>
           <td>{{ item.mfg }}</td>
           <td>{{ item.model }}</td>
           <td>{{ item.upn }}</td>
@@ -43,6 +45,7 @@
 
 <script>
 import firebase from "@/firebase";
+import { mapState } from "vuex";
 const db = firebase.firestore();
 const items = db.collection("RawLogins");
 import componentMaker from "./shared.js";
@@ -51,28 +54,31 @@ const component = componentMaker(items);
 const methods = {
   guessSerial(dnsHostname) {
     try {
-      return dnsHostname.split("-")[1] || "";      
+      return dnsHostname.split("-")[1] || "";
     } catch (error) {
       return "";
     }
   },
   deleteSelected() {
-    const batch = db.batch(); 
-    this.selected.forEach((key) => {
+    const batch = db.batch();
+    this.selected.forEach(key => {
       batch.delete(items.doc(key));
     });
     batch.commit()
-    .then(() => {
-      this.selected = [];
-      this.selectAll = false;
-    })
-    .catch((err) => {
-      console.log(`Batch failed: ${err}`)
-    })
+      .then(() => {
+        this.selected = [];
+        this.selectAll = false;
+      })
+      .catch((err) => {
+        console.log(`Batch failed: ${err}`)
+      });
   }
 };
 
+const computed = mapState({ claims: state => state.claims });
+
 Object.assign(component.methods, methods);
+Object.assign(component.computed, computed);
 
 export default component;
 </script>

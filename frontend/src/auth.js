@@ -13,6 +13,9 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
     // set state and user in Vuex
     store.commit("setUser", firebase.auth().currentUser);
     store.commit("setAppStatus", "ready");
+    user
+      .getIdTokenResult()
+      .then(token => store.commit("setClaims", token.claims));
   } else {
     store.commit("setAppStatus", "loading"); // set app to loading state
 

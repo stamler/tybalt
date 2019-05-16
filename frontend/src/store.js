@@ -6,7 +6,8 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     appStatus: "loading",
-    user: null
+    user: null,
+    claims: null
   },
   mutations: {
     setAppStatus(state, status) {
@@ -14,6 +15,9 @@ export default new Vuex.Store({
     },
     setUser(state, user) {
       state.user = user;
+    },
+    setClaims(state, claims) {
+      state.claims = claims;
     }
   },
   actions: {}
