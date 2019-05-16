@@ -9,6 +9,7 @@ import RawLogins from "@/components/RawLogins.vue";
 import Logins from "@/components/Logins.vue";
 import Profiles from "@/components/Profiles.vue";
 import Computers from "@/components/Computers.vue";
+import Users from "@/components/Users.vue";
 
 Vue.use(Router);
 
@@ -55,7 +56,12 @@ export default new Router({
         {
           path: "computers",
           component: Computers
+        },
+        {
+          path: "users",
+          component: Users
         }
+
       ]
     },
     {

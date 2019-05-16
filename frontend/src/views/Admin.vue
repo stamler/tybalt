@@ -5,7 +5,8 @@
       <router-link to="/admin/rawlogins">Raw Logins</router-link> |
       <router-link to="/admin/logins">Logins</router-link> |
       <router-link to="/admin/profiles">Profiles</router-link> |
-      <router-link to="/admin/computers">Computers</router-link>
+      <router-link to="/admin/computers">Computers</router-link> |
+      <router-link to="/admin/users">Users</router-link>
     </div>
     <router-view/>
   </div>
