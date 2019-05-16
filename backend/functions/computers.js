@@ -18,7 +18,7 @@ const validate = ajv.compile(schema);
 // The claimsHandler writes user information under the assigned property of a 
 // computer based on a userSourceAnchor and Computer ID
 exports.assignComputerToUser = async (data, context, db) => {
-  callableIsAuthorized(context, ['admin'], validate, data);
+  callableIsAuthorized(context, ['computers'], validate, data);
   
   // Get the user docRef
   let snapshot = await db.collection("Users").where("userSourceAnchor", "==", data.user).get();
