@@ -8,6 +8,7 @@
         <tr>
           <th>{{ items.length }}</th>
           <th><a href="#" v-on:click="sort('computerName')">Computer</a></th>
+          <th><a href="#" v-on:click="sort('osVersion')">Windows</a></th>
           <th><a href="#" v-on:click="sort('mfg')">mfg</a></th>
           <th><a href="#" v-on:click="sort('model')">model</a></th>
           <th><a href="#" v-on:click="sort('userGivenName')">First</a>&nbsp;<a href="#" v-on:click="sort('userSurname')">Last</a></th>
@@ -24,6 +25,7 @@
             <br/>
             {{ item.computerName }}
           </td>
+          <td>{{ item.osVersion }}</td>
           <td>{{ item.mfg }}</td>
           <td>{{ item.model }}</td>
           <td>{{ item.userGivenName }} {{ item.userSurname }}</td>
