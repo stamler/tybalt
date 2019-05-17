@@ -13,6 +13,7 @@ const componentMaker = function(items, limit = 300, order) {
       return {
         taskAreaMode: "default",
         items: [],
+        search: "",
         sortBy: "created",
         sortDescending: true,
         selectAll: false,

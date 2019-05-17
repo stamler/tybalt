@@ -1,7 +1,7 @@
 <template>
   <div id="container">
     <div>
-      <input type="textbox" placeholder="search..." />
+      <input type="textbox" placeholder="search..." v-model="search" />
       <button v-if="claims.rawlogins === true" v-on:click="deleteSelected()">
         Delete {{ selected.length }} items
       </button>

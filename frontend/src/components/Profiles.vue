@@ -9,7 +9,7 @@
 
     <div id="taskArea">
       <div v-if="taskAreaMode === 'default'">
-        <input type="textbox" placeholder="search..." />
+        <input type="textbox" placeholder="search..." v-model="search" />
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
         <button v-on:click="taskAreaMode='modClaims'" >✏️ Edit Claims</button>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <div id="container">
     <div>
-      <input type="textbox" placeholder="search..." />
+      <input type="textbox" placeholder="search..." v-model="search" />
     </div>
     <table>
       <thead>
