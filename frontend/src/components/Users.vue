@@ -1,12 +1,12 @@
 <template>
   <div id="container">
     <div>
-      <input type="textbox" placeholder="search..." />
+      <input type="textbox" placeholder="search..." v-model="search" />
     </div>
     <table>
       <thead>
         <tr>
-          <th>{{ items.length }}</th>
+          <th>{{ processedItems.length }}</th>
           <th><a href="#" v-on:click="sort('givenName')">First</a>&nbsp;<a href="#" v-on:click="sort('surname')">Last</a></th>
           <th><a href="#" v-on:click="sort('updated')">updated</a></th>
           <th><a href="#" v-on:click="sort('userSourceAnchor')">ms-DS-ConsistencyGuid</a></th>

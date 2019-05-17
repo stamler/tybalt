@@ -34,12 +34,16 @@ const componentMaker = function(items, limit = 300, order) {
     computed: {
       processedItems() {
         // slice() shallow-copies the array https://github.com/vuejs/vuefire/issues/244
-        return this.items.slice().sort((a, b) => {
-          const direction = this.sortDescending ? -1 : 1;
-          if (a[this.sortBy] < b[this.sortBy]) return -1 * direction;
-          else if (a[this.sortBy] > b[this.sortBy]) return 1 * direction;
-          return 0;
-        });
+        return this.items.slice()
+          .sort((a, b) => {
+            const direction = this.sortDescending ? -1 : 1;
+            if (a[this.sortBy] < b[this.sortBy]) return -1 * direction;
+            else if (a[this.sortBy] > b[this.sortBy]) return 1 * direction;
+            return 0;
+          })
+          .filter(
+            p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          );
       }
     },
     methods: {
@@ -54,6 +58,11 @@ const componentMaker = function(items, limit = 300, order) {
       sort(property) {
         this.sortDescending = !this.sortDescending;
         this.sortBy = property;
+      },
+      searchString(item) {
+        return Object.values(item)
+          .join(",")
+          .toLowerCase();
       }
     }
   };

@@ -11,7 +11,7 @@
         <tr>
           <th>
             <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
-            {{ selected.length }}/{{ items.length }}
+            {{ selected.length }}/{{ processedItems.length }}
           </th>
           <th><a href="#" v-on:click="sort('mfg')">mfg</a></th>
           <th><a href="#" v-on:click="sort('model')">model</a></th>

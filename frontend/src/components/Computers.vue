@@ -6,7 +6,7 @@
     <table>
       <thead>
         <tr>
-          <th>{{ items.length }}</th>
+          <th>{{ processedItems.length }}</th>
           <th><a href="#" v-on:click="sort('computerName')">Computer</a></th>
           <th><a href="#" v-on:click="sort('osVersion')">Windows</a></th>
           <th><a href="#" v-on:click="sort('mfg')">mfg</a></th>
