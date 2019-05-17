@@ -173,9 +173,5 @@ describe("azure module", () => {
       assert.equal(result.status.args[0][0],500);
       assert.equal(result.send.args[0][0],"auth/something-else");
     });
-    it("(200 OK) with a new firebase token if id_token is verified and no db provided", async () => {
-      let result = await handler(Req({method:'GET', token:id_token}), Res());
-      assert.equal(result.status.args[0][0],200);
-    });
   });
 });

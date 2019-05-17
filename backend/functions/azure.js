@@ -133,13 +133,24 @@ exports.handler = async (req, res, db) => {
   const properties = {displayName: valid.name, email: valid.email};
 
   let userRecord;
+  const profile = db.collection("Profiles").doc(uid);
   try {
     // try updating the user first
     userRecord = await admin.auth().updateUser(uid, properties);
+    await profile.update({...properties});
   } catch (error) {
     if (error.code === 'auth/user-not-found') {
-      // if the user doesn't exist then create it
-      userRecord = await admin.auth().createUser({ uid, ...properties});
+      try {
+        // if the user doesn't exist then create it
+        userRecord = await admin.auth().createUser({ uid, ...properties});
+        // create a corresponding profile doc
+        // TODO: look for existing user here and if one single match is found
+        // write the the userSourceAnchor to the profile, possibly pending human
+        // confirmation
+        await profile.set({...properties});
+      } catch (e) {
+        return res.status(500).send(e.code);
+      }
     } else if (error.code === 'auth/email-already-exists') {
       return res.status(501).send("A user with this email address and a different Object ID already exists. Either the user who used to use that email address must sign in to update their address and and fix the conflict, or an administrator must delete that user's auth account in the database so the new user can assume the email address.");
     } else {
