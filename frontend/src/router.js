@@ -1,5 +1,6 @@
 import Vue from "vue";
 import Router from "vue-router";
+import store from "./store";
 
 // Views
 import Dashboard from "@/views/Dashboard.vue";
@@ -13,7 +14,7 @@ import Users from "@/components/Users.vue";
 
 Vue.use(Router);
 
-export default new Router({
+const router = new Router({
   mode: "history",
   base: process.env.BASE_URL,
   routes: [
@@ -61,7 +62,11 @@ export default new Router({
       children: [
         {
           path: "rawlogins",
-          component: RawLogins
+          component: RawLogins,
+          beforeEnter: (to, from, next) => {
+            if (store.state.claims.rawlogins !== true) next(false);
+            else next();
+          }
         },
         {
           path: "logins",
@@ -73,13 +78,16 @@ export default new Router({
         },
         {
           path: "computers",
-          component: Computers
+          component: Computers,
+          beforeEnter: (to, from, next) => {
+            if (store.state.claims.computers !== true) next(false);
+            else next();
+          }
         },
         {
           path: "users",
           component: Users
         }
-
       ]
     },
     {
@@ -88,3 +96,5 @@ export default new Router({
     }
   ]
 });
+
+export default router;
