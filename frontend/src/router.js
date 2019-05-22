@@ -56,36 +56,35 @@ const router = new Router({
     },
     {
       path: "/admin",
-      name: "admin",
+      name: "Admin",
       component: () =>
         import(/* webpackChunkName: "about" */ "./views/Admin.vue"),
       children: [
         {
           path: "rawlogins",
-          component: RawLogins,
-          beforeEnter: (to, from, next) => {
-            if (store.state.claims.rawlogins !== true) next(false);
-            else next();
-          }
+          name: "Raw Logins",
+          meta: { claims: ["rawlogins", "audit"] },
+          component: RawLogins
         },
         {
           path: "logins",
+          name: "Logins",
           component: Logins
         },
         {
           path: "profiles",
+          name: "Profiles",
           component: Profiles
         },
         {
           path: "computers",
-          component: Computers,
-          beforeEnter: (to, from, next) => {
-            if (store.state.claims.computers !== true) next(false);
-            else next();
-          }
+          name: "Computers",
+          meta: { claims: ["computers", "audit"] },
+          component: Computers
         },
         {
           path: "users",
+          name: "Users",
           component: Users
         }
       ]
@@ -95,6 +94,30 @@ const router = new Router({
       component: { template: "<h1>404</h1>" }
     }
   ]
+});
+
+router.beforeEach((to, from, next) => {
+  if (to.meta && to.meta.claims) {
+    // make an array of claims shared by the authed user
+    // and the meta claims property
+    // TODO: this breaks on manual navigation because state
+    // claims haven't been written yet (they're written by a promise)
+    const intrsect = to.meta.claims.filter(x =>
+      store.state.claims.hasOwnProperty(x)
+    );
+    if (intrsect.some(x => store.state.claims[x] === true)) {
+      // if at least one element in this array has a value of true
+      // allow the route
+      console.log(`protected route allowed`);
+      next();
+    } else {
+      // otherwise cancel the navigation
+      console.log("protected route blocked");
+      next(false);
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;
