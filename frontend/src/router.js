@@ -11,6 +11,7 @@ import Logins from "@/components/Logins.vue";
 import Profiles from "@/components/Profiles.vue";
 import Computers from "@/components/Computers.vue";
 import Users from "@/components/Users.vue";
+import TimeEntries from "@/components/TimeEntries.vue";
 
 Vue.use(Router);
 
@@ -43,7 +44,14 @@ const router = new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: "about" */ "./views/Time.vue")
+        import(/* webpackChunkName: "about" */ "./views/Time.vue"),
+      children: [
+        {
+          path: "entries",
+          name: "Time Entries",
+          component: TimeEntries
+        }
+      ]
     },
     {
       path: "/about",
