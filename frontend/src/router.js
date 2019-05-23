@@ -69,11 +69,13 @@ const router = new Router({
         {
           path: "logins",
           name: "Logins",
+          meta: { claims: ["logins", "audit"] },
           component: Logins
         },
         {
           path: "profiles",
           name: "Profiles",
+          meta: { claims: ["profiles", "audit"] },
           component: Profiles
         },
         {
