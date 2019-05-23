@@ -1,14 +1,13 @@
 <template>
   <nav id="nav">
-    <router-link to="/dashboard">Dashboard</router-link> |
-    <router-link to="/projects">Projects</router-link> |
-    <router-link to="/time">Time</router-link> |
-    <router-link to="/about">About</router-link> |
-    <router-link to="/admin">Admin</router-link> |
-
+    <span v-for="link in links" v-bind:key="link.name">
+      | <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+        {{ link.name }}
+      </router-link>
+    </span>
     <span v-if="state == 'ready'">
       <button v-on:click="signOut()">Sign Out</button>
-      {{ message }}{{ user.displayName }}
+      <span>{{ user.displayName }}</span>
     </span>
     <span v-else-if="state == 'loading'">Loading...</span>
     <span v-else>Unknown State</span>
@@ -23,7 +22,8 @@ import { signOut } from "@/auth";
 export default {
   data: function() {
     return {
-      message: "Hi, "
+      // top level router entries that have a name property
+      links: this.$router.options.routes.filter(x => x.name)
     };
   },
   computed: mapState({
@@ -31,7 +31,18 @@ export default {
     user: state => state.user
   }),
   methods: {
-    signOut
+    signOut,
+    showLink (link) {
+      if (link.meta && link.meta.claims) {
+        // get intersect of link.claims & this.claims
+        const intrsect = link.meta.claims.filter(x => this.claims.hasOwnProperty(x));
+
+        // ensure the value of at least one item is true
+        return intrsect.some(x => this.claims[x] === true);
+      } else {
+        return true;
+      }
+    }
   }
 };
 </script>
