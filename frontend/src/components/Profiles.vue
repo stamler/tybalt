@@ -32,7 +32,7 @@
         </td>
         <td>{{ item.displayName }}</td>
         <td>{{ item.email }}</td>
-        <td>{{ item.customClaims }}</td>
+        <td>{{ item.customClaims ? Object.keys(item.customClaims).join(", ") : "" }}</td>
         <td v-if="item.onPremId">{{ item.onPremId }}</td>
         <td v-else><button>Write AzureID to User doc</button></td>
         <td><button>Revoke refresh tokens</button></td>
