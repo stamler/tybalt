@@ -36,7 +36,7 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": {
-        "enum": ["admin", "rawlogins", "computers", "profiles", "logins", "users", "audit", "standard"]
+        "enum": ["admin", "audit", "computers", "logins", "profiles", "projects", "rawlogins", "time", "users" ]
       }
     }  
   }
