@@ -47,11 +47,7 @@ const componentMaker = function(items, limit = 300, order) {
           );
       },
       // the spread operator allows including the mapped computed properties
-      ...mapState({
-        claims: state => state.claims,
-        state: state => state.appStatus,
-        user: state => state.user
-      })
+      ...mapState(["claims", "state", "user"])
     },
     methods: {
       toggleAll() {
