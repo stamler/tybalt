@@ -85,14 +85,10 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
   }
 });
 
-export function signOut(complete = true) {
+export function signOut() {
   unsubscribe();
   firebase.auth().signOut();
-  console.log("signed out of firebase");
-  // TODO: change application state and/or change name / message
-  if (complete) {
-    window.location.href = "https://login.windows.net/common/oauth2/logout";
-  }
+  window.location.href = "https://login.windows.net/common/oauth2/logout";
 }
 
 function randomString(length) {

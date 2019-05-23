@@ -7,18 +7,7 @@
     <router-link to="/admin">Admin</router-link> |
 
     <span v-if="state == 'ready'">
-      <input
-        id="signOutButtonIncomplete"
-        type="button"
-        value="Sign Out firebase only"
-        v-on:click="signOut(false)"
-      />
-      <input
-        id="signOutButton"
-        type="button"
-        value="Sign Out"
-        v-on:click="signOut()"
-      />
+      <button v-on:click="signOut()">Sign Out</button>
       {{ message }}{{ user.displayName }}
     </span>
     <span v-else-if="state == 'loading'">Loading...</span>
