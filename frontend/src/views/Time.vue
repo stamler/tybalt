@@ -7,22 +7,27 @@
         </router-link>
       </span>
     </div>
+    <h2>Week {{ now.isoWeek() }} is 
+      {{ now.startOf('week').format("ddd MMM D") }} to 
+      {{ now.endOf('week').format("ddd MMM D") }}</h2>
     <router-view/>
   </div>
 </template>
 
 <script>
+import moment from "moment";
 import { mapState } from "vuex";
 
 export default {
   data: function() {
     return {
+      now: moment(),
       links: this.$router.options.routes.filter(x => x.name === "Time")[0].children
     }
   },
-  computed: mapState({
-    claims: state => state.claims
-  }),
+  computed: {
+    ...mapState(["state","claims","user"])
+  },
   methods: {
     showLink (link) {
       if (link.meta && link.meta.claims) {
