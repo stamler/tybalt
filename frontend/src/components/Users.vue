@@ -27,15 +27,11 @@
 </template>
 <script>
 import firebase from "@/firebase";
-import { mapState } from "vuex";
 const db = firebase.firestore();
 const items = db.collection("Users");
 import componentMaker from "./shared.js";
 
 const component = componentMaker(items);
-const computed = mapState({ claims: state => state.claims });
-
-Object.assign(component.computed, computed);
 
 export default component;
 </script>

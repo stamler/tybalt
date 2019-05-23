@@ -58,7 +58,6 @@
 
 <script>
 import firebase from "@/firebase";
-import { mapState } from "vuex";
 const db = firebase.firestore();
 const items = db.collection("Computers");
 import componentMaker from "./shared.js";
@@ -78,10 +77,7 @@ const methods = {
   }
 }
 
-const computed = mapState({ claims: state => state.claims });
-
 Object.assign(component.methods, methods);
-Object.assign(component.computed, computed);
 
 export default component;
 </script>

@@ -1,6 +1,7 @@
 /* The base JS for components with a sortable table of items */
 
 import moment from "moment";
+import { mapState } from "vuex";
 
 const componentMaker = function(items, limit = 300, order) {
   if (order) {
@@ -44,7 +45,13 @@ const componentMaker = function(items, limit = 300, order) {
           .filter(
             p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
-      }
+      },
+      // the spread operator allows including the mapped computed properties
+      ...mapState({
+        claims: state => state.claims,
+        state: state => state.appStatus,
+        user: state => state.user
+      })
     },
     methods: {
       toggleAll() {
