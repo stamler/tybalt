@@ -12,6 +12,7 @@ import Profiles from "@/components/Profiles.vue";
 import Computers from "@/components/Computers.vue";
 import Users from "@/components/Users.vue";
 import TimeEntries from "@/components/TimeEntries.vue";
+import TimeSheets from "@/components/TimeSheets.vue";
 
 Vue.use(Router);
 
@@ -40,6 +41,7 @@ const router = new Router({
     {
       path: "/time",
       name: "Time",
+      redirect: "/time/entries",
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -50,7 +52,13 @@ const router = new Router({
           path: "entries",
           name: "Time Entries",
           component: TimeEntries
+        },
+        {
+          path: "sheets",
+          name: "Time Sheets",
+          component: TimeSheets
         }
+
       ]
     },
     {
@@ -65,15 +73,10 @@ const router = new Router({
     {
       path: "/admin",
       name: "Admin",
+      redirect: "/admin/logins",
       component: () =>
         import(/* webpackChunkName: "about" */ "./views/Admin.vue"),
       children: [
-        {
-          path: "rawlogins",
-          name: "Raw Logins",
-          meta: { claims: ["rawlogins", "audit"] },
-          component: RawLogins
-        },
         {
           path: "logins",
           name: "Logins",
@@ -96,6 +99,12 @@ const router = new Router({
           path: "users",
           name: "Users",
           component: Users
+        },
+        {
+          path: "rawlogins",
+          name: "Raw Logins",
+          meta: { claims: ["rawlogins", "audit"] },
+          component: RawLogins
         }
       ]
     },

@@ -2,6 +2,8 @@
   <div id="container">
     <div>
       <input type="textbox" placeholder="search..." v-model="search" />
+      <button>New Entry</button>
+      <button>Check Entries</button>
     </div>
     <table>
       <thead>
