@@ -30,7 +30,8 @@ const componentMaker = function(items) {
     computed: {
       processedItems() {
         // slice() shallow-copies the array https://github.com/vuejs/vuefire/issues/244
-        return this.items.slice()
+        return this.items
+          .slice()
           .sort((a, b) => {
             const direction = this.sortDescending ? -1 : 1;
             if (a[this.sortBy] < b[this.sortBy]) return -1 * direction;
