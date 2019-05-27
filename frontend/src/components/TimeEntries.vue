@@ -24,9 +24,16 @@
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
           <td></td>
-          <td>{{ item.date }}</td>
+          <td>{{ item.date.toDate() | shortDate }}</td>
           <td>{{ item.job }}</td>
           <td>{{ item.code }}</td>
+          <td>{{ item.jobHours }}</td>
+          <td>{{ item.hours }}</td>
+          <td>{{ item.mealsHours }}</td>
+          <td>{{ item.workRecord }}</td>
+          <td>{{ item.project }}</td>
+          <td>{{ item.description }}</td>
+          <td>{{ item.comments }}</td>
         </tr>
       </tbody>
     </table>
