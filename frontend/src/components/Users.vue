@@ -28,10 +28,13 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("Users");
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items);
+const component = componentMaker();
+
+component.created = function() {
+  this.$bind("items", db.collection("Users"));
+}
 
 export default component;
 </script>

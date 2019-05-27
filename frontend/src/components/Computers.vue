@@ -59,10 +59,9 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("Computers");
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items);
+const component = componentMaker();
 const methods = {
   assign(computer, user) {
     const assignComputerToUser = firebase.functions().httpsCallable("assignComputerToUser");
@@ -78,6 +77,10 @@ const methods = {
 }
 
 Object.assign(component.methods, methods);
+
+component.created = function() {
+  this.$bind("items", db.collection("Computers"));
+}
 
 export default component;
 </script>

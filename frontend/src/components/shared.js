@@ -3,7 +3,7 @@
 import moment from "moment";
 import { mapState } from "vuex";
 
-const componentMaker = function(items) {
+const componentMaker = function() {
   return {
     data() {
       return {
@@ -15,9 +15,6 @@ const componentMaker = function(items) {
         selectAll: false,
         selected: []
       };
-    },
-    created() {
-      this.$bind("items", items);
     },
     filters: {
       dateFormat(date) {

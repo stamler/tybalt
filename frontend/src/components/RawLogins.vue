@@ -46,10 +46,9 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("RawLogins");
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items);
+const component = componentMaker();
 const methods = {
   guessSerial(dnsHostname) {
     try {
@@ -75,6 +74,10 @@ const methods = {
 };
 
 Object.assign(component.methods, methods);
+
+component.created = function() {
+  this.$bind("items", db.collection("RawLogins"));
+}
 
 export default component;
 </script>

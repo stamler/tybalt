@@ -27,10 +27,13 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("TimeSheets");
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items);
+const component = componentMaker();
+
+component.created = function() {
+  this.$bind("items", db.collection("TimeSheets"));
+}
 
 export default component;
 </script>

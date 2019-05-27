@@ -24,6 +24,9 @@
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
           <td></td>
+          <td>{{ item.date }}</td>
+          <td>{{ item.job }}</td>
+          <td>{{ item.code }}</td>
         </tr>
       </tbody>
     </table>
@@ -32,11 +35,14 @@
 
 <script>
 import firebase from "@/firebase";
+import store from "../store";
 const db = firebase.firestore();
-const items = db.collection("TimeEntries");
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items);
+const component = componentMaker();
+component.created = function() {
+  this.$bind("items", db.collection("TimeEntries").where("uid", "==", store.state.user.uid));
+}
 
 export default component;
 </script>

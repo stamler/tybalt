@@ -52,11 +52,10 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("Profiles");
 import componentMaker from "./shared.js";
 import ModClaims from "@/components/ModClaims.vue";
 
-const component = componentMaker(items);
+const component = componentMaker();
 const methods = {
   modClaims(data) {
     const modClaims = firebase.functions().httpsCallable("modClaims");
@@ -83,6 +82,11 @@ const methods = {
 }
 
 Object.assign(component.methods, methods);
+
+component.created = function() {
+  this.$bind("items", db.collection("Profiles"));
+}
+
 component.components = { ModClaims };
 
 export default component;
