@@ -3,12 +3,7 @@
 import moment from "moment";
 import { mapState } from "vuex";
 
-const componentMaker = function(items, limit = 300, order) {
-  if (order) {
-    items = items.orderBy(...order).limit(limit);
-  } else {
-    items = items.limit(limit);
-  }
+const componentMaker = function(items) {
   return {
     data() {
       return {

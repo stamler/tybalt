@@ -27,10 +27,11 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-const items = db.collection("Logins");
+const items = db.collection("Logins").orderBy("created", "desc").limit(101);
+
 import componentMaker from "./shared.js";
 
-const component = componentMaker(items,100,["created","desc"]);
+const component = componentMaker(items);
 
 export default component;
 </script>
