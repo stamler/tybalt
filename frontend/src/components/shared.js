@@ -17,6 +17,9 @@ const componentMaker = function() {
       };
     },
     filters: {
+      shortDate(date) {
+        return moment(date).format("MMM DD");
+      },
       dateFormat(date) {
         return moment(date).format("YYYY MMM DD / HH:mm:ss");
       },
