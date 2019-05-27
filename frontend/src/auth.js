@@ -1,21 +1,39 @@
-import store from "@/store";
 import firebase from "@/firebase";
 import jwt_decode from "jwt-decode";
 import axios from "axios";
+import Vue from "vue";
+
+import App from "./App.vue";
+import router from "./router";
+import store from "./store";
 
 // TODO: Pull the Azure config from a firebase document
 const clientId = "5ce70993-306b-4c1e-a980-ba4139863126";
 const tenant = "tbte.onmicrosoft.com";
 
+let app = null;
+
 const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
   if (user) {
     console.log(`${user.displayName} is logged in`);
     // set state and user in Vuex
-    store.commit("setUser", firebase.auth().currentUser);
-    store.commit("setAppStatus", "ready");
-    user
-      .getIdTokenResult()
-      .then(token => store.commit("setClaims", token.claims));
+    const tasks = [];
+    tasks.push(store.commit("setUser", firebase.auth().currentUser));
+    tasks.push(store.commit("setAppStatus", "ready"));
+    tasks.push(
+      user
+        .getIdTokenResult()
+        .then(token => store.commit("setClaims", token.claims))
+    );
+    Promise.all(tasks).then(() => {
+      if (!app) {
+        app = new Vue({
+          router,
+          store,
+          render: h => h(App) // h is an alias for createElement
+        }).$mount("#app");
+      }
+    });
   } else {
     store.commit("setAppStatus", "loading"); // set app to loading state
 
