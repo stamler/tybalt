@@ -19,6 +19,11 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
     console.log(`${user.displayName} is logged in`);
     // set state and user in Vuex
     const tasks = [];
+    // TODO: Vuex won't survive a page reload and this code won't be
+    // retriggered if the user is still signed in, meaning the state will
+    // disappear breaking the app. Further since components are loaded
+    // by the router, any component which depends on state will fail on
+    // app load.
     tasks.push(store.commit("setUser", firebase.auth().currentUser));
     tasks.push(store.commit("setAppStatus", "ready"));
     tasks.push(
