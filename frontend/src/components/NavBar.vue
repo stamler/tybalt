@@ -17,7 +17,7 @@
 <script>
 import firebase from "@/firebase";
 import { mapState } from "vuex";
-import { signOut } from "@/auth";
+import { signOut } from "@/main";
 
 export default {
   data: function() {
