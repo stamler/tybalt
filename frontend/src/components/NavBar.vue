@@ -1,16 +1,14 @@
 <template>
   <nav id="nav">
     <span v-for="link in links" v-bind:key="link.name">
-      | <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+      <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
         {{ link.name }}
-      </router-link>
+      </router-link>&nbsp;
     </span>
-    <span v-if="state == 'ready'">
-      <button v-on:click="signOut()">Sign Out</button>
-      <span>{{ user.displayName }}</span>
+    <span id="userBox">
+      <button v-on:click="signOut()">Sign Out</button>&nbsp;
+      <router-link to="/admin/profiles/userid">{{ user.displayName }}</router-link>
     </span>
-    <span v-else-if="state == 'loading'">Loading...</span>
-    <span v-else>Unknown State</span>
   </nav>
 </template>
 
@@ -47,16 +45,15 @@ export default {
 };
 </script>
 <style>
-#nav {
-  padding: 30px;
+#userBox {
+  background-color: #777777;
+  padding: 0px 4px 0px;
+  border-radius: 3px;
 }
 
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+#userBox button {
+  margin:0px;
+  position: relative;
+  top: -1px;
 }
 </style>

@@ -35,9 +35,3 @@ const component = componentMaker(items);
 
 export default component;
 </script>
-
-<style scoped>
-#container {
-  text-align: left;
-}
-</style>

@@ -2,9 +2,9 @@
   <div>
     <div id="nav">
       <span v-for="link in links" v-bind:key="link.name">
-        | <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+        <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
           {{ link.name }}
-        </router-link>
+        </router-link>&nbsp;
       </span>
     </div>
     <router-view/>
@@ -37,19 +37,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
-}
-
-</style>

@@ -2,9 +2,9 @@
   <div>
     <div id="nav">
       <span v-for="link in links" v-bind:key="link.name">
-        | <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+        <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
           {{ link.name }}
-        </router-link>
+        </router-link>&nbsp;
       </span>
     </div>
     <h2>Week {{ now.isoWeek() }} is 
