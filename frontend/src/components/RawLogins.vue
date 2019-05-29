@@ -24,7 +24,9 @@
       </thead>
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
-          <input type="checkbox" v-bind:value="item.id" v-model="selected"/>
+          <td>
+            <input type="checkbox" v-bind:value="item.id" v-model="selected"/>
+          </td>
           <td>{{ item.mfg }}</td>
           <td>{{ item.model }}</td>
           <td>{{ item.upn }}</td>
@@ -60,7 +62,7 @@ const methods = {
   deleteSelected() {
     const batch = db.batch();
     this.selected.forEach(key => {
-      batch.delete(items.doc(key));
+      batch.delete(this.items.doc(key));
     });
     batch.commit()
       .then(() => {
@@ -76,6 +78,7 @@ const methods = {
 Object.assign(component.methods, methods);
 
 component.created = function() {
+  this.collection = db.collection("RawLogins");
   this.$bind("items", db.collection("RawLogins"));
 }
 
