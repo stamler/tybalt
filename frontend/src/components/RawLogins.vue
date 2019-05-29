@@ -62,7 +62,8 @@ const methods = {
   deleteSelected() {
     const batch = db.batch();
     this.selected.forEach(key => {
-      batch.delete(this.items.doc(key));
+      // apparently $bind on items removes the doc() function
+      batch.delete(this.collection.doc(key)); // collection works but items doesn't
     });
     batch.commit()
       .then(() => {
