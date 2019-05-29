@@ -2,11 +2,18 @@
 
 import moment from "moment";
 import { mapState } from "vuex";
+import Editor from "./Editor";
 
 const componentMaker = function() {
   return {
+    components: {
+      Editor
+    },
     data() {
       return {
+        showNewItem: false, // show or hide the Editor for new item
+        editingObject: {}, // An object of the firestore collection
+        collection: null, // The firestore collection
         taskAreaMode: "default",
         items: [],
         search: "",
