@@ -68,6 +68,9 @@ const componentMaker = function() {
         return Object.values(item)
           .join(",")
           .toLowerCase();
+      },
+      clearEditor() {
+        this.editingObject = {};
       }
     }
   };

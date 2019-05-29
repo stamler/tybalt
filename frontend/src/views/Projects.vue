@@ -3,12 +3,15 @@
     <div>
       <input type="textbox" placeholder="search..." v-model="search" />
       <button v-if="showNewItem === false" v-on:click="showNewItem = true" >New Project</button>
-      <button v-else v-on:click="showNewItem = false" >Done</button>
+      <button v-else v-on:click="showNewItem = false" >Done Creating Projects</button>
     </div>
     <table>
       <thead>
         <tr>
-          <th>{{ processedItems.length }}</th>
+          <th>
+            <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
+            {{ selected.length }}/{{ processedItems.length }}
+          </th>
           <th><a href="#" v-on:click="sort('job')">Job</a></th>
           <th><a href="#" v-on:click="sort('manager')">Project Manager</a></th>
           <th><a href="#" v-on:click="sort('client')">Client</a></th>
@@ -20,18 +23,22 @@
       <tbody>
         <Editor 
           v-if="showNewItem === true" 
+          v-on:clearEditor="clearEditor()"
           v-bind:schema="['job','manager', 'client', 'proposal', 'description', 'status']"
           v-bind:data="editingObject"
           v-bind:collection="collection"
         />
         <tr v-for="item in processedItems" v-bind:key="item.id">
-          <td></td>
+          <td>
+            <input type="checkbox" v-bind:value="item.id" v-model="selected">
+          </td>
           <td>{{ item.job }}</td>
           <td>{{ item.manager }}</td>
           <td>{{ item.client }}</td>
           <td>{{ item.proposal }}</td>
           <td>{{ item.description }}</td>
           <td>{{ item.status }}</td>
+          <td><button>✏️</button></td>
         </tr>
       </tbody>
     </table>
