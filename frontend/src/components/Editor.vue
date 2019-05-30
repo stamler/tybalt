@@ -1,7 +1,7 @@
 <template>
     <tr id="editor">
       <td></td>
-      <td v-for="field in schema" v-bind:key="field">
+      <td v-for="field in Object.keys(schema)" v-bind:key="field">
         <input type="text" v-model="data[field]"/>
       </td>
       <td><button v-on:click="saveItem()">Save</button></td>
@@ -17,11 +17,26 @@ export default {
     saveItem() {
       // TODO: consider this model
       // https://simonkollross.de/posts/vuejs-using-v-model-with-objects-for-custom-components
-      // TODO: if one of the properties in schema has key = true then use
+      // if one of the properties in schema has id = true then use
       // that as an arg to doc(), otherwise leave it blank.
-      this.collection.doc().set(this.data).then(docRef => {
-        this.$emit('clearEditor');
-      })
+      const id_attribs = Object.keys(this.schema).filter(i => this.schema[i].id);
+      if (id_attribs.length === 0) {
+        // the schema says no attributes are marked id
+        this.collection.doc().set(this.data).then(docRef => {
+          this.$emit('clearEditor');
+        });
+      } else if (id_attribs.length === 1) {
+        // the schema stipulates one attribute is id. Remove it
+        // from the data and add it to the id
+        const id = this.data[id_attribs[0]];
+        delete this.data[id_attribs[0]];
+        this.collection.doc(id).set(this.data).then(docRef => {
+          this.$emit('clearEditor');
+        });
+      } else {
+        // ERROR: the schema stipulates more than one attribute is id
+        console.log("The schema says multiple attributes are id, not saving");
+      }
     }
   }
 }

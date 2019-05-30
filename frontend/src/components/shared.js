@@ -14,6 +14,7 @@ const componentMaker = function() {
     data() {
       return {
         showNewItem: false, // show or hide the Editor for new item
+        schema: {}, // description of objs in collection, ~validate.js syntax
         editingObject: {}, // An object of the firestore collection
         collection: null, // The firestore collection
         taskAreaMode: "default",

@@ -27,7 +27,7 @@
         <Editor 
           v-if="showNewItem === true" 
           v-on:clearEditor="clearEditor()"
-          v-bind:schema="['job','manager', 'client', 'proposal', 'description', 'status']"
+          v-bind:schema="schema"
           v-bind:data="editingObject"
           v-bind:collection="collection"
         />
@@ -35,7 +35,7 @@
           <td>
             <input type="checkbox" v-bind:value="item.id" v-model="selected">
           </td>
-          <td>{{ item.job }}</td>
+          <td>{{ item.id }}</td>
           <td>{{ item.manager }}</td>
           <td>{{ item.client }}</td>
           <td>{{ item.proposal }}</td>
@@ -56,6 +56,14 @@ import componentMaker from "../components/shared.js";
 const component = componentMaker();
 
 component.created = function() {
+  this.schema = {
+    job: {id: true},
+    manager: true,
+    client: true,
+    proposal: true,
+    description: true,
+    status: true
+  };
   this.collection = db.collection("Projects");
   this.$bind("items", db.collection("Projects"));
 }
