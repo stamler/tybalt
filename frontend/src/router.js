@@ -5,15 +5,6 @@ import store from "./store";
 // Views
 import Dashboard from "@/views/Dashboard.vue";
 
-// Components
-import RawLogins from "@/components/RawLogins.vue";
-import Logins from "@/components/Logins.vue";
-import Profiles from "@/components/Profiles.vue";
-import Computers from "@/components/Computers.vue";
-import Users from "@/components/Users.vue";
-import TimeEntries from "@/components/TimeEntries.vue";
-import TimeSheets from "@/components/TimeSheets.vue";
-
 Vue.use(Router);
 
 const router = new Router({
@@ -42,12 +33,14 @@ const router = new Router({
         {
           path: "entries",
           name: "Time Entries",
-          component: TimeEntries
+          component: () =>
+            import(/* webpackChunkName: "time" */ "./components/TimeEntries.vue")
         },
         {
           path: "sheets",
           name: "Time Sheets",
-          component: TimeSheets
+          component: () =>
+            import(/* webpackChunkName: "time" */ "./components/TimeSheets.vue")
         }
 
       ]
@@ -66,36 +59,41 @@ const router = new Router({
           path: "logins",
           name: "Logins",
           meta: { claims: ["logins", "audit"] },
-          component: Logins
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Logins.vue")
         },
         {
           path: "profiles",
           name: "Profiles",
           meta: { claims: ["profiles", "audit"] },
-          component: Profiles
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Profiles.vue")
         },
         {
           path: "computers",
           name: "Computers",
           meta: { claims: ["computers", "audit"] },
-          component: Computers
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Computers.vue")
         },
         {
           path: "users",
           name: "Users",
-          component: Users
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Users.vue")
         },
         {
           path: "projects",
           name: "Projects",
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./views/Projects.vue")
+            import(/* webpackChunkName: "admin" */ "./components/Projects.vue")
         },
         {
           path: "rawlogins",
           name: "Raw Logins",
           meta: { claims: ["rawlogins", "audit"] },
-          component: RawLogins
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue")
         }
       ]
     },
