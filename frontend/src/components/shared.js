@@ -3,6 +3,8 @@
 import moment from "moment";
 import { mapState } from "vuex";
 import Editor from "./Editor";
+import firebase from "@/firebase";
+const db = firebase.firestore();
 
 const componentMaker = function() {
   return {
@@ -71,6 +73,23 @@ const componentMaker = function() {
       },
       clearEditor() {
         this.editingObject = {};
+      },
+      deleteSelected() {
+        const batch = db.batch();
+        this.selected.forEach(key => {
+          // apparently Vuefire $bind on items removes the doc() function so we
+          // use collection instead of items. TODO: research and understand this
+          batch.delete(this.collection.doc(key));
+        });
+        batch
+          .commit()
+          .then(() => {
+            this.selected = [];
+            this.selectAll = false;
+          })
+          .catch(err => {
+            console.log(`Batch failed: ${err}`);
+          });
       }
     }
   };

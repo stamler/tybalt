@@ -2,6 +2,9 @@
   <div id="container">
     <div>
       <input type="textbox" placeholder="search..." v-model="search" />
+      <button v-if="claims.projects === true" v-on:click="deleteSelected()">
+        Delete {{ selected.length }} items
+      </button>
       <button v-if="showNewItem === false" v-on:click="showNewItem = true" >New Project</button>
       <button v-else v-on:click="showNewItem = false" >Done Creating Projects</button>
     </div>

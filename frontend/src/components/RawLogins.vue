@@ -58,22 +58,6 @@ const methods = {
     } catch (error) {
       return "";
     }
-  },
-  deleteSelected() {
-    const batch = db.batch();
-    this.selected.forEach(key => {
-      // apparently Vuefire $bind on items removes the doc() function so we
-      // use collection instead of items. TODO: research and understand this
-      batch.delete(this.collection.doc(key));
-    });
-    batch.commit()
-      .then(() => {
-        this.selected = [];
-        this.selectAll = false;
-      })
-      .catch((err) => {
-        console.log(`Batch failed: ${err}`)
-      });
   }
 };
 
