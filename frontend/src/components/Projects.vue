@@ -5,8 +5,12 @@
       <button v-if="claims.projects === true" v-on:click="deleteSelected()">
         Delete {{ selected.length }} items
       </button>
-      <button v-if="showNewItem === false" v-on:click="showNewItem = true" >New Project</button>
-      <button v-else v-on:click="showNewItem = false" >Done Creating Projects</button>
+      <button v-if="showNewItem === false" v-on:click="showNewItem = true" >
+        New Project
+      </button>
+      <button v-else v-on:click="showNewItem = false" >
+        Done Creating Projects
+      </button>
     </div>
     <table>
       <thead>
@@ -15,12 +19,17 @@
             <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
             {{ selected.length }}/{{ processedItems.length }}
           </th>
-          <th><a href="#" v-on:click="sort('job')">Job</a></th>
-          <th><a href="#" v-on:click="sort('manager')">Project Manager</a></th>
-          <th><a href="#" v-on:click="sort('client')">Client</a></th>
-          <th><a href="#" v-on:click="sort('proposal')">Proposal</a></th>
-          <th>Description</th>
-          <th><a href="#" v-on:click="sort('status')">Status</a></th>
+          <th v-for="col in Object.keys(schema)" v-bind:key="col">
+            <span v-if="schema[col] && schema[col].sort === false">
+              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+            </span>
+            <a v-else-if="schema[col] && schema[col].id" href="#" v-on:click="sort('id')">
+              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+            </a>
+            <a v-else href="#" v-on:click="sort('id')">
+              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+            </a>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -35,12 +44,9 @@
           <td>
             <input type="checkbox" v-bind:value="item.id" v-model="selected">
           </td>
-          <td>{{ item.id }}</td>
-          <td>{{ item.manager }}</td>
-          <td>{{ item.client }}</td>
-          <td>{{ item.proposal }}</td>
-          <td>{{ item.description }}</td>
-          <td>{{ item.status }}</td>
+          <td v-for="col in Object.keys(schema)" v-bind:key="col">
+            {{ schema[col] && schema[col].id === true ? item.id : item[col] }}
+          </td>  
           <td><button>✏️</button></td>
         </tr>
       </tbody>
@@ -57,12 +63,12 @@ const component = componentMaker();
 
 component.created = function() {
   this.schema = {
-    job: {id: true},
-    manager: true,
-    client: true,
-    proposal: true,
-    description: true,
-    status: true
+    job: {display: "Job", id: true},
+    manager: {display: "Project Manager"},
+    client: {display: "Client"},
+    proposal: {display: "Proposal"},
+    description: {display: "Description", sort:false},
+    status: null
   };
   this.collection = db.collection("Projects");
   this.$bind("items", db.collection("Projects"));
