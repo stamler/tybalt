@@ -91,9 +91,3 @@ component.components = { ModClaims };
 
 export default component;
 </script>
-
-<style scoped>
-#container {
-  text-align: left;
-}
-</style>

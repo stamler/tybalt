@@ -37,9 +37,3 @@ component.created = function() {
 
 export default component;
 </script>
-
-<style scoped>
-#container {
-  text-align: left;
-}
-</style>
