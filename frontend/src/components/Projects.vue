@@ -17,7 +17,7 @@ export default {
         client: {display: "Client"},
         proposal: {display: "Proposal"},
         description: {display: "Description", sort:false},
-        status: true
+        status: true // must be an object, otherwise other code fails
       },
       collection: db.collection("Projects"),
     }
