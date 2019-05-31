@@ -1,5 +1,5 @@
 <template>
-  <List :scheme="schema" :source="collection"/>
+  <List :schema="schema" :collection="collection"/>
 </template>
 
 <script>
@@ -17,7 +17,7 @@ export default {
         client: {display: "Client"},
         proposal: {display: "Proposal"},
         description: {display: "Description", sort:false},
-        status: null
+        status: true
       },
       collection: db.collection("Projects"),
     }

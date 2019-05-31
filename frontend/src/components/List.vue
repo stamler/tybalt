@@ -59,10 +59,7 @@ import componentMaker from "../components/shared.js";
 
 const component = componentMaker();
 
-component.props = ['scheme', 'source'];
 component.created = function() {
-  this.schema = this.scheme;
-  this.collection = this.source;
   this.$bind("items", this.collection);
 }
 
