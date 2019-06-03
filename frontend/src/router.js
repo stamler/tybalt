@@ -99,14 +99,14 @@ const router = new Router({
               path: "add",
               name: "Add Project",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Add.vue")
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
             },
             {
               path: "edit/:id",
               props: true,
               name: "Edit Project",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Add.vue")
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
             }
           ]
         },
