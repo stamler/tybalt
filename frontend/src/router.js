@@ -94,6 +94,12 @@ const router = new Router({
               name: "Projects List",
               component: () =>
                 import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            },
+            {
+              path: "add",
+              name: "Add Project",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Add.vue")
             }
           ]
         },

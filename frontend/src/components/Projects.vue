@@ -1,5 +1,11 @@
 <template>
-  <router-view/>
+  <div>
+    <div id="nav">
+      <router-link to="/admin/projects/list">List</router-link>&nbsp;
+      <router-link to="/admin/projects/add">New</router-link>
+    </div>
+    <router-view/>
+  </div>
 </template>
 
 <script>
