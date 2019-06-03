@@ -2,7 +2,8 @@
   <div id="editor">
       <span class="field" v-for="field in Object.keys(schema)" v-bind:key="field">
         <label for="">{{ field }}</label>
-        <input type="text" v-model="item[field]"/>
+        <input v-if="schema[field].id" type="text" v-model="item.id"/>
+        <input v-else type="text" v-model="item[field]"/>
       </span>
       <button v-on:click="saveItem()">Save</button>
   </div>
@@ -10,12 +11,22 @@
 
 <script>
 export default {
+  props: ['id'],
   data() {
     return {
-      schema: null,
+      schema: {},
       collection: null,
       item: {}
     }
+  },
+  watch: {
+    id: {
+      immediate: true,
+      handler(id) {
+        console.log(id);
+        this.item = id ? this.$bind('item', this.$parent.collection.doc(id)) : {};
+      },
+    },
   },
   created() {
     this.schema = this.$parent.schema;
@@ -36,9 +47,9 @@ export default {
       } else if (id_attribs.length === 1) {
         // one attribute with id property in schema. Remove it
         // from the data and add it to the id
-        const id = this.item[id_attribs[0]];
+        const new_id = this.item[id_attribs[0]];
         delete this.item[id_attribs[0]];
-        this.collection.doc(id).set(this.item).then(docRef => {
+        this.collection.doc(new_id).set(this.item).then(docRef => {
           this.clearEditor();
         });
       } else {

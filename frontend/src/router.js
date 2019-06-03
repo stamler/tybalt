@@ -100,6 +100,13 @@ const router = new Router({
               name: "Add Project",
               component: () =>
                 import(/* webpackChunkName: "admin" */ "./components/Add.vue")
+            },
+            {
+              path: "edit/:id",
+              props: true,
+              name: "Edit Project",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Add.vue")
             }
           ]
         },
