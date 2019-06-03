@@ -5,12 +5,6 @@
       <button v-if="claims.projects === true" v-on:click="deleteSelected()">
         Delete {{ selected.length }} items
       </button>
-      <button v-if="showNewItem === false" v-on:click="showNewItem = true" >
-        New Project
-      </button>
-      <button v-else v-on:click="showNewItem = false" >
-        Done Creating Projects
-      </button>
     </div>
     <table>
       <thead>
@@ -33,13 +27,6 @@
         </tr>
       </thead>
       <tbody>
-        <Editor 
-          v-if="showNewItem === true" 
-          v-on:clearEditor="clearEditor()"
-          v-bind:schema="schema"
-          v-bind:data="editingObject"
-          v-bind:collection="collection"
-        />
         <tr v-for="item in processedItems" v-bind:key="item.id">
           <td>
             <input type="checkbox" v-bind:value="item.id" v-model="selected">
@@ -69,8 +56,6 @@ export default {
     return {
       schema: null, // schema: a reference to the parent schema
       collection: null, // collection: a reference to the parent collection
-      showNewItem: false, // show or hide the Editor for new item
-      editingObject: {}, // An object of the firestore collection
       taskAreaMode: "default",
       items: [],
       search: "",
@@ -131,9 +116,6 @@ export default {
       return Object.values(item)
         .join(",")
         .toLowerCase();
-    },
-    clearEditor() {
-      this.editingObject = {};
     },
     deleteSelected() {
       const batch = db.batch();

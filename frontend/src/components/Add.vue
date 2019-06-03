@@ -23,7 +23,6 @@ export default {
     id: {
       immediate: true,
       handler(id) {
-        console.log(id);
         this.item = id ? this.$bind('item', this.$parent.collection.doc(id)) : {};
       },
     },
