@@ -5,7 +5,6 @@
         <input type="text" v-model="item[field]"/>
       </span>
       <button v-on:click="saveItem()">Save</button>
-      {{ item }}
   </div>
 </template>
 
