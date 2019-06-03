@@ -2,15 +2,11 @@
 
 import moment from "moment";
 import { mapState } from "vuex";
-import Editor from "./Editor";
 import firebase from "@/firebase";
 const db = firebase.firestore();
 
 const componentMaker = function() {
   return {
-    components: {
-      Editor
-    },
     data() {
       return {
         schema: null, // schema: a reference to the parent schema
@@ -69,9 +65,6 @@ const componentMaker = function() {
         return Object.values(item)
           .join(",")
           .toLowerCase();
-      },
-      clearEditor() {
-        this.editingObject = {};
       },
       deleteSelected() {
         const batch = db.batch();

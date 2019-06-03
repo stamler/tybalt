@@ -44,14 +44,10 @@
 <script>
 import moment from "moment";
 import { mapState } from "vuex";
-import Editor from "./Editor";
 import firebase from "@/firebase";
 const db = firebase.firestore();
 
 export default {
-  components: {
-    Editor
-  },
   data() {
     return {
       schema: null, // schema: a reference to the parent schema
