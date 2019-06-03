@@ -30,12 +30,12 @@ export default {
       // that as an arg to doc(), otherwise leave it blank.
       const id_attribs = Object.keys(this.schema).filter(i => this.schema[i].id);
       if (id_attribs.length === 0) {
-        // the schema says no attributes are marked id
+        // no attributes with id property in schema
         this.collection.doc().set(this.item).then(docRef => {
           this.clearEditor();
         });
       } else if (id_attribs.length === 1) {
-        // the schema stipulates one attribute is id. Remove it
+        // one attribute with id property in schema. Remove it
         // from the data and add it to the id
         const id = this.item[id_attribs[0]];
         delete this.item[id_attribs[0]];
