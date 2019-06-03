@@ -2,10 +2,12 @@
   <div id="editor">
       <span class="field" v-for="field in Object.keys(schema)" v-bind:key="field">
         <label for="">{{ field }}</label>
-        <input v-if="schema[field].id" type="text" v-model="item.id"/>
+        <!-- id !== undefined means we're editing existing item -->
+        <span v-if="id !== undefined && schema[field].id">{{ item.id }}</span>
         <input v-else type="text" v-model="item[field]"/>
       </span>
-      <button v-on:click="saveItem()">Save</button>
+      <button v-on:click="save()">Save</button>
+      <button v-if="id !== undefined" v-on:click="del()">Delete</button>
   </div>
 </template>
 
@@ -32,29 +34,46 @@ export default {
     this.collection = this.$parent.collection;
   },
   methods: {
-    saveItem() {
+    save() {
       // TODO: consider this model
       // https://simonkollross.de/posts/vuejs-using-v-model-with-objects-for-custom-components
       // if one of the properties in schema has id = true then use
       // that as an arg to doc(), otherwise leave it blank.
-      const id_attribs = Object.keys(this.schema).filter(i => this.schema[i].id);
-      if (id_attribs.length === 0) {
-        // no attributes with id property in schema
-        this.collection.doc().set(this.item).then(docRef => {
-          this.clearEditor();
-        });
-      } else if (id_attribs.length === 1) {
-        // one attribute with id property in schema. Remove it
-        // from the data and add it to the id
-        const new_id = this.item[id_attribs[0]];
-        delete this.item[id_attribs[0]];
-        this.collection.doc(new_id).set(this.item).then(docRef => {
+      if(this.id) {
+        // Editing an existing item
+        // Since the UI binds existing id to the key field, no need to delete
+        this.collection.doc(this.id).set(this.item).then(docRef => {
           this.clearEditor();
         });
       } else {
-        // ERROR: the schema stipulates more than one attribute is id
-        console.log("The schema says multiple attributes are id, not saving");
+        // Creating a new item
+        const id_attribs = Object.keys(this.schema).filter(i => this.schema[i].id);
+
+        if (id_attribs.length === 0) {
+          // no attributes with id property in schema
+          this.collection.doc().set(this.item).then(docRef => {
+            this.clearEditor();
+          });
+        } else if (id_attribs.length === 1) {
+          // one attribute with id property in schema. Remove it
+          // from the data and add it to the id
+          const new_id = this.item[id_attribs[0]];
+          delete this.item[id_attribs[0]];
+          this.collection.doc(new_id).set(this.item).then(docRef => {
+            this.clearEditor();
+          });
+        } else {
+          // ERROR: the schema stipulates more than one attribute is id
+          console.log("The schema says multiple attributes are id, not saving");
+        }
       }
+    },
+    del() {
+      this.collection.doc(this.id).delete().then(() => {
+        this.clearEditor();
+        // TODO: unstable state because id prop is now invalid.
+        // either push to /list or to /add URL 
+      });
     },
     clearEditor() {
       this.item = {};
