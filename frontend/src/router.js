@@ -85,8 +85,17 @@ const router = new Router({
         {
           path: "projects",
           name: "Projects",
+          redirect: "/admin/projects/list",
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Projects.vue")
+            import(/* webpackChunkName: "admin" */ "./components/Projects.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Projects List",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            }
+          ]
         },
         {
           path: "rawlogins",

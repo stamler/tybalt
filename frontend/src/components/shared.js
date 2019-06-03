@@ -11,9 +11,10 @@ const componentMaker = function() {
     components: {
       Editor
     },
-    props: ["schema", "collection"],
     data() {
       return {
+        schema: null, // schema: a reference to the parent schema
+        collection: null, // collection: a reference to the parent collection
         showNewItem: false, // show or hide the Editor for new item
         editingObject: {}, // An object of the firestore collection
         taskAreaMode: "default",

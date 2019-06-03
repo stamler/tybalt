@@ -1,5 +1,5 @@
 <template>
-  <List :schema="schema" :collection="collection"/>
+  <router-view/>
 </template>
 
 <script>
@@ -20,6 +20,7 @@ export default {
         status: true // must be an object, otherwise other code fails
       },
       collection: db.collection("Projects"),
+      items: db.collection("Projects"),
     }
   }
 }

@@ -60,7 +60,10 @@ import componentMaker from "../components/shared.js";
 const component = componentMaker();
 
 component.created = function() {
-  this.$bind("items", this.collection);
+  this.schema = this.$parent.schema;
+  this.collection = this.$parent.collection;
+  this.items = this.$parent.items;
+  this.$bind("items", this.items);
 }
 
 export default component;
