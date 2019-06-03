@@ -44,6 +44,7 @@ export default {
         // Since the UI binds existing id to the key field, no need to delete
         this.collection.doc(this.id).set(this.item).then(docRef => {
           this.clearEditor();
+          // TODO: router push to the list view here instead of clear
         });
       } else {
         // Creating a new item
@@ -53,6 +54,7 @@ export default {
           // no attributes with id property in schema
           this.collection.doc().set(this.item).then(docRef => {
             this.clearEditor();
+            // TODO: either push to list view or notify user save is done
           });
         } else if (id_attribs.length === 1) {
           // one attribute with id property in schema. Remove it
@@ -61,10 +63,12 @@ export default {
           delete this.item[id_attribs[0]];
           this.collection.doc(new_id).set(this.item).then(docRef => {
             this.clearEditor();
+            // TODO: either push to list view or notify user save is done
           });
         } else {
           // ERROR: the schema stipulates more than one attribute is id
           console.log("The schema says multiple attributes are id, not saving");
+          // TODO: Notify user of error in UI
         }
       }
     },
