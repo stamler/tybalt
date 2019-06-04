@@ -34,6 +34,7 @@ export default {
   },
   computed: mapState(["claims"]),
   created() {
+    // Modify UI based on permissions and business requirements here
     this.create = this.select = this.del = this.edit =
       this.claims.hasOwnProperty("projects") &&
       this.claims["projects"] === true
