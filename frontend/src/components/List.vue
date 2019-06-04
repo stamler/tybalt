@@ -14,13 +14,16 @@
             {{ selected.length }}/{{ processedItems.length }}
           </th>
           <th v-for="col in Object.keys(schema)" v-bind:key="col">
+            <!-- the schema specifies not to sort on this column  -->
             <span v-if="schema[col] && schema[col].sort === false">
               {{ schema[col] && schema[col].display ? schema[col].display : col }}
             </span>
+            <!-- the schema specifies this column is an id -->
             <a v-else-if="schema[col] && schema[col].id" href="#" v-on:click="sort('id')">
               {{ schema[col] && schema[col].display ? schema[col].display : col }}
             </a>
-            <a v-else href="#" v-on:click="sort('id')">
+            <!-- sort on this regular column -->
+            <a v-else href="#" v-on:click="sort(col)">
               {{ schema[col] && schema[col].display ? schema[col].display : col }}
             </a>
           </th>
@@ -111,7 +114,9 @@ export default {
       this.sortBy = property;
     },
     searchString(item) {
-      return Object.values(item)
+      const fields = Object.values(item);
+      fields.push(item.id);
+      return fields
         .join(",")
         .toLowerCase();
     },
