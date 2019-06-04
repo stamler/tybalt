@@ -2,7 +2,7 @@
   <div>
     <div id="nav">
       <router-link to="list">List</router-link>&nbsp;
-      <router-link v-if="enableEditing" to="add">New</router-link>
+      <router-link v-if="create" to="add">New</router-link>
     </div>
     <router-view/>
   </div>
@@ -16,7 +16,10 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
-      enableEditing: false,
+      create: false,
+      select: false,
+      edit: false,
+      del: false,
       schema: {
         job: {display: "Job", id: true},
         manager: {display: "Project Manager"},
@@ -31,7 +34,7 @@ export default {
   },
   computed: mapState(["claims"]),
   created() {
-    this.enableEditing = 
+    this.create = this.select = this.del = this.edit =
       this.claims.hasOwnProperty("projects") &&
       this.claims["projects"] === true
   }
