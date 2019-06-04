@@ -85,11 +85,6 @@ const router = new Router({
         {
           path: "projects",
           name: "Projects",
-          props: () => ({
-            enableEditing:
-              store.state.claims.hasOwnProperty("projects") &&
-              store.state.claims["projects"] === true
-          }),
           redirect: "/admin/projects/list",
           component: () =>
             import(/* webpackChunkName: "admin" */ "./components/Projects.vue"),

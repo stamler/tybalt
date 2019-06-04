@@ -12,11 +12,12 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
+import { mapState } from "vuex";
 
 export default {
-  props: ["enableEditing"],
   data() {
     return {
+      enableEditing: false,
       schema: {
         job: {display: "Job", id: true},
         manager: {display: "Project Manager"},
@@ -28,6 +29,12 @@ export default {
       collection: db.collection("Projects"),
       items: db.collection("Projects"),
     }
+  },
+  computed: mapState(["claims"]),
+  created() {
+    this.enableEditing = 
+      this.claims.hasOwnProperty("projects") &&
+      this.claims["projects"] === true
   }
 }
 </script>
