@@ -113,9 +113,18 @@ const router = new Router({
         {
           path: "rawlogins",
           name: "Raw Logins",
+          redirect: "/admin/rawlogins/list",
           meta: { claims: ["rawlogins", "audit"] },
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue")
+            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Raw Logins List",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            }
+          ]
         }
       ]
     },

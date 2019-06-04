@@ -16,7 +16,7 @@
           <th v-else>
             {{ processedItems.length }}
           </th>
-          <th v-for="col in Object.keys(schema)" v-bind:key="col">
+          <th v-for="col in fields" v-bind:key="col">
             <!-- the schema specifies not to sort on this column  -->
             <span v-if="schema[col] && schema[col].sort === false">
               {{ schema[col] && schema[col].display ? schema[col].display : col }}
@@ -34,12 +34,15 @@
       </thead>
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
+          <!-- selection checkbox -->
           <td>
             <input v-if="select" type="checkbox" v-bind:value="item.id" v-model="selected">
           </td>
-          <td v-for="col in Object.keys(schema)" v-bind:key="col">
-            {{ schema[col] && schema[col].id === true ? item.id : item[col] }}
+          <!-- columns  -->
+          <td v-for="field in fields" v-bind:key="field">
+            {{ renderCell(field, item) }}
           </td>
+          <!-- edit button  -->
           <td v-if="edit"><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
         </tr>
       </tbody>
@@ -81,18 +84,10 @@ export default {
     this.items = this.$parent.items;
     this.$bind("items", this.items);
   },
-  filters: {
-    shortDate(date) {
-      return moment(date).format("MMM DD");
-    },
-    dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },
-    relativeTime(date) {
-      return moment(date).fromNow();
-    }
-  },
   computed: {
+    fields() {
+      return Object.keys(this.schema);
+    },
     processedItems() {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
@@ -110,6 +105,11 @@ export default {
     ...mapState(["claims"])
   },
   methods: {
+    renderCell(field, item) {
+      const value = this.schema[field] && this.schema[field].id === true ? item.id : item[field];
+      const derivation = this.schema[field].derivation;
+      return derivation ? derivation(item) : value;
+    },
     toggleAll() {
       this.selected = [];
       if (!this.selectAll) {
