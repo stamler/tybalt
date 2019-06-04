@@ -1,5 +1,5 @@
 <template>
-  <div id="editor">
+  <form id="editor">
       <span class="field" v-for="field in Object.keys(schema)" v-bind:key="field">
         <label for="">{{ field }}</label>
         <!-- disable input because we're editing and this field is the id -->
@@ -7,9 +7,9 @@
         <!-- enable input for this regular field -->
         <input v-else type="text" v-model="item[field]"/>
       </span>
-      <button v-on:click="save()">Save</button>
-      <button v-on:click="$router.push(parentPath)">Cancel</button>
-  </div>
+      <button type="button" v-on:click="save()">Save</button>
+      <button type="button" v-on:click="$router.push(parentPath)">Cancel</button>
+  </form>
 </template>
 
 <script>
