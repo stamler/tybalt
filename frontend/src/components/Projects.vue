@@ -1,5 +1,6 @@
 <template>
   <div>
+    Editing {{ enableEditing ? "Enabled" : "Disabled" }}
     <div id="nav">
       <router-link to="list">List</router-link>&nbsp;
       <router-link to="add">New</router-link>
@@ -11,10 +12,9 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import List from './List.vue'
 
 export default {
-  components: { List },
+  props: ["enableEditing"],
   data() {
     return {
       schema: {
