@@ -102,7 +102,7 @@ const router = new Router({
                 import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
             },
             {
-              path: "edit/:id",
+              path: ":id/edit",
               props: true,
               name: "Edit Project",
               component: () =>

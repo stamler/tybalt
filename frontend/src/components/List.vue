@@ -33,8 +33,8 @@
           </td>
           <td v-for="col in Object.keys(schema)" v-bind:key="col">
             {{ schema[col] && schema[col].id === true ? item.id : item[col] }}
-          </td>  
-          <td><button>✏️</button></td>
+          </td>
+          <td><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
         </tr>
       </tbody>
     </table>
@@ -50,6 +50,7 @@ const db = firebase.firestore();
 export default {
   data() {
     return {
+      parentPath: null,
       schema: null, // schema: a reference to the parent schema
       collection: null, // collection: a reference to the parent collection
       taskAreaMode: "default",
@@ -62,6 +63,7 @@ export default {
     };
   },
   created() {
+    this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
