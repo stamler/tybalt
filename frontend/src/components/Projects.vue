@@ -1,8 +1,8 @@
 <template>
   <div>
     <div id="nav">
-      <router-link to="/admin/projects/list">List</router-link>&nbsp;
-      <router-link to="/admin/projects/add">New</router-link>
+      <router-link to="list">List</router-link>&nbsp;
+      <router-link to="add">New</router-link>
     </div>
     <router-view/>
   </div>

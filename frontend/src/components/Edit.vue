@@ -2,12 +2,13 @@
   <div id="editor">
       <span class="field" v-for="field in Object.keys(schema)" v-bind:key="field">
         <label for="">{{ field }}</label>
-        <!-- id !== undefined means we're editing existing item -->
-        <span v-if="id !== undefined && schema[field].id">{{ item.id }}</span>
+        <!-- disable input because we're editing and this field is the id -->
+        <span v-if="editing && schema[field].id">{{ item.id }}</span>
+        <!-- enable input for this regular field -->
         <input v-else type="text" v-model="item[field]"/>
       </span>
       <button v-on:click="save()">Save</button>
-      <button v-if="id !== undefined" v-on:click="del()">Delete</button>
+      <button v-on:click="$router.push(parentPath)">Cancel</button>
   </div>
 </template>
 
@@ -20,6 +21,11 @@ export default {
       schema: {},
       collection: null,
       item: {}
+    }
+  },
+  computed: {
+    editing: function () {
+      return this.id !== undefined;
     }
   },
   watch: {
@@ -55,7 +61,7 @@ export default {
           // no attributes with id property in schema
           this.collection.doc().set(this.item).then(docRef => {
             this.clearEditor();
-            // TODO: either push to list view or notify user save is done
+            // notify user save is done
           });
         } else if (id_attribs.length === 1) {
           // one attribute with id property in schema. Remove it
@@ -64,7 +70,7 @@ export default {
           delete this.item[id_attribs[0]];
           this.collection.doc(new_id).set(this.item).then(docRef => {
             this.clearEditor();
-            // TODO: either push to list view or notify user save is done
+            // notify user save is done
           });
         } else {
           // ERROR: the schema stipulates more than one attribute is id
@@ -72,13 +78,6 @@ export default {
           // TODO: Notify user of error in UI
         }
       }
-    },
-    del() {
-      this.collection.doc(this.id).delete().then(() => {
-        this.clearEditor();
-        // TODO: unstable state because id prop is now invalid.
-        // either push to /list or to /add URL 
-      });
     },
     clearEditor() {
       this.item = {};
