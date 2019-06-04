@@ -16,6 +16,7 @@ export default {
   props: ['id'],
   data() {
     return {
+      parentPath: null,
       schema: {},
       collection: null,
       item: {}
@@ -30,6 +31,7 @@ export default {
     },
   },
   created() {
+    this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
   },
@@ -43,8 +45,7 @@ export default {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
         this.collection.doc(this.id).set(this.item).then(docRef => {
-          this.clearEditor();
-          // TODO: router push to the list view here instead of clear
+          this.$router.push(this.parentPath);
         });
       } else {
         // Creating a new item
