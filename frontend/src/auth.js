@@ -2,15 +2,11 @@ import jwt_decode from "jwt-decode";
 import axios from "axios";
 import firebase from "@/firebase";
 
-import store from "./store";
-
 // TODO: Pull the Azure config from a firebase document
 const clientId = "5ce70993-306b-4c1e-a980-ba4139863126";
 const tenant = "tbte.onmicrosoft.com";
 
 export async function signIn() {
-  store.commit("setAppStatus", "loading"); // set app to loading state
-
   // no user is signed in, try to extract a token from URL fragment
   const hash = window.location.hash.substring(1);
   const hashParams = hash.split("&").reduce(function(result, item) {

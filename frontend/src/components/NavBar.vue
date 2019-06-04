@@ -25,7 +25,6 @@ export default {
     };
   },
   computed: mapState({
-    state: state => state.appStatus,
     user: state => state.user
   }),
   methods: {

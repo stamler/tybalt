@@ -25,7 +25,6 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
     // by the router, any component which depends on state will fail on
     // app load.
     tasks.push(store.commit("setUser", firebase.auth().currentUser));
-    tasks.push(store.commit("setAppStatus", "ready"));
     tasks.push(
       user
         .getIdTokenResult()

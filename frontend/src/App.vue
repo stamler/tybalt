@@ -15,7 +15,6 @@ export default {
   },
   data() {
     return {
-      state: "loading", // app state can be "loading", "ready"
       user: null
     };
   }
