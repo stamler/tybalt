@@ -1,39 +1,38 @@
 <template>
-  <div id="container">
-    <div>
-      <input type="textbox" placeholder="search..." v-model="search" />
+  <div>
+    <div id="nav">
+      <router-link to="list">List</router-link>&nbsp;
+      <router-link v-if="create" to="add">New</router-link>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>{{ processedItems.length }}</th>
-          <th><a href="#" v-on:click="sort('computer')">Computer</a></th>
-          <th><a href="#" v-on:click="sort('givenName')">First</a>&nbsp;<a href="#" v-on:click="sort('surname')">Last</a></th>
-          <th><a href="#" v-on:click="sort('created')">created</a></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in processedItems" v-bind:key="item.id">
-          <td></td>
-          <td>{{ item.computer }}</td>
-          <td>{{ item.givenName }} {{ item.surname }}</td>
-          <td>{{ item.created.toDate() | relativeTime }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <router-view/>
   </div>
 </template>
 
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import componentMaker from "./shared.js";
+import { mapState } from "vuex";
+import moment from "moment";
 
-const component = componentMaker();
-
-component.created = function() {
-  this.$bind("items", db.collection("Logins").orderBy("created", "desc").limit(101));
+export default {
+  data() {
+    return {
+      create: false,
+      select: false,
+      edit: false,
+      del: false,
+      schema: {
+        givenName: {display: "First Name"},
+        surname: {display: "Last Name"},
+        created: {
+          derivation: obj => moment(obj.created.toDate()).fromNow()
+        },
+        computer: {display: "Computer"},
+      },
+      collection: db.collection("Logins"),
+      items: db.collection("Logins").orderBy("created", "desc").limit(101),
+    }
+  },
+  computed: mapState(["claims"]),
 }
-
-export default component;
 </script>
