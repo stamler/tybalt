@@ -19,9 +19,7 @@ export default {
       links: this.$router.options.routes.filter(x => x.name === "Admin")[0].children
     }
   },
-  computed: mapState({
-    claims: state => state.claims
-  }),
+  computed: mapState(['claims']),
   methods: {
     showLink (link) {
       if (link.meta && link.meta.claims) {

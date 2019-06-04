@@ -24,9 +24,7 @@ export default {
       links: this.$router.options.routes.filter(x => x.name)
     };
   },
-  computed: mapState({
-    user: state => state.user
-  }),
+  computed: mapState(["user"]),
   methods: {
     signOut,
     showLink (link) {

@@ -26,7 +26,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(["state","claims","user"])
+    ...mapState(["claims","user"])
   },
   methods: {
     showLink (link) {

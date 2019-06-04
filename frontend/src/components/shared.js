@@ -46,7 +46,7 @@ const componentMaker = function() {
           );
       },
       // the spread operator allows including the mapped computed properties
-      ...mapState(["claims", "state", "user"])
+      ...mapState(["claims", "user"])
     },
     methods: {
       toggleAll() {
