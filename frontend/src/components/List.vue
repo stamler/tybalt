@@ -2,16 +2,19 @@
   <div id="container">
     <div>
       <input type="textbox" placeholder="search..." v-model="search" />
-      <button v-if="claims.projects === true" v-on:click="deleteSelected()">
+      <button v-if="enableEditing" v-on:click="deleteSelected()">
         Delete {{ selected.length }} items
       </button>
     </div>
     <table>
       <thead>
         <tr>
-          <th>
+          <th v-if="enableEditing">
             <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
             {{ selected.length }}/{{ processedItems.length }}
+          </th>
+          <th v-else>
+            {{ processedItems.length }}
           </th>
           <th v-for="col in Object.keys(schema)" v-bind:key="col">
             <!-- the schema specifies not to sort on this column  -->
@@ -32,12 +35,12 @@
       <tbody>
         <tr v-for="item in processedItems" v-bind:key="item.id">
           <td>
-            <input type="checkbox" v-bind:value="item.id" v-model="selected">
+            <input v-if="enableEditing" type="checkbox" v-bind:value="item.id" v-model="selected">
           </td>
           <td v-for="col in Object.keys(schema)" v-bind:key="col">
             {{ schema[col] && schema[col].id === true ? item.id : item[col] }}
           </td>
-          <td><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
+          <td v-if="enableEditing"><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
         </tr>
       </tbody>
     </table>
@@ -53,6 +56,7 @@ const db = firebase.firestore();
 export default {
   data() {
     return {
+      enableEditing: false,
       parentPath: null,
       schema: null, // schema: a reference to the parent schema
       collection: null, // collection: a reference to the parent collection
@@ -66,6 +70,7 @@ export default {
     };
   },
   created() {
+    this.enableEditing = this.$parent.enableEditing;
     this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;

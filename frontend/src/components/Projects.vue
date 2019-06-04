@@ -1,9 +1,8 @@
 <template>
   <div>
-    Editing {{ enableEditing ? "Enabled" : "Disabled" }}
     <div id="nav">
       <router-link to="list">List</router-link>&nbsp;
-      <router-link to="add">New</router-link>
+      <router-link v-if="enableEditing" to="add">New</router-link>
     </div>
     <router-view/>
   </div>
