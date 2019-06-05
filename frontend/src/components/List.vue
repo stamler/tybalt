@@ -1,11 +1,19 @@
 <template>
   <div id="container">
-    <div>
+    <div v-if="taskAreaMode === 'default'">
       <input type="textbox" placeholder="search..." v-model="search" />
       <button v-if="del" v-on:click="deleteSelected()">
         Delete {{ selected.length }} items
       </button>
+      <slot 
+        name="taskAreaDefault" 
+        v-bind:taskAreaMode="taskAreaMode"
+        v-bind:setTaskMode="setTaskMode"/>
     </div>
+    <slot 
+      name="taskAreaNonDefault" 
+      v-bind:taskAreaMode="taskAreaMode"
+      v-bind:setTaskMode="setTaskMode"/>
     <table>
       <thead>
         <tr>
@@ -105,6 +113,9 @@ export default {
     ...mapState(["claims"])
   },
   methods: {
+    setTaskMode(mode) {
+      this.taskAreaMode = mode;
+    },
     renderCell(field, item) {
       const value = this.schema[field] && this.schema[field].id === true ? item.id : item[field];
       const derivation = this.schema[field].derivation;

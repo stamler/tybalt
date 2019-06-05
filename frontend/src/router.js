@@ -79,6 +79,22 @@ const router = new Router({
             import(/* webpackChunkName: "admin" */ "./components/Profiles.vue")
         },
         {
+          path: "profiles2",
+          name: "Profiles2",
+          redirect: "/admin/profiles2/list",
+          meta: { claims: ["profiles", "audit"] },
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Profiles2.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Profiles List",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            }
+          ]
+        },
+        {
           path: "computers",
           name: "Computers",
           meta: { claims: ["computers", "audit"] },
