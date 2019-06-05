@@ -10,7 +10,7 @@
         <button v-on:click="setTaskMode('modClaims')" >✏️ Edit Claims</button>
       </template>
       <template v-slot:taskAreaNonDefault="{ taskAreaMode, setTaskMode }">
-        <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" v-on:mod-claims="modClaims"/>
+        <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" />
       </template>
     </router-view>
   </div>
@@ -50,18 +50,6 @@ export default {
       this.claims["profiles"] === true
   },
   methods: {
-    modClaims(data) {
-      const modClaims = firebase.functions().httpsCallable("modClaims");
-      modClaims({...data, users: this.selected})
-        .then((result) => {
-          // TODO: get and handle real responses from callable
-          console.log(JSON.stringify(result));
-        })
-        .catch((error) => {
-          // TODO: get and handle real responses from callable
-          console.log(error);
-        });
-    },
     claimsToProfiles() {
       const claimsToProfiles = firebase.functions().httpsCallable("claimsToProfiles");
       claimsToProfiles({})

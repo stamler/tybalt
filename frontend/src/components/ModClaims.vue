@@ -7,6 +7,8 @@
   </div>
 </template>
 <script>
+import firebase from "@/firebase";
+
 export default {
   data() {
     return {
@@ -18,9 +20,19 @@ export default {
       // claims should be separated by commas
       const data = {
         action,
-        claims: this.claimsString.split(',').map(s => s.trim())
+        claims: this.claimsString.split(',').map(s => s.trim()),
+        users: this.$parent.selected
       }
-      this.$emit('mod-claims', data)
+      const modClaims = firebase.functions().httpsCallable("modClaims");
+      modClaims(data)
+        .then((result) => {
+          // TODO: get and handle real responses from callable
+          console.log(JSON.stringify(result));
+        })
+        .catch((error) => {
+          // TODO: get and handle real responses from callable
+          console.log(error);
+        });
     }
   }
 }
