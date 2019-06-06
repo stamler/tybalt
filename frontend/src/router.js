@@ -42,7 +42,6 @@ const router = new Router({
           component: () =>
             import(/* webpackChunkName: "time" */ "./components/TimeSheets.vue")
         }
-
       ]
     },
     {
@@ -60,7 +59,7 @@ const router = new Router({
           name: "Logins",
           meta: { claims: ["logins", "audit"] },
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Logins.vue"),
+            import(/* webpackChunkName: "admin" */ "./components/Logins.vue")
         },
         {
           path: "profiles",
@@ -129,18 +128,9 @@ const router = new Router({
         {
           path: "rawlogins",
           name: "Raw Logins",
-          redirect: "/admin/rawlogins/list",
           meta: { claims: ["rawlogins", "audit"] },
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue"),
-          children: [
-            {
-              path: "list",
-              name: "Raw Logins List",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/List.vue")
-            }
-          ]
+            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue")
         }
       ]
     },
