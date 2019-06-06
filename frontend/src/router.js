@@ -85,17 +85,8 @@ const router = new Router({
         {
           path: "users",
           name: "Users",
-          redirect: "/admin/users/list",
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Users.vue"),
-          children: [
-            {
-              path: "list",
-              name: "Users List",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/List.vue")
-            }
-          ]
+            import(/* webpackChunkName: "admin" */ "./components/Users.vue")
         },
         {
           path: "projects",
