@@ -87,9 +87,9 @@ export default {
     };
   },
   created() {
-    this.select = this.$parent.select;
-    this.edit = this.$parent.edit;
-    this.del = this.$parent.del;
+    this.select = this.$parent.select || false;
+    this.edit = this.$parent.edit || false;
+    this.del = this.$parent.del || false;
     this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
