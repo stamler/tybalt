@@ -1,19 +1,23 @@
 <template>
   <div id="container">
-    <div v-if="taskAreaMode === 'default'">
-      <input type="textbox" placeholder="search..." v-model="search" />
-      <button v-if="del" v-on:click="deleteSelected()">
-        Delete {{ selected.length }} items
-      </button>
-      <slot 
-        name="taskAreaDefault" 
-        v-bind:taskAreaMode="taskAreaMode"
-        v-bind:setTaskMode="setTaskMode"/>
+    <div id="taskArea">
+      <div v-if="taskAreaMode === 'default'">
+        <input type="textbox" placeholder="search..." v-model="search" />
+        <button v-if="del" v-on:click="deleteSelected()">
+          Delete {{ selected.length }} items
+        </button>
+        <slot 
+          name="taskAreaDefault" 
+          v-bind:taskAreaMode="taskAreaMode"
+          v-bind:setTaskMode="setTaskMode"/>
+      </div>
+      <div v-else>
+        <slot 
+          name="taskAreaNonDefault" 
+          v-bind:taskAreaMode="taskAreaMode"
+          v-bind:setTaskMode="setTaskMode"/>
+      </div>
     </div>
-    <slot 
-      name="taskAreaNonDefault" 
-      v-bind:taskAreaMode="taskAreaMode"
-      v-bind:setTaskMode="setTaskMode"/>
     <table>
       <thead>
         <tr>

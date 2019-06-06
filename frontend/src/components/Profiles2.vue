@@ -1,10 +1,6 @@
 <template>
   <div>
-    <div id="nav">
-      <router-link to="list">List</router-link>&nbsp;
-      <router-link v-if="create" to="add">New</router-link>
-    </div>
-    <router-view>
+    <List>
       <template v-slot:taskAreaDefault="{ taskAreaMode, setTaskMode }">
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
         <button v-on:click="setTaskMode('modClaims')" >✏️ Edit Claims</button>
@@ -12,7 +8,7 @@
       <template v-slot:taskAreaNonDefault="{ taskAreaMode, setTaskMode }">
         <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" />
       </template>
-    </router-view>
+    </List>
   </div>
 </template>
 
@@ -22,9 +18,10 @@ const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
 import ModClaims from "@/components/ModClaims.vue";
+import List from "@/components/List.vue";
 
 export default {
-  components: { ModClaims },
+  components: { ModClaims, List },
   data() {
     return {
       create: false,
