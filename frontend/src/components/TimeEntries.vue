@@ -1,10 +1,18 @@
 <template>
-  <List>
-    <template v-slot:taskAreaDefault>
-      <button>New Entry</button>
-      <button>Check Entries</button>
-    </template>
-  </List>
+  <div>
+    <div id="nav">
+      <router-link to="list">List</router-link>&nbsp;
+      <router-link v-if="create" to="add">New</router-link>
+    </div>
+    <h2>Week {{ now.isoWeek() }} is 
+      {{ now.startOf('week').format("ddd MMM D") }} to 
+      {{ now.endOf('week').format("ddd MMM D") }}</h2>
+    <router-view>
+      <template v-slot:taskAreaDefault>
+        <button>Check Entries</button>
+      </template>
+    </router-view>
+  </div>
 </template>
 
 <script>
@@ -19,6 +27,11 @@ export default {
   components: { List },
   data() {
     return {
+      create: false,
+      select: false,
+      edit: false,
+      del: false,
+      now: moment(),
       schema: {
         date: {
           display: "Date",
@@ -41,8 +54,8 @@ export default {
   created() {
     // Modify UI based on permissions and business requirements here
     this.create = this.select = this.del = this.edit =
-      this.claims.hasOwnProperty("users") &&
-      this.claims["users"] === true
+      this.claims.hasOwnProperty("time") &&
+      this.claims["time"] === true
   }
 }
 </script>

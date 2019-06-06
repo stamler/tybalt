@@ -33,8 +33,30 @@ const router = new Router({
         {
           path: "entries",
           name: "Time Entries",
+          redirect: "/time/entries/list",
           component: () =>
-            import(/* webpackChunkName: "time" */ "./components/TimeEntries.vue")
+            import(/* webpackChunkName: "time" */ "./components/TimeEntries.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Time Entries List",
+              component: () =>
+                import(/* webpackChunkName: "time" */ "./components/List.vue")
+            },
+            {
+              path: "add",
+              name: "Add Time Entry",
+              component: () =>
+                import(/* webpackChunkName: "time" */ "./components/Edit.vue")
+            },
+            {
+              path: ":id/edit",
+              props: true,
+              name: "Edit Time Entry",
+              component: () =>
+                import(/* webpackChunkName: "time" */ "./components/Edit.vue")
+            }
+          ]
         },
         {
           path: "sheets",
