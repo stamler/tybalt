@@ -1,39 +1,41 @@
 <template>
-  <div id="container">
-    <div>
-      <input type="textbox" placeholder="search..." v-model="search" />
-      <button>Bundle Timesheet 21</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>{{ processedItems.length }}</th>
-          <th><a href="#" v-on:click="sort('week')">Week Number</a></th>
-          <th><a href="#" v-on:click="sort('status')">Status</a></th>
-          <th><a href="#" v-on:click="sort('jobHours')">Job Hours</a></th>
-          <th><a href="#" v-on:click="sort('hours')">Non-Job Hours</a></th>
-          <th><a href="#" v-on:click="sort('mealsHours')">Meal Hours</a></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in processedItems" v-bind:key="item.id">
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <List>
+    <template v-slot:taskAreaDefault>
+      <button>Bundle Timesheet {{ now.isoWeek() }}</button>
+    </template>
+  </List>
 </template>
 
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import componentMaker from "./shared.js";
+import store from "../store";
+import { mapState } from "vuex";
+import moment from "moment";
+import List from "./List";
 
-const component = componentMaker();
-
-component.created = function() {
-  this.$bind("items", db.collection("TimeSheets"));
+export default {
+  components: { List },
+  data() {
+    return {
+      now: moment(),
+      schema: {
+        week: {display: "Week Number"},
+        status: {display: "Status"},
+        jobHours: {display: "Job Hours"},
+        hours: {display: "Non-Job Hours"},
+        mealsHours: {display: "Meal Hours"},
+      },
+      collection: db.collection("TimeSheets"),
+      items: db.collection("TimeSheets").where("uid", "==", store.state.user.uid),
+    }
+  },
+  computed: mapState(["claims"]),
+  created() {
+    // Modify UI based on permissions and business requirements here
+    this.create = this.select = this.del = this.edit =
+      this.claims.hasOwnProperty("users") &&
+      this.claims["users"] === true
+  }
 }
-
-export default component;
 </script>
