@@ -40,7 +40,8 @@ export default {
     },
   },
   created() {
-    this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
+    const currentRoute = this.$route.matched[this.$route.matched.length-1];
+    this.parentPath = currentRoute.parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
   },
