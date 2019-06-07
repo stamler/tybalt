@@ -13,8 +13,10 @@
 </template>
 
 <script>
+import { mapState } from "vuex";
+
 export default {
-  props: ['id'],
+  props: ["id", "saveUid"],
   data() {
     return {
       parentPath: null,
@@ -24,6 +26,7 @@ export default {
     }
   },
   computed: {
+    ...mapState(["user"]),
     editing: function () {
       return this.id !== undefined;
     }
@@ -47,6 +50,7 @@ export default {
       // https://simonkollross.de/posts/vuejs-using-v-model-with-objects-for-custom-components
       // if one of the properties in schema has id = true then use
       // that as an arg to doc(), otherwise leave it blank.
+      if(this.saveUid) { this.item.uid = this.user.uid }
       if(this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
