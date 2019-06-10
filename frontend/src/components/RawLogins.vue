@@ -1,5 +1,19 @@
 <template>
-  <List :select="true && hasPermission" :del="true && hasPermission"/>
+  <List :select="true && hasPermission" :del="true && hasPermission">
+    <template v-slot:columns="{ item }">
+      <td>{{ item.mfg }}</td>
+      <td>{{ item.model }}</td>
+      <td>{{ item.upn }}</td>
+      <td>{{ item.serial }}</td>
+      <td>{{ item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname }}</td>
+      <td>{{ item.created.toDate() | relativeTime }}</td>
+      <td>
+        <span v-if="!item.userSourceAnchor">userSourceAnchor</span>
+        <span v-if="!item.serial">serial {{ guessSerial(item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname)}}</span>
+        <span v-if="isNaN(item.radiatorVersion)">radiatorVersion</span>
+      </td>
+    </template>
+  </List>
 </template>
 
 <script>
@@ -7,7 +21,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./List";
+import List from "./List2";
 
 export default {
   components: { List },
@@ -18,35 +32,9 @@ export default {
         model: {display: "Model"},
         upn: {display: "UPN"},
         serial: {display: "Serial"},
-        dnsHostname: {
-          display: "DNS Hostname", 
-          sort:false,
-          editable: false, // This field shouldn't be visible in any editors
-          derivation: obj => obj.networkConfig[Object.keys(obj.networkConfig)[0]].dnsHostname
-        },
-        created: {
-          derivation: obj => moment(obj.created.toDate()).fromNow()
-        },
-        issues: {
-          sort: false,
-          editable: false,
-          derivation: obj => {
-            let issues = [];
-            if (!obj.userSourceAnchor) issues.push("userSourceAnchor");
-            if (isNaN(obj.radiatorVersion)) issues.push("radiatorVersion");
-            if (!obj.serial) {
-              const dnsHostname = obj.networkConfig[Object.keys(obj.networkConfig)[0]].dnsHostname
-              let sn_msg = "serial ";
-              try {
-                sn_msg += dnsHostname.split("-")[1] || "";
-              } catch (error) {
-                sn_msg += "";
-              }
-              issues.push(sn_msg);
-            }
-            return issues.join(" ");
-          }
-        }
+        dnsHostname: { display: "DNS Hostname", sort:false },
+        created: true,
+        issues: { sort: false }
       },
       collection: db.collection("RawLogins"),
       items: db.collection("RawLogins"),
@@ -58,6 +46,20 @@ export default {
     hasPermission () {
       return this.claims.hasOwnProperty("rawlogins") &&
         this.claims["rawlogins"];
+    }
+  },
+  methods: {
+    guessSerial(dnsHostname) {
+      try {
+        return dnsHostname.split("-")[1] || "";
+      } catch (error) {
+        return "";
+      }
+    }
+  },
+  filters: {
+    relativeTime(date) {
+      return moment(date).fromNow();
     }
   }
 }
