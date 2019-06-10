@@ -71,12 +71,16 @@ export default {
     }
   },
   methods: {
-    guessSerial(dnsHostname) {
-      try {
-        return dnsHostname.split("-")[1] || "";
-      } catch (error) {
-        return "";
-      }
+    assign(computer, user) {
+      const assignComputerToUser = firebase.functions().httpsCallable("assignComputerToUser");
+      return assignComputerToUser({ computer, user })
+      .then((result) => {
+        console.log(`assigned computer ${computer} to ${user}`);      
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log(`assignComputerTouser(${computer}, ${user}) didn't work`); 
+      });
     }
   },
   filters: {
