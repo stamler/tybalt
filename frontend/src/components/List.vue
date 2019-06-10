@@ -56,6 +56,7 @@
           </td>
           <!-- edit button  -->
           <td v-if="edit"><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
+          <td><slot name="lastCol" v-bind:item="item" /></td>
         </tr>
       </tbody>
     </table>

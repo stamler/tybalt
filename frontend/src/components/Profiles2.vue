@@ -1,5 +1,11 @@
 <template>
   <div>
+    <!-- TODO: 
+    
+    Implement Entire Row as scoped slot rather than using Schema property?
+    https://jsfiddle.net/pyrello/odwag9mx/
+
+    -->
     <List :select="true && hasPermission">
       <template v-slot:taskAreaDefault="{ taskAreaMode, setTaskMode }">
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
@@ -7,6 +13,10 @@
       </template>
       <template v-slot:taskAreaNonDefault="{ taskAreaMode, setTaskMode }">
         <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" />
+      </template>
+      <template v-slot:lastCol="{ item }">
+        <button>Write AzureID to User doc</button>
+        <button>Revoke refresh tokens</button>
       </template>
     </List>
   </div>
