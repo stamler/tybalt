@@ -1,6 +1,6 @@
 <template>
   <div>
-    <List>
+    <List :select="true && hasPermission">
       <template v-slot:taskAreaDefault="{ taskAreaMode, setTaskMode }">
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
         <button v-on:click="setTaskMode('modClaims')" >✏️ Edit Claims</button>
@@ -24,10 +24,6 @@ export default {
   components: { ModClaims, List },
   data() {
     return {
-      create: false,
-      select: false,
-      edit: false,
-      del: false,
       schema: {
         displayName: {display:"user"},
         email: true,
@@ -39,12 +35,13 @@ export default {
       items: db.collection("Profiles"),
     }
   },
-  computed: mapState(["claims"]),
-  created() {
-    // Modify UI based on permissions and business requirements here
-    this.select =
-      this.claims.hasOwnProperty("profiles") &&
-      this.claims["profiles"] === true
+  computed: {
+    ...mapState(["claims", "user"]),
+    // Determine whether to show UI controls based on claims
+    hasPermission () {
+      return this.claims.hasOwnProperty("profiles") &&
+        this.claims["profiles"];
+    }
   },
   methods: {
     claimsToProfiles() {

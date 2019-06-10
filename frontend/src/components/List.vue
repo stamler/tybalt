@@ -69,11 +69,9 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 
 export default {
+  props: ["select","edit","del"], // select, edit, delete provided by router props
   data() {
     return {
-      select: false,
-      edit: false,
-      del: false,
       parentPath: null,
       schema: null, // schema: a reference to the parent schema
       collection: null, // collection: a reference to the parent collection
@@ -87,9 +85,6 @@ export default {
     };
   },
   created() {
-    this.select = this.$parent.select || false;
-    this.edit = this.$parent.edit || false;
-    this.del = this.$parent.del || false;
     this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;

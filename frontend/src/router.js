@@ -23,6 +23,7 @@ const router = new Router({
     {
       path: "/time",
       name: "Time",
+      // TODO: permissions meta (redirect breaks it if placed here)
       redirect: "/time/entries",
       // route level code-splitting
       // this generates a separate chunk (time.[hash].js) for this route
@@ -40,6 +41,8 @@ const router = new Router({
             {
               path: "list",
               name: "Time Entries List",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true },
               component: () =>
                 import(/* webpackChunkName: "time" */ "./components/List.vue")
             },
@@ -109,12 +112,14 @@ const router = new Router({
         {
           path: "users",
           name: "Users",
+          meta: { claims: ["users", "audit"] },
           component: () =>
             import(/* webpackChunkName: "admin" */ "./components/Users.vue")
         },
         {
           path: "projects",
           name: "Projects",
+          // TODO: permissions meta (redirect breaks it if placed here)
           redirect: "/admin/projects/list",
           component: () =>
             import(/* webpackChunkName: "admin" */ "./components/Projects.vue"),
@@ -122,6 +127,8 @@ const router = new Router({
             {
               path: "list",
               name: "Projects List",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true },
               component: () =>
                 import(/* webpackChunkName: "admin" */ "./components/List.vue")
             },

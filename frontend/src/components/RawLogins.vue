@@ -1,5 +1,5 @@
 <template>
-  <List />
+  <List :select="true && hasPermission" :del="true && hasPermission"/>
 </template>
 
 <script>
@@ -13,10 +13,6 @@ export default {
   components: { List },
   data() {
     return {
-      create: false,
-      select: false,
-      edit: false,
-      del: false,
       schema: {
         mfg: {display: "Manufacturer"},
         model: {display: "Model"},
@@ -56,12 +52,13 @@ export default {
       items: db.collection("RawLogins"),
     }
   },
-  computed: mapState(["claims"]),
-  created() {
-    // Modify UI based on permissions and business requirements here
-    this.select = this.del =
-      this.claims.hasOwnProperty("rawlogins") &&
-      this.claims["rawlogins"] === true
+  computed: {
+    ...mapState(["claims"]),
+    // Determine whether to show UI controls based on claims
+    hasPermission () {
+      return this.claims.hasOwnProperty("rawlogins") &&
+        this.claims["rawlogins"];
+    }
   }
 }
 </script>
