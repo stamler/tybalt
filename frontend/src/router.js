@@ -103,6 +103,13 @@ const router = new Router({
             import(/* webpackChunkName: "admin" */ "./components/Computers.vue")
         },
         {
+          path: "computers2",
+          name: "Computers2",
+          meta: { claims: ["computers", "audit"] },
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Computers2.vue")
+        },
+        {
           path: "users",
           name: "Users",
           meta: { claims: ["users", "audit"] },
