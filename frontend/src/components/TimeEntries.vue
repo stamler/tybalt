@@ -54,6 +54,7 @@ export default {
       items: db
         .collection("TimeEntries")
         .where("uid", "==", store.state.user.uid)
+        .orderBy("date", "desc")
     };
   },
   computed: mapState(["claims"]),
