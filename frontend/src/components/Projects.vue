@@ -5,6 +5,14 @@
       <router-link v-if="hasPermission" to="add">New</router-link>
     </div>
     <router-view>
+      <template v-slot:columns="{ item }">
+        <td>{{ item.id }}</td>
+        <td>{{ item.manager }}</td>
+        <td>{{ item.client }}</td>
+        <td>{{ item.proposal }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.status }}</td>
+      </template>
     </router-view>
   </div>
 </template>

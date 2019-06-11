@@ -123,7 +123,7 @@ const router = new Router({
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+                import(/* webpackChunkName: "admin" */ "./components/List2.vue")
             },
             {
               path: "add",
