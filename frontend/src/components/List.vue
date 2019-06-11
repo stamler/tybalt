@@ -6,40 +6,54 @@
         <button v-if="del" v-on:click="deleteSelected()">
           Delete {{ selected.length }} items
         </button>
-        <slot 
-          name="taskAreaDefault" 
+        <slot
+          name="taskAreaDefault"
           v-bind:taskAreaMode="taskAreaMode"
-          v-bind:setTaskMode="setTaskMode"/>
+          v-bind:setTaskMode="setTaskMode"
+        />
       </div>
       <div v-else>
-        <slot 
-          name="taskAreaNonDefault" 
+        <slot
+          name="taskAreaNonDefault"
           v-bind:taskAreaMode="taskAreaMode"
-          v-bind:setTaskMode="setTaskMode"/>
+          v-bind:setTaskMode="setTaskMode"
+        />
       </div>
     </div>
     <table>
       <thead>
         <tr>
           <th v-if="select">
-            <input type="checkbox" v-model="selectAll" v-on:click="toggleAll()">
+            <input
+              type="checkbox"
+              v-model="selectAll"
+              v-on:click="toggleAll()"
+            />
             {{ selected.length }}/{{ processedItems.length }}
           </th>
-          <th v-else>
-            {{ processedItems.length }}
-          </th>
+          <th v-else>{{ processedItems.length }}</th>
           <th v-for="col in fields" v-bind:key="col">
             <!-- the schema specifies not to sort on this column  -->
             <span v-if="schema[col] && schema[col].sort === false">
-              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+              {{
+                schema[col] && schema[col].display ? schema[col].display : col
+              }}
             </span>
             <!-- the schema specifies this column is an id -->
-            <a v-else-if="schema[col] && schema[col].id" href="#" v-on:click="sort('id')">
-              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+            <a
+              v-else-if="schema[col] && schema[col].id"
+              href="#"
+              v-on:click="sort('id')"
+            >
+              {{
+                schema[col] && schema[col].display ? schema[col].display : col
+              }}
             </a>
             <!-- sort on this regular column -->
             <a v-else href="#" v-on:click="sort(col)">
-              {{ schema[col] && schema[col].display ? schema[col].display : col }}
+              {{
+                schema[col] && schema[col].display ? schema[col].display : col
+              }}
             </a>
           </th>
         </tr>
@@ -48,12 +62,21 @@
         <tr v-for="item in processedItems" v-bind:key="item.id">
           <!-- selection checkbox -->
           <td>
-            <input v-if="select" type="checkbox" v-bind:value="item.id" v-model="selected">
+            <input
+              v-if="select"
+              type="checkbox"
+              v-bind:value="item.id"
+              v-model="selected"
+            />
           </td>
           <!-- columns  -->
           <slot name="columns" v-bind:item="item" />
           <!-- edit button  -->
-          <td v-if="edit"><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
+          <td v-if="edit">
+            <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+              ✏️
+            </router-link>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -61,13 +84,12 @@
 </template>
 
 <script>
-import moment from "moment";
 import { mapState } from "vuex";
 import firebase from "@/firebase";
 const db = firebase.firestore();
 
 export default {
-  props: ["select","edit","del"], // select, edit, delete provided by router props
+  props: ["select", "edit", "del"], // select, edit, delete provided by router props
   data() {
     return {
       parentPath: null,
@@ -83,7 +105,9 @@ export default {
     };
   },
   created() {
-    this.parentPath = this.$route.matched[this.$route.matched.length-1].parent.path;
+    this.parentPath = this.$route.matched[
+      this.$route.matched.length - 1
+    ].parent.path;
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
@@ -128,9 +152,7 @@ export default {
     searchString(item) {
       const fields = Object.values(item);
       fields.push(item.id);
-      return fields
-        .join(",")
-        .toLowerCase();
+      return fields.join(",").toLowerCase();
     },
     deleteSelected() {
       const batch = db.batch();
@@ -149,6 +171,6 @@ export default {
           console.log(`Batch failed: ${err}`);
         });
     }
-  }  
-}
+  }
+};
 </script>
