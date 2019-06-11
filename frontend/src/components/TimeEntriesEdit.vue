@@ -1,26 +1,72 @@
 <template>
   <form id="editor">
-    <span class="field" v-for="field in Object.keys(schema)" v-bind:key="field">
-      <label for>{{ field }}</label>
-      <!-- disable input because we're editing and this field is the id -->
-      <span v-if="editing && schema[field].id">{{ item.id }}</span>
-      <!-- enable input for this regular field -->
-      <input v-else type="text" v-model="item[field]" />
-    </span>
-    <button type="button" v-on:click="save()">Save</button>
-    <button type="button" v-on:click="$router.push(parentPath)">Cancel</button>
+    <datepicker class="formblock" :inline="true" v-model="item.date" />
+    <div class="formblock">
+      <span class="field">
+        <input type="radio" name="hasjob" id="nojob" :value="false" />
+        <label for="nojob">&nbsp;No Job</label>
+
+        &nbsp;/
+
+        <input type="radio" name="hasjob" id="yesjob" :value="true" />
+        <label for="nojob">&nbsp;Job</label>
+      </span>
+
+      <span class="field">
+        <label for="job">Job</label>
+        <input type="text" name="job" v-model="item.job" />
+      </span>
+
+      <span class="field">
+        <label for="division">Division</label>
+        <input type="text" name="division" v-model="item.division" />
+      </span>
+
+      <span class="field">
+        <label for="timetype">Time Type</label>
+        <input type="text" name="timetype" v-model="item.timetype" />
+      </span>
+
+      <span class="field">
+        <label for="hours">Hours</label>
+        <input type="text" name="hours" v-model="item.hours" />
+      </span>
+
+      <span class="field">
+        <label for="workrecord">Work Record</label>
+        <input type="text" name="workrecord" v-model="item.workrecord" />
+      </span>
+
+      <span class="field">
+        <label for="description">Description</label>
+        <input type="text" name="description" v-model="item.description" />
+      </span>
+
+      <span class="field">
+        <label for="comments">Comments</label>
+        <input type="text" name="comments" v-model="item.comments" />
+      </span>
+
+      <span class="field">
+        <button type="button" v-on:click="save()">Save</button>
+        <button type="button" v-on:click="$router.push(parentPath)">
+          Cancel
+        </button>
+      </span>
+    </div>
   </form>
 </template>
 
 <script>
 import { mapState } from "vuex";
+import Datepicker from "vuejs-datepicker";
 
 export default {
-  props: ["id", "saveUid"],
+  components: { Datepicker },
+  props: ["id"],
   data() {
     return {
       parentPath: null,
-      schema: {},
       collection: null,
       item: {}
     };
@@ -35,6 +81,10 @@ export default {
     id: {
       immediate: true,
       handler(id) {
+        // The editor doesn't work right now because the firebase timestamp
+        // format isn't supported by Datepicker. Instead of binding we should
+        // likely just get a snapshot to populate item. This could be done
+        // once rather than inside a watcher, possibly with updated()
         this.item = id
           ? this.$bind("item", this.$parent.collection.doc(id))
           : {};
@@ -44,21 +94,13 @@ export default {
   created() {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
-    this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
   },
   methods: {
     save() {
-      // TODO: consider this model
-      // https://simonkollross.de/posts/vuejs-using-v-model-with-objects-for-custom-components
-      // if one of the properties in schema has id = true then use
-      // that as an arg to doc(), otherwise leave it blank.
-      if (this.saveUid) {
-        this.item.uid = this.user.uid;
-      }
+      this.item.uid = this.user.uid; // include uid of the creating user
       if (this.id) {
         // Editing an existing item
-        // Since the UI binds existing id to the key field, no need to delete
         this.collection
           .doc(this.id)
           .set(this.item)
@@ -67,52 +109,30 @@ export default {
           });
       } else {
         // Creating a new item
-        const id_attribs = Object.keys(this.schema).filter(
-          i => this.schema[i].id
-        );
-
-        if (id_attribs.length === 0) {
-          // no attributes with id property in schema
-          this.collection
-            .doc()
-            .set(this.item)
-            .then(docRef => {
-              this.clearEditor();
-              // notify user save is done
-            });
-        } else if (id_attribs.length === 1) {
-          // one attribute with id property in schema. Remove it
-          // from the data and add it to the id
-          const new_id = this.item[id_attribs[0]];
-          delete this.item[id_attribs[0]];
-          this.collection
-            .doc(new_id)
-            .set(this.item)
-            .then(docRef => {
-              this.clearEditor();
-              // notify user save is done
-            });
-        } else {
-          // ERROR: the schema stipulates more than one attribute is id
-          console.log("The schema says multiple attributes are id, not saving");
-          // TODO: Notify user of error in UI
-        }
+        this.collection
+          .doc()
+          .set(this.item)
+          .then(docRef => {
+            this.$router.push(this.parentPath);
+          });
       }
-    },
-    clearEditor() {
-      this.item = {};
     }
   }
 };
 </script>
 <style>
-.field {
+#editor {
   display: flex;
 }
-.field label {
-  width: 100px;
+.formblock {
+  width: 320px;
+  margin-right: 20px;
+  display: flex;
+  flex-direction: column;
 }
-.field input {
-  width: 200px;
+.field label {
+  display: inline-block;
+  background-color: aquamarine;
+  width: 100px;
 }
 </style>
