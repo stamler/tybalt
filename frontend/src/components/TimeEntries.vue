@@ -11,6 +11,17 @@
       <template v-slot:taskAreaDefault>
         <button>Check Entries</button>
       </template>
+      <template v-slot:columns="{ item }">
+        <td>{{ item.date.toDate() | shortDate }}</td>
+        <td>{{ item.job }}</td>
+        <td>{{ item.division }}</td>
+        <td>{{ item.timetype }}</td>
+        <td>{{ item.hours }}</td>
+        <td>{{ item.workrecord }}</td>
+        <td>{{ item.project }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.comments }}</td>
+      </template>
     </router-view>
   </div>
 </template>
@@ -27,10 +38,7 @@ export default {
     return {
       now: moment(),
       schema: {
-        date: {
-          display: "Date",
-          derivation: obj => moment(obj.date.toDate()).format("MMM DD")
-        },
+        date: { display: "Date" },
         job: {display: "Job/Proposal"},
         division: {display: "Division"},
         timetype: {display: "Type"},
@@ -45,5 +53,10 @@ export default {
     }
   },
   computed: mapState(["claims"]),
+  filters: {
+    shortDate(date) {		
+      return moment(date).format("MMM DD");		
+    }
+  }
 }
 </script>
