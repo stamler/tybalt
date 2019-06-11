@@ -81,7 +81,7 @@ export default {
     id: {
       immediate: true,
       handler(id) {
-        // The editor doesn't work right now because the firebase timestamp
+        // TODO: The editor doesn't work right now because the firebase timestamp
         // format isn't supported by Datepicker. Instead of binding we should
         // likely just get a snapshot to populate item. This could be done
         // once rather than inside a watcher, possibly with updated()
