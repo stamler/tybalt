@@ -2,7 +2,7 @@
   <div>
     <div id="nav">
       <router-link to="list">List</router-link>&nbsp;
-      <router-link v-if="create" to="add">New</router-link>
+      <router-link to="add">New</router-link>
     </div>
     <h2>Week {{ now.isoWeek() }} is 
       {{ now.startOf('week').format("ddd MMM D") }} to 
@@ -21,16 +21,10 @@ const db = firebase.firestore();
 import store from "../store";
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./List";
 
 export default {
-  components: { List },
   data() {
     return {
-      create: false,
-      select: false,
-      edit: false,
-      del: false,
       now: moment(),
       schema: {
         date: {
@@ -51,11 +45,5 @@ export default {
     }
   },
   computed: mapState(["claims"]),
-  created() {
-    // Modify UI based on permissions and business requirements here
-    this.create = this.select = this.del = this.edit =
-      this.claims.hasOwnProperty("time") &&
-      this.claims["time"] === true
-  }
 }
 </script>
