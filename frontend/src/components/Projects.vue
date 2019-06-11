@@ -2,9 +2,10 @@
   <div>
     <div id="nav">
       <router-link to="list">List</router-link>&nbsp;
-      <router-link v-if="create" to="add">New</router-link>
+      <router-link v-if="hasPermission" to="add">New</router-link>
     </div>
-    <router-view/>
+    <router-view>
+    </router-view>
   </div>
 </template>
 
@@ -16,10 +17,6 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
-      create: false,
-      select: false,
-      edit: false,
-      del: false,
       schema: {
         job: {display: "Job", id: true},
         manager: {display: "Project Manager"},
@@ -32,12 +29,13 @@ export default {
       items: db.collection("Projects"),
     }
   },
-  computed: mapState(["claims"]),
-  created() {
-    // Modify UI based on permissions and business requirements here
-    this.create = this.select = this.del = this.edit =
-      this.claims.hasOwnProperty("projects") &&
-      this.claims["projects"] === true
+  computed: {
+    ...mapState(["claims"]),
+    // Determine whether to show UI controls based on claims
+    hasPermission () {
+      return this.claims.hasOwnProperty("projects") &&
+        this.claims["projects"];
+    }
   }
 }
 </script>
