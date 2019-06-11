@@ -86,7 +86,7 @@ export default {
   filters: {
     dateFormat(date) {
       return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },  
+    },
     relativeTime(date) {
       return moment(date).fromNow();
     }

@@ -1,5 +1,12 @@
 <template>
-  <List/>
+  <List>
+    <template v-slot:columns="{ item }">
+      <td>{{ item.givenName }}</td>
+      <td>{{ item.surname }}</td>
+      <td>{{ item.created.toDate() | relativeTime }}</td>
+      <td>{{ item.computer }}</td>
+    </template>
+  </List>
 </template>
 
 <script>
@@ -7,7 +14,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./List";
+import List from "./List2";
 
 export default {
   components: { List },
@@ -16,9 +23,7 @@ export default {
       schema: {
         givenName: {display: "First Name"},
         surname: {display: "Last Name"},
-        created: {
-          derivation: obj => moment(obj.created.toDate()).fromNow()
-        },
+        created: true,
         computer: {display: "Computer"},
       },
       collection: db.collection("Logins"),
@@ -26,5 +31,10 @@ export default {
     }
   },
   computed: mapState(["claims"]),
+  filters: {
+    relativeTime(date) {
+      return moment(date).fromNow();
+    }
+  }
 }
 </script>
