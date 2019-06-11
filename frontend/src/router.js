@@ -51,7 +51,7 @@ const router = new Router({
               name: "Add Time Entry",
               props: { saveUid: true },
               component: () =>
-                import(/* webpackChunkName: "time" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "time" */ "./components/TimeEntriesEdit.vue")
             },
             {
               path: ":id/edit",
@@ -59,7 +59,7 @@ const router = new Router({
               props: route => ({ id: route.params.id, saveUid: true }),
               name: "Edit Time Entry",
               component: () =>
-                import(/* webpackChunkName: "time" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "time" */ "./components/TimeEntriesEdit.vue")
             }
           ]
         },
