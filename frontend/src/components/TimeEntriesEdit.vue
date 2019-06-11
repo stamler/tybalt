@@ -1,6 +1,12 @@
 <template>
   <form id="editor">
-    <datepicker class="formblock" :inline="true" v-model="item.date" />
+    <datepicker
+      class="formblock"
+      :inline="true"
+      :disabledDates="dps.disabled"
+      :highlighted="dps.highlighted"
+      v-model="item.date"
+    />
     <div class="formblock">
       <span class="field">
         <input type="radio" name="hasjob" id="nojob" :value="false" />
@@ -60,12 +66,27 @@
 <script>
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
+import moment from "moment";
 
 export default {
   components: { Datepicker },
   props: ["id"],
   data() {
     return {
+      dps: {
+        // date picker state
+        disabled: {
+          to: moment()
+            .subtract(3, "weeks")
+            .toDate(),
+          from: moment()
+            .add(3, "weeks")
+            .toDate()
+        },
+        highlighted: {
+          dates: [new Date()]
+        }
+      },
       parentPath: null,
       collection: null,
       item: {}
@@ -81,13 +102,17 @@ export default {
     id: {
       immediate: true,
       handler(id) {
-        // TODO: The editor doesn't work right now because the firebase timestamp
-        // format isn't supported by Datepicker. Instead of binding we should
-        // likely just get a snapshot to populate item. This could be done
-        // once rather than inside a watcher, possibly with updated()
-        this.item = id
-          ? this.$bind("item", this.$parent.collection.doc(id))
-          : {};
+        if (id) {
+          this.$parent.collection
+            .doc(id)
+            .get()
+            .then(snap => {
+              this.item = snap.data();
+              this.item.date = this.item.date.toDate();
+            });
+        } else {
+          this.item = {};
+        }
       }
     }
   },
@@ -99,6 +124,10 @@ export default {
   methods: {
     save() {
       this.item.uid = this.user.uid; // include uid of the creating user
+      if (!this.item.hasOwnProperty("date")) {
+        // make the date today if not provided by user
+        this.item.date = new Date();
+      }
       if (this.id) {
         // Editing an existing item
         this.collection
