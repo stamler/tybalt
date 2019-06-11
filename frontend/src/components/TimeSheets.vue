@@ -3,6 +3,13 @@
     <template v-slot:taskAreaDefault>
       <button>Bundle Timesheet {{ now.isoWeek() }}</button>
     </template>
+    <template v-slot:columns="{ item }">
+      <td>{{ item.week }}</td>
+      <td>{{ item.status }}</td>
+      <td>{{ item.jobHours }}</td>
+      <td>{{ item.hours }}</td>
+      <td>{{ item.mealsHours }}</td>
+    </template>
   </List>
 </template>
 
@@ -12,7 +19,7 @@ const db = firebase.firestore();
 import store from "../store";
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./List";
+import List from "./List2";
 
 export default {
   components: { List },
