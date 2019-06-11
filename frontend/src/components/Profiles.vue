@@ -14,7 +14,10 @@
       <template v-slot:taskAreaNonDefault="{ taskAreaMode, setTaskMode }">
         <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" />
       </template>
-      <template v-slot:lastCol="{ item }">
+      <template v-slot:columns="{ item }">
+        <td>{{ item.displayName }}</td>
+        <td>{{ item.email }}</td>
+        <td>{{ item.customClaims | keysString }}</td>
         <button>Write AzureID to User doc</button>
         <button>Revoke refresh tokens</button>
       </template>
@@ -28,7 +31,7 @@ const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
 import ModClaims from "@/components/ModClaims.vue";
-import List from "@/components/List.vue";
+import List from "@/components/List2.vue";
 
 export default {
   components: { ModClaims, List },
@@ -37,9 +40,7 @@ export default {
       schema: {
         displayName: {display:"user"},
         email: true,
-        claims: {
-          derivation: obj => obj.customClaims ? Object.keys(obj.customClaims).join(", ") : ""
-        },
+        claims: true,
       },
       collection: db.collection("Profiles"),
       items: db.collection("Profiles"),
@@ -63,6 +64,11 @@ export default {
         .catch((error) => {
           console.log(error);
         });
+    }
+  },
+  filters: {
+    keysString(obj) {
+      return obj ? Object.keys(obj).join(", ") : "";
     }
   }
 }
