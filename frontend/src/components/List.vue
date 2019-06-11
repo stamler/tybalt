@@ -51,12 +51,9 @@
             <input v-if="select" type="checkbox" v-bind:value="item.id" v-model="selected">
           </td>
           <!-- columns  -->
-          <td v-for="field in fields" v-bind:key="field">
-            {{ renderCell(field, item) }}
-          </td>
+          <slot name="columns" v-bind:item="item" />
           <!-- edit button  -->
           <td v-if="edit"><router-link :to="[parentPath,item.id,'edit'].join('/')">✏️</router-link></td>
-          <td><slot name="lastCol" v-bind:item="item" /></td>
         </tr>
       </tbody>
     </table>
@@ -115,11 +112,6 @@ export default {
   methods: {
     setTaskMode(mode) {
       this.taskAreaMode = mode;
-    },
-    renderCell(field, item) {
-      const value = this.schema[field] && this.schema[field].id === true ? item.id : item[field];
-      const derivation = this.schema[field].derivation;
-      return derivation ? derivation(item) : value;
     },
     toggleAll() {
       this.selected = [];

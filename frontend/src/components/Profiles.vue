@@ -31,7 +31,7 @@ const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
 import ModClaims from "@/components/ModClaims.vue";
-import List from "@/components/List2.vue";
+import List from "@/components/List.vue";
 
 export default {
   components: { ModClaims, List },
