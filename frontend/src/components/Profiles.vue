@@ -9,10 +9,13 @@
     <List :select="true && hasPermission">
       <template v-slot:taskAreaDefault="{ taskAreaMode, setTaskMode }">
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
-        <button v-on:click="setTaskMode('modClaims')" >✏️ Edit Claims</button>
+        <button v-on:click="setTaskMode('modClaims')">✏️ Edit Claims</button>
       </template>
       <template v-slot:taskAreaNonDefault="{ taskAreaMode, setTaskMode }">
-        <ModClaims v-if="taskAreaMode === 'modClaims'" v-on:cancel="setTaskMode('default')" />
+        <ModClaims
+          v-if="taskAreaMode === 'modClaims'"
+          v-on:cancel="setTaskMode('default')"
+        />
       </template>
       <template v-slot:columns="{ item }">
         <td>{{ item.displayName }}</td>
@@ -29,7 +32,6 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
-import moment from "moment";
 import ModClaims from "@/components/ModClaims.vue";
 import List from "@/components/List.vue";
 
@@ -38,30 +40,31 @@ export default {
   data() {
     return {
       schema: {
-        displayName: {display:"user"},
+        displayName: { display: "user" },
         email: true,
-        claims: true,
+        claims: true
       },
       collection: db.collection("Profiles"),
-      items: db.collection("Profiles"),
-    }
+      items: db.collection("Profiles")
+    };
   },
   computed: {
     ...mapState(["claims", "user"]),
     // Determine whether to show UI controls based on claims
-    hasPermission () {
-      return this.claims.hasOwnProperty("profiles") &&
-        this.claims["profiles"];
+    hasPermission() {
+      return this.claims.hasOwnProperty("profiles") && this.claims["profiles"];
     }
   },
   methods: {
     claimsToProfiles() {
-      const claimsToProfiles = firebase.functions().httpsCallable("claimsToProfiles");
+      const claimsToProfiles = firebase
+        .functions()
+        .httpsCallable("claimsToProfiles");
       claimsToProfiles({})
-        .then((result) => {
+        .then(result => {
           console.log(JSON.stringify(result));
         })
-        .catch((error) => {
+        .catch(error => {
           console.log(error);
         });
     }
@@ -71,5 +74,5 @@ export default {
       return obj ? Object.keys(obj).join(", ") : "";
     }
   }
-}
+};
 </script>

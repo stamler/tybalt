@@ -3,7 +3,11 @@
     <template v-slot:columns="{ item }">
       <td>{{ item.givenName }}</td>
       <td>{{ item.surname }}</td>
-      <td>{{ item.created? $options.filters.dateFormat(item.created.toDate()) : "" }}</td>
+      <td>
+        {{
+          item.created ? $options.filters.dateFormat(item.created.toDate()) : ""
+        }}
+      </td>
       <td>{{ item.updated.toDate() | relativeTime }}</td>
       <td>{{ item.userSourceAnchor }}</td>
       <td>{{ item.lastComputer }}</td>
@@ -14,7 +18,6 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import { mapState } from "vuex";
 import moment from "moment";
 import List from "./List";
 
@@ -27,12 +30,12 @@ export default {
         surname: true,
         created: true,
         updated: true,
-        userSourceAnchor: {display: "ms-DS-ConsistencyGuid"},
-        lastComputer: {display: "Last Computer"},
+        userSourceAnchor: { display: "ms-DS-ConsistencyGuid" },
+        lastComputer: { display: "Last Computer" }
       },
       collection: db.collection("Users"),
-      items: db.collection("Users"),
-    }
+      items: db.collection("Users")
+    };
   },
   filters: {
     dateFormat(date) {
@@ -42,5 +45,5 @@ export default {
       return moment(date).fromNow();
     }
   }
-}
+};
 </script>

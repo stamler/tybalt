@@ -21,14 +21,17 @@ export default {
   data() {
     return {
       schema: {
-        givenName: {display: "First Name"},
-        surname: {display: "Last Name"},
+        givenName: { display: "First Name" },
+        surname: { display: "Last Name" },
         created: true,
-        computer: {display: "Computer"},
+        computer: { display: "Computer" }
       },
       collection: db.collection("Logins"),
-      items: db.collection("Logins").orderBy("created", "desc").limit(101),
-    }
+      items: db
+        .collection("Logins")
+        .orderBy("created", "desc")
+        .limit(101)
+    };
   },
   computed: mapState(["claims"]),
   filters: {
@@ -36,5 +39,5 @@ export default {
       return moment(date).fromNow();
     }
   }
-}
+};
 </script>

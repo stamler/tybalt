@@ -26,24 +26,23 @@ export default {
   data() {
     return {
       schema: {
-        job: {display: "Job", id: true},
-        manager: {display: "Project Manager"},
-        client: {display: "Client"},
-        proposal: {display: "Proposal"},
-        description: {display: "Description", sort:false},
+        job: { display: "Job", id: true },
+        manager: { display: "Project Manager" },
+        client: { display: "Client" },
+        proposal: { display: "Proposal" },
+        description: { display: "Description", sort: false },
         status: true // must be an object, otherwise other code fails
       },
       collection: db.collection("Projects"),
-      items: db.collection("Projects"),
-    }
+      items: db.collection("Projects")
+    };
   },
   computed: {
     ...mapState(["claims"]),
     // Determine whether to show UI controls based on claims
-    hasPermission () {
-      return this.claims.hasOwnProperty("projects") &&
-        this.claims["projects"];
+    hasPermission() {
+      return this.claims.hasOwnProperty("projects") && this.claims["projects"];
     }
   }
-}
+};
 </script>
