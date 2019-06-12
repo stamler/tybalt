@@ -141,6 +141,36 @@ const router = new Router({
           ]
         },
         {
+          path: "divisions",
+          name: "Divisions",
+          redirect: "/admin/divisions/list",
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/Divisions.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Divisions List",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true },
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            },
+            {
+              path: "add",
+              name: "Add Division",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+            },
+            {
+              path: ":id/edit",
+              props: true,
+              name: "Edit Division",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+            }
+          ]
+        },
+        {
           path: "rawlogins",
           name: "Raw Logins",
           meta: { claims: ["rawlogins", "audit"] },
