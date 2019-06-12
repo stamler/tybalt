@@ -15,7 +15,7 @@
       </template>
       <template v-slot:columns="{ item }">
         <td>{{ item.date.toDate() | shortDate }}</td>
-        <td>{{ item.job }}</td>
+        <td>{{ item.project }}</td>
         <td>{{ item.division }}</td>
         <td>{{ item.timetype }}</td>
         <td>{{ item.hours }}</td>
@@ -41,12 +41,11 @@ export default {
       now: moment(),
       schema: {
         date: { display: "Date" },
-        job: { display: "Job/Proposal" },
+        project: { display: "Project / Proposal" },
         division: { display: "Division" },
         timetype: { display: "Type" },
         hours: { display: "Hours" },
         workrecord: { display: "Work Record" },
-        project: { display: "Project" },
         description: { display: "Description" },
         comments: { display: "Comments" }
       },

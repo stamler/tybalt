@@ -8,6 +8,27 @@ service cloud.firestore {
       // requester uid matches uid field in existing document
       return request.auth.uid == resource.data.uid;
     }
+    function validTimeEntry() {
+      return
+        // The Time Type is provided and exists in the database
+        exists(/databases/$(database)/documents/TimeTypes/$(request.resource.data.timetype)) &&
+        // When provided, Project exists in the database and Time Type is 'R'
+        (
+          (
+            "project" in request.resource.data &&
+            exists(/databases/$(database)/documents/Projects/$(request.resource.data.project)) &&
+            request.resource.data.timetype == "R"
+          ) || 
+            !("project" in request.resource.data)
+        ) &&
+        // If provided, Division exists in the database and Time Type is 'R'
+        (
+          (
+            exists(/databases/$(database)/documents/Divisions/$(request.resource.data.division)) &&
+            request.resource.data.timetype == "R"
+          ) || !("division" in request.resource.data)
+        );
+    }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;
       allow write: if request.auth.token.rawlogins == true;
@@ -26,8 +47,8 @@ service cloud.firestore {
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && uidMatches() && exists(/databases/$(database)/documents/Projects/$(request.resource.data.job));
-      allow create: if hasClaim("time") && exists(/databases/$(database)/documents/Projects/$(request.resource.data.job));
+      allow update: if hasClaim("time") && validTimeEntry() && uidMatches() 
+      allow create: if hasClaim("time") && validTimeEntry()
     }
     match /TimeSheets/{sheet} {
       allow read, update, delete: if request.auth.uid == resource.data.uid && request.auth.token.time == true;

@@ -26,7 +26,7 @@ export default {
   data() {
     return {
       schema: {
-        job: { display: "Job", id: true },
+        project: { display: "Project / Proposal", id: true },
         manager: { display: "Project Manager" },
         client: { display: "Client" },
         proposal: { display: "Proposal" },

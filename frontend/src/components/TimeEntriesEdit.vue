@@ -19,8 +19,8 @@
       </span>
 
       <span class="field">
-        <label for="job">Job</label>
-        <input type="text" name="job" v-model="item.job" />
+        <label for="project">Project / Proposal</label>
+        <input type="text" name="project" v-model="item.project" />
       </span>
 
       <span class="field">
@@ -67,6 +67,7 @@
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import moment from "moment";
+import _ from "lodash";
 
 export default {
   components: { Datepicker },
@@ -123,6 +124,8 @@ export default {
   },
   methods: {
     save() {
+      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
+      console.log(this.item);
       this.item.uid = this.user.uid; // include uid of the creating user
       if (!this.item.hasOwnProperty("date")) {
         // make the date today if not provided by user
