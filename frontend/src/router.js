@@ -171,6 +171,36 @@ const router = new Router({
           ]
         },
         {
+          path: "timetypes",
+          name: "Time Types",
+          redirect: "/admin/timetypes/list",
+          component: () =>
+            import(/* webpackChunkName: "admin" */ "./components/TimeTypes.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Time Types List",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true },
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+            },
+            {
+              path: "add",
+              name: "Add Time Type",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+            },
+            {
+              path: ":id/edit",
+              props: true,
+              name: "Edit Time Type",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+            }
+          ]
+        },
+        {
           path: "rawlogins",
           name: "Raw Logins",
           meta: { claims: ["rawlogins", "audit"] },
