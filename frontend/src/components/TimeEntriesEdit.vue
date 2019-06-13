@@ -9,16 +9,6 @@
     />
     <div class="formblock">
       <span class="field">
-        <input type="radio" name="hasjob" id="nojob" :value="false" />
-        <label for="nojob">&nbsp;No Job</label>
-
-        &nbsp;/
-
-        <input type="radio" name="hasjob" id="yesjob" :value="true" />
-        <label for="nojob">&nbsp;Job</label>
-      </span>
-
-      <span class="field">
         <label for="project">Project / Proposal</label>
         <input type="text" name="project" v-model.trim="item.project" />
       </span>
@@ -162,7 +152,7 @@ export default {
   display: flex;
 }
 .formblock {
-  width: 320px;
+  width: 300px;
   margin-right: 20px;
   display: flex;
   flex-direction: column;
@@ -170,6 +160,6 @@ export default {
 .field label {
   display: inline-block;
   background-color: aquamarine;
-  width: 100px;
+  width: 140px;
 }
 </style>

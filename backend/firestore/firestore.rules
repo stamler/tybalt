@@ -18,14 +18,12 @@ service cloud.firestore {
     function validTimeEntry() {
       return
         // restrict accepted properties
-        newDoc().keys().hasOnly([
-            "date", "project", "division", "timetype", "workrecord", "notes",
-            "hours", "jobHours", "mealsHours", "uid"
-          ]) &&
+        newDoc().keys().hasOnly([ "date", "timetype", "division", "project",
+          "hours", "jobHours", "workrecord", "notes", "mealsHours", "uid" ]) &&
 
         isInCollection("timetype","TimeTypes") && // timetype exists in db
  
-        // When project provided, it & division exist in db, timetype is 'R'
+        // when project provided, it & division exist in db, timetype is 'R'
         (
           ( isInCollection("project","Projects") && 
             isInCollection("division","Divisions") &&
@@ -33,7 +31,7 @@ service cloud.firestore {
           !("project" in newDoc())
         ) &&
 
-        // When provided, Division exists in the database and Time Type is 'R'
+        // when provided, division exists in db, Time Type is 'R'
         (
           ( isInCollection("division","Divisions") && 
             newDoc().timetype == "R" ) || 
@@ -41,9 +39,9 @@ service cloud.firestore {
         ) &&
 
         // when provided, hours/jobHours/mealsHours are numbers
-        ( newDoc().jobHours is number || !("jobHours" in newDoc()) ) &&
-        ( newDoc().hours is number || !("hours" in newDoc()) ) &&
-        ( newDoc().mealsHours is number || !("mealsHours" in newDoc()) );
+        numOrMissing("jobHours") &&
+        numOrMissing("hours") &&
+        numOrMissing("mealsHours");
     }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;
