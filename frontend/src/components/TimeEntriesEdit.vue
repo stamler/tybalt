@@ -9,6 +9,15 @@
     />
     <div class="formblock">
       <span class="field">
+        <label for="timetype">Time Type</label>
+        <select name="timetype" v-model="item.timetype">
+          <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
+            {{ t.name }}
+          </option>
+        </select>
+      </span>
+
+      <span class="field">
         <label for="project">Project / Proposal</label>
         <input type="text" name="project" v-model.trim="item.project" />
       </span>
@@ -18,15 +27,6 @@
         <select name="division" v-model="item.division">
           <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
             {{ d.name }}
-          </option>
-        </select>
-      </span>
-
-      <span class="field">
-        <label for="timetype">Time Type</label>
-        <select name="timetype" v-model="item.timetype">
-          <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
-            {{ t.name }}
           </option>
         </select>
       </span>
