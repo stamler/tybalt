@@ -16,6 +16,7 @@ service cloud.firestore {
       return ( newDoc()[field] is number || !(field in newDoc()))
     }
     function validTimeEntry() {
+      // TODO: Boolean Simplification
       return
         // restrict accepted properties
         newDoc().keys().hasOnly([ "date", "timetype", "division", "project",
@@ -50,12 +51,16 @@ service cloud.firestore {
           ( newDoc()["jobHours"] is number && isInCollection("project", "Projects") ) ||
           !("jobHours" in newDoc()) 
         ) &&
-        
+
         // when provided, mealsHours require an existing project
         (
           ( newDoc()["mealsHours"] is number && isInCollection("project", "Projects") ) ||
           !("mealsHours" in newDoc())
         );
+
+        // TODO: workrecord require project?
+        // TODO: workrecord requires jobHours?
+        // TODO: workrecord requires Field Services Division?
     }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;
