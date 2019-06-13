@@ -13,6 +13,17 @@
       <template v-slot:taskAreaDefault>
         <button>Check Entries</button>
       </template>
+      <template v-slot:headers>
+        <th>Date</th>
+        <th>Project / Proposal</th>
+        <th>Division</th>
+        <th>Type</th>
+        <th>Hours</th>
+        <th>Job Hours</th>
+        <th>Meals Hours</th>
+        <th>Work Record</th>
+        <th>Notes</th>
+      </template>
       <template v-slot:columns="{ item }">
         <td>{{ item.date.toDate() | shortDate }}</td>
         <td>{{ item.project }}</td>
@@ -41,17 +52,7 @@ export default {
   data() {
     return {
       now: moment(),
-      schema: {
-        date: { display: "Date" },
-        project: { display: "Project / Proposal" },
-        division: { display: "Division" },
-        timetype: { display: "Type" },
-        hours: { display: "Hours" },
-        jobHours: { display: "Job Hours" },
-        mealsHours: { display: "Meals Hours" },
-        workrecord: { display: "Work Record" },
-        notes: { display: "Notes" }
-      },
+      schema: {},
       collection: db.collection("TimeEntries"),
       items: db
         .collection("TimeEntries")
