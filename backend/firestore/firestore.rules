@@ -1,47 +1,42 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-    function hasClaim(claim) {
-      // requester has given custom claim
+    function hasClaim(claim) { // requester has given custom claim
       return request.auth.token[claim] == true;
     }
-    function uidMatches() {
-      // requester uid matches uid field in existing document
+    function uidMatches() { // requester uid matches field in existing doc
       return request.auth.uid == resource.data.uid;
     }
     function isInCollection(field, collection) {
       return exists(/databases/$(database)/documents/$(collection)/$(request.resource.data[field]))
     }
+    function newDoc() {
+      return request.resource.data;
+    }
     function validTimeEntry() {
       return
-        // Only the allowed fields are present
-        request.resource.data.keys().hasOnly([
+        // restrict accepted properties
+        newDoc().keys().hasOnly([
             "date", "project", "division", "timetype", "hours", "workrecord", 
             "notes", "uid"
           ]) &&
 
-        // The Time Type is provided and exists in the database
-        isInCollection("timetype","TimeTypes") &&
+        isInCollection("timetype","TimeTypes") && // timetype provided + exists
  
         // When provided, Project exists in the database and Time Type is 'R'
         (
-          (
-            exists(/databases/$(database)/documents/Projects/$(request.resource.data.project)) &&
-            request.resource.data.timetype == "R"
-          ) || 
-            !("project" in request.resource.data)
+          ( isInCollection("project","Projects") && newDoc().timetype == "R" ) || 
+          !("project" in newDoc())
         ) &&
 
         // When provided, Division exists in the database and Time Type is 'R'
         (
-          (
-            exists(/databases/$(database)/documents/Divisions/$(request.resource.data.division)) &&
-            request.resource.data.timetype == "R"
-          ) || !("division" in request.resource.data)
+          ( isInCollection("division","Divisions") && newDoc().timetype == "R" ) || 
+          !("division" in newDoc())
         ) &&
         // jobHours is either a number or not provided (replace with numberOrMissing() func)
-        ( request.resource.data.jobHours is number || !("jobHours" in request.resource.data) ) &&
-        ( request.resource.data.nonJobHours is number || !("nonJobHours" in request.resource.data) ) &&
-        ( request.resource.data.mealsHours is number || !("mealsHours" in request.resource.data) );
+        ( newDoc().jobHours is number || !("jobHours" in newDoc()) ) &&
+        ( newDoc().nonJobHours is number || !("nonJobHours" in newDoc()) ) &&
+        ( newDoc().mealsHours is number || !("mealsHours" in newDoc()) );
     }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;
