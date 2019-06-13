@@ -10,24 +10,37 @@ service cloud.firestore {
     }
     function validTimeEntry() {
       return
+        // Only the allowed fields are present
+        request.resource.data.keys().hasOnly(
+          [
+            "date", "project", "division", "timetype", "hours", "workrecord", 
+            "notes", "uid"
+          ]
+        ) &&
+
         // The Time Type is provided and exists in the database
         exists(/databases/$(database)/documents/TimeTypes/$(request.resource.data.timetype)) &&
+ 
         // When provided, Project exists in the database and Time Type is 'R'
         (
           (
-            "project" in request.resource.data &&
             exists(/databases/$(database)/documents/Projects/$(request.resource.data.project)) &&
             request.resource.data.timetype == "R"
           ) || 
             !("project" in request.resource.data)
         ) &&
-        // If provided, Division exists in the database and Time Type is 'R'
+
+        // When provided, Division exists in the database and Time Type is 'R'
         (
           (
             exists(/databases/$(database)/documents/Divisions/$(request.resource.data.division)) &&
             request.resource.data.timetype == "R"
           ) || !("division" in request.resource.data)
-        );
+        ) &&
+        // jobHours is either a number or not provided (replace with numberOrMissing() func)
+        ( request.resource.data.jobHours is number || !("jobHours" in request.resource.data) ) &&
+        ( request.resource.data.nonJobHours is number || !("nonJobHours" in request.resource.data) ) &&
+        ( request.resource.data.mealsHours is number || !("mealsHours" in request.resource.data) );
     }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;

@@ -46,8 +46,7 @@ export default {
         timetype: { display: "Type" },
         hours: { display: "Hours" },
         workrecord: { display: "Work Record" },
-        description: { display: "Description" },
-        comments: { display: "Comments" }
+        notes: { display: "Notes" }
       },
       collection: db.collection("TimeEntries"),
       items: db

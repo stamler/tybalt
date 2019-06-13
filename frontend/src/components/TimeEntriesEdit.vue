@@ -44,13 +44,8 @@
       </span>
 
       <span class="field">
-        <label for="description">Description</label>
-        <input type="text" name="description" v-model="item.description" />
-      </span>
-
-      <span class="field">
-        <label for="comments">Comments</label>
-        <input type="text" name="comments" v-model="item.comments" />
+        <label for="notes">Notes</label>
+        <input type="text" name="notes" v-model="item.notes" />
       </span>
 
       <span class="field">
