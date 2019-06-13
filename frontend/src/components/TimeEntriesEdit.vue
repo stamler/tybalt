@@ -164,6 +164,7 @@ export default {
 <style>
 #editor {
   display: flex;
+  flex-wrap: wrap;
 }
 .formblock {
   width: 300px;
@@ -172,8 +173,13 @@ export default {
   flex-direction: column;
 }
 .field label {
+  margin: 0px;
+  padding: 0px;
   display: inline-block;
   background-color: aquamarine;
-  width: 140px;
+  width: 45%;
+}
+.field input {
+  width: 50%;
 }
 </style>
