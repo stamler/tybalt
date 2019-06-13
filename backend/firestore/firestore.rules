@@ -8,18 +8,19 @@ service cloud.firestore {
       // requester uid matches uid field in existing document
       return request.auth.uid == resource.data.uid;
     }
+    function isInCollection(field, collection) {
+      return exists(/databases/$(database)/documents/$(collection)/$(request.resource.data[field]))
+    }
     function validTimeEntry() {
       return
         // Only the allowed fields are present
-        request.resource.data.keys().hasOnly(
-          [
+        request.resource.data.keys().hasOnly([
             "date", "project", "division", "timetype", "hours", "workrecord", 
             "notes", "uid"
-          ]
-        ) &&
+          ]) &&
 
         // The Time Type is provided and exists in the database
-        exists(/databases/$(database)/documents/TimeTypes/$(request.resource.data.timetype)) &&
+        isInCollection("timetype","TimeTypes") &&
  
         // When provided, Project exists in the database and Time Type is 'R'
         (
