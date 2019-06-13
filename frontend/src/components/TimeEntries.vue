@@ -19,6 +19,8 @@
         <td>{{ item.division }}</td>
         <td>{{ item.timetype }}</td>
         <td>{{ item.hours }}</td>
+        <td>{{ item.jobHours }}</td>
+        <td>{{ item.mealsHours }}</td>
         <td>{{ item.workrecord }}</td>
         <td>{{ item.project }}</td>
         <td>{{ item.description }}</td>
@@ -45,6 +47,8 @@ export default {
         division: { display: "Division" },
         timetype: { display: "Type" },
         hours: { display: "Hours" },
+        jobHours: { display: "Job Hours" },
+        mealsHours: { display: "Meals Hours" },
         workrecord: { display: "Work Record" },
         notes: { display: "Notes" }
       },

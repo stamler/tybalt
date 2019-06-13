@@ -12,30 +12,37 @@ service cloud.firestore {
     function newDoc() {
       return request.resource.data;
     }
+    function numOrMissing(field) {
+      return ( newDoc()[field] is number || !(field in newDoc()))
+    }
     function validTimeEntry() {
       return
         // restrict accepted properties
         newDoc().keys().hasOnly([
-            "date", "project", "division", "timetype", "hours", "workrecord", 
-            "notes", "uid"
+            "date", "project", "division", "timetype", "workrecord", "notes",
+            "hours", "jobHours", "mealsHours", "uid"
           ]) &&
 
-        isInCollection("timetype","TimeTypes") && // timetype provided + exists
+        isInCollection("timetype","TimeTypes") && // timetype exists in db
  
-        // When provided, Project exists in the database and Time Type is 'R'
+        // When project provided, it & division exist in db, timetype is 'R'
         (
-          ( isInCollection("project","Projects") && newDoc().timetype == "R" ) || 
+          ( isInCollection("project","Projects") && 
+            isInCollection("division","Divisions") &&
+            newDoc().timetype == "R" ) || 
           !("project" in newDoc())
         ) &&
 
         // When provided, Division exists in the database and Time Type is 'R'
         (
-          ( isInCollection("division","Divisions") && newDoc().timetype == "R" ) || 
+          ( isInCollection("division","Divisions") && 
+            newDoc().timetype == "R" ) || 
           !("division" in newDoc())
         ) &&
-        // jobHours is either a number or not provided (replace with numberOrMissing() func)
+
+        // when provided, hours/jobHours/mealsHours are numbers
         ( newDoc().jobHours is number || !("jobHours" in newDoc()) ) &&
-        ( newDoc().nonJobHours is number || !("nonJobHours" in newDoc()) ) &&
+        ( newDoc().hours is number || !("hours" in newDoc()) ) &&
         ( newDoc().mealsHours is number || !("mealsHours" in newDoc()) );
     }
     match /RawLogins/{rawLogin} {
