@@ -17,12 +17,7 @@
         </select>
       </span>
 
-      <span class="field">
-        <label for="project">Project / Proposal</label>
-        <input type="text" name="project" v-model.trim="item.project" />
-      </span>
-
-      <span class="field">
+      <span class="field" v-if="item.timetype === 'R'">
         <label for="division">Division</label>
         <select name="division" v-model="item.division">
           <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
@@ -31,22 +26,27 @@
         </select>
       </span>
 
+      <span class="field" v-if="item.timetype === 'R'">
+        <label for="project">Project / Proposal</label>
+        <input type="text" name="project" v-model.trim="item.project" />
+      </span>
+
       <span class="field">
         <label for="hours">Hours</label>
         <input type="text" name="hours" v-model.number="item.hours" />
       </span>
 
-      <span class="field">
+      <span class="field" v-if="item.project && item.project !== ''">
         <label for="jobHours">Job Hours</label>
         <input type="text" name="jobHours" v-model.number="item.jobHours" />
       </span>
 
-      <span class="field">
+      <span class="field" v-if="item.project && item.project !== ''">
         <label for="mealsHours">Meals Hours</label>
         <input type="text" name="mealsHours" v-model.number="item.mealsHours" />
       </span>
 
-      <span class="field">
+      <span class="field" v-if="item.timetype === 'R'">
         <label for="workrecord">Work Record</label>
         <input type="text" name="workrecord" v-model.trim="item.workrecord" />
       </span>
