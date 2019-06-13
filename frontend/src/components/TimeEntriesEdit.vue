@@ -15,12 +15,20 @@
 
       <span class="field">
         <label for="division">Division</label>
-        <input type="text" name="division" v-model.trim="item.division" />
+        <select name="division" v-model="item.division">
+          <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
+            {{ d.name }}
+          </option>
+        </select>
       </span>
 
       <span class="field">
         <label for="timetype">Time Type</label>
-        <input type="text" name="timetype" v-model.trim="item.timetype" />
+        <select name="timetype" v-model="item.timetype">
+          <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
+            {{ t.name }}
+          </option>
+        </select>
       </span>
 
       <span class="field">
@@ -59,6 +67,8 @@
 </template>
 
 <script>
+import firebase from "@/firebase";
+const db = firebase.firestore();
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import moment from "moment";
@@ -85,6 +95,8 @@ export default {
       },
       parentPath: null,
       collection: null,
+      divisions: [],
+      timetypes: [],
       item: {}
     };
   },
@@ -116,6 +128,8 @@ export default {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
     this.collection = this.$parent.collection;
+    this.$bind("divisions", db.collection("Divisions"));
+    this.$bind("timetypes", db.collection("TimeTypes"));
   },
   methods: {
     save() {
