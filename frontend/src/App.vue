@@ -35,9 +35,19 @@ body {
 
 .nav {
   display: flex;
+  /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* hide scrollbar firefox (experimental */
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: -ms-autohiding-scrollbar; /* hide scrollbar edge */
   color: white;
   background-color: #444440;
   padding: 4px 10px 4px;
+}
+
+.nav::-webkit-scrollbar {
+  display: none; /* hide scrollbar in safari */
 }
 
 .nav a {
@@ -55,9 +65,8 @@ body {
 }
 
 .navlinksstart {
-  flex-shrink: 0;
   display: flex;
-  flex-grow: 1;
+  flex: 0 0 auto;
 }
 
 .navlink {
@@ -65,6 +74,7 @@ body {
 }
 
 .navlinksend {
-  flex-grow: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 </style>
