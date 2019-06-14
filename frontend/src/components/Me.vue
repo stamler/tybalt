@@ -4,10 +4,8 @@
       <router-link to="#" v-on:click.native="signOut()">Sign Out</router-link>
     </div>
     <div id="dash">
-      <div>
-        <h2>Hi, {{ user.displayName }}</h2>
-        <img alt="TBTE logo" src="../assets/logo.png" />
-      </div>
+      <h2>Hi, {{ user.displayName }}</h2>
+      <img alt="TBTE logo" src="../assets/logo.png" />
     </div>
   </div>
 </template>
@@ -25,6 +23,11 @@ export default {
 <style>
 #dash {
   display: flex;
+  flex-direction: column;
   justify-content: center;
+}
+#dash img,
+h2 {
+  align-self: center;
 }
 </style>
