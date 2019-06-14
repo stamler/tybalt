@@ -56,11 +56,13 @@ service cloud.firestore {
         (
           ( newDoc()["mealsHours"] is number && isInCollection("project", "Projects") ) ||
           !("mealsHours" in newDoc())
-        );
+        ) &&
 
-        // TODO: workrecord require project?
-        // TODO: workrecord requires jobHours?
-        // TODO: workrecord requires Field Services Division?
+        // when provided workrecord requires an existing project
+        (
+          ("workrecord" in newDoc() && isInCollection("project", "Projects") ) ||
+          !("workrecord" in newDoc())
+        );
     }
     match /RawLogins/{rawLogin} {
       allow read: if request.auth.uid != null;

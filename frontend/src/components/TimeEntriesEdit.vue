@@ -46,7 +46,7 @@
         <input type="text" name="mealsHours" v-model.number="item.mealsHours" />
       </span>
 
-      <span class="field" v-if="item.timetype === 'R'">
+      <span class="field" v-if="item.project && item.project !== ''">
         <label for="workrecord">Work Record</label>
         <input type="text" name="workrecord" v-model.trim="item.workrecord" />
       </span>
