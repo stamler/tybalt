@@ -6,18 +6,11 @@
       </router-link>
       &nbsp;
     </span>
-    <span id="userBox">
-      <button v-on:click="signOut()">Sign Out</button>&nbsp;
-      <router-link to="/admin/profiles/userid">
-        {{ user.displayName }}
-      </router-link>
-    </span>
   </nav>
 </template>
 
 <script>
 import { mapState } from "vuex";
-import { signOut } from "@/main";
 
 export default {
   data: function() {
@@ -26,9 +19,8 @@ export default {
       links: this.$router.options.routes.filter(x => x.name)
     };
   },
-  computed: mapState(["user", "claims"]),
+  computed: mapState(["claims"]),
   methods: {
-    signOut,
     showLink(link) {
       if (link.meta && link.meta.claims) {
         // get intersect of link.claims & this.claims
@@ -45,16 +37,3 @@ export default {
   }
 };
 </script>
-<style>
-#userBox {
-  background-color: #777777;
-  padding: 0px 4px 0px;
-  border-radius: 3px;
-}
-
-#userBox button {
-  margin: 0px;
-  position: relative;
-  top: -1px;
-}
-</style>

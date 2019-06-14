@@ -2,8 +2,8 @@ import Vue from "vue";
 import Router from "vue-router";
 import store from "./store";
 
-// Views
-import Dashboard from "@/views/Dashboard.vue";
+// Components
+import Me from "@/components/Me.vue";
 
 Vue.use(Router);
 
@@ -13,12 +13,12 @@ const router = new Router({
   routes: [
     {
       path: "/",
-      redirect: "/dashboard"
+      redirect: "/me"
     },
     {
-      path: "/dashboard",
-      name: "Dashboard",
-      component: Dashboard
+      path: "/me",
+      name: "Me",
+      component: Me
     },
     {
       path: "/time",
