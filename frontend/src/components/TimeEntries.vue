@@ -33,9 +33,7 @@
         <td>{{ item.jobHours }}</td>
         <td>{{ item.mealsHours }}</td>
         <td>{{ item.workrecord }}</td>
-        <td>{{ item.project }}</td>
-        <td>{{ item.description }}</td>
-        <td>{{ item.comments }}</td>
+        <td>{{ item.notes }}</td>
       </template>
     </router-view>
   </div>
