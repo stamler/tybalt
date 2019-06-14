@@ -28,6 +28,7 @@ body {
 }
 
 #app {
+  font-size: 16pt;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -44,6 +45,11 @@ body {
   color: white;
   background-color: #444440;
   padding: 4px 10px 4px;
+
+  /*
+  CSS Scrolling shadows?
+  https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing
+  */
 }
 
 .nav::-webkit-scrollbar {

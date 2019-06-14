@@ -4,11 +4,11 @@
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
     </div>
-    <h2>
+    <h3>
       Week {{ now.isoWeek() }} is
       {{ now.startOf("week").format("ddd MMM D") }} to
       {{ now.endOf("week").format("ddd MMM D") }}
-    </h2>
+    </h3>
     <router-view>
       <template v-slot:taskAreaDefault>
         <button>Check Entries</button>
