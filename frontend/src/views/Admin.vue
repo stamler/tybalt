@@ -1,11 +1,14 @@
 <template>
   <div>
-    <div id="nav">
+    <div class="nav">
       <span v-for="link in links" v-bind:key="link.name">
-        <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+        <router-link
+          class="navlink"
+          v-bind:to="{ name: link.name }"
+          v-if="showLink(link)"
+        >
           {{ link.name }}
         </router-link>
-        &nbsp;
       </span>
     </div>
     <router-view />

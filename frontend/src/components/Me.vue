@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div id="nav">
+    <div class="nav">
       <router-link to="#" v-on:click.native="signOut()">Sign Out</router-link>
     </div>
     <h2>Hi, {{ user.displayName }}</h2>

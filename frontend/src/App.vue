@@ -35,24 +35,37 @@ body {
   color: #2c3e50;
 }
 
-#nav {
+.nav {
+  display: flex;
   color: white;
   background-color: #444440;
   padding: 4px 10px 4px;
 }
 
-#nav a {
+.nav a {
   font-weight: bold;
-  color:white;
+  color: white;
   text-decoration: none;
 }
 
-#nav a:hover {
+.nav a:hover {
   text-decoration: underline;
 }
 
-#nav a.router-link-exact-active {
+.nav a.router-link-exact-active {
   color: yellow;
 }
 
+.navlinks {
+  display: flex;
+  flex-grow: 1;
+}
+
+.navlink {
+  margin-right: 1em;
+}
+
+.userlink {
+  flex-grow: 0;
+}
 </style>

@@ -1,8 +1,10 @@
 <template>
   <div>
-    <div id="nav">
-      <router-link to="list">List</router-link>&nbsp;
-      <router-link v-if="hasPermission" to="add">New</router-link>
+    <div class="nav">
+      <router-link class="navlink" to="list">List</router-link>
+      <router-link class="navlink" v-if="hasPermission" to="add">
+        New
+      </router-link>
     </div>
     <router-view>
       <template v-slot:headers="{ sort }">

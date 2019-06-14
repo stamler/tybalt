@@ -1,10 +1,18 @@
 <template>
-  <nav id="nav">
-    <span v-for="link in links" v-bind:key="link.name">
-      <router-link v-bind:to="{ name: link.name }" v-if="showLink(link)">
+  <nav class="nav">
+    <span class="navlinks">
+      <router-link
+        class="navlink"
+        v-for="link in links"
+        v-bind:key="link.name"
+        v-bind:to="{ name: link.name }"
+        v-if="showLink(link)"
+      >
         {{ link.name }}
       </router-link>
-      &nbsp;
+    </span>
+    <span class="userlink">
+      <router-link to="/me">{{ user.displayName }}</router-link>
     </span>
   </nav>
 </template>
@@ -19,7 +27,7 @@ export default {
       links: this.$router.options.routes.filter(x => x.name)
     };
   },
-  computed: mapState(["claims"]),
+  computed: mapState(["user", "claims"]),
   methods: {
     showLink(link) {
       if (link.meta && link.meta.claims) {

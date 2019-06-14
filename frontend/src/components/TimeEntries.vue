@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div id="nav">
-      <router-link to="list">List</router-link>&nbsp;
-      <router-link to="add">New</router-link>
+    <div class="nav">
+      <router-link class="navlink" to="list">List</router-link>
+      <router-link class="navlink" to="add">New</router-link>
     </div>
     <h2>
       Week {{ now.isoWeek() }} is
