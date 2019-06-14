@@ -1,13 +1,17 @@
 <template>
   <form id="editor">
-    <datepicker
-      class="formblock"
-      :inline="true"
-      :disabledDates="dps.disabled"
-      :highlighted="dps.highlighted"
-      v-model="item.date"
-    />
     <div class="formblock">
+      <span class="field">
+        <label for="datepicker">Date</label>
+        <datepicker
+          name="datepicker"
+          wrapper-class="fieldinput"
+          :inline="false"
+          :disabledDates="dps.disabled"
+          :highlighted="dps.highlighted"
+          v-model="item.date"
+        />
+      </span>
       <span class="field">
         <label for="timetype">Time Type</label>
         <select name="timetype" v-model="item.timetype">
@@ -27,7 +31,7 @@
       </span>
 
       <span class="field" v-if="item.timetype === 'R'">
-        <label for="project">Project / Proposal</label>
+        <label for="project">Project/Proposal</label>
         <input type="text" name="project" v-model.trim="item.project" />
       </span>
 
@@ -172,14 +176,23 @@ export default {
   display: flex;
   flex-direction: column;
 }
+.field {
+  display: flex;
+}
+.field select {
+  margin-left: auto;
+}
 .field label {
   margin: 0px;
   padding: 0px;
   display: inline-block;
   background-color: aquamarine;
-  width: 45%;
 }
 .field input {
-  width: 50%;
+  flex-grow: 1;
+}
+
+.fieldinput {
+  margin-left: auto;
 }
 </style>
