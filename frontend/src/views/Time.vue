@@ -1,9 +1,11 @@
 <template>
   <div>
     <div class="nav">
-      <span v-for="link in links" v-bind:key="link.name">
+      <span class="navlinksstart">
         <router-link
           class="navlink"
+          v-for="link in links"
+          v-bind:key="link.name"
           v-bind:to="{ name: link.name }"
           v-if="showLink(link)"
         >

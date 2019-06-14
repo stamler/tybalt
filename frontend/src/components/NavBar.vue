@@ -1,6 +1,6 @@
 <template>
   <nav class="nav">
-    <span class="navlinks">
+    <span class="navlinksstart">
       <router-link
         class="navlink"
         v-for="link in links"
@@ -11,7 +11,7 @@
         {{ link.name }}
       </router-link>
     </span>
-    <span class="userlink">
+    <span class="navlinksend">
       <router-link to="/me">{{ user.displayName }}</router-link>
     </span>
   </nav>

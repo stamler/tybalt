@@ -56,7 +56,8 @@ body {
   color: yellow;
 }
 
-.navlinks {
+.navlinksstart {
+  flex-shrink: 0;
   display: flex;
   flex-grow: 1;
 }
@@ -65,7 +66,7 @@ body {
   margin-right: 1em;
 }
 
-.userlink {
+.navlinksend {
   flex-grow: 0;
 }
 </style>
