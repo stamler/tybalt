@@ -36,6 +36,7 @@ body {
 
 .nav {
   display: flex;
+  font-size: 0.8em;
   /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
   flex-wrap: nowrap;
   overflow-x: auto;
