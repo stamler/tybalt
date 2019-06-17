@@ -9,6 +9,7 @@
     <router-view>
       <template v-slot:columns="{ item }">
         <td>{{ item.id }}</td>
+        <td>{{ item.name }}</td>
         <td>{{ item.manager }}</td>
         <td>{{ item.client }}</td>
         <td>{{ item.proposal }}</td>
@@ -29,6 +30,7 @@ export default {
     return {
       schema: {
         project: { display: "Project / Proposal", id: true },
+        name: { display: "Short Name" },
         manager: { display: "Project Manager" },
         client: { display: "Client" },
         proposal: { display: "Proposal" },
