@@ -34,11 +34,13 @@ service cloud.firestore {
         ) &&
 
         // when provided, division exists in db, Time Type is 'R'
+        // when division is missing, Time Type is not 'R'
         // TODO: could division also be missing with Time Type 'X'?
         (
           ( isInCollection("division","Divisions") && 
             newDoc().timetype == "R" ) ||
-          !("division" in newDoc())
+          (!("division" in newDoc()) && 
+            newDoc().timetype != "R" )
         ) &&
 
         // at least one hours type is provided
