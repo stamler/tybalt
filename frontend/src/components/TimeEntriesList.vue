@@ -1,0 +1,148 @@
+<template>
+  <div id="container">
+    <div class="timeentry" v-for="item in items" v-bind:key="item.id">
+      <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
+      <div class="detailsbox">
+        <div class="headline">
+          {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+        </div>
+        <div v-if="item.timetype === 'R' && item.project" class="projectline">
+          {{ item.project }} - {{ item.projectName }}
+        </div>
+        <div class="hoursline">
+          {{ item | hoursString }}
+        </div>
+        <div v-if="item.notes" class="notesline">
+          {{ item.notes }}
+        </div>
+      </div>
+      <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+        ✏️
+      </router-link>
+      <router-link to="#" v-on:click="del(item.id)">
+        ❌
+      </router-link>
+    </div>
+  </div>
+</template>
+
+<script>
+import firebase from "@/firebase";
+const db = firebase.firestore();
+import moment from "moment";
+
+export default {
+  filters: {
+    shortDate(date) {
+      return moment(date).format("MMM DD");
+    },
+    hoursString(item) {
+      const hoursArray = [];
+      if (item.hours) hoursArray.push(item.hours + " hrs");
+      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
+      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
+      return hoursArray.join(" + ");
+    }
+  },
+  data() {
+    return {
+      parentPath: null,
+      schema: null, // schema: a reference to the parent schema
+      collection: null, // collection: a reference to the parent collection
+      taskAreaMode: "default",
+      items: [],
+      search: "",
+      sortBy: "created",
+      sortDescending: true,
+      selectAll: false,
+      selected: []
+    };
+  },
+  created() {
+    this.parentPath = this.$route.matched[
+      this.$route.matched.length - 1
+    ].parent.path;
+    this.schema = this.$parent.schema;
+    this.collection = this.$parent.collection;
+    this.items = this.$parent.items;
+    this.$bind("items", this.items);
+  },
+  methods: {
+    deleteSelected() {
+      const batch = db.batch();
+      this.selected.forEach(key => {
+        // apparently Vuefire $bind on items removes the doc() function so we
+        // use collection instead of items. TODO: research and understand this
+        batch.delete(this.collection.doc(key));
+      });
+      batch
+        .commit()
+        .then(() => {
+          this.selected = [];
+          this.selectAll = false;
+        })
+        .catch(err => {
+          console.log(`Batch failed: ${err}`);
+        });
+    }
+  }
+};
+</script>
+<style>
+.timeentry {
+  display: flex;
+  flex-grow: 1;
+  font-size: 0.8em;
+  height: 5em;
+  border-bottom: 1px solid #eee;
+}
+.anchorbox {
+  display: flex;
+  flex-shrink: 0;
+  margin: 0em 0.6em 0em;
+  width: 3.2em;
+  align-items: center;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.detailsbox {
+  /* ensure ellipsis works on children 
+  https://css-tricks.com/flexbox-truncated-text/ */
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+  flex-direction: column;
+}
+.headline {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  margin: 0em;
+  padding: 0em;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.projectline {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9em;
+}
+.hoursline {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9em;
+}
+.notesline {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  color: grey;
+  font-size: 0.9em;
+}
+</style>

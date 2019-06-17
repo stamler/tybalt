@@ -101,6 +101,7 @@ export default {
       collection: null,
       divisions: [],
       timetypes: [],
+      projects: [],
       item: {}
     };
   },
@@ -134,16 +135,62 @@ export default {
     this.collection = this.$parent.collection;
     this.$bind("divisions", db.collection("Divisions"));
     this.$bind("timetypes", db.collection("TimeTypes"));
+    this.$bind("projects", db.collection("Projects"));
   },
   methods: {
     save() {
+      // Populate the Time Type Name
+      this.item.timetypeName = this.timetypes.filter(
+        i => i.id === this.item.timetype
+      )[0].name;
+
+      // if timetype isn't R, delete disallowed properties
+      if (this.item.timetype !== "R") {
+        [
+          "division",
+          "divisionName",
+          "project",
+          "projectName",
+          "jobHours",
+          "mealsHours",
+          "workrecord"
+        ].forEach(x => delete this.item[x]);
+      } else {
+        // timetype is R, division must be present
+        if (this.item.division && this.item.division.length > 0) {
+          // write divisionName
+          this.item.divisionName = this.divisions.filter(
+            i => i.id === this.item.division
+          )[0].name;
+        } else {
+          throw "Division Missing";
+        }
+
+        // Populate or Clear the Project Name
+        if (this.item.project && this.item.project.length > 0) {
+          // Update
+          this.item.projectName = this.projects.filter(
+            i => i.id === this.item.project
+          )[0].name;
+        } else {
+          // Clear
+          delete this.item.projectName;
+          delete this.item.jobHours;
+          delete this.item.workorder;
+        }
+      }
+
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
-      console.log(this.item);
+
       this.item.uid = this.user.uid; // include uid of the creating user
       if (!this.item.hasOwnProperty("date")) {
         // make the date today if not provided by user
         this.item.date = new Date();
       }
+
+      console.log(this.item);
+
+      // Write to database
       if (this.id) {
         // Editing an existing item
         this.collection

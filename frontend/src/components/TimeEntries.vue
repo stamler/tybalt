@@ -3,39 +3,14 @@
     <div class="nav">
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
+      <router-link class="navlink" to="#">Check</router-link>
+      <router-link class="navlink" to="#">
+        Bundle W{{ now.isoWeek() }} ({{ now.startOf("week").format("D") }}-{{
+          now.endOf("week").format("D")
+        }})
+      </router-link>
     </div>
-    <h3>
-      Week {{ now.isoWeek() }} is
-      {{ now.startOf("week").format("ddd MMM D") }} to
-      {{ now.endOf("week").format("ddd MMM D") }}
-    </h3>
-    <router-view>
-      <template v-slot:taskAreaDefault>
-        <button>Check Entries</button>
-      </template>
-      <template v-slot:headers>
-        <th>Date</th>
-        <th>Project / Proposal</th>
-        <th>Division</th>
-        <th>Type</th>
-        <th>Hours</th>
-        <th>Job Hours</th>
-        <th>Meals Hours</th>
-        <th>Work Record</th>
-        <th>Notes</th>
-      </template>
-      <template v-slot:columns="{ item }">
-        <td>{{ item.date.toDate() | shortDate }}</td>
-        <td>{{ item.project }}</td>
-        <td>{{ item.division }}</td>
-        <td>{{ item.timetype }}</td>
-        <td>{{ item.hours }}</td>
-        <td>{{ item.jobHours }}</td>
-        <td>{{ item.mealsHours }}</td>
-        <td>{{ item.workrecord }}</td>
-        <td>{{ item.notes }}</td>
-      </template>
-    </router-view>
+    <router-view />
   </div>
 </template>
 
