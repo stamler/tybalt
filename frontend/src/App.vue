@@ -28,7 +28,7 @@ body {
 }
 
 #app {
-  font-size: 16pt;
+  font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
