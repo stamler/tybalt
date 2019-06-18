@@ -1,18 +1,18 @@
 <template>
   <div id="container">
-    <div class="timeentry" v-for="item in items" v-bind:key="item.id">
+    <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
       <div class="detailsbox">
         <div class="headline">
           {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
         </div>
-        <div v-if="item.timetype === 'R' && item.project" class="projectline">
+        <div v-if="item.timetype === 'R' && item.project" class="firstline">
           {{ item.project }} - {{ item.projectName }}
         </div>
-        <div class="hoursline">
+        <div class="secondline">
           {{ item | hoursString }}
         </div>
-        <div v-if="item.notes" class="notesline">
+        <div v-if="item.notes" class="thirdline">
           {{ item.notes }}
         </div>
       </div>
@@ -80,7 +80,7 @@ export default {
 };
 </script>
 <style>
-.timeentry {
+.listentry {
   display: flex;
   flex-grow: 1;
   font-size: 0.8em;
@@ -116,19 +116,19 @@ export default {
   font-size: 0.9em;
 }
 
-.projectline {
+.firstline {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
 }
-.hoursline {
+.secondline {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
 }
-.notesline {
+.thirdline {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
