@@ -8,9 +8,6 @@
           <div class="headline">{{ item.givenName }} {{ item.surname }}</div>
         </div>
         <div class="firstline">{{ item.computer }}</div>
-        <div v-if="item.notes" class="thirdline">
-          upn:{{ item.userSourceAnchor }}
-        </div>
       </div>
     </div>
   </div>
