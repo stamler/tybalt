@@ -30,8 +30,6 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
 import moment from "moment";
 
 export default {
