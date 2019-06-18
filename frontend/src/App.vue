@@ -27,6 +27,9 @@ body {
   padding: 0px;
 }
 
+.attention {
+  color: red;
+}
 #app {
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
