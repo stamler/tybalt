@@ -151,7 +151,7 @@ const router = new Router({
               // TODO: hide select/edit/del for read-only claims holders
               props: { edit: true },
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsList.vue")
             },
             {
               path: "add",
@@ -181,7 +181,7 @@ const router = new Router({
               // TODO: hide select/edit/del for read-only claims holders
               props: { edit: true },
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/List.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsList.vue")
             },
             {
               path: "add",
