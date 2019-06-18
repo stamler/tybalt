@@ -84,4 +84,18 @@ body {
   margin-left: auto;
   flex: 0 0 auto;
 }
+
+#container input:focus {
+  outline: none;
+}
+#container input {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e6e6e6;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-size: 1.25em;
+}
 </style>
