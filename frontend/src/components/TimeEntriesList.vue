@@ -48,22 +48,14 @@ export default {
   data() {
     return {
       parentPath: null,
-      schema: null, // schema: a reference to the parent schema
       collection: null, // collection: a reference to the parent collection
-      taskAreaMode: "default",
-      items: [],
-      search: "",
-      sortBy: "created",
-      sortDescending: true,
-      selectAll: false,
-      selected: []
+      items: []
     };
   },
   created() {
     this.parentPath = this.$route.matched[
       this.$route.matched.length - 1
     ].parent.path;
-    this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
     this.$bind("items", this.items);
