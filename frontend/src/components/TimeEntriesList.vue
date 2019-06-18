@@ -3,8 +3,11 @@
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
       <div class="detailsbox">
-        <div class="headline">
-          {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+        <div class="headline_wrapper">
+          <div class="headline">
+            {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+          </div>
+          <div class="byline"></div>
         </div>
         <div v-if="item.timetype === 'R' && item.project" class="firstline">
           {{ item.project }} - {{ item.projectName }}
@@ -97,43 +100,41 @@ export default {
   font-size: 0.9em;
 }
 .detailsbox {
+  display: flex;
   /* ensure ellipsis works on children 
   https://css-tricks.com/flexbox-truncated-text/ */
   min-width: 0;
-  display: flex;
   justify-content: center;
   flex-grow: 1;
   flex-direction: column;
 }
-.headline {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 
-  margin: 0em;
-  padding: 0em;
-  font-weight: bold;
-  font-size: 0.9em;
+.headline_wrapper {
+  display: flex;
 }
 
-.firstline {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.9em;
-}
-.secondline {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.9em;
-}
+.headline,
+.byline,
+.firstline,
+.secondline,
 .thirdline {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  color: grey;
   font-size: 0.9em;
+  margin: 0em;
+  padding: 0em;
+}
+
+.headline {
+  font-weight: bold;
+}
+
+.byline {
+  margin-left: 0.3em;
+}
+
+.thirdline {
+  color: grey;
 }
 </style>
