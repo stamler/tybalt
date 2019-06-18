@@ -1,12 +1,5 @@
 <template>
-  <List>
-    <template v-slot:columns="{ item }">
-      <td>{{ item.givenName }}</td>
-      <td>{{ item.surname }}</td>
-      <td>{{ item.created.toDate() | relativeTime }}</td>
-      <td>{{ item.computer }}</td>
-    </template>
-  </List>
+  <List />
 </template>
 
 <script>
@@ -14,7 +7,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./List";
+import List from "./LoginList";
 
 export default {
   components: { List },
