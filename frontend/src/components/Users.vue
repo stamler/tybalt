@@ -19,7 +19,7 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import moment from "moment";
-import List from "./List";
+import List from "./UsersList";
 
 export default {
   components: { List },
