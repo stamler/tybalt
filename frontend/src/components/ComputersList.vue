@@ -19,8 +19,8 @@
           </div>
         </div>
         <div class="firstline">
-          {{ item.updated.toDate() | relativeTime }}
-          running Windows {{ item.osVersion }}
+          {{ item.updated.toDate() | relativeTime }}, Windows
+          {{ item.osVersion }}
         </div>
         <div class="secondline">
           {{ item.userGivenName }} {{ item.userSurname }}
