@@ -19,7 +19,7 @@
       <router-link :to="[parentPath, item.id, 'edit'].join('/')">
         ✏️
       </router-link>
-      <router-link to="#" v-on:click="del(item.id)">
+      <router-link to="#" v-on:click.native="del(item.id)">
         ❌
       </router-link>
     </div>
@@ -68,21 +68,12 @@ export default {
     this.$bind("items", this.items);
   },
   methods: {
-    deleteSelected() {
-      const batch = db.batch();
-      this.selected.forEach(key => {
-        // apparently Vuefire $bind on items removes the doc() function so we
-        // use collection instead of items. TODO: research and understand this
-        batch.delete(this.collection.doc(key));
-      });
-      batch
-        .commit()
-        .then(() => {
-          this.selected = [];
-          this.selectAll = false;
-        })
+    del(item) {
+      this.collection
+        .doc(item)
+        .delete()
         .catch(err => {
-          console.log(`Batch failed: ${err}`);
+          console.log(err);
         });
     }
   }
