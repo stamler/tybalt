@@ -1,11 +1,5 @@
 <template>
   <div>
-    <!-- TODO: 
-    
-    Implement Entire Row as scoped slot rather than using Schema property?
-    https://jsfiddle.net/pyrello/odwag9mx/
-
-    -->
     <List :select="true && hasPermission">
       <template v-slot:taskAreaDefault="{ taskAreaMode, setTaskMode }">
         <button v-on:click="claimsToProfiles">🔄 Reload Profiles</button>
@@ -33,7 +27,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import ModClaims from "@/components/ModClaims.vue";
-import List from "@/components/List.vue";
+import List from "@/components/ProfilesList.vue";
 
 export default {
   components: { ModClaims, List },
