@@ -2,10 +2,11 @@
   <form id="editor">
     <div class="formblock">
       <span class="field">
-        <label for="datepicker">Date</label>
         <datepicker
           name="datepicker"
-          wrapper-class="fieldinput"
+          input-class="fieldinput"
+          wrapper-class="calendar-wrapper"
+          placeholder="Date"
           :inline="false"
           :disabledDates="dps.disabled"
           :highlighted="dps.highlighted"
@@ -13,8 +14,8 @@
         />
       </span>
       <span class="field">
-        <label for="timetype">Time Type</label>
         <select name="timetype" v-model="item.timetype">
+          <option value="" disabled selected>Entry Type</option>
           <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
             {{ t.name }}
           </option>
@@ -22,7 +23,6 @@
       </span>
 
       <span class="field" v-if="item.timetype === 'R'">
-        <label for="division">Division</label>
         <select name="division" v-model="item.division">
           <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
             {{ d.name }}
@@ -30,34 +30,79 @@
         </select>
       </span>
 
-      <span class="field" v-if="item.timetype === 'R'">
-        <label for="project">Project/Proposal</label>
-        <input type="text" name="project" v-model.trim="item.project" />
+      <span
+        class="field"
+        v-if="item.timetype === 'R' && item.division && item.division !== ''"
+      >
+        <label for="project">Job</label>
+        <input
+          type="text"
+          name="project"
+          placeholder="Project/Proposal"
+          v-model.trim="item.project"
+        />
       </span>
 
       <span class="field">
         <label for="hours">Hours</label>
-        <input type="text" name="hours" v-model.number="item.hours" />
+        <input type="number" name="hours" v-model.number="item.hours" />
       </span>
 
-      <span class="field" v-if="item.project && item.project !== ''">
+      <span
+        class="field"
+        v-if="
+          item.project &&
+            item.project !== '' &&
+            item.division &&
+            item.timetype === 'R'
+        "
+      >
         <label for="jobHours">Job Hours</label>
-        <input type="text" name="jobHours" v-model.number="item.jobHours" />
+        <input type="number" name="jobHours" v-model.number="item.jobHours" />
       </span>
 
-      <span class="field" v-if="item.project && item.project !== ''">
+      <span
+        class="field"
+        v-if="
+          item.project &&
+            item.project !== '' &&
+            item.division &&
+            item.timetype === 'R'
+        "
+      >
         <label for="mealsHours">Meals Hours</label>
-        <input type="text" name="mealsHours" v-model.number="item.mealsHours" />
+        <input
+          type="number"
+          name="mealsHours"
+          v-model.number="item.mealsHours"
+        />
       </span>
 
-      <span class="field" v-if="item.project && item.project !== ''">
+      <span
+        class="field"
+        v-if="
+          item.project &&
+            item.project !== '' &&
+            item.division &&
+            item.timetype === 'R'
+        "
+      >
         <label for="workrecord">Work Record</label>
-        <input type="text" name="workrecord" v-model.trim="item.workrecord" />
+        <input
+          type="text"
+          name="workrecord"
+          placeholder="Work Record"
+          v-model.trim="item.workrecord"
+        />
       </span>
 
       <span class="field">
-        <label for="notes">Notes</label>
-        <input type="text" name="notes" v-model.trim="item.notes" />
+        <input
+          type="text"
+          name="notes"
+          placeholder="Notes"
+          v-model.trim="item.notes"
+        />
       </span>
 
       <span class="field">
@@ -218,28 +263,54 @@ export default {
   flex-wrap: wrap;
 }
 .formblock {
-  width: 300px;
-  margin-right: 20px;
   display: flex;
+  width: 100%;
   flex-direction: column;
 }
 .field {
   display: flex;
+  font-size: 1.2em;
 }
 .field select {
-  margin-left: auto;
-}
-.field label {
-  margin: 0px;
-  padding: 0px;
-  display: inline-block;
-  background-color: aquamarine;
-}
-.field input {
-  flex-grow: 1;
+  -webkit-appearance: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e6e6e6;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-size: 1em;
 }
 
+.field select:focus {
+  outline: none;
+}
+.field label {
+  font-size: 1em;
+  padding-right: 0.3em;
+}
+.field input {
+  margin: 0;
+  padding: 0;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e6e6e6;
+  flex-grow: 1;
+  font-size: 1em;
+}
+
+.field input:focus {
+  outline: none;
+}
+.calendar-wrapper {
+  width: 100%;
+}
 .fieldinput {
-  margin-left: auto;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-size: 1em;
 }
 </style>
