@@ -25,7 +25,6 @@ export default {
   data() {
     return {
       now: moment(),
-      schema: {},
       collection: db.collection("TimeEntries"),
       items: db
         .collection("TimeEntries")
