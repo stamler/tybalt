@@ -164,14 +164,14 @@ const router = new Router({
               path: "add",
               name: "Add Division",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Division",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
             }
           ]
         },
@@ -194,14 +194,14 @@ const router = new Router({
               path: "add",
               name: "Add Time Type",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Time Type",
               component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/Edit.vue")
+                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
             }
           ]
         }
