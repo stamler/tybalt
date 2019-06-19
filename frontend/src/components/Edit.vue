@@ -7,8 +7,12 @@
       <!-- enable input for this regular field -->
       <input v-else type="text" v-model="item[field]" />
     </span>
-    <button type="button" v-on:click="save()">Save</button>
-    <button type="button" v-on:click="$router.push(parentPath)">Cancel</button>
+    <span class="field">
+      <button type="button" v-on:click="save()">Save</button>
+      <button type="button" v-on:click="$router.push(parentPath)">
+        Cancel
+      </button>
+    </span>
   </form>
 </template>
 
