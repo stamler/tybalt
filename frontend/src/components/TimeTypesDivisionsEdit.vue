@@ -69,9 +69,7 @@ export default {
   },
   methods: {
     save() {
-      console.log(this.item);
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
-      console.log(this.item);
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
