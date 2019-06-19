@@ -1,9 +1,9 @@
 <template>
   <div>
     <div class="nav">
-      <span class="navlinksstart">
+      <span class="linksstart">
         <router-link
-          class="navlink"
+          class="link"
           v-for="link in links"
           v-bind:key="link.name"
           v-bind:to="{ name: link.name }"

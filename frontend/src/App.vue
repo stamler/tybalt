@@ -30,6 +30,7 @@ body {
 .attention {
   color: red;
 }
+
 #app {
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
@@ -55,35 +56,27 @@ body {
   https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing
   */
 }
-
 .nav::-webkit-scrollbar {
   display: none; /* hide scrollbar in safari */
 }
-
+.nav .link,
 .nav a {
+  margin-right: 1em;
   font-weight: bold;
   color: white;
   text-decoration: none;
 }
-
 .nav a:hover {
   text-decoration: underline;
 }
-
 .nav a.router-link-exact-active {
   color: yellow;
 }
-
-.navlinksstart {
+.nav .linksstart {
   display: flex;
   flex: 0 0 auto;
 }
-
-.navlink {
-  margin-right: 1em;
-}
-
-.navlinksend {
+.nav .linksend {
   margin-left: auto;
   flex: 0 0 auto;
 }
