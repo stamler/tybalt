@@ -105,14 +105,3 @@ export default {
   }
 };
 </script>
-<style>
-.field {
-  display: flex;
-}
-.field label {
-  width: 100px;
-}
-.field input {
-  width: 200px;
-}
-</style>
