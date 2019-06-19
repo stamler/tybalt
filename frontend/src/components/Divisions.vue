@@ -6,18 +6,7 @@
         New
       </router-link>
     </div>
-    <router-view>
-      <template v-slot:headers="{ sort }">
-        <th>Code</th>
-        <th>Name</th>
-        <th>Description</th>
-      </template>
-      <template v-slot:columns="{ item }">
-        <td>{{ item.id }}</td>
-        <td>{{ item.name }}</td>
-        <td>{{ item.description }}</td>
-      </template>
-    </router-view>
+    <router-view />
   </div>
 </template>
 
@@ -29,11 +18,6 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
-      schema: {
-        code: { id: true },
-        name: true,
-        description: true
-      },
       collection: db.collection("Divisions"),
       items: db.collection("Divisions")
     };

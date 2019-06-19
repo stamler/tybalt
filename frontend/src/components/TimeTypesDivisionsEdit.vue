@@ -30,7 +30,6 @@ export default {
   data() {
     return {
       parentPath: null,
-      schema: {},
       collection: null,
       item: {}
     };
@@ -66,7 +65,6 @@ export default {
   created() {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
-    this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
   },
   methods: {
