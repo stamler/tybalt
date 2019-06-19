@@ -7,7 +7,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./LoginList";
+import List from "./LoginsList";
 
 export default {
   components: { List },
