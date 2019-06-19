@@ -1,18 +1,5 @@
 <template>
-  <List>
-    <template v-slot:columns="{ item }">
-      <td>{{ item.givenName }}</td>
-      <td>{{ item.surname }}</td>
-      <td>
-        {{
-          item.created ? $options.filters.dateFormat(item.created.toDate()) : ""
-        }}
-      </td>
-      <td>{{ item.updated.toDate() | relativeTime }}</td>
-      <td>{{ item.userSourceAnchor }}</td>
-      <td>{{ item.lastComputer }}</td>
-    </template>
-  </List>
+  <List />
 </template>
 
 <script>

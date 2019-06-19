@@ -1,28 +1,5 @@
 <template>
-  <List :select="true && hasPermission" :del="true && hasPermission">
-    <template v-slot:columns="{ item }">
-      <td>{{ item.mfg }}</td>
-      <td>{{ item.model }}</td>
-      <td>{{ item.upn }}</td>
-      <td>{{ item.serial }}</td>
-      <td>
-        {{ item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname }}
-      </td>
-      <td>{{ item.created.toDate() | relativeTime }}</td>
-      <td>
-        <span v-if="!item.userSourceAnchor">userSourceAnchor</span>
-        <span v-if="!item.serial">
-          serial
-          {{
-            guessSerial(
-              item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname
-            )
-          }}
-        </span>
-        <span v-if="isNaN(item.radiatorVersion)">radiatorVersion</span>
-      </td>
-    </template>
-  </List>
+  <List />
 </template>
 
 <script>

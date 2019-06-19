@@ -1,44 +1,5 @@
 <template>
-  <List>
-    <template v-slot:columns="{ item }">
-      <td>
-        <span v-if="!item.computerName.includes(item.serial)">
-          ❗({{ item.serial }})
-        </span>
-        <br />
-        {{ item.computerName }}
-      </td>
-      <td>{{ item.osVersion }}</td>
-      <td>{{ item.mfg }}</td>
-      <td>{{ item.model }}</td>
-      <td>{{ item.userGivenName }}</td>
-      <td>{{ item.userSurname }}</td>
-      <td>
-        <span v-if="!item.assigned">
-          <!-- Show this if the device has no assignment -->
-          <button
-            v-if="claims.computers === true"
-            v-on:click="assign(item.id, item.userSourceAnchor)"
-          >
-            assign
-          </button>
-        </span>
-        <span
-          v-else-if="item.assigned.userSourceAnchor !== item.userSourceAnchor"
-        >
-          <!-- Show this if the device has an assignment that doesn't
-          match the last user login-->
-          <button v-on:click="assign(item.id, item.userSourceAnchor)">
-            ❗assign, currently {{ item.assigned.givenName }}
-            {{ item.assigned.surname }}
-          </button>
-        </span>
-        <span v-else>{{ item.assigned.time.toDate() | relativeTime }}</span>
-      </td>
-      <td>{{ item.updated.toDate() | relativeTime }}</td>
-      <td>{{ item.created.toDate() | dateFormat }}</td>
-    </template>
-  </List>
+  <List />
 </template>
 
 <script>
