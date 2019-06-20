@@ -1,5 +1,5 @@
 <template>
-  <nav class="nav">
+  <div id="sidenav">
     <span class="linksstart">
       <router-link
         class="link"
@@ -14,7 +14,7 @@
     <span class="linksend">
       <router-link to="/me">{{ user.displayName }}</router-link>
     </span>
-  </nav>
+  </div>
 </template>
 
 <script>

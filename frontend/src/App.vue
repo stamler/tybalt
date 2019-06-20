@@ -1,17 +1,17 @@
 <template>
   <div id="app">
-    <NavBar />
+    <SideNav />
     <router-view id="main" />
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import NavBar from "@/components/NavBar.vue";
+import SideNav from "@/components/SideNav.vue";
 
 export default {
   components: {
-    NavBar
+    SideNav
   },
   data() {
     return {
@@ -32,12 +32,27 @@ body {
 }
 
 #app {
+  display: flex;
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+#sidenav {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  color: white;
+  background-color: #444440;
+  padding: 4px 10px 4px;
+}
+
+#main {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
 .nav {
   display: flex;
   font-size: 0.8em;
@@ -59,6 +74,8 @@ body {
 .nav::-webkit-scrollbar {
   display: none; /* hide scrollbar in safari */
 }
+
+#sidenav a,
 .nav .link,
 .nav a {
   margin-right: 1em;
@@ -66,11 +83,24 @@ body {
   color: white;
   text-decoration: none;
 }
+#sidenav a:hover,
 .nav a:hover {
   text-decoration: underline;
 }
+#sidenav a.router-link-exact-active,
 .nav a.router-link-exact-active {
   color: yellow;
+}
+#sidenav .linksstart {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+#sidenav .linksend {
+  margin-top: 1em;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
 }
 .nav .linksstart {
   display: flex;
