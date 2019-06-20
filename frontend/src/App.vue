@@ -24,9 +24,11 @@ export default {
 <style>
 html {
   height: 100%;
+  width: 100%;
 }
 body {
   height: 100%;
+  width: 100%;
   margin: 0px;
   padding: 0px;
 }
@@ -37,7 +39,7 @@ body {
 
 #app {
   height: 100%;
-  display: flex;
+  width: 100%;
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -45,18 +47,26 @@ body {
 }
 
 #sidenav {
+  /* https://codepen.io/markcaron/pen/pPZVWO */
+  position: fixed;
+  height: 100%;
+  /*transform: translateX(-100%);*/
+  opacity: 0.95;
+  box-shadow: 0.1em 0em 1em #222;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
   color: white;
-  background-color: #444440;
-  padding: 4px 10px 4px;
+  background-color: #222222;
+  padding: 1em 0em 0em 1em;
 }
 
 #main {
+  height: 100%;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  /* allow shrinking of content */
+  /* min-width: 0; */
 }
 
 #content {
@@ -211,7 +221,7 @@ select {
   -webkit-appearance: none;
 }
 
-#list input:focus,
+#content input:focus,
 #editor .field select:focus,
 #editor .field input:focus {
   outline: none;
