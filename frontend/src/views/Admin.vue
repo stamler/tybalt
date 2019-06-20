@@ -13,7 +13,7 @@
         </router-link>
       </span>
     </div>
-    <router-view />
+    <router-view id="content" />
   </div>
 </template>
 <script>

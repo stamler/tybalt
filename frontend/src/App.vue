@@ -22,7 +22,11 @@ export default {
 </script>
 
 <style>
+html {
+  height: 100%;
+}
 body {
+  height: 100%;
   margin: 0px;
   padding: 0px;
 }
@@ -32,6 +36,7 @@ body {
 }
 
 #app {
+  height: 100%;
   display: flex;
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
@@ -53,12 +58,18 @@ body {
   flex-direction: column;
   flex-grow: 1;
 }
+
+#content {
+  flex-direction: column;
+  overflow: auto;
+}
 .nav {
   display: flex;
   font-size: 0.8em;
   /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
   flex-wrap: nowrap;
   overflow-x: auto;
+  flex-shrink: 0;
   scrollbar-width: none; /* hide scrollbar firefox (experimental */
   -webkit-overflow-scrolling: touch;
   -ms-overflow-style: -ms-autohiding-scrollbar; /* hide scrollbar edge */
@@ -186,7 +197,7 @@ select {
   padding: 0;
 }
 
-#list input {
+#content input {
   width: 100%;
   font-size: 1.25em;
 }
