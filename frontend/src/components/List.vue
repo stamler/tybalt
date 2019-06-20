@@ -1,5 +1,5 @@
 <template>
-  <div id="container">
+  <div id="list">
     <div id="taskArea">
       <div v-if="taskAreaMode === 'default'">
         <input type="textbox" placeholder="search..." v-model="search" />

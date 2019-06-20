@@ -1,5 +1,5 @@
 <template>
-  <div id="container">
+  <div id="list">
     <input type="textbox" placeholder="search..." v-model="search" />
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
       <div class="anchorbox">{{ item.displayName }}</div>

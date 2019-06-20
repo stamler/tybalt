@@ -1,5 +1,5 @@
 <template>
-  <div id="container">
+  <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
       <div class="detailsbox">

@@ -81,20 +81,6 @@ body {
   flex: 0 0 auto;
 }
 
-#container input:focus {
-  outline: none;
-}
-#container input {
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: 1px solid #e6e6e6;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  font-size: 1.25em;
-}
-
 .listentry {
   display: flex;
   flex-grow: 1;
@@ -159,20 +145,32 @@ body {
   display: flex;
   font-size: 1.2em;
 }
-#editor .calendar-input,
-#editor .field input,
-#editor .field select {
-  flex-grow: 1;
-  margin: 0;
-  padding: 0;
-  font-size: 1em;
+
+input,
+select {
   border-top: none;
   border-left: none;
   border-right: none;
   border-bottom: 1px solid #e6e6e6;
+  margin: 0;
+  padding: 0;
+}
+
+#list input {
+  width: 100%;
+  font-size: 1.25em;
+}
+
+#editor .calendar-input,
+#editor .field input,
+#editor .field select {
+  flex-grow: 1;
+  font-size: 1em;
   -moz-appearance: none;
   -webkit-appearance: none;
 }
+
+#list input:focus,
 #editor .field select:focus,
 #editor .field input:focus {
   outline: none;
