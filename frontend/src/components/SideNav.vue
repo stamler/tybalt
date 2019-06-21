@@ -1,15 +1,19 @@
 <template>
   <div id="sidenav">
-    <span class="linksstart">
-      <router-link
-        class="link"
-        v-for="link in links"
-        v-bind:key="link.name"
-        v-bind:to="{ name: link.name }"
-      >
-        {{ link.name }}
-      </router-link>
-    </span>
+    <ul>
+      <li v-for="link in links" v-bind:key="link.name">
+        <router-link class="link" v-bind:to="{ name: link.name }">
+          {{ link.name }}
+        </router-link>
+        <ul v-if="link.children && link.children.length > 0">
+          <li v-for="child in link.children" v-bind:key="child.name">
+            <router-link class="link" v-bind:to="{ name: child.name }">
+              {{ child.name }}
+            </router-link>
+          </li>
+        </ul>
+      </li>
+    </ul>
     <span class="linksend">
       <router-link to="/me">{{ user.displayName }}</router-link>
     </span>

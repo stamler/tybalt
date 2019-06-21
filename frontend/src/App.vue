@@ -118,6 +118,10 @@ body,
   color: white;
   text-decoration: none;
 }
+#sidenav ul {
+  list-style-type: none;
+  padding-left: 0.5em;
+}
 #sidenav a:hover,
 .nav a:hover {
   text-decoration: underline;
