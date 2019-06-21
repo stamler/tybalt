@@ -1,18 +1,20 @@
 <template>
   <div id="app">
     <SideNav />
-    <router-view id="main" />
+    <router-view v-bind:class="{ slidRight: sidenav }" id="main" />
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
 import SideNav from "@/components/SideNav.vue";
+import { mapState } from "vuex";
 
 export default {
   components: {
     SideNav
   },
+  computed: mapState(["sidenav"]),
   data() {
     return {
       user: null
@@ -22,15 +24,16 @@ export default {
 </script>
 
 <style>
-html {
-  height: 100%;
-  width: 100%;
+* {
+  margin: 0;
+  padding: 0;
 }
-body {
-  height: 100%;
-  width: 100%;
-  margin: 0px;
-  padding: 0px;
+
+html,
+body,
+#app {
+  height: 100vh;
+  width: 100vw;
 }
 
 .attention {
@@ -38,8 +41,11 @@ body {
 }
 
 #app {
-  height: 100%;
-  width: 100%;
+  /* Flexbox Off Canvas Menu similar to this technique
+     https://codepen.io/oknoblich/pen/klnjw */
+  /* min-height: 100%; /* is this necessary? */
+  display: flex;
+  overflow: hidden;
   font-size: 20px;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -47,26 +53,33 @@ body {
 }
 
 #sidenav {
+  position: absolute;
+  height: 100vh;
   /* https://codepen.io/markcaron/pen/pPZVWO */
-  position: fixed;
-  height: 100%;
   /*transform: translateX(-100%);*/
-  opacity: 0.95;
-  box-shadow: 0.1em 0em 1em #222;
+  color: white;
+  width: 10em;
+  background-color: #555;
+  padding: 1em 0em 0em 1em;
+  box-sizing: border-box; /* make padding stay within 100% box */
   display: flex;
   flex-direction: column;
-  color: white;
-  background-color: #222222;
-  padding: 1em 0em 0em 1em;
 }
 
 #main {
-  height: 100%;
+  /* https://stackoverflow.com/questions/1260122/expand-a-div-to-fill-the-remaining-width */
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex: 1;
+  background: #fff;
+  transform: translate(0);
+  transition: transform 0.3s ease-in-out;
   /* allow shrinking of content */
   /* min-width: 0; */
+}
+
+#main.slidRight {
+  transform: translate(10em);
 }
 
 #content {
@@ -171,8 +184,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
-  margin: 0em;
-  padding: 0em;
 }
 
 .headline {
@@ -203,8 +214,6 @@ select {
   border-left: none;
   border-right: none;
   border-bottom: 1px solid #e6e6e6;
-  margin: 0;
-  padding: 0;
 }
 
 #content input {
