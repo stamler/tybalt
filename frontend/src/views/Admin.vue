@@ -2,6 +2,9 @@
   <div>
     <div class="nav">
       <span class="linksstart">
+        <router-link to="#" v-on:click.native="toggleMenu">
+          &#9776;
+        </router-link>
         <router-link
           class="link"
           v-for="link in links"
@@ -18,6 +21,7 @@
 </template>
 <script>
 import { mapState } from "vuex";
+import store from "../store";
 
 export default {
   data: function() {
@@ -28,6 +32,9 @@ export default {
   },
   computed: mapState(["claims"]),
   methods: {
+    toggleMenu() {
+      store.commit("toggleMenu");
+    },
     showLink(link) {
       if (link.meta && link.meta.claims) {
         // get intersect of link.claims & this.claims
