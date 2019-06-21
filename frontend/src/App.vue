@@ -27,6 +27,7 @@ export default {
 * {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 html,
@@ -61,7 +62,6 @@ body,
   width: 10em;
   background-color: #555;
   padding: 1em 0em 0em 1em;
-  box-sizing: border-box; /* make padding stay within 100% box */
   display: flex;
   flex-direction: column;
 }
@@ -74,6 +74,7 @@ body,
   background: #fff;
   transform: translate(0);
   transition: transform 0.3s ease-in-out;
+  box-shadow: 0 0 10px #000;
   /* allow shrinking of content */
   /* min-width: 0; */
 }
@@ -83,7 +84,7 @@ body,
 }
 
 #content {
-  flex-direction: column;
+  /* scroll within block if necessary */
   overflow: auto;
 }
 .nav {
@@ -218,6 +219,7 @@ select {
 
 #content input {
   width: 100%;
+  padding-left: 0.3em;
   font-size: 1.25em;
 }
 
