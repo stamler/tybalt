@@ -22,6 +22,7 @@ const router = new Router({
     {
       path: "/time",
       name: "Time",
+      meta: { claims: ["time"] },
       // TODO: permissions meta (redirect breaks it if placed here)
       redirect: "/time/entries",
       // route level code-splitting

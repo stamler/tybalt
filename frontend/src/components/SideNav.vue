@@ -6,7 +6,6 @@
         v-for="link in links"
         v-bind:key="link.name"
         v-bind:to="{ name: link.name }"
-        v-if="showLink(link)"
       >
         {{ link.name }}
       </router-link>
@@ -21,26 +20,26 @@
 import { mapState } from "vuex";
 
 export default {
-  data: function() {
-    return {
-      // top level router entries that have a name property
-      links: this.$router.options.routes.filter(x => x.name)
-    };
-  },
-  computed: mapState(["user", "claims"]),
-  methods: {
-    showLink(link) {
-      if (link.meta && link.meta.claims) {
-        // get intersect of link.claims & this.claims
-        const intrsect = link.meta.claims.filter(x =>
-          this.claims.hasOwnProperty(x)
-        );
-
-        // ensure the value of at least one item is true
-        return intrsect.some(x => this.claims[x] === true);
-      } else {
-        return true;
-      }
+  computed: {
+    ...mapState(["user", "claims"]),
+    // top level router entries that have a name property and are allowed
+    links() {
+      return this.$router.options.routes.filter(x => {
+        if (x.name) {
+          if (x.meta && x.meta.claims) {
+            // get intersect of link.claims & this.claims
+            const intersect = x.meta.claims.filter(y =>
+              this.claims.hasOwnProperty(y)
+            );
+            // ensure the value of at least one item is true
+            return intersect.some(y => this.claims[y] === true);
+          } else {
+            return true;
+          }
+        } else {
+          return false;
+        }
+      });
     }
   }
 };
