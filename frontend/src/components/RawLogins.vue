@@ -23,7 +23,7 @@ export default {
         issues: { sort: false }
       },
       collection: db.collection("RawLogins"),
-      items: db.collection("RawLogins")
+      items: db.collection("RawLogins").orderBy("created", "desc")
     };
   },
   computed: {
