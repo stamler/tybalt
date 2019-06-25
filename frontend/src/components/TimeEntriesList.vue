@@ -19,12 +19,14 @@
           {{ item.notes }}
         </div>
       </div>
-      <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-        ✏️
-      </router-link>
-      <router-link to="#" v-on:click.native="del(item.id)">
-        ❌
-      </router-link>
+      <div class="rowactionsbox">
+        <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+          ✏️
+        </router-link>
+        <router-link to="#" v-on:click.native="del(item.id)">
+          ❌
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

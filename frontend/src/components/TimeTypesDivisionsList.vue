@@ -14,9 +14,11 @@
         </div>
         <div class="firstline">{{ item.description }}</div>
       </div>
-      <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-        ✏️
-      </router-link>
+      <div class="rowactionsbox">
+        <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+          ✏️
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

@@ -36,9 +36,11 @@
           </span>
         </div>
       </div>
-      <router-link to="#" v-on:click.native="del(item.id)">
-        ❌
-      </router-link>
+      <div class="rowactionsbox">
+        <router-link to="#" v-on:click.native="del(item.id)">
+          ❌
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

@@ -82,11 +82,11 @@ body,
   flex: 1;
   /* scroll within block if necessary */
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .actions,
 .header {
   display: flex;
-  font-size: 0.8em;
   /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -150,6 +150,10 @@ body,
   flex: 0 0 auto;
 }
 
+#list {
+  display: flex;
+  flex-direction: column;
+}
 .listentry {
   display: flex;
   flex-grow: 1;
@@ -174,6 +178,14 @@ body,
   justify-content: center;
   flex-grow: 1;
   flex-direction: column;
+}
+.rowactionsbox {
+  display: flex;
+  margin: 0em 0.6em 0em;
+  align-items: center;
+}
+.rowactionsbox a {
+  text-decoration: none;
 }
 
 .headline_wrapper {
