@@ -2,7 +2,12 @@
   <div id="list">
     <div id="taskArea">
       <div v-if="taskAreaMode === 'default'">
-        <input type="textbox" placeholder="search..." v-model="search" />
+        <input
+          id="searchbox"
+          type="textbox"
+          placeholder="search..."
+          v-model="search"
+        />
         <button v-if="del" v-on:click="deleteSelected()">
           Delete {{ selected.length }} items
         </button>

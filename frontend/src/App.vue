@@ -79,6 +79,7 @@ body,
 }
 
 #content {
+  flex: 1;
   /* scroll within block if necessary */
   overflow: auto;
 }
@@ -127,7 +128,7 @@ body,
 #sidenav a.router-link-exact-active,
 .actions a.router-link-exact-active,
 .header a.router-link-exact-active {
-  color: yellow;
+  color: rgb(255, 204, 0);
 }
 #sidenav .linksstart {
   display: flex;
@@ -223,10 +224,21 @@ select {
 
 #content input {
   width: 100%;
-  padding-left: 0.3em;
   font-size: 1.25em;
 }
-
+#searchbox {
+  padding-left: 0.3em;
+}
+button {
+  appearance: none;
+  border: none;
+  font-weight: bold;
+  padding: 0.5em 0.8em 0.5em;
+  margin-right: 0.3em;
+  margin-top: 0.3em;
+  border-radius: 0.5em;
+  background: rgb(255, 204, 0);
+}
 #editor .calendar-input,
 #editor .field input,
 #editor .field select {
