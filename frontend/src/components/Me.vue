@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="nav">
+    <Header />
+    <div class="actions">
       <router-link to="#" v-on:click.native="signOut()">Sign Out</router-link>
     </div>
     <div id="dash">
@@ -12,11 +13,15 @@
 <script>
 import { signOut } from "@/main";
 import { mapState } from "vuex";
+import Header from "../components/Header";
 
 export default {
   computed: mapState(["user"]),
   methods: {
     signOut
+  },
+  components: {
+    Header
   }
 };
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="nav">
+    <div class="actions">
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
       <router-link class="navlink" to="#">Check</router-link>

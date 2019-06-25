@@ -14,9 +14,6 @@
         </ul>
       </li>
     </ul>
-    <span class="linksend">
-      <router-link to="/me">{{ user.displayName }}</router-link>
-    </span>
   </div>
 </template>
 

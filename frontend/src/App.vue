@@ -14,12 +14,7 @@ export default {
   components: {
     SideNav
   },
-  computed: mapState(["sidenav"]),
-  data() {
-    return {
-      user: null
-    };
-  }
+  computed: mapState(["sidenav"])
 };
 </script>
 
@@ -87,7 +82,8 @@ body,
   /* scroll within block if necessary */
   overflow: auto;
 }
-.nav {
+.actions,
+.header {
   display: flex;
   font-size: 0.8em;
   /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
@@ -106,13 +102,15 @@ body,
   https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing
   */
 }
-.nav::-webkit-scrollbar {
+.actions::-webkit-scrollbar,
+.header::-webkit-scrollbar {
   display: none; /* hide scrollbar in safari */
 }
 
 #sidenav a,
-.nav .link,
-.nav a {
+.header .link,
+.actions a,
+.header a {
   margin-right: 1em;
   font-weight: bold;
   color: white;
@@ -123,11 +121,12 @@ body,
   padding-left: 0.5em;
 }
 #sidenav a:hover,
-.nav a:hover {
+.header a:hover {
   text-decoration: underline;
 }
 #sidenav a.router-link-exact-active,
-.nav a.router-link-exact-active {
+.actions a.router-link-exact-active,
+.header a.router-link-exact-active {
   color: yellow;
 }
 #sidenav .linksstart {
@@ -141,11 +140,11 @@ body,
   flex-direction: column;
   flex: 0 0 auto;
 }
-.nav .linksstart {
+.header .linksstart {
   display: flex;
   flex: 0 0 auto;
 }
-.nav .linksend {
+.header .linksend {
   margin-left: auto;
   flex: 0 0 auto;
 }
@@ -205,6 +204,7 @@ body,
 
 /* Editor Styles */
 #editor {
+  padding-left: 0.4em;
   display: flex;
   flex-direction: column;
 }

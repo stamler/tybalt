@@ -29,7 +29,7 @@ const router = new Router({
       // this generates a separate chunk (time.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: "time" */ "./views/Time.vue"),
+        import(/* webpackChunkName: "time" */ "./views/Main.vue"),
       children: [
         {
           path: "entries",
@@ -78,7 +78,7 @@ const router = new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: "admin" */ "./views/Admin.vue"),
+        import(/* webpackChunkName: "admin" */ "./views/Main.vue"),
       children: [
         {
           path: "logins",
