@@ -69,7 +69,7 @@ body,
   background: #fff;
   transform: translate(0);
   transition: transform 0.3s ease-in-out;
-  box-shadow: 0 0 10px #000;
+  box-shadow: 0 0 0.5em #000;
   /* allow shrinking of content */
   /* min-width: 0; */
 }
@@ -79,7 +79,6 @@ body,
 }
 
 #content {
-  flex: 1;
   /* scroll within block if necessary */
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -87,25 +86,19 @@ body,
 .actions,
 .header {
   display: flex;
-  /* https://iamsteve.me/blog/entry/using-flexbox-for-horizontal-scrolling-navigation */
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  flex-shrink: 0;
-  scrollbar-width: none; /* hide scrollbar firefox (experimental */
-  -webkit-overflow-scrolling: touch;
-  -ms-overflow-style: -ms-autohiding-scrollbar; /* hide scrollbar edge */
+  flex-shrink: 0; /* preserve height */
   color: white;
   background-color: #444440;
-  padding: 4px 10px 4px;
-
-  /*
-  CSS Scrolling shadows?
-  https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing
-  */
+  padding: 0.2em 0.5em 0.2em;
 }
-.actions::-webkit-scrollbar,
-.header::-webkit-scrollbar {
-  display: none; /* hide scrollbar in safari */
+.header .linksstart {
+  display: flex;
+  flex: 0 0 auto;
+}
+.header .linksend {
+  display: flex;
+  flex-direction: row-reverse;
+  flex: 1 0 auto;
 }
 
 #sidenav a,
@@ -141,14 +134,6 @@ body,
   flex-direction: column;
   flex: 0 0 auto;
 }
-.header .linksstart {
-  display: flex;
-  flex: 0 0 auto;
-}
-.header .linksend {
-  margin-left: auto;
-  flex: 0 0 auto;
-}
 
 #list {
   display: flex;
@@ -156,33 +141,32 @@ body,
 }
 .listentry {
   display: flex;
-  flex-grow: 1;
+  max-width: 100vw; /* restrict the maximum width of a list entry */
   font-size: 0.8em;
-  height: 5em;
+  height: 5em; /* replace with flex-basis? */
   border-bottom: 1px solid #eee;
 }
 .anchorbox {
   display: flex;
-  flex-shrink: 0;
+  flex: 0 0 6em;
   margin: 0em 0.6em 0em;
-  width: 3.2em;
   align-items: center;
+  justify-content: center;
   font-weight: bold;
   font-size: 0.9em;
 }
 .detailsbox {
   display: flex;
-  /* ensure ellipsis works on children 
-  https://css-tricks.com/flexbox-truncated-text/ */
-  min-width: 0;
-  justify-content: center;
-  flex-grow: 1;
+  flex: 1 1;
+  min-width: 0; /* allows ellipsis to show */
   flex-direction: column;
+  justify-content: center;
 }
 .rowactionsbox {
   display: flex;
-  margin: 0em 0.6em 0em;
+  flex: 0 0;
   align-items: center;
+  margin: 0em 0.6em 0em;
 }
 .rowactionsbox a {
   text-decoration: none;
