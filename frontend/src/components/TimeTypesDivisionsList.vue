@@ -89,8 +89,3 @@ export default {
   }
 };
 </script>
-<style scoped>
-.listentry {
-  height: 3em;
-}
-</style>

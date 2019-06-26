@@ -148,10 +148,9 @@ body,
 }
 .anchorbox {
   display: flex;
-  flex: 0 0 6em;
-  margin: 0em 0.6em 0em;
+  flex: 0 0 5em;
+  margin: 0em 0.5em 0em;
   align-items: center;
-  justify-content: center;
   font-weight: bold;
   font-size: 0.9em;
 }

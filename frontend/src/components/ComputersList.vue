@@ -132,6 +132,6 @@ export default {
 </script>
 <style scoped>
 .anchorbox {
-  width: 6.5em;
+  flex-basis: 6.5em;
 }
 </style>

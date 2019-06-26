@@ -91,8 +91,3 @@ export default {
   }
 };
 </script>
-<style scoped>
-.anchorbox {
-  width: 4em;
-}
-</style>
