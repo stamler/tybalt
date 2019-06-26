@@ -141,9 +141,9 @@ body,
 }
 .listentry {
   display: flex;
-  max-width: 100vw; /* restrict the maximum width of a list entry */
+  max-width: 100vw; /* restrict to view port width */
   font-size: 0.8em;
-  height: 5em; /* replace with flex-basis? */
+  flex: 0 0 5em;
   border-bottom: 1px solid #eee;
 }
 .anchorbox {
