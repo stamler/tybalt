@@ -28,8 +28,9 @@ export default {
 html,
 body,
 #app {
-  height: 100vh;
+  min-height: 100vh; /* allow app to grow vertically */
   width: 100vw;
+  max-width: 100%; /* 100vw ignores width of vertical scrollbar */
 }
 
 .attention {
@@ -39,7 +40,7 @@ body,
 #app {
   /* Flexbox Off Canvas Menu similar to this technique
      https://codepen.io/oknoblich/pen/klnjw */
-  /* min-height: 100%; /* is this necessary? */
+  background-color: #555; /* effectively sidenav background */
   display: flex;
   overflow: hidden;
   font-size: 20px;
@@ -50,12 +51,10 @@ body,
 
 #sidenav {
   position: absolute;
-  height: 100vh;
   /* https://codepen.io/markcaron/pen/pPZVWO */
   /*transform: translateX(-100%);*/
   color: white;
   width: 10em;
-  background-color: #555;
   padding: 1em 0em 0em 1em;
   display: flex;
   flex-direction: column;
@@ -66,12 +65,11 @@ body,
   display: flex;
   flex-direction: column;
   flex: 1;
+  max-width: 100vw; /* restrict to view port width */
   background: #fff;
   transform: translate(0);
   transition: transform 0.3s ease-in-out;
   box-shadow: 0 0 0.5em #000;
-  /* allow shrinking of content */
-  /* min-width: 0; */
 }
 
 #main.slidRight {
@@ -79,9 +77,8 @@ body,
 }
 
 #content {
-  /* scroll within block if necessary */
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
 }
 .actions,
 .header {
@@ -141,7 +138,6 @@ body,
 }
 .listentry {
   display: flex;
-  max-width: 100vw; /* restrict to view port width */
   font-size: 0.8em;
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
