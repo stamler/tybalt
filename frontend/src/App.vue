@@ -73,7 +73,7 @@ body,
   max-width: 100vw; /* restrict to view port width */
   background: #fff;
   transform: translate(0);
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out 0.1s, max-width 0.3s ease-in-out;
   box-shadow: 0 0 0.5em #000;
 }
 
@@ -94,7 +94,7 @@ body,
   color: white;
   padding: 0.2em 0.5em 0.2em;
   transform: translate(0);
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out 0.1s, max-width 0.3s ease-in-out;
 }
 .header.slidRight {
   transform: translate(10em);
@@ -125,7 +125,8 @@ body,
 .header .link,
 .actions a,
 .header a {
-  margin-right: 1em;
+  margin: 0em 0.7em 0em -0.3em;
+  padding: 0em 0.3em 0em;
   font-weight: bold;
   color: white;
   text-decoration: none;
@@ -134,6 +135,9 @@ body,
   list-style-type: none;
   padding-left: 0.5em;
 }
+#sidenav li {
+  font-weight: bold;
+}
 #sidenav a:hover,
 .header a:hover {
   text-decoration: underline;
@@ -141,7 +145,10 @@ body,
 #sidenav a.router-link-exact-active,
 .actions a.router-link-exact-active,
 .header a.router-link-exact-active {
-  color: rgb(70, 153, 255);
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 0.25em;
+  padding: 0em 0.3em 0em;
+  box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.05);
 }
 #sidenav .linksstart {
   display: flex;

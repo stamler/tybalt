@@ -32,6 +32,7 @@ h2 {
   align-self: center;
 }
 #spacer {
+  background-color: rgb(255, 163, 51);
   flex: 0 0 3em;
 }
 </style>

@@ -2,9 +2,7 @@
   <div id="sidenav">
     <ul>
       <li v-for="link in links" v-bind:key="link.name">
-        <router-link class="link" v-bind:to="{ name: link.name }">
-          {{ link.name }}
-        </router-link>
+        {{ link.name }}
         <ul v-if="link.children && link.children.length > 0">
           <li v-for="child in link.children" v-bind:key="child.name">
             <router-link class="link" v-bind:to="{ name: child.name }">
