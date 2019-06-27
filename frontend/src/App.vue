@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <SideNav />
+    <Header v-bind:class="{ slidRight: sidenav }" />
     <router-view v-bind:class="{ slidRight: sidenav }" id="main" />
   </div>
 </template>
@@ -8,11 +9,13 @@
 <script>
 // @ is an alias to /src
 import SideNav from "@/components/SideNav.vue";
+import Header from "@/components/Header";
 import { mapState } from "vuex";
 
 export default {
   components: {
-    SideNav
+    SideNav,
+    Header
   },
   computed: mapState(["sidenav"])
 };
@@ -40,7 +43,9 @@ body,
 #app {
   /* Flexbox Off Canvas Menu similar to this technique
      https://codepen.io/oknoblich/pen/klnjw */
-  background-color: #555; /* effectively sidenav background */
+  background-color: rgb(50, 220, 132);
+
+  /*background-color: rgb(50, 60, 70); /* effectively sidenav background */
   display: flex;
   overflow: hidden;
   font-size: 20px;
@@ -82,11 +87,28 @@ body,
 }
 .actions,
 .header {
+  z-index: 1;
   display: flex;
-  flex-shrink: 0; /* preserve height */
+  align-items: center;
   color: white;
-  background-color: #444440;
   padding: 0.2em 0.5em 0.2em;
+  transform: translate(0);
+  transition: transform 0.3s ease-in-out;
+}
+.header.slidRight {
+  transform: translate(10em);
+}
+
+.actions {
+  background-color: rgb(255, 197, 51);
+  flex-shrink: 0; /* preserve height */
+}
+.header {
+  background-color: rgb(255, 163, 51);
+  position: fixed;
+  height: 2em;
+  top: 0px;
+  width: 100%;
 }
 .header .linksstart {
   display: flex;
@@ -118,7 +140,7 @@ body,
 #sidenav a.router-link-exact-active,
 .actions a.router-link-exact-active,
 .header a.router-link-exact-active {
-  color: rgb(255, 204, 0);
+  color: rgb(70, 153, 255);
 }
 #sidenav .linksstart {
   display: flex;
@@ -164,6 +186,7 @@ body,
   margin: 0em 0.6em 0em;
 }
 .rowactionsbox a {
+  margin-right: 0.8em;
   text-decoration: none;
 }
 

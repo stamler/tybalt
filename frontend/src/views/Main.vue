@@ -1,15 +1,11 @@
 <template>
   <div>
-    <Header />
+    <div id="spacer"></div>
     <router-view id="content" />
   </div>
 </template>
-<script>
-import Header from "../components/Header";
-
-export default {
-  components: {
-    Header
-  }
-};
-</script>
+<style>
+#spacer {
+  flex: 0 0 2em;
+}
+</style>
