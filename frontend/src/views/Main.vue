@@ -6,6 +6,6 @@
 </template>
 <style>
 #spacer {
-  flex: 0 0 2em;
+  flex: 0 0 3em;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Header />
+    <div id="spacer"></div>
     <div class="actions">
       <router-link to="#" v-on:click.native="signOut()">Sign Out</router-link>
     </div>
@@ -13,15 +13,11 @@
 <script>
 import { signOut } from "@/main";
 import { mapState } from "vuex";
-import Header from "../components/Header";
 
 export default {
   computed: mapState(["user"]),
   methods: {
     signOut
-  },
-  components: {
-    Header
   }
 };
 </script>
@@ -34,5 +30,8 @@ export default {
 #dash img,
 h2 {
   align-self: center;
+}
+#spacer {
+  flex: 0 0 3em;
 }
 </style>

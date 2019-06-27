@@ -106,7 +106,7 @@ body,
 .header {
   background-color: rgb(255, 163, 51);
   position: fixed;
-  height: 2em;
+  height: 3em;
   top: 0px;
   width: 100%;
 }
