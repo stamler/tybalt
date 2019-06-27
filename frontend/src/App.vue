@@ -90,6 +90,7 @@ body,
   z-index: 1;
   display: flex;
   align-items: center;
+  overflow: hidden; /* */
   color: white;
   padding: 0.2em 0.5em 0.2em;
   transform: translate(0);
@@ -258,6 +259,7 @@ button {
 #editor .field select {
   flex-grow: 1;
   font-size: 1em;
+  border-radius: 0;
   -moz-appearance: none;
   -webkit-appearance: none;
 }
@@ -275,5 +277,17 @@ button {
 #editor .calendar-input,
 #editor .calendar-wrapper {
   width: 100%;
+}
+
+@media only screen and (min-width: 640px) {
+  /* larger screens */
+  .header.slidRight {
+    max-width: calc(100vw - 10em);
+    transform: translate(10em);
+  }
+  #main.slidRight {
+    max-width: calc(100vw - 10em);
+    transform: translate(10em);
+  }
 }
 </style>
