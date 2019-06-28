@@ -14,7 +14,6 @@
     </span>
     <span class="field">
       <select name="timetype" v-model="item.timetype">
-        <option value="" disabled selected>Entry Type</option>
         <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
           {{ t.name }}
         </option>
@@ -51,7 +50,11 @@
       v-if="showSuggestions && projectCandidates.length > 0"
     >
       <ul>
-        <li v-for="c in projectCandidates" v-bind:key="c.id">
+        <li
+          v-for="(c, index) in projectCandidates"
+          v-bind:class="{ selected: index === selectedIndex }"
+          v-bind:key="c.id"
+        >
           {{ c.id }} - {{ c.name }}
         </li>
       </ul>
@@ -157,6 +160,7 @@ export default {
       timetypes: [],
       projects: [],
       showSuggestions: false,
+      selectedIndex: null,
       projectCandidates: [],
       item: {}
     };
@@ -199,10 +203,14 @@ export default {
   },
   methods: {
     onArrowUp() {
-      console.log("Up Arrow pressed.");
+      const count = this.projectCandidates.length;
+      this.selectedIndex =
+        this.selectedIndex === null ? count - 1 : (this.selectedIndex + count - 1) % count;
     },
     onArrowDown() {
-      console.log("Down Arrow pressed.");
+      const count = this.projectCandidates.length;
+      this.selectedIndex =
+        this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
     },
     updateProjectCandidates: _.debounce(function(e) {
       const loBound = e.target.value.trim();
@@ -310,5 +318,8 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   list-style-type: none;
+}
+#suggestions li.selected {
+  background-color: #ddd;
 }
 </style>
