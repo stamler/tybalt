@@ -37,10 +37,25 @@
       <input
         type="text"
         name="project"
-        placeholder="Project/Proposal"
-        v-model.trim="item.project"
+        placeholder="Project or Proposal number"
+        v-bind:value="item.project"
+        v-on:keydown.arrow-down="onArrowDown"
+        v-on:keydown.arrow-up="onArrowUp"
+        v-on:focus="showSuggestions = true"
+        v-on:blur="showSuggestions = false"
+        v-on:input="updateProjectCandidates"
       />
     </span>
+    <div
+      id="suggestions"
+      v-if="showSuggestions && projectCandidates.length > 0"
+    >
+      <ul>
+        <li v-for="c in projectCandidates" v-bind:key="c.id">
+          {{ c.id }} - {{ c.name }}
+        </li>
+      </ul>
+    </div>
 
     <span class="field">
       <label for="hours">Hours</label>
@@ -141,6 +156,8 @@ export default {
       divisions: [],
       timetypes: [],
       projects: [],
+      showSuggestions: false,
+      projectCandidates: [],
       item: {}
     };
   },
@@ -163,7 +180,11 @@ export default {
               this.item.date = this.item.date.toDate();
             });
         } else {
-          this.item = {};
+          this.item = {
+            date: moment().toDate(),
+            timetype: "R"
+          };
+          // TODO: add defaultDivision from the User so it's pre-populated
         }
       }
     }
@@ -177,6 +198,30 @@ export default {
     this.$bind("projects", db.collection("Projects"));
   },
   methods: {
+    onArrowUp() {
+      console.log("Up Arrow pressed.");
+    },
+    onArrowDown() {
+      console.log("Down Arrow pressed.");
+    },
+    updateProjectCandidates: _.debounce(function(e) {
+      const loBound = e.target.value.trim();
+      if (loBound.length > 0) {
+        const hiBound = e.target.value.trim() + "\uf8ff";
+        this.item.project = loBound; // preserve the value in the input field
+        this.$bind(
+          "projectCandidates",
+          db
+            .collection("Projects")
+            .where(firebase.firestore.FieldPath.documentId(), ">=", loBound)
+            .where(firebase.firestore.FieldPath.documentId(), "<=", hiBound)
+            .limit(5)
+        );
+      } else {
+        this.projectCandidates = [];
+        delete this.item.project;
+      }
+    }, 400),
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
@@ -206,7 +251,7 @@ export default {
         }
 
         // Populate or Clear the Project Name
-        if (this.item.project && this.item.project.length > 0) {
+        if (this.item.project && this.item.project.length > 5) {
           // Update
           this.item.projectName = this.projects.filter(
             i => i.id === this.item.project
@@ -251,3 +296,19 @@ export default {
   }
 };
 </script>
+<style>
+#suggestions {
+  padding: 0.25em;
+  border-radius: 0em 0em 1em 1em;
+  border-bottom: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+}
+#suggestions ul,
+#suggestions li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  list-style-type: none;
+}
+</style>
