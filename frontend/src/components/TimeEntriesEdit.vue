@@ -206,11 +206,13 @@ export default {
       const count = this.projectCandidates.length;
       this.selectedIndex =
         this.selectedIndex === null ? count - 1 : (this.selectedIndex + count - 1) % count;
+      this.item.project = this.projectCandidates[this.selectedIndex].id;
     },
     onArrowDown() {
       const count = this.projectCandidates.length;
       this.selectedIndex =
         this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
+      this.item.project = this.projectCandidates[this.selectedIndex].id;
     },
     updateProjectCandidates: _.debounce(function(e) {
       const loBound = e.target.value.trim();
