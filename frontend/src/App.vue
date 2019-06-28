@@ -227,7 +227,7 @@ body,
 
 /* Editor Styles */
 #editor {
-  padding-left: 0.4em;
+  padding: 0em 0.4em;
   display: flex;
   flex-direction: column;
 }
