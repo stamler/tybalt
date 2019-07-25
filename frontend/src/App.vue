@@ -166,6 +166,20 @@ body,
   display: flex;
   flex-direction: column;
 }
+#listbar {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #eee;
+}
+
+#listbar input {
+  border: none;
+}
+
+#listbar span {
+  flex: 1 0 5.5em;
+  padding-right: 0.3em;
+}
 .listentry {
   display: flex;
   font-size: 0.8em;

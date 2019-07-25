@@ -37,21 +37,6 @@ export default {
       );
     }
   },
-  methods: {
-    assign(computer, user) {
-      const assignComputerToUser = firebase
-        .functions()
-        .httpsCallable("assignComputerToUser");
-      return assignComputerToUser({ computer, user })
-        .then(() => {
-          console.log(`assigned computer ${computer} to ${user}`);
-        })
-        .catch(error => {
-          console.log(error);
-          console.log(`assignComputerTouser(${computer}, ${user}) didn't work`);
-        });
-    }
-  },
   filters: {
     dateFormat(date) {
       return moment(date).format("YYYY MMM DD / HH:mm:ss");
