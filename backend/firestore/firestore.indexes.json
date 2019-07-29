@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "Logins",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "computer",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "TimeEntries",
       "queryScope": "COLLECTION",
       "fields": [
