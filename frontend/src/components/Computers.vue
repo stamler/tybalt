@@ -1,5 +1,10 @@
 <template>
-  <List />
+  <div>
+    <div class="actions">
+      <router-link class="navlink" v-bind:to="{ name: 'Computers' }">List</router-link>
+    </div>
+    <router-view />
+  </div>
 </template>
 
 <script>
@@ -7,10 +12,8 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import moment from "moment";
-import List from "./ComputersList";
 
 export default {
-  components: { List },
   data() {
     return {
       schema: {

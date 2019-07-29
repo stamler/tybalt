@@ -98,8 +98,26 @@ const router = new Router({
           path: "computers",
           name: "Computers",
           meta: { claims: ["computers", "audit"] },
+          redirect: "/admin/computers/list",
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Computers.vue")
+            import(/* webpackChunkName: "admin" */ "./components/Computers.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Computers List",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true },
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/ComputersList.vue")
+            },
+            {
+              path: ":id/details",
+              props: true,
+              name: "Computer Details",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/ComputersDetails.vue")
+            }
+          ]
         },
         {
           path: "users",
