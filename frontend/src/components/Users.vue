@@ -1,5 +1,12 @@
 <template>
-  <router-view />
+  <div>
+    <div class="actions">
+      <router-link class="navlink" v-bind:to="{ name: 'Users' }">
+        List
+      </router-link>
+    </div>
+    <router-view />
+  </div>
 </template>
 
 <script>

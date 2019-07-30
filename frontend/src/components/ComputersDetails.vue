@@ -30,10 +30,16 @@
     </div>
 
     <div>Login History</div>
-    <div v-for="login in logins" v-bind:key="login">
+    <div v-for="login in logins" v-bind:key="login.id">
       {{ login.created.toDate() | relativeTime }}
-      {{ login.givenName }}
-      {{ login.surname }}
+      <!-- 
+        TODO: FIX THIS This will break when the userSourceAnchor and the Users id 
+        do not match. BUG
+      -->
+      <router-link v-bind:to="{name: 'User Details', params: { id: login.userSourceAnchor }}">
+        {{ login.givenName }}
+        {{ login.surname }}
+      </router-link>
     </div>
   </div>
 </template>
