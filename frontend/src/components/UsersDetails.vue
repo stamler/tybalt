@@ -91,9 +91,34 @@ export default {
                     .orderBy("created", "desc")
                 );
               } else {
-                // The id doesn't exist, list instead
-                // TODO: show a message to the user
-                this.$router.push(this.parentPath);
+                // The provided id is either a userSourceAnchor or the actual
+                // object id. Since the object id doesn't exist, try the
+                // userSourceAnchor before failing.
+                this.$parent.collection
+                  .where("userSourceAnchor", "==", id)
+                  .get()
+                  .then(snap => {
+                    if (snap.size !== 1) {
+                      // Either doesn't exist or multiple exist,
+                      // (an error condition). List instead
+                      // TODO: show a message to the user
+                      this.$router.push(this.parentPath);
+                    } else {
+                      console.log("id not found, using userSourceAnchor");
+                      this.item = snap.docs[0].data();
+                      this.$bind(
+                        "logins",
+                        db
+                          .collection("Logins")
+                          .where(
+                            "userSourceAnchor",
+                            "==",
+                            this.item.userSourceAnchor
+                          )
+                          .orderBy("created", "desc")
+                      );
+                    }
+                  });
               }
             });
         } else {
