@@ -8,27 +8,29 @@
       <div>
         Windows {{ item.osVersion }} {{ item.osArch }}, SKU:{{ item.osSku }}
       </div>
-      <div>created {{ item.created.toDate() | dateFormat }}</div>
-      <div>
-        updated {{ item.updated.toDate() | dateFormat }}
-        (radiator v{{ item.radiatorVersion }})
+      <div v-if="item.created">
+        created {{ item.created.toDate() | dateFormat }}
+      </div>
+      <div v-if="item.updated">
+        updated {{ item.updated.toDate() | dateFormat }} (radiator v{{
+          item.radiatorVersion
+        }})
       </div>
       <div>
         {{ item.bootDrive }} ({{ item.bootDriveFS }})
         {{ item.bootDriveCap | humanFileSize }} /
-        {{ item.bootDriveFree | humanFileSize }} Free
-        ({{ Math.floor( 100 * item.bootDriveFree / item.bootDriveCap) }}%)
+        {{ item.bootDriveFree | humanFileSize }} Free ({{
+          Math.floor((100 * item.bootDriveFree) / item.bootDriveCap)
+        }}%)
       </div>
-      <div>
-        {{ item.ram | humanFileSize }} RAM
-      </div>
-      <div v-for="cfg, mac in item.networkConfig">
-        <div>{{ mac }}: {{ cfg.ips }}</div>
+      <div>{{ item.ram | humanFileSize }} RAM</div>
+      <div v-for="(props, mac) in item.networkConfig" v-bind:key="mac">
+        <div>{{ mac }}: {{ props.ips }}</div>
       </div>
     </div>
 
-    <div>Logins</div>
-    <div v-for="login in logins">
+    <div>Login History</div>
+    <div v-for="login in logins" v-bind:key="login">
       {{ login.created.toDate() | relativeTime }}
       {{ login.givenName }}
       {{ login.surname }}
@@ -77,8 +79,8 @@ export default {
         return bytes + " B";
       }
       var units = si
-        ? ['kB','MB','GB','TB','PB','EB','ZB','YB']
-        : ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+        ? ["kB", "MB", "GB", "TB", "PB", "EB"]
+        : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
       var u = -1;
       do {
         bytes /= thresh;
