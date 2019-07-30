@@ -15,6 +15,20 @@
       ]
     },
     {
+      "collectionGroup": "Logins",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userSourceAnchor",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "TimeEntries",
       "queryScope": "COLLECTION",
       "fields": [

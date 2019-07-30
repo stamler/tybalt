@@ -1,15 +1,13 @@
 <template>
-  <List />
+  <router-view />
 </template>
 
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import moment from "moment";
-import List from "./UsersList";
 
 export default {
-  components: { List },
   data() {
     return {
       schema: {

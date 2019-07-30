@@ -7,7 +7,11 @@
       v-model="search"
     />
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.givenName }} {{ item.surname }}</div>
+      <div class="anchorbox">
+        <router-link :to="[parentPath, item.id, 'details'].join('/')">
+          {{ item.givenName }} {{ item.surname }}
+        </router-link>
+      </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ item.email }}</div>
