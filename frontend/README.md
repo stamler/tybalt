@@ -1,4 +1,4 @@
-# imperial-firebase
+# tybalt
 
 ## Project setup
 ```
