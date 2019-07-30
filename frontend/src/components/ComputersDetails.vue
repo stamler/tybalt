@@ -36,7 +36,12 @@
         TODO: FIX THIS This will break when the userSourceAnchor and the Users id 
         do not match. BUG
       -->
-      <router-link v-bind:to="{name: 'User Details', params: { id: login.userSourceAnchor }}">
+      <router-link
+        v-bind:to="{
+          name: 'User Details',
+          params: { id: login.userSourceAnchor }
+        }"
+      >
         {{ login.givenName }}
         {{ login.surname }}
       </router-link>

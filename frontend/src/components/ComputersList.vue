@@ -10,7 +10,11 @@
         />
         <span>{{ processedItems.length }} items</span>
       </div>
-      <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
+      <div
+        class="listentry"
+        v-for="item in processedItems"
+        v-bind:key="item.id"
+      >
         <div class="anchorbox">
           <router-link :to="[parentPath, item.id, 'details'].join('/')">
             {{ item.computerName }}
@@ -20,7 +24,8 @@
           <div class="headline_wrapper">
             <div class="headline">
               <!-- hide item.mfg if model starts with HP -->
-              {{ item.model.startsWith("HP ") ? "" : item.mfg }} {{ item.model }}
+              {{ item.model.startsWith("HP ") ? "" : item.mfg }}
+              {{ item.model }}
             </div>
             <div class="byline">
               <span
@@ -48,7 +53,9 @@
               </button>
             </span>
             <span
-              v-else-if="item.assigned.userSourceAnchor !== item.userSourceAnchor"
+              v-else-if="
+                item.assigned.userSourceAnchor !== item.userSourceAnchor
+              "
             >
               <!-- Show this if the device has an assignment that doesn't
               match the last user login-->

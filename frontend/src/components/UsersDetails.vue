@@ -12,7 +12,9 @@
     <div>Login History</div>
     <div v-for="login in logins" v-bind:key="login.id">
       {{ login.created.toDate() | relativeTime }}
-      <router-link v-bind:to="{name: 'Computer Details', params: { id: login.computer }}">
+      <router-link
+        v-bind:to="{ name: 'Computer Details', params: { id: login.computer } }"
+      >
         {{ login.computer }}
       </router-link>
     </div>
@@ -85,7 +87,7 @@ export default {
                   "logins",
                   db
                     .collection("Logins")
-                    .where("userSourceAnchor", "==", id)
+                    .where("userSourceAnchor", "==", this.item.userSourceAnchor)
                     .orderBy("created", "desc")
                 );
               } else {
