@@ -1,6 +1,11 @@
 <template>
   <div>
-    <div>{{ item.computerName }}</div>
+    <div>
+      {{ item.computerName }}
+      <span v-if="item.retired">
+        (Retired {{ item.retired.toDate() | relativeTime }})
+      </span>
+    </div>
     <div>
       <div>
         {{ item.mfg }} {{ item.model }} ({{ item.systemType | systemType }})
