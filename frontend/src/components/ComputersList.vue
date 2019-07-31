@@ -34,6 +34,9 @@
               >
                 ({{ item.serial }})
               </span>
+              <span v-if="item.retired">
+                ### Retired {{ item.retired.toDate() | shortDate }} ##
+              </span>
             </div>
           </div>
           <div class="firstline">
@@ -42,33 +45,35 @@
           </div>
           <div class="secondline">
             {{ item.userGivenName }} {{ item.userSurname }}
-            <span v-if="!item.assigned">
-              <!-- Show this if the device has no assignment -->
-              <button
-                v-if="claims.computers === true"
-                v-on:click="assign(item.id, item.userSourceAnchor)"
-                class="attention"
+            <span v-if="!item.retired">
+              <span v-if="!item.assigned">
+                <!-- Show this if the device has no assignment -->
+                <button
+                  v-if="claims.computers === true"
+                  v-on:click="assign(item.id, item.userSourceAnchor)"
+                  class="attention"
+                >
+                  assign
+                </button>
+              </span>
+              <span
+                v-else-if="
+                  item.assigned.userSourceAnchor !== item.userSourceAnchor
+                "
               >
-                assign
-              </button>
-            </span>
-            <span
-              v-else-if="
-                item.assigned.userSourceAnchor !== item.userSourceAnchor
-              "
-            >
-              <!-- Show this if the device has an assignment that doesn't
-              match the last user login-->
-              <button
-                v-on:click="assign(item.id, item.userSourceAnchor)"
-                class="attention"
-              >
-                assign, currently {{ item.assigned.givenName }}
-                {{ item.assigned.surname }}
-              </button>
-            </span>
-            <span v-else>
-              assigned {{ item.assigned.time.toDate() | relativeTime }}
+                <!-- Show this if the device has an assignment that doesn't
+                match the last user login-->
+                <button
+                  v-on:click="assign(item.id, item.userSourceAnchor)"
+                  class="attention"
+                >
+                  assign, currently {{ item.assigned.givenName }}
+                  {{ item.assigned.surname }}
+                </button>
+              </span>
+              <span v-else>
+                assigned {{ item.assigned.time.toDate() | relativeTime }}
+              </span>
             </span>
           </div>
           <div class="thirdline">
