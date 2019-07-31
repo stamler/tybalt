@@ -3,6 +3,7 @@ const makeSlug = require('./utilities.js').makeSlug;
 const Ajv = require('ajv')
 const schema = require('./RawLogins.schema.json')
 const functions = require('firebase-functions');
+const _ = require('lodash');
 
 const ajv = new Ajv({
   removeAdditional: true,
@@ -90,7 +91,12 @@ exports.handler = async (req, res, db) => {
       // Invalid submission, store RawLogin for later processing
       console.log("rawLogins: submission doesn't validate");
       console.log(validate.errors);
-      await db.collection('RawLogins').doc().set(d);
+      if (_.isEmpty(d)) {
+        console.log("empty submission, not saving");
+        return res.status(400).send();
+      } else {
+        await db.collection('RawLogins').doc().set(d);
+      }
     } else {
       // write valid object to database
       await storeValidLogin(d, db);

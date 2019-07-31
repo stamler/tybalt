@@ -79,6 +79,13 @@ describe("rawLogins module", () => {
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);
     });
+    it("(400 Bad Request) if an empty JSON login is POSTed", async () => {
+      const db = makeDb();
+      //sandbox.stub(console, "log"); // stub out console
+      let result = await handler(Req({body: {}, authType:'TYBALT', token:'asdf'}),Res(), db);
+      assert.equal(result.status.args[0][0], 400);
+      sinon.assert.notCalled(db.batchStubs.set);
+    });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
       const db = makeDb({computerExists: true});
       let result = await handler(Req({body: {...data}, authType:'TYBALT', token:'asdf'}),Res(), db);
