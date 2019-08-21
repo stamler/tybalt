@@ -91,14 +91,25 @@ import moment from "moment";
 import { mapState } from "vuex";
 
 export default {
+  props: ["retired"],
   computed: {
     ...mapState(["claims"]),
     processedItems() {
-      return this.items
-        .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-        .filter(
-          p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
-        );
+      if (this.retired) {
+        return this.items
+          .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
+          .filter(p => p.hasOwnProperty("retired"))
+          .filter(
+            p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          );
+      } else {
+        return this.items
+          .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
+          .filter(p => !p.hasOwnProperty("retired"))
+          .filter(
+            p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          );
+      }
     }
   },
   filters: {

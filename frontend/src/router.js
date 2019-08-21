@@ -111,6 +111,14 @@ const router = new Router({
                 import(/* webpackChunkName: "admin" */ "./components/ComputersList.vue")
             },
             {
+              path: "retired",
+              name: "Retired Computers",
+              // TODO: hide select/edit/del for read-only claims holders
+              props: { select: true, edit: true, del: true, retired: true },
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/ComputersList.vue")
+            },
+            {
               path: ":id/details",
               props: true,
               name: "Computer Details",
