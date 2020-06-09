@@ -27,7 +27,7 @@ exports.callableIsAuthorized = function(context, claims, validate, data) {
 
   // caller must have at least one authorized custom claim
   if(!claims.some(claim => 
-    context.auth.token.hasOwnProperty(claim) && 
+    Object.prototype.hasOwnProperty.call(context.auth.token, "claim") &&
     context.auth.token[claim] === true )) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
