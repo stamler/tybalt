@@ -50,6 +50,7 @@
 
 <script>
 import moment from "moment";
+import firebase from "@/firebase";
 
 export default {
   computed: {
@@ -101,8 +102,18 @@ export default {
           console.log(err);
         });
     },
-    cleanup(name) {
-      console.log(`called cleanup with arg ${name}`);
+    cleanup(computerName) {
+      const data = { computerName };
+      const cleanup_old = firebase.functions().httpsCallable("cleanup");
+      cleanup_old(data)
+        .then(result => {
+          // TODO: get and handle real responses from callable
+          console.log(JSON.stringify(result));
+        })
+        .catch(error => {
+          // TODO: get and handle real responses from callable
+          console.log(error);
+        });
     },
     searchString(item) {
       const fields = Object.values(item);
