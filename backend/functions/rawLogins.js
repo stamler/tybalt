@@ -247,6 +247,12 @@ exports.cleanup = async (data, context, db) => {
   if (old_items_snapshot.size > 0) {
     console.log(`Deleting ${old_items_snapshot.size} entries of ${data.computerName} prior to ${latest_item_snapshot.docs[0].data().created.toDate()}`);
     // Do the deletion here
+    const batch = db.batch();
+    old_items_snapshot.forEach(element => {
+      batch.delete(element.ref);
+    });
+    return batch.commit();
+  } else {
+    return `No items to cleanup for computerName ${data.computerName}`;
   }
-  
 };
