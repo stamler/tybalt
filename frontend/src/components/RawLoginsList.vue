@@ -107,11 +107,9 @@ export default {
       const cleanup_old = firebase.functions().httpsCallable("cleanup");
       cleanup_old(data)
         .then(result => {
-          // TODO: get and handle real responses from callable
           console.log(JSON.stringify(result));
         })
         .catch(error => {
-          // TODO: get and handle real responses from callable
           console.log(error);
         });
     },
