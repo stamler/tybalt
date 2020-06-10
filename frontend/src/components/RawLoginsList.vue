@@ -38,7 +38,8 @@
             missing serial
             {{
               guessSerial(
-                item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname
+                item.networkConfig[Object.keys(item.networkConfig)[0]]
+                  .dnsHostname
               )
             }}
           </span>
@@ -137,10 +138,14 @@ export default {
       }
     },
     makeSlug(serial, mfg) {
-      const sc = serial.replace(/\s|\/|,/g,"");
-      const mc = mfg.toLowerCase().replace(/\/|\.|,|inc|ltd/gi,"").trim().replace(/ /g,"_")
-      if (sc.length>=4 && mc.length>=2 ) {
-        return sc + ',' + mc;
+      const sc = serial.replace(/\s|\/|,/g, "");
+      const mc = mfg
+        .toLowerCase()
+        .replace(/\/|\.|,|inc|ltd/gi, "")
+        .trim()
+        .replace(/ /g, "_");
+      if (sc.length >= 4 && mc.length >= 2) {
+        return sc + "," + mc;
       } else {
         throw new Error(`serial ${sc} or manufacturer ${mc} too short`);
       }
