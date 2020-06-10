@@ -40,9 +40,12 @@ exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
 });
 
 // cleanup RawLogins with computerName
-exports.cleanup = functions.https.onCall(async (data, context) => {
-  return rawLoginsModule.cleanup(data, context, admin.firestore())
-});
+//exports.cleanup = functions.https.onCall(async (data, context) => {
+//  return rawLoginsModule.cleanup(data, context, admin.firestore())
+//});
+const cleanup_trigger = function (snap, context) {
+  return rawLoginsModule.cleanup(snap.data(), context, admin.firestore())
+}
 
 const writeCreated = function (snap, context) {
   return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
@@ -53,3 +56,6 @@ exports.computersCreatedDate = functions.firestore.document('Computers/{computer
 exports.loginsCreatedDate = functions.firestore.document('Logins/{loginId}').onCreate(writeCreated);
 exports.rawLoginsCreatedDate = functions.firestore.document('RawLogins/{loginId}').onCreate(writeCreated);
 exports.usersCreatedDate = functions.firestore.document('Users/{loginId}').onCreate(writeCreated);
+
+// Cleanup old RawLogins onCreate
+exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').onCreate(cleanup_trigger);

@@ -223,8 +223,9 @@ async function getUserRef(d, db) {
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
 exports.cleanup = async (data, context, db) => {
-  callableIsAuthorized(context, ['admin'], validateCleanup, data);
-  
+  // unComment this line if calling from client rather than onCreate()
+  //callableIsAuthorized(context, ['admin'], validateCleanup, data);
+  console.log(`cleanup ${data.computerName}`)
   // Get the latest rawLogin with specified computerName
   let latest_item_snapshot = await db.collection("RawLogins")
     .where("computerName", "==", data.computerName)
