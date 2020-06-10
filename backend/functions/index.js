@@ -39,6 +39,11 @@ exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
   return computersModule.assignComputerToUser(data, context, admin.firestore());
 });
 
+// cleanup RawLogins with computerName
+exports.cleanup = functions.https.onCall(async (data, context) => {
+  return rawLoginsModule.cleanup(data, context, admin.firestore())
+});
+
 const writeCreated = function (snap, context) {
   return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
 }

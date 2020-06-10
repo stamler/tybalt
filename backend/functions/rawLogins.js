@@ -1,5 +1,6 @@
 const serverTimestamp = require('firebase-admin').firestore.FieldValue.serverTimestamp
 const makeSlug = require('./utilities.js').makeSlug;
+const callableIsAuthorized = require('./utilities.js').callableIsAuthorized;
 const Ajv = require('ajv')
 const schema = require('./RawLogins.schema.json')
 const functions = require('firebase-functions');
@@ -10,6 +11,25 @@ const ajv = new Ajv({
   coerceTypes: true,
   allErrors: true // required for 'removeIfFails' keyword
 });
+
+const ajv_vanilla = new Ajv()
+const validateCleanup = ajv_vanilla.compile({
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "computerName": {
+      "$id": "#/properties/computerName",
+      "type": "string",
+      "title": "Computer name",
+      "examples": [
+        "MHE-41KE281PH"
+      ],
+      "minLength": 1,
+      "maxLength": 48,
+    },
+
+  }
+ });
 
 // The 'removeIfFails' keyword deletes a property if it is invalid. Created to
 // remove email properties that don't validate, i.e. empty strings. 
@@ -197,3 +217,36 @@ async function getUserRef(d, db) {
   // otherwise we'll overwrite an existing user.
   return db.collection('Users').doc();
 }
+
+// This function deletes all rawLogins except for the latest
+// for each computerName. The deletion will be done on a batched
+// write after querying what we want
+// https://github.com/googleapis/nodejs-firestore/issues/64
+exports.cleanup = async (data, context, db) => {
+  callableIsAuthorized(context, ['admin'], validateCleanup, data);
+  
+  // Get the latest rawLogin with specified computerName
+  let latest_item_snapshot = await db.collection("RawLogins")
+    .where("computerName", "==", data.computerName)
+    .orderBy("created","desc")
+    .limit(1)
+    .get();
+  
+  if (latest_item_snapshot.empty) {
+    throw new functions.https.HttpsError("not-found",
+    "The provided computerName doesn't exist");
+  }
+
+  // Get previous rawLogin with specified computerName for deletion
+  let old_items_snapshot = await db.collection("RawLogins")
+    .where("computerName", "==", data.computerName)
+    .where("created", "<", latest_item_snapshot.docs[0].data().created)
+    .orderBy("created","desc")
+    .get();
+
+  if (old_items_snapshot.size > 0) {
+    console.log(`Deleting ${old_items_snapshot.size} entries of ${data.computerName} prior to ${latest_item_snapshot.docs[0].data().created.toDate()}`);
+    // Do the deletion here
+  }
+  
+};
