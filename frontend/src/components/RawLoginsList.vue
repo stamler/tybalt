@@ -11,7 +11,18 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ item.mfg }} {{ item.model }}</div>
-          <div class="byline">{{ item.serial }}</div>
+          <div class="byline">
+            <span v-if="item.serial">
+              <router-link
+                v-bind:to="{
+                  name: 'Computer Details',
+                  params: { id: makeSlug(item.serial, item.mfg) }
+                }"
+              >
+                {{ item.serial }}
+              </router-link>
+            </span>
+          </div>
         </div>
         <div class="firstline">{{ item.upn }} {{ item.userSourceAnchor }}</div>
         <div class="secondline">
@@ -123,6 +134,15 @@ export default {
         return dnsHostname.split("-")[1] || "";
       } catch (error) {
         return "";
+      }
+    },
+    makeSlug(serial, mfg) {
+      const sc = serial.replace(/\s|\/|,/g,"");
+      const mc = mfg.toLowerCase().replace(/\/|\.|,|inc|ltd/gi,"").trim().replace(/ /g,"_")
+      if (sc.length>=4 && mc.length>=2 ) {
+        return sc + ',' + mc;
+      } else {
+        throw new Error(`serial ${sc} or manufacturer ${mc} too short`);
       }
     }
   }
