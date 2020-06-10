@@ -40,6 +40,9 @@
         <router-link to="#" v-on:click.native="del(item.id)">
           ❌
         </router-link>
+        <router-link to="#" v-on:click.native="cleanup(item.computerName)">
+          cleanup
+        </router-link>
       </div>
     </div>
   </div>
@@ -97,6 +100,9 @@ export default {
         .catch(err => {
           console.log(err);
         });
+    },
+    cleanup(name) {
+      console.log(`called cleanup with arg ${name}`);
     },
     searchString(item) {
       const fields = Object.values(item);
