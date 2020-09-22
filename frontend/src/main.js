@@ -9,10 +9,36 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 
-// load auth before Vue
-import * as auth from "./auth";
-
 let app = null;
+
+// https://github.com/firebase/quickstart-js/blob/master/auth/microsoft-redirect.html
+/* Handle the redirect extracting a token if it exists */
+firebase
+  .auth()
+  .getRedirectResult()
+  .then(function(result) {
+    if (result.credential) {
+      let token = result.credential.accessToken;
+      let idToken = result.credential.idToken;
+    }
+    let user = result.user;
+    console.log(user);
+  })
+  .catch(function(error) {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    var email = error.email;
+    var credential = error.credential;
+    if (errorCode === "auth/account-exists-with-different-credential") {
+      alert(
+        "You have already signed up with a different auth provider for that email."
+      );
+      // If you are using multiple auth providers on your app you should handle linking
+      // the user's accounts here.
+    } else {
+      console.error(error);
+    }
+  });
 
 const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
   if (user) {
@@ -40,7 +66,9 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
       }
     });
   } else {
-    auth.signIn();
+    let provider = new firebase.auth.OAuthProvider("microsoft.com");
+    provider.setCustomParameters({ tenant: "tbte.onmicrosoft.com" });
+    firebase.auth().signInWithRedirect(provider);
   }
 });
 
