@@ -1,7 +1,7 @@
 // add or remove custom claims to user from node CLI
 
 const admin = require('firebase-admin');
-const serviceAccount = require('../../../Downloads/serviceAccountKey.json');
+const serviceAccount = require('../../../../Downloads/serviceAccountKey.json');
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 async function chclaim(action, email, claim) {
