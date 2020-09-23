@@ -86,12 +86,12 @@ service cloud.firestore {
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && validTimeEntry() && uidMatches() 
-      allow create: if hasClaim("time") && validTimeEntry()
+      allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
+      allow create: if hasClaim("time") && validTimeEntry();
     }
     match /TimeSheets/{sheet} {
-      allow read, update, delete: if request.auth.uid == resource.data.uid && request.auth.token.time == true;
-      allow create: if request.auth.token.time == true;
+      allow read, update, delete: if hasClaim("time") && uidMatches();
+      allow create: if hasClaim("time");
     }
     match /Projects/{project} {
       allow read: if request.auth.uid != null;
