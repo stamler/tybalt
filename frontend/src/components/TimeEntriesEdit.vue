@@ -282,8 +282,6 @@ export default {
         this.item.date = new Date();
       }
 
-      console.log(this.item);
-
       // Write to database
       if (this.id) {
         // Editing an existing item
