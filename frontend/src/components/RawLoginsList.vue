@@ -104,7 +104,7 @@ export default {
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
     this.$bind("items", this.items).catch(error => {
-      alert(error);
+      alert(`Can't load Raw Logins: ${error.message}`);
     });
   },
   methods: {

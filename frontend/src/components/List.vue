@@ -119,7 +119,9 @@ export default {
     this.schema = this.$parent.schema;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
-    this.$bind("items", this.items);
+    this.$bind("items", this.items).catch(error => {
+      alert(`Can't load Items: ${error.message}`);
+    });
   },
   computed: {
     fields() {

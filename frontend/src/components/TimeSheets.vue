@@ -34,9 +34,7 @@ export default {
         mealsHours: { display: "Meal Hours" }
       },
       collection: db.collection("TimeSheets"),
-      items: db
-        .collection("TimeSheets")
-        .where("uid", "==", store.state.user.uid)
+      items: []
     };
   },
   computed: mapState(["claims"]),
@@ -44,6 +42,12 @@ export default {
     // Modify UI based on permissions and business requirements here
     this.create = this.select = this.del = this.edit =
       this.claims.hasOwnProperty("users") && this.claims["users"] === true;
+    this.$bind(
+      "items",
+      db.collection("TimeSheets").where("uid", "==", store.state.user.uid)
+    ).catch(error => {
+      alert(`Can't load Time Sheets: ${error.message}`);
+    });
   }
 };
 </script>
