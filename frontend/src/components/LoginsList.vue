@@ -60,7 +60,9 @@ export default {
     ].parent.path;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
-    this.$bind("items", this.items);
+    this.$bind("items", this.items).catch(error => {
+      alert(error);
+    });
   },
   methods: {
     del(item) {
