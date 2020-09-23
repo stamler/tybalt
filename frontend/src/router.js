@@ -259,6 +259,8 @@ const router = new Router({
   ]
 });
 
+/*
+// Disable route locking for testing purposes
 router.beforeEach((to, from, next) => {
   if (to.meta && to.meta.claims) {
     // make an array of claims shared by the authed user
@@ -280,5 +282,6 @@ router.beforeEach((to, from, next) => {
     next();
   }
 });
+*/
 
 export default router;
