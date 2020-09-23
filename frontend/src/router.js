@@ -269,9 +269,7 @@ router.beforeEach((to, from, next) => {
       store.state.claims.hasOwnProperty(x)
     );
     if (intrsect.some(x => store.state.claims[x] === true)) {
-      // if at least one element in this array has a value of true
-      // allow the route
-      console.log(`protected route allowed`);
+      // allow route if at least one element in array is true
       next();
     } else {
       // otherwise cancel the navigation

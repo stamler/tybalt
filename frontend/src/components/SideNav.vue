@@ -25,15 +25,23 @@ export default {
     links() {
       return this.$router.options.routes.filter(x => {
         if (x.name) {
-          if (x.meta && x.meta.claims) {
-            // get intersect of link.claims & this.claims
-            const intersect = x.meta.claims.filter(y =>
-              this.claims.hasOwnProperty(y)
-            );
-            // ensure the value of at least one item is true
-            return intersect.some(y => this.claims[y] === true);
-          } else {
+          // filter out entries we don't have claims for if
+          // next line is false to enable UI filtering by claims
+          // eslint-disable-next-line no-constant-condition
+          if (true) {
             return true;
+          } else {
+            if (x.meta && x.meta.claims) {
+              // There are claims requirements for this route, validate
+              // them by getting intersect of link.claims & this.claims
+              const intersect = x.meta.claims.filter(y =>
+                this.claims.hasOwnProperty(y)
+              );
+              // ensure the value of at least one item is true
+              return intersect.some(y => this.claims[y] === true);
+            } else {
+              return true;
+            }
           }
         } else {
           return false;
