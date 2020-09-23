@@ -90,8 +90,7 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /TimeSheets/{sheet} {
-      allow read, update, delete: if hasClaim("time") && uidMatches();
-      allow create: if hasClaim("time");
+      allow read: if hasClaim("time") && uidMatches();
     }
     match /Projects/{project} {
       allow read: if request.auth.uid != null;
