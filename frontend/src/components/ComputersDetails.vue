@@ -122,7 +122,9 @@ export default {
                     .collection("Logins")
                     .where("computer", "==", id)
                     .orderBy("created", "desc")
-                );
+                ).catch(error => {
+                  alert(`Can't load logins: ${error.message}`);
+                });
               } else {
                 // The id doesn't exist, list instead
                 // TODO: show a message to the user
