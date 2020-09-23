@@ -70,17 +70,16 @@ service cloud.firestore {
         );
     }
     match /RawLogins/{rawLogin} {
-      allow read: if request.auth.uid != null;
-      allow write: if request.auth.token.rawlogins == true;
+      allow read, delete: if hasClaim("admin");
     }
     match /Logins/{login} {
-      allow read: if request.auth.uid != null;
+      allow read: if hasClaim("admin");
     }
     match /Profiles/{profile} {
-      allow read: if request.auth.uid != null;
+      allow read: if hasClaim("admin");
     }
     match /Users/{user} {
-      allow read: if request.auth.uid != null;
+      allow read: if hasClaim("admin");
     }
     match /Computers/{computer} {
       allow read: if request.auth.uid != null;
@@ -96,15 +95,15 @@ service cloud.firestore {
     }
     match /Projects/{project} {
       allow read: if request.auth.uid != null;
-      allow write: if request.auth.token.projects == true;
+      allow write: if hasClaim("admin");
     }
     match /Divisions/{division} {
       allow read: if request.auth.uid != null;
-      allow write: if request.auth.token.admin == true;
+      allow write: if hasClaim("admin");
     }
     match /TimeTypes/{timetype} {
       allow read: if request.auth.uid != null;
-      allow write: if request.auth.token.admin == true;
+      allow write: if hasClaim("admin");
     }
     match /{document=**} {
       allow read, write: if false;
