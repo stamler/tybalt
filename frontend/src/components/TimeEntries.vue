@@ -32,12 +32,13 @@ export default {
         .functions()
         .httpsCallable("bundleTimesheet");
       return bundleTimesheet({ year, week })
-        .then(() => {
-          console.log(`bundled timesheet ${year}-${week}`);
+        .then(res => {
+          console.log(
+            `bundled ${res.data.year}-${res.data.week} for ${res.data.uid}`
+          );
         })
         .catch(error => {
-          console.log(error);
-          console.log(`bundleTimesheet(${year}, ${week}) didn't work`);
+          alert(`Error bundling timesheet: ${error.message}`);
         });
     }
   },
