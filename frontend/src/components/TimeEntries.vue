@@ -4,7 +4,11 @@
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
       <router-link class="navlink" to="#">Check</router-link>
-      <router-link class="navlink" to="#">
+      <router-link
+        class="navlink"
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="bundle(now.year(), now.isoWeek())"
+      >
         Bundle W{{ now.isoWeek() }} ({{ now.startOf("week").format("D") }}-{{
           now.endOf("week").format("D")
         }})
@@ -22,6 +26,21 @@ import { mapState } from "vuex";
 import moment from "moment";
 
 export default {
+  methods: {
+    bundle(year, week) {
+      const bundleTimesheet = firebase
+        .functions()
+        .httpsCallable("bundleTimesheet");
+      return bundleTimesheet({ year, week })
+        .then(() => {
+          console.log(`bundled timesheet ${year}-${week}`);
+        })
+        .catch(error => {
+          console.log(error);
+          console.log(`bundleTimesheet(${year}, ${week}) didn't work`);
+        });
+    }
+  },
   data() {
     return {
       now: moment(),

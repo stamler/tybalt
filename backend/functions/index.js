@@ -10,6 +10,7 @@ const rawLoginsModule = require('./rawLogins.js')
 //const azureModule = require('./azure.js')
 const claimsModule = require('./claims.js')
 const computersModule = require('./computers.js')
+const timesheetsModule = require('./timesheets.js')
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
@@ -37,6 +38,11 @@ exports.modClaims = functions.https.onCall(async (data, context) => {
 // assign a user to a computer
 exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
   return computersModule.assignComputerToUser(data, context, admin.firestore());
+});
+
+// bundle a timesheet
+exports.bundleTimesheet = functions.https.onCall(async (data, context) => {
+  return timesheetsModule.bundleTimesheet(data, context, admin.firestore());
 });
 
 // cleanup RawLogins with computerName
