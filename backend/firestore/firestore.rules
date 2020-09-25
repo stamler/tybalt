@@ -22,7 +22,7 @@ service cloud.firestore {
         // restrict accepted properties
         newDoc().keys().hasOnly([ "date", "timetype", "division", "project",
           "hours", "jobHours", "workrecord", "notes", "mealsHours", "uid",
-          "timetypeName", "divisionName", "projectName" ]) &&
+          "timetypeName", "divisionName", "projectName", "week_ending" ]) &&
 
         isInCollection("timetype","TimeTypes") && // timetype exists in db
  
