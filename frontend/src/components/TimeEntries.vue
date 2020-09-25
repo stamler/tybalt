@@ -7,11 +7,9 @@
       <router-link
         class="navlink"
         v-bind:to="{ name: 'Time Sheets' }"
-        v-on:click.native="bundle(now.year(), now.isoWeek())"
+        v-on:click.native="bundle(saturday)"
       >
-        Bundle W{{ now.isoWeek() }} ({{ now.startOf("week").format("D") }}-{{
-          now.endOf("week").format("D")
-        }})
+        Bundle to {{ saturday.getMonth() + 1 }}/{{ saturday.getDate() }}
       </router-link>
     </div>
     <router-view />
@@ -23,7 +21,6 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import store from "../store";
 import { mapState } from "vuex";
-import moment from "moment";
 
 export default {
   methods: {
@@ -44,7 +41,6 @@ export default {
   },
   data() {
     return {
-      now: moment(),
       collection: db.collection("TimeEntries"),
       items: db
         .collection("TimeEntries")
@@ -52,10 +48,17 @@ export default {
         .orderBy("date", "desc")
     };
   },
-  computed: mapState(["claims"]),
-  filters: {
-    shortDate(date) {
-      return moment(date).format("MMM DD");
+  computed: {
+    ...mapState(["claims"]),
+    saturday() {
+      const today = new Date();
+      if (today.getDay() == 6) {
+        return today;
+      } else {
+        let nextsaturday = new Date();
+        nextsaturday.setDate(nextsaturday.getDate() + (6 - today.getDay()));
+        return nextsaturday;
+      }
     }
   }
 };

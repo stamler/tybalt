@@ -12,8 +12,9 @@ exports.bundleTimesheet = async (data, context, db) => {
     // Get non-entry information
     return {
       uid: context.auth.uid,
-      year: data.year,
-      week: data.week
+      week_ending: data.end_date, // verify that it's a saturday
+      manager: "approving manager uid",
+      approved: false
     }
 
 };
@@ -27,15 +28,34 @@ function bundle_entries(year, week) {
   let entries = db
     .collection("TimeEntries")
     .where("uid", "==", store.state.user.uid)
-    .where("date", ">=", start_date)
-    .where("date", "<=", end_date)
+    .where("week_ending", "==", week_ending)
     .orderBy("date", "asc")
 
   Create new Timesheet document in TimeSheets that contains the following properties:
-    uid, start_date, end_date, year, week, entries
+    uid, end_date, entries, manager, approved:false
     
   const result = await db.collection('TimeSheets').add({ uid, start_date, end_date, year, week, entries });
 
 }
 
 */
+
+exports.writeWeekEnding = async (snap, context) => {
+  // TODO: this is currently called with onCreate() trigger, meaning that
+  // it isn't called if an entry is updated. Updated entries can have new
+  // dates and so may need to have their week_ending changed as well.
+  // We must fix this by calling this function with the trigger onWrite() 
+  // instead and then checking here whether the document exists so that 
+  // the delete case is handled
+
+  const date = snap.data().date.toDate();
+  if (date.getDay() === 6) {
+    date.setHours(23,59,59,999);
+    return snap.ref.set({ week_ending: date }, { merge: true } );
+  } else {
+    const nextsaturday = new Date();
+    nextsaturday.setDate(nextsaturday.getDate() + (6 - date.getDay()));
+    nextsaturday.setHours(23,59,59,999);
+    return snap.ref.set({ week_ending: nextsaturday }, { merge: true } );
+  }
+}
