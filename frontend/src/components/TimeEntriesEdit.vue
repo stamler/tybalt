@@ -118,6 +118,23 @@
       />
     </span>
 
+    <!-- This field is for testing only since week_ending should be 
+    automatically assigned with a trigger cloud function -->
+    <!--
+    <span class="field">
+      <datepicker
+        name="datepicker"
+        input-class="calendar-input"
+        wrapper-class="calendar-wrapper"
+        placeholder="WEEK ENDING FOR TESTING"
+        :inline="false"
+        :disabledDates="dps.disabled"
+        :highlighted="dps.highlighted"
+        v-model="item.week_ending"
+      />
+    </span>
+      -->
+
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
@@ -182,6 +199,13 @@ export default {
             .then(snap => {
               this.item = snap.data();
               this.item.date = this.item.date.toDate();
+              // Next line is only used for testing, normally hidden in UI
+              // The user shouldn't be manually setting the week_ending because
+              // this is done using an onWrite() trigger. We can test this
+              // functionality by showing the week_ending field in the UI
+              // component above. The next line makes sure the format is a JS
+              // date object so the date picker can display and edit it.
+              this.item.week_ending = this.item.week_ending.toDate();
             });
         } else {
           this.item = {
@@ -205,7 +229,9 @@ export default {
     onArrowUp() {
       const count = this.projectCandidates.length;
       this.selectedIndex =
-        this.selectedIndex === null ? count - 1 : (this.selectedIndex + count - 1) % count;
+        this.selectedIndex === null
+          ? count - 1
+          : (this.selectedIndex + count - 1) % count;
       this.item.project = this.projectCandidates[this.selectedIndex].id;
     },
     onArrowDown() {
