@@ -40,6 +40,7 @@
         v-bind:value="item.project"
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
+        v-on:keyup.enter="selectProject"
         v-on:focus="showSuggestions = true"
         v-on:blur="showSuggestions = false"
         v-on:input="updateProjectCandidates"
@@ -226,6 +227,10 @@ export default {
     this.$bind("projects", db.collection("Projects"));
   },
   methods: {
+    selectProject() {
+      this.item.project = this.projectCandidates[this.selectedIndex].id;
+      this.showSuggestions = false;
+    },
     onArrowUp() {
       const count = this.projectCandidates.length;
       this.selectedIndex =
