@@ -41,8 +41,6 @@
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
         v-on:keyup.enter="selectProject"
-        v-on:focus="showSuggestions = true"
-        v-on:blur="showSuggestions = false"
         v-on:input="updateProjectCandidates"
       />
     </span>
@@ -55,6 +53,7 @@
           v-for="(c, index) in projectCandidates"
           v-bind:class="{ selected: index === selectedIndex }"
           v-bind:key="c.id"
+          v-on:click="setProject(c.id)"
         >
           {{ c.id }} - {{ c.name }}
         </li>
@@ -227,6 +226,10 @@ export default {
     this.$bind("projects", db.collection("Projects"));
   },
   methods: {
+    setProject(id) {
+      this.item.project = id;
+      this.showSuggestions = false;
+    },
     selectProject() {
       this.item.project = this.projectCandidates[this.selectedIndex].id;
       this.showSuggestions = false;
@@ -246,6 +249,7 @@ export default {
       this.item.project = this.projectCandidates[this.selectedIndex].id;
     },
     updateProjectCandidates: _.debounce(function(e) {
+      this.showSuggestions = true;
       const loBound = e.target.value.trim();
       if (loBound.length > 0) {
         const hiBound = e.target.value.trim() + "\uf8ff";
@@ -353,4 +357,6 @@ export default {
 #suggestions li.selected {
   background-color: #ddd;
 }
+/* TODO: Add hover cover selection */
+/* https://www.digitalocean.com/community/tutorials/vuejs-vue-autocomplete-component#async-loading */
 </style>
