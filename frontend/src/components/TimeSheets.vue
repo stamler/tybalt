@@ -1,8 +1,6 @@
 <template>
   <List>
-    <template v-slot:taskAreaDefault>
-      <button>Bundle Timesheet {{ now.isoWeek() }}</button>
-    </template>
+    <template v-slot:taskAreaDefault></template>
     <template v-slot:columns="{ item }">
       <td>{{ item.week }}</td>
       <td>{{ item.status }}</td>
@@ -18,14 +16,12 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import store from "../store";
 import { mapState } from "vuex";
-import moment from "moment";
 import List from "./List";
 
 export default {
   components: { List },
   data() {
     return {
-      now: moment(),
       schema: {
         week: { display: "Week Number" },
         status: { display: "Status" },
