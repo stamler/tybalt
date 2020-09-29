@@ -29,9 +29,13 @@ export default {
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
-      return bundleTimesheet({ week })
+      return bundleTimesheet({ week_ending: week.getTime() })
         .then(res => {
-          console.log(`bundled ${res.data.week} for ${res.data.uid}`);
+          const date = new Date(res.data.week_ending);
+          alert(
+            `Timesheet created for the week ending ${date.getMonth() +
+              1}/${date.getDate()}`
+          );
         })
         .catch(error => {
           alert(`Error bundling timesheet: ${error.message}`);

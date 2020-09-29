@@ -8,12 +8,13 @@ https://firebase.google.com/docs/functions/callable
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
 exports.bundleTimesheet = async (data, context, db) => {
-
     // Get non-entry information
+    // NB: Dates are not supported in Firebase Functions yet
+    // https://github.com/firebase/firebase-functions/issues/316
     return {
       uid: context.auth.uid,
-      week_ending: data.end_date, // verify that it's a saturday
-      manager: "approving manager uid",
+      week_ending: data.week_ending, // verify that it's a saturday
+      manager: "approving manager uid", 
       approved: false
     }
 
