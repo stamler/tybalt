@@ -354,9 +354,9 @@ export default {
   text-overflow: ellipsis;
   list-style-type: none;
 }
-#suggestions li.selected {
+#suggestions li.selected,
+#suggestions li:hover {
   background-color: #ddd;
 }
-/* TODO: Add hover cover selection */
 /* https://www.digitalocean.com/community/tutorials/vuejs-vue-autocomplete-component#async-loading */
 </style>
