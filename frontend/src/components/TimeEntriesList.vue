@@ -60,9 +60,6 @@ export default {
     ].parent.path;
     this.collection = this.$parent.collection;
     this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
-      alert(`Can't load Time Entries: ${error.message}`);
-    });
   },
   methods: {
     del(item) {

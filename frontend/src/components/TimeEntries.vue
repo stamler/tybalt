@@ -3,13 +3,14 @@
     <div class="actions">
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
-      <router-link class="navlink" to="#">Check</router-link>
       <router-link
+        v-for="week in saturdays"
+        v-bind:key="week.valueOf()"
         class="navlink"
         v-bind:to="{ name: 'Time Sheets' }"
-        v-on:click.native="bundle(saturday)"
+        v-on:click.native="bundle(week)"
       >
-        Bundle to {{ saturday.getMonth() + 1 }}/{{ saturday.getDate() }}
+        {{ week.getMonth() + 1 }}/{{ week.getDate() }}
       </router-link>
     </div>
     <router-view />
@@ -24,15 +25,13 @@ import { mapState } from "vuex";
 
 export default {
   methods: {
-    bundle(year, week) {
+    bundle(week) {
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
-      return bundleTimesheet({ year, week })
+      return bundleTimesheet({ week })
         .then(res => {
-          console.log(
-            `bundled ${res.data.year}-${res.data.week} for ${res.data.uid}`
-          );
+          console.log(`bundled ${res.data.week} for ${res.data.uid}`);
         })
         .catch(error => {
           alert(`Error bundling timesheet: ${error.message}`);
@@ -42,23 +41,29 @@ export default {
   data() {
     return {
       collection: db.collection("TimeEntries"),
-      items: db
+      items: []
+    };
+  },
+  created() {
+    this.$bind(
+      "items",
+      db
         .collection("TimeEntries")
         .where("uid", "==", store.state.user.uid)
         .orderBy("date", "desc")
-    };
+    ).catch(error => {
+      alert(`Can't load Time Entries: ${error.message}`);
+    });
   },
   computed: {
     ...mapState(["claims"]),
-    saturday() {
-      const today = new Date();
-      if (today.getDay() == 6) {
-        return today;
-      } else {
-        let nextsaturday = new Date();
-        nextsaturday.setDate(nextsaturday.getDate() + (6 - today.getDay()));
-        return nextsaturday;
-      }
+    saturdays() {
+      const weeks = this.items
+        .filter(x => x.hasOwnProperty("week_ending"))
+        .map(x => x.week_ending.toDate().valueOf());
+      // return an array of unique primitive date values (valueOf())
+      // We must extract Month/Day info in the UI
+      return [...new Set(weeks)].map(x => new Date(x));
     }
   }
 };
