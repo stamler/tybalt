@@ -30,11 +30,10 @@ export default {
         .functions()
         .httpsCallable("bundleTimesheet");
       return bundleTimesheet({ week_ending: week.getTime() })
-        .then(res => {
-          const date = new Date(res.data.week_ending);
+        .then(() => {
           alert(
-            `Timesheet created for the week ending ${date.getMonth() +
-              1}/${date.getDate()}`
+            `Timesheet created for the week ending ${week.getMonth() +
+              1}/${week.getDate()}`
           );
         })
         .catch(error => {

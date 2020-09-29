@@ -4,6 +4,7 @@ This module exports callable handlers (functions.https.onCall(<handler_func>))
 https://firebase.google.com/docs/functions/callable
 
 */
+const functions = require('firebase-functions');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
@@ -11,35 +12,37 @@ exports.bundleTimesheet = async (data, context, db) => {
     // Get non-entry information
     // NB: Dates are not supported in Firebase Functions yet
     // https://github.com/firebase/firebase-functions/issues/316
-    return {
-      uid: context.auth.uid,
-      week_ending: data.week_ending, // verify that it's a saturday
-      manager: "approving manager uid", 
-      approved: false
+
+    // make week_ending a date and verify it's a Saturday
+    const week = new Date(data.week_ending);
+    week.setHours(23,59,59,999);
+    if (week.getDay() !== 6) {
+      throw new functions.https.HttpsError('invalid-argument', 'The week' + 
+      ' ending specified is not a Saturday');
     }
-
-};
-
-/*
-// Pseudocode
-function bundle_entries(year, week) {
-  let start_date = get_start_date(year, week);
-  let end_date = get_end_date(year, week);
-
-  let entries = db
-    .collection("TimeEntries")
-    .where("uid", "==", store.state.user.uid)
-    .where("week_ending", "==", week_ending)
-    .orderBy("date", "asc")
-
-  Create new Timesheet document in TimeSheets that contains the following properties:
-    uid, end_date, entries, manager, approved:false
     
-  const result = await db.collection('TimeSheets').add({ uid, start_date, end_date, year, week, entries });
+    let entries = db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
+    if (!entries.empty) {
+      console.log("there are entries, creating a batch");
+      // Start a write batch
+      let batch = db.batch();
+      const timesheet = db.collection("TimeSheets").doc();
 
-}
+      // TODO: Add entries to Timesheet, then
+      // TODO: delelete entries from TimeEntries
+      batch.set(timesheet, {
+        uid: context.auth.uid,
+        week_ending: week,
+        manager: "approving manager uid", 
+        approved: false  
+      });
+      return batch.commit();
 
-*/
+    } else {
+      console.log("there are no entries, returning null");
+      return null;
+    }
+};
 
 exports.writeWeekEnding = async (change, context) => {
   // TODO: overwrite any week_ending values submitted from client

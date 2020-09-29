@@ -29,6 +29,20 @@
       ]
     },
     {
+      "collectionGroup": "RawLogins",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "computerName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "TimeEntries",
       "queryScope": "COLLECTION",
       "fields": [
@@ -43,16 +57,20 @@
       ]
     },
     {
-      "collectionGroup": "RawLogins",
+      "collectionGroup": "TimeEntries",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "computerName",
+          "fieldPath": "uid",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "created",
-          "order": "DESCENDING"
+          "fieldPath": "week_ending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
         }
       ]
     }
