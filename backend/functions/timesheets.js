@@ -61,15 +61,15 @@ exports.unbundleTimesheet = async(data, context, db) => {
     const batch = db.batch();
 
     // Create new TimeEntres for each entries item in the TimeSheet
-    timeSheet.entries.forEach(timeEntry => {
+    timeSheet.data().entries.forEach(timeEntry => {
       // timeEntry is of type "QueryDocumentSnapshot"
       // TODO: Possibly must add back redundant data removed in bundle
       let entry = db.collection("TimeEntries").doc();
-      batch.set(entry, timeEntry.data());
+      batch.set(entry, timeEntry);
     });
     
     // Delete the TimeSheet
-    batch.delete(timeSheet);
+    batch.delete(timeSheet.ref);
     return batch.commit();
 
   } else {
