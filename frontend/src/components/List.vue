@@ -85,6 +85,14 @@
               ✏️
             </router-link>
           </td>
+          <td>
+            <router-link
+              :to="[parentPath, 'entries'].join('/')"
+              v-on:click.native="unbundle(item.week_ending.toDate())"
+            >
+              unbundle
+            </router-link>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -141,6 +149,22 @@ export default {
     ...mapState(["claims"])
   },
   methods: {
+    unbundle(week) {
+      console.log(week);
+      const unbundleTimesheet = firebase
+        .functions()
+        .httpsCallable("unbundleTimesheet");
+      return unbundleTimesheet({ week_ending: week.getTime() })
+        .then(() => {
+          alert(
+            `Timesheet unbundled for the week ending ${week.getMonth() +
+              1}/${week.getDate()}`
+          );
+        })
+        .catch(error => {
+          alert(`Error unbundling timesheet: ${error.message}`);
+        });
+    },
     setTaskMode(mode) {
       this.taskAreaMode = mode;
     },
