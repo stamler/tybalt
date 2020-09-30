@@ -21,18 +21,28 @@ exports.bundleTimesheet = async (data, context, db) => {
       ' ending specified is not a Saturday');
     }
     
-    let entries = db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
-    if (!entries.empty) {
-      console.log("there are entries, creating a batch");
+    const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
+    if (!timeEntries.empty) {
+      console.log("there are TimeEntries, creating a batch");
       // Start a write batch
-      let batch = db.batch();
-      const timesheet = db.collection("TimeSheets").doc();
+      const batch = db.batch();
 
-      // TODO: Add entries to Timesheet, then
-      // TODO: delelete entries from TimeEntries
+      // Put the existing timeEntries into an array then delete from Collection
+      const entries = [];
+      timeEntries.forEach(timeEntry => {
+        // timeEntry is of type "QueryDocumentSnapshot"
+        // TODO: Possibly remove redundant data here like timetypeName etc.
+        // NB if we remove fields, we'll have to re-add them in an unbundle.
+        entries.push(timeEntry.data());
+        batch.delete(timeEntry.ref);
+      });
+      
+      // Build the TimeSheet including entries array created in previous step
+      const timesheet = db.collection("TimeSheets").doc();
       batch.set(timesheet, {
         uid: context.auth.uid,
         week_ending: week,
+        entries,
         manager: "approving manager uid", 
         approved: false  
       });
@@ -42,6 +52,10 @@ exports.bundleTimesheet = async (data, context, db) => {
       console.log("there are no entries, returning null");
       return null;
     }
+};
+
+exports.unbundleTimesheet = async(data, context, db) => {
+  return null;
 };
 
 exports.writeWeekEnding = async (change, context) => {
