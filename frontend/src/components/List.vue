@@ -88,7 +88,7 @@
           <td>
             <router-link
               :to="[parentPath, 'entries'].join('/')"
-              v-on:click.native="unbundle(item.week_ending.toDate())"
+              v-on:click.native="unbundle(item.id)"
             >
               unbundle
             </router-link>
@@ -149,21 +149,14 @@ export default {
     ...mapState(["claims"])
   },
   methods: {
-    unbundle(week) {
-      console.log(week);
+    unbundle(timesheetId) {
+      console.log(`unbundling TimeSheet ${timesheetId}`);
       const unbundleTimesheet = firebase
         .functions()
         .httpsCallable("unbundleTimesheet");
-      return unbundleTimesheet({ week_ending: week.getTime() })
-        .then(() => {
-          alert(
-            `Timesheet unbundled for the week ending ${week.getMonth() +
-              1}/${week.getDate()}`
-          );
-        })
-        .catch(error => {
-          alert(`Error unbundling timesheet: ${error.message}`);
-        });
+      return unbundleTimesheet({ id: timesheetId }).catch(error => {
+        alert(`Error unbundling timesheet: ${error.message}`);
+      });
     },
     setTaskMode(mode) {
       this.taskAreaMode = mode;
