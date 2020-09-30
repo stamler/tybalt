@@ -9,7 +9,6 @@ const functions = require('firebase-functions');
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
 exports.bundleTimesheet = async (data, context, db) => {
-    // Get non-entry information
     // NB: Dates are not supported in Firebase Functions yet
     // https://github.com/firebase/firebase-functions/issues/316
 
@@ -55,7 +54,28 @@ exports.bundleTimesheet = async (data, context, db) => {
 };
 
 exports.unbundleTimesheet = async(data, context, db) => {
-  return null;
+  const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
+  if (timeSheet.exists) {
+    console.log("TimeSheet found, creating a batch");
+    // Start a write batch
+    const batch = db.batch();
+
+    // Create new TimeEntres for each entries item in the TimeSheet
+    timeSheet.entries.forEach(timeEntry => {
+      // timeEntry is of type "QueryDocumentSnapshot"
+      // TODO: Possibly must add back redundant data removed in bundle
+      let entry = db.collection("TimeEntries").doc();
+      batch.set(entry, timeEntry.data());
+    });
+    
+    // Delete the TimeSheet
+    batch.delete(timeSheet);
+    return batch.commit();
+
+  } else {
+    console.log("no TimeSheet found, returning null");
+    return null;
+  }
 };
 
 exports.writeWeekEnding = async (change, context) => {

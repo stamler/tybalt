@@ -45,6 +45,11 @@ exports.bundleTimesheet = functions.https.onCall(async (data, context) => {
   return timesheetsModule.bundleTimesheet(data, context, admin.firestore());
 });
 
+// unbundle a timesheet
+exports.unbundleTimesheet = functions.https.onCall(async (data, context) => {
+  return timesheetsModule.unbundleTimesheet(data, context, admin.firestore());
+});
+
 // cleanup RawLogins with computerName
 //exports.cleanup = functions.https.onCall(async (data, context) => {
 //  return rawLoginsModule.cleanup(data, context, admin.firestore())
