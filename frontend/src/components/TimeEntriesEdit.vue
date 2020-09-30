@@ -60,11 +60,6 @@
       </ul>
     </div>
 
-    <span class="field">
-      <label for="hours">Hours</label>
-      <input type="number" name="hours" v-model.number="item.hours" />
-    </span>
-
     <span
       class="field"
       v-if="
@@ -76,6 +71,11 @@
     >
       <label for="jobHours">Job Hours</label>
       <input type="number" name="jobHours" v-model.number="item.jobHours" />
+    </span>
+
+    <span class="field">
+      <label for="hours">Non-Job Hours</label>
+      <input type="number" name="hours" v-model.number="item.hours" />
     </span>
 
     <span
