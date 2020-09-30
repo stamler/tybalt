@@ -2,8 +2,8 @@
   <List>
     <template v-slot:taskAreaDefault></template>
     <template v-slot:columns="{ item }">
-      <td>{{ item.week }}</td>
-      <td>{{ item.status }}</td>
+      <td>{{ item.week_ending.toDate().toISOString() }}</td>
+      <td>{{ item.approved }}</td>
       <td>{{ item.jobHours }}</td>
       <td>{{ item.hours }}</td>
       <td>{{ item.mealsHours }}</td>
@@ -23,8 +23,8 @@ export default {
   data() {
     return {
       schema: {
-        week: { display: "Week Number" },
-        status: { display: "Status" },
+        week_ending: { display: "Week Ending" },
+        approved: { display: "Approved" },
         jobHours: { display: "Job Hours" },
         hours: { display: "Non-Job Hours" },
         mealsHours: { display: "Meal Hours" }
