@@ -12,6 +12,8 @@
 //  Callable functions to automatically get context: 
 //      https://firebase.google.com/docs/functions/callable
 
+const admin = require('firebase-admin');
+
 exports.createProfile = async(user, db) => {
   const customClaims = {
     time: true
