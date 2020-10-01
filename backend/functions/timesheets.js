@@ -3,8 +3,23 @@
 This module exports callable handlers (functions.https.onCall(<handler_func>))
 https://firebase.google.com/docs/functions/callable
 
+
+Claims permissions: these should perhaps be in an array and simpler to get
+below the 1000 byte limit
+
+time: true 
+The default. Holders of this claim can create TimeEntries, bundle and unbundle
+their own TimeSheets, and release them for approval
+
+time: approver
+Holders of this claim do everything true users can do. Additionaly they can
+approve released timesheets whose manager_uid field matches their uid.
+
+time: admin
+Holders of this claim can export
 */
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
@@ -36,17 +51,45 @@ exports.bundleTimesheet = async (data, context, db) => {
         batch.delete(timeEntry.ref);
       });
       
-      // Build the TimeSheet including entries array created in previous step
-      const timesheet = db.collection("TimeSheets").doc();
-      batch.set(timesheet, {
-        uid: context.auth.uid,
-        week_ending: week,
-        entries,
-        manager: "approving manager uid", 
-        approved: false  
-      });
-      return batch.commit();
+      // Load the profile for the user to get manager information
+      const profile = await db.collection("Profiles").doc(context.auth.uid).get()
+      if (profile.exists) {
+        const manager_uid = profile.get("manager_uid");
+        if (manager_uid !== undefined) {
 
+          // Verify that the auth user with manager_uid exists 
+          let manager;
+          try {
+            manager = await admin.auth().getUser(manager_uid);
+          } catch (error) {
+            // The Profile for this user likely specifies an identifier 
+            // (manager_uid) that doesn't correspond to valid User Record.
+            throw new functions.https.HttpsError('internal', error.message);  
+          }
+          const claims = manager.customClaims
+          if (claims && claims['time'] === 'approver') {
+            // The profile contains a valid manager, build the TimeSheet document
+            const timesheet = db.collection("TimeSheets").doc();
+            batch.set(timesheet, {
+              uid: context.auth.uid,
+              week_ending: week,
+              entries,
+              manager: manager_uid, 
+              approved: false  
+            });
+            return batch.commit();
+          } else {
+            throw new functions.https.HttpsError('internal', "The manager" +
+              " specified in the Profile doesn't have required permissions");
+          }
+        } else {
+         throw new functions.https.HttpsError('internal', "The Profile for" + 
+          " this user doesn't contain a manager_uid");
+        }
+      } else {
+        throw new functions.https.HttpsError('internal', "A Profile doesn't" + 
+        " exist for this user");
+      }
     } else {
       console.log("there are no entries, returning null");
       return null;
