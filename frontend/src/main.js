@@ -22,7 +22,7 @@ firebase
       let idToken = result.credential.idToken;
     }
     let user = result.user;
-    console.log(user);
+    //console.log(user);
   })
   .catch(function(error) {
     var errorCode = error.code;
@@ -42,7 +42,7 @@ firebase
 
 const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
   if (user) {
-    console.log(`${user.displayName} is logged in`);
+    // console.log(`${user.displayName} is logged in`);
     // set state and user in Vuex
     const tasks = [];
     // TODO: Vuex won't survive a page reload and this code won't be
