@@ -31,6 +31,7 @@ exports.createProfile = async(user, db) => {
     });
   } catch (error) {
     console.log(error);
+    return null;
   }
 }
 
@@ -46,13 +47,17 @@ exports.deleteProfile = async(user, db) => {
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
 exports.updateClaims = async (change, context) => {
   if (change.after.exists) {
-    if (_.isEqual(change.before.customClaims, change.after.customClaims)) {
+    const originalClaims = change.before.data().customClaims;
+    const newClaims = change.after.data().customClaims;
+    if (_.isEqual(originalClaims, newClaims)) {
+      //console.log(`No custom claims changed for ${change.after.ref.path}`);
       // The Firebase Auth User Record customClaims weren't changed
       return null;
     } else {
       // The Firebase Auth User Record customClaims were changed, update them
       // TODO: !!Validate that the customClaims format is correct!!
-      return admin.auth().setCustomUserClaims(uid, change.after.customClaims);
+      //console.log(`setting claims for ${change.after.id} to ${JSON.stringify(newClaims)}`);
+      return admin.auth().setCustomUserClaims(change.after.id, newClaims);
     }
   } else {
     console.log("A Profile document was deleted. If a corresponding user" +
