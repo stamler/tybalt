@@ -75,6 +75,9 @@ exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').o
 // add week_ending property to TimeEntries on create or update
 exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').onWrite(timesheetsModule.writeWeekEnding);
 
+// update the Firebase Auth Custom Claims from the corresponding Profile doc
+exports.updateClaims = functions.firestore.document('Profiles/{uid}').onWrite(profilesModule.updateClaims);
+
 // create a Profile when a new user is created in Firebase Auth
 exports.createProfile = functions.auth.user().onCreate((user) => {
   return profilesModule.createProfile(user, admin.firestore());

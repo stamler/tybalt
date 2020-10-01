@@ -13,6 +13,7 @@
 //      https://firebase.google.com/docs/functions/callable
 
 const admin = require('firebase-admin');
+const _ = require('lodash');
 
 // Create the corresponding Profile document when an auth user is deleted
 exports.createProfile = async(user, db) => {
@@ -39,5 +40,23 @@ exports.deleteProfile = async(user, db) => {
     await db.collection("Profiles").doc(user.uid).delete();
   } catch (error) {
     console.log(error);
+  }
+}
+
+// update the Firebase Auth Custom Claims from the corresponding Profile doc
+exports.updateClaims = async (change, context) => {
+  if (change.after.exists) {
+    if (_.isEqual(change.before.customClaims, change.after.customClaims)) {
+      // The Firebase Auth User Record customClaims weren't changed
+      return null;
+    } else {
+      // The Firebase Auth User Record customClaims were changed, update them
+      // TODO: !!Validate that the customClaims format is correct!!
+      return admin.auth().setCustomUserClaims(uid, change.after.customClaims);
+    }
+  } else {
+    console.log("A Profile document was deleted. If a corresponding user" +
+      " remains in Firebase Auth, recreate it manually");
+    return null;
   }
 }
