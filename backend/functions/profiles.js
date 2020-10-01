@@ -11,3 +11,22 @@
 // https://firebase.google.com/docs/auth/admin/custom-claims
 //  Callable functions to automatically get context: 
 //      https://firebase.google.com/docs/functions/callable
+
+exports.createProfile = async(user, db) => {
+  const customClaims = {
+    time: true
+  };
+
+  await admin.auth().setCustomUserClaims(user.uid, customClaims)
+
+  try {
+    return db.collection("Profiles").doc(user.uid).set({
+      displayName: user.displayName,
+      email: user.email,
+      customClaims,
+      manager_uid: null    
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}

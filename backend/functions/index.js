@@ -11,6 +11,7 @@ const rawLoginsModule = require('./rawLogins.js')
 const claimsModule = require('./claims.js')
 const computersModule = require('./computers.js')
 const timesheetsModule = require('./timesheets.js')
+const profilesModule = require('./profiles.js')
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
@@ -73,3 +74,8 @@ exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').o
 
 // add week_ending property to TimeEntries on create or update
 exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').onWrite(timesheetsModule.writeWeekEnding);
+
+// create a Profile when a new user is created in Firebase Auth
+exports.createProfile = functions.auth.user().onCreate((user) => {
+  return profilesModule.createProfile(user, admin.firestore());
+});
