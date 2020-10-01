@@ -79,3 +79,8 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
 exports.createProfile = functions.auth.user().onCreate((user) => {
   return profilesModule.createProfile(user, admin.firestore());
 });
+
+// delete a Profile when a user is deleted in Firebase Auth
+exports.deleteProfile = functions.auth.user().onDelete((user) => {
+  return profilesModule.deleteProfile(user, admin.firestore());
+});

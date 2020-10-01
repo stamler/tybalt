@@ -14,11 +14,11 @@
 
 const admin = require('firebase-admin');
 
+// Create the corresponding Profile document when an auth user is deleted
 exports.createProfile = async(user, db) => {
   const customClaims = {
     time: true
   };
-
   await admin.auth().setCustomUserClaims(user.uid, customClaims)
 
   try {
@@ -28,6 +28,15 @@ exports.createProfile = async(user, db) => {
       customClaims,
       manager_uid: null    
     });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// Delete the corresponding Profile document when an auth user is deleted
+exports.deleteProfile = async(user, db) => {
+  try {
+    await db.collection("Profiles").doc(user.uid).delete();
   } catch (error) {
     console.log(error);
   }
