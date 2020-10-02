@@ -4,6 +4,13 @@ const firebase = require("@firebase/testing");
 const MY_PROJECT_ID = "charade-ca63f";
 
 describe("Firestore Rules", () => {
+  describe("Computers", () => {})
+  describe("Config", () => {})
+  describe("Divisions", () => {})
+  describe("Logins", () => {})
+  describe("Profiles", () => {})
+  describe("Projects", () => {})
+
   describe("RawLogins", () => {
 
     it("Allows admins to read and delete stuff", async () => {
@@ -26,4 +33,9 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(document.set({foo: "bar"}));
     });
   })
+
+  describe("TimeEntries", () => {})
+  describe("TimeSheets", () => {})
+  describe("TimeTypes", () => {})
+  describe("Users", () => {})
 })
