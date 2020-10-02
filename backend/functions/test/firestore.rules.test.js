@@ -25,32 +25,41 @@ function allowAuthenticatedRead (collection) {
 }
 
 function denyAuthenticatedRead (collection) {
-  return it(`${collection} denies all authenticated users to read`, async () => {
+  return it(`${collection} denies authenticated users reading`, async () => {
     const doc = dbLoggedInNoClaims.collection(collection).doc();
     await firebase.assertFails(doc.get());
   });
 }
 
 function allowAdminWrite (collection) {
-  return it("Allows admin-claim users writing", async () => {
+  return it(`${collection} allows admin-claim users to write`, async () => {
     const doc = dbLoggedInAdminClaim.collection(collection).doc();
     await firebase.assertSucceeds(doc.set({foo: "bar"}));
   });
 }
 
+function denyAdminWrite (collection) {
+  return it(`${collection} denies admin-claim users writing`, async () => {
+    const doc = dbLoggedInAdminClaim.collection(collection).doc();
+    await firebase.assertFails(doc.set({foo: "bar"}));
+  })
+}
+
+function allowAdminRead (collection) {
+  return it(`${collection} allows admin-claim users to read`, async () => {
+    const doc = dbLoggedInAdminClaim.collection(collection).doc();
+    await firebase.assertSucceeds(doc.get());
+  })
+}
+
+
 function denyAuthenticatedWrite (collection) {
-  return it("Denies signed-in users writing", async () => {
+  return it(`${collection} denies signed-in users writing`, async () => {
     const doc = dbLoggedInNoClaims.collection(collection).doc();
     await firebase.assertFails(doc.set({foo: "bar"}));
   });
 }
 
-function denyAdminWrite (collection) {
-  return it("Denies admin-claim users writing", async () => {
-    const doc = dbLoggedInAdminClaim.collection(collection).doc();
-    await firebase.assertFails(doc.set({foo: "bar"}));
-  })
-}
 
 describe("Firestore Rules", () => {
   describe("Unauthenticated Reads and Writes", () => {
@@ -65,68 +74,44 @@ describe("Firestore Rules", () => {
     ["Computers", "Divisions", "Projects", "TimeTypes"].forEach(collection => {
       allowAuthenticatedRead(collection);
     });
-    ["Config"].forEach(collection => {
+    ["Config", "RawLogins"].forEach(collection => {
       denyAuthenticatedRead(collection);
     });
   })
-  describe("Computers", () => {
-    denyAdminWrite("Computers");
-    denyAuthenticatedWrite("Computers");
+
+  describe("Authenticated Writes", () => {
+    ["Computers", "Config", "Divisions", "Projects", "RawLogins", "TimeTypes"].forEach(collection => {
+      denyAuthenticatedWrite(collection);
+    })
   })
-  describe("Config", () => {
-    denyAdminWrite("Config");
-    denyAuthenticatedWrite("Config");
+
+  describe("Admin Writes", () => {
+    ["Divisions", "Projects", "TimeTypes"].forEach(collection => {
+      allowAdminWrite(collection);
+    });
+    ["Computers", "Config", "RawLogins"].forEach(collection => {
+      denyAdminWrite(collection);
+    })
   })
-  describe("Divisions", () => {
-    allowAdminWrite("Divisions");
-    denyAuthenticatedWrite("Divisions");
+
+  describe("Admin Reads", () => {
+    ["Logins", "Profiles", "RawLogins", "Users"].forEach(collection => {
+      allowAdminRead(collection);
+    })
   })
-  describe("Logins", () => {
-  })
-  describe("Profiles", () => {
-  })
-  describe("Projects", () => {
-    allowAdminWrite("Projects");
-    denyAuthenticatedWrite("Projects");
-  })
+
 
   describe("RawLogins", () => {
-    denyAuthenticatedWrite("RawLogins");
-    denyAdminWrite("RawLogins");
-    it("Allows admins to read and delete stuff", async () => {
+    it("Allows admins to delete stuff", async () => {
 
     })
-    it ("Prevents anybody else from reading or deleting stuff", async () => {
+    it ("Prevents anybody else from deleting stuff", async () => {
 
     })
-    it("Prevents anybody from creating or updating stuff", async () => {
-
-      // Test with auth admin
-      let db = firebase.initializeTestApp({projectId: MY_PROJECT_ID, authAdmin }).firestore();
-      let document = db.collection("RawLogins").doc();
-      await firebase.assertFails(document.set({foo: "bar"}));
-
-      // Test with non-auth admin
-      db = firebase.initializeTestApp({projectId: MY_PROJECT_ID }).firestore();
-      document = db.collection("RawLogins").doc();
-      await firebase.assertFails(document.set({foo: "bar"}));
-    });
   })
 
   describe("TimeEntries", () => {
   })
   describe("TimeSheets", () => {
   })
-  describe("TimeTypes", () => {
-    it("Allows admin-claim users writing", async () => {
-      const doc = dbLoggedInAdminClaim.collection("Divisions").doc();
-      await firebase.assertSucceeds(doc.set({foo: "bar"}));
-    })
-    it("Denies signed-in users writing", async () => {
-      const doc = dbLoggedInNoClaims.collection("Divisions").doc();
-      await firebase.assertFails(doc.set({foo: "bar"}));
-    })
-
-  })
-  describe("Users", () => {})
 })
