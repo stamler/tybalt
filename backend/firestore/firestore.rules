@@ -72,8 +72,12 @@ service cloud.firestore {
           !("workrecord" in newDoc())
         );
     }
-    match /RawLogins/{rawLogin} {
-      allow read, delete: if hasClaim("admin");
+    match /Computers/{computer} {
+      allow read: if isSignedIn();
+    }
+    match /Divisions/{division} {
+      allow read: if isSignedIn();
+      allow write: if hasClaim("admin");
     }
     match /Logins/{login} {
       allow read: if hasClaim("admin");
@@ -81,11 +85,12 @@ service cloud.firestore {
     match /Profiles/{profile} {
       allow read: if hasClaim("admin");
     }
-    match /Users/{user} {
-      allow read: if hasClaim("admin");
-    }
-    match /Computers/{computer} {
+    match /Projects/{project} {
       allow read: if isSignedIn();
+      allow write: if hasClaim("admin");
+    }
+    match /RawLogins/{rawLogin} {
+      allow read, delete: if hasClaim("admin");
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
@@ -95,17 +100,12 @@ service cloud.firestore {
     match /TimeSheets/{sheet} {
       allow read: if hasClaim("time") && uidMatches();
     }
-    match /Projects/{project} {
-      allow read: if isSignedIn();
-      allow write: if hasClaim("admin");
-    }
-    match /Divisions/{division} {
-      allow read: if isSignedIn();
-      allow write: if hasClaim("admin");
-    }
     match /TimeTypes/{timetype} {
       allow read: if isSignedIn();
       allow write: if hasClaim("admin");
+    }
+    match /Users/{user} {
+      allow read: if hasClaim("admin");
     }
     match /{document=**} {
       allow read, write: if false;
