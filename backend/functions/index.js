@@ -7,7 +7,6 @@ admin.initializeApp();
 admin.firestore().settings({timestampsInSnapshots: true});
 
 const rawLoginsModule = require('./rawLogins.js')
-//const azureModule = require('./azure.js')
 const claimsModule = require('./claims.js')
 const computersModule = require('./computers.js')
 const timesheetsModule = require('./timesheets.js')
@@ -18,12 +17,6 @@ const profilesModule = require('./profiles.js')
 exports.rawLogins = functions.https.onRequest((req, res) => {
   rawLoginsModule.handler(req, res, admin.firestore());
 });
-
-// Get a Custom Firebase token by sending the right info to this endpoint
-// TODO: remove this function and use the new built-in Microsoft provider
-//exports.getToken = functions.https.onRequest(async (req, res) => {
-//  azureModule.handler(req, res, admin.firestore());
-//});
 
 // Dump the claims for each user in firebase Authentication to corresponding
 // document in 'Profiles' collection.
