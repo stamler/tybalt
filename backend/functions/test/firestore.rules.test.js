@@ -137,11 +137,21 @@ describe("Firestore Rules", () => {
   })
 
   describe("TimeEntries", () => {
-    it("requires a uid, date, and TimeType", async() => {      
+    it("requires Off-Rotation documents to have only a uid, date, and TimeType", async () => {      
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
-      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR", hours:5}));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(),
+        timetype:"OR"}));
       await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}))
       await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(),
+        timetype:"OR", hours: 5}))
+    })
+    it("requires Hours-worked documents to have a valid Division", async () => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", hours:5 }));
     })
   })
   describe("TimeSheets", () => {
