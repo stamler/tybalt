@@ -218,6 +218,13 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", mealsHours: "duck" }));
     })
+    it("requires a referenced project to be valid", async () => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "P18-123" }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "18-123" }));
+    })
   })
   describe("TimeSheets", () => {
   })
