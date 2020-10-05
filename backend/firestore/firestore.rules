@@ -16,19 +16,25 @@ service cloud.firestore {
     function newDoc() {
       return request.resource.data;
     }
-    function numOrMissing(field) {
-      return ( newDoc()[field] is number || !(field in newDoc()))
+    function isPositiveNumber(field) {
+      return request.resource.data[field] is number && request.resource.data[field] > 0;
     }
     function validTimeEntry() {
       // TODO: Boolean Simplification
       return
-        // restrict accepted properties
+        // allowed fields
         newDoc().keys().hasOnly([ "date", "timetype", "division", "project",
           "hours", "jobHours", "workrecord", "notes", "mealsHours", "uid",
           "timetypeName", "divisionName", "projectName", "week_ending" ]) &&
 
         isInCollection("timetype","TimeTypes") && // timetype exists in db
- 
+
+        // required fields
+        newDoc().keys().hasAll(["date", "timetype", "uid"]) &&
+
+        // prevent user from submitting an entry with an unauthorized uid
+        request.auth.uid == request.resource.data['uid'] &&
+
         // when project provided, it & division exist in db, timetype is 'R'
         (
           ( isInCollection("project","Projects") && 
@@ -39,7 +45,6 @@ service cloud.firestore {
 
         // when provided, division exists in db, Time Type is 'R'
         // when division is missing, Time Type is not 'R'
-        // TODO: could division also be missing with Time Type 'X'?
         (
           ( isInCollection("division","Divisions") && 
             newDoc().timetype == "R" ) ||
@@ -47,23 +52,18 @@ service cloud.firestore {
             newDoc().timetype != "R" )
         ) &&
 
-        // at least one hours type is provided
+        // at least one hours type is provided OR the timetype is "OR"
         (
-          newDoc()["jobHours"] is number ||
-          newDoc()["hours"] is number ||
-          newDoc()["mealsHours"] is number
+          (isPositiveNumber("jobHours") && !(newDoc().timetype == "OR")) ||
+          (isPositiveNumber("hours") && !(newDoc().timetype == "OR")) ||
+          (isPositiveNumber("mealsHours") && !(newDoc().timetype == "OR")) ||
+          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "uid", "week_ending"]))
         ) &&
 
         // when provided, jobHours require an existing project
         (
           ( newDoc()["jobHours"] is number && isInCollection("project", "Projects") ) ||
           !("jobHours" in newDoc()) 
-        ) &&
-
-        // when provided, mealsHours require an existing project
-        (
-          ( newDoc()["mealsHours"] is number && isInCollection("project", "Projects") ) ||
-          !("mealsHours" in newDoc())
         ) &&
 
         // when provided workrecord requires an existing project
