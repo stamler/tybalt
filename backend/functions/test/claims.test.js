@@ -59,8 +59,6 @@ describe("claims module", () => {
       return assert.isRejected(result,/failed to commit custom Claims to Profiles/)
 
     });
-    it("properly iterates over large collections");
-    it("creates profiles if they don't exist for all auth users");
   });
 
   describe("modClaims()", () => {
@@ -122,6 +120,5 @@ describe("claims module", () => {
       // TODO: test the returned promise is resolved.
       // TODO: assert profiles.set() was called with expected args
     });
-    it("reports if an error occurs");
   });
 });
