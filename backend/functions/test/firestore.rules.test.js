@@ -145,10 +145,12 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
       await firebase.assertFails(doc.set({uid: "bob", date:new Date(), timetype:"OR"}));
     })
-    it("requires Off-Rotation entries to have only a uid, date, and timetype", async () => {      
+    it("requires Off-Rotation (OR) entries to have only a uid, date, and timetype", async () => {      
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
       await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", hours: 5}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", jobHours: 5}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", mealsHours: 5}));
       await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}));
       await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
     })
