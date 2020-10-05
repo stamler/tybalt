@@ -1,3 +1,8 @@
+/*
+ This code is an attempt to understand firebase rules in a different way
+ It is not to be used in production
+*/
+
 if (request.auth.uid == request.resource.data['uid']) {
   if( newDoc().keys().hasAll(["date", "timetype", "uid"]) ) {
     if (isInCollection("timetype","TimeTypes")) {
