@@ -193,7 +193,27 @@ describe("Firestore Rules", () => {
         await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", jobHours: 5 }));
     })
-
+    it("requires hours, jobHours, and mealsHours to be positive real numbers", async() => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", project: "19-333", jobHours: 5 }));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours: 5 }));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", mealsHours: 1 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", project: "19-333", jobHours: -1 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", project: "19-333", jobHours: "duck" }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours: -1 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours: "duck" }));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", mealsHours: -1 }));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", mealsHours: "duck" }));
+    })
   })
   describe("TimeSheets", () => {
   })
