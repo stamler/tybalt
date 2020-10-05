@@ -8,6 +8,7 @@ const dbNotLoggedIn = firebase.initializeTestApp({projectId: MY_PROJECT_ID }).fi
 const dbLoggedInNoClaims = firebase.initializeTestApp({projectId: MY_PROJECT_ID, auth }).firestore();
 const dbLoggedInTimeClaim = firebase.initializeTestApp({projectId: MY_PROJECT_ID, auth: {...auth, time: true} }).firestore();
 const dbLoggedInAdminClaim = firebase.initializeTestApp({projectId: MY_PROJECT_ID, auth: {...auth, admin: true} }).firestore();
+const dbAdmin = firebase.initializeAdminApp({projectId: MY_PROJECT_ID }).firestore();
 
 function denyUnauthenticatedReadWrite (collection) {
   return it(`${collection} denies unauthenticated reads and writes`, async () => {
@@ -62,6 +63,29 @@ function denyAuthenticatedWrite (collection) {
 
 
 describe("Firestore Rules", () => {
+
+  before(() => {
+    // setup database
+    firebase.clearFirestoreData({ projectId: MY_PROJECT_ID });
+    const timetypes = ["OB", "OH", "OO", "OP", "OR", "OS", "OV", "R"];
+    const divisions = ["B", "BE", "BI", "BM", "BS", "CA", "CB", "CF", "CH", 
+      "CI", "CS", "E", "EE", "EG", "EP", "G", "GE", "GL", "I", "IC", "IH", 
+      "IM", "M", "MD", "MF", "ML", "XB", "XE", "XF"];
+    const batch = dbAdmin.batch();
+    timetypes.forEach(timetype => {
+      const newDoc = dbAdmin.collection("TimeTypes").doc(timetype);
+      batch.set(newDoc, { name: `${timetype} name`});
+    })
+    divisions.forEach(division => {
+      const newDoc = dbAdmin.collection("Divisions").doc(division);
+      batch.set(newDoc, { name: `${division} name`});
+    })
+    batch.commit();
+  });
+
+  after(() => {
+  })
+
   describe("Unauthenticated Reads and Writes", () => {
     ["Computers", "Config", "Divisions", "Logins", "Profiles", 
     "Projects", "RawLogins", "TimeEntries", "TimeSheets", 
@@ -103,14 +127,22 @@ describe("Firestore Rules", () => {
 
   describe("RawLogins", () => {
     it("Allows admins to delete stuff", async () => {
-
+      const doc = dbLoggedInAdminClaim.collection("RawLogins").doc();
+      await firebase.assertSucceeds(doc.delete());      
     })
     it ("Prevents anybody else from deleting stuff", async () => {
-
+      const doc = dbLoggedInNoClaims.collection("RawLogins").doc();
+      await firebase.assertFails(doc.delete());      
     })
   })
 
   describe("TimeEntries", () => {
+    it("requires a uid, date, and TimeType", async() => {      
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR", hours:5}));
+      await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}))
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
+    })
   })
   describe("TimeSheets", () => {
   })
