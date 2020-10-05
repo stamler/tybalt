@@ -68,9 +68,8 @@ describe("Firestore Rules", () => {
     // setup database
     firebase.clearFirestoreData({ projectId: MY_PROJECT_ID });
     const timetypes = ["OB", "OH", "OO", "OP", "OR", "OS", "OV", "R"];
-    const divisions = ["B", "BE", "BI", "BM", "BS", "CA", "CB", "CF", "CH", 
-      "CI", "CS", "E", "EE", "EG", "EP", "G", "GE", "GL", "I", "IC", "IH", 
-      "IM", "M", "MD", "MF", "ML", "XB", "XE", "XF"];
+    const divisions = ["B", "BE", "CI"];
+    const projects = ["19-333", "19-444", "19-555", "P18-123"];
     const batch = dbAdmin.batch();
     timetypes.forEach(timetype => {
       const newDoc = dbAdmin.collection("TimeTypes").doc(timetype);
@@ -79,6 +78,10 @@ describe("Firestore Rules", () => {
     divisions.forEach(division => {
       const newDoc = dbAdmin.collection("Divisions").doc(division);
       batch.set(newDoc, { name: `${division} name`});
+    })
+    projects.forEach(project => {
+      const newDoc = dbAdmin.collection("Projects").doc(project);
+      batch.set(newDoc, { name: `${project} name`});
     })
     batch.commit();
   });
@@ -137,22 +140,60 @@ describe("Firestore Rules", () => {
   })
 
   describe("TimeEntries", () => {
-    it("requires Off-Rotation documents to have only a uid, date, and TimeType", async () => {      
+    it("requires submitted uid to match the authenticated user id", async () => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
-      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(),
-        timetype:"OR"}));
-      await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}))
-      await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
-      await firebase.assertFails(doc.set({uid:"alice", date:new Date(),
-        timetype:"OR", hours: 5}))
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
+      await firebase.assertFails(doc.set({uid: "bob", date:new Date(), timetype:"OR"}));
     })
-    it("requires Hours-worked documents to have a valid Division", async () => {
+    it("requires Off-Rotation entries to have only a uid, date, and timetype", async () => {      
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", hours: 5}));
+      await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
+    })
+    it("requires Hours-worked documents to have a valid division", async () => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", hours:5 }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", hours:5 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "NOTINDB", hours:5 }));
     })
+    it("requires documents not have unspecified fields", async () => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, foo:"bar" }));      
+    })
+    it("requires a document's timetype value to reference a valid timetype", async() => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"NONVALIDTIMETYPE", division: "CI", hours:5 }));      
+    })
+    it("requires documents with workrecord key to reference a valid project", async() => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"asdf" }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "notproject", workrecord:"asdf" }));
+        await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, workrecord:"asdf" }));
+    })
+    it("requires documents with jobHours key to reference a valid project", async() => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", project: "19-333", jobHours: 5 }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", project: "notproject", jobHours: 5 }));
+        await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", jobHours: 5 }));
+    })
+
   })
   describe("TimeSheets", () => {
   })
