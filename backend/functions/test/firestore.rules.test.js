@@ -180,11 +180,11 @@ describe("Firestore Rules", () => {
     it("requires documents with workrecord key to reference a valid project", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"asdf" }));
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"K20-420" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "notproject", workrecord:"asdf" }));
+        timetype:"R", division: "CI", hours:5, project: "notproject", workrecord:"K20-420" }));
         await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, workrecord:"asdf" }));
+        timetype:"R", division: "CI", hours:5, workrecord:"K20-420" }));
     })
     it("requires documents with jobHours key to reference a valid project", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
@@ -224,6 +224,18 @@ describe("Firestore Rules", () => {
         timetype:"R", division: "CI", hours:5, project: "P18-123" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", hours:5, project: "18-123" }));
+    })
+    it("requires workrecords to match the correct format", async() => {
+      const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"Q20-423" }));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"K20-423-1" }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"F18-33-1" }));
+      await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
+        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"asdf" }));
+
     })
   })
   describe("TimeSheets", () => {
