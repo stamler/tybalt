@@ -45,4 +45,8 @@ describe("timesheets.js", () => {
     return assert(week_ending.toDate().valueOf() === new Date("2020-10-24T23:59:59.999Z").valueOf());
   }).timeout(3000);
 
+  it("updates the week_ending if it was modified manually by the client")
+  it("exits and logs an error if date field is missing")
+  it("exits and logs an informational message if a document was deleted")
+
 });
