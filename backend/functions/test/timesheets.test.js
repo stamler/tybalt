@@ -17,22 +17,32 @@ function sleep(ms) {
 }
 
 describe("timesheets.js", () => {
+  const testApp = firebase.initializeAdminApp({ projectId: MY_PROJECT_ID });
+  const db = testApp.firestore();
+
   it("adds a correct week_ending to a fresh document", async () => {
-    // You could use initializeTestApp if you want to simulate a write from a user (which goes
-    // through security rules).  You need to use your real project ID so that the Functions and
-    // Firestore emulators can communicate.
-    const testApp = firebase.initializeAdminApp({ projectId: MY_PROJECT_ID });
 
-    const db = testApp.firestore();
-    const docRef = await db.collection('TimeEntries').add({ test_id: 6, date: new Date("2020-10-09") });
-
-    // At this point you need to run a loop or a listener to make sure the function
-    // does what it's supposed to.  The function will excute async after the Firestore write completes.
+    const docRef = await db.collection('TimeEntries').doc('abc');
+    docRef.set({ date: new Date("2020-10-09") });
     
     await sleep(2500)
     const snap = await docRef.get();
     const week_ending = snap.get('week_ending');
 
     return assert(week_ending.toDate().valueOf() === new Date("2020-10-10T23:59:59.999Z").valueOf());
-  }).timeout(5000);
+  }).timeout(3000);
+
+  it("updates a correct week_ending on a modified document", async () => {
+    // use the document 'abc' from the first test    
+    // modify the date and verify
+    const docRef = await db.collection('TimeEntries').doc('abc');
+    docRef.set({ date: new Date("2020-10-19") }, { merge: true });
+    await sleep(2300)
+    const snap = await docRef.get();
+    const week_ending = snap.get('week_ending');
+
+
+    return assert(week_ending.toDate().valueOf() === new Date("2020-10-24T23:59:59.999Z").valueOf());
+  }).timeout(3000);
+
 });
