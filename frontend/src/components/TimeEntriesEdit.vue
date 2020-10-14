@@ -73,7 +73,7 @@
       <input type="number" name="jobHours" v-model.number="item.jobHours" />
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.timetype !== 'OR'">
       <label for="hours">Non-Job Hours</label>
       <input type="number" name="hours" v-model.number="item.hours" />
     </span>
