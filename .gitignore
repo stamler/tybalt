@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 firebase-debug.log*
 
+# Exported Firestore test data for import into emulator
+local_test_data/
 # Firebase cache
 .firebase/
 
