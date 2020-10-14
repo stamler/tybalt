@@ -125,39 +125,40 @@ exports.unbundleTimesheet = async(data, context, db) => {
   }
 };
 
-exports.writeWeekEnding = async (change, context) => {
+exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').onWrite( async (change, context) => {
   // TODO: overwrite any week_ending values submitted from client
   if (change.after.exists) {
-    // The time entry was either created or updated
-    const date = change.after.data().date.toDate();
-    const previousDate = change.before.exists ? change.before.data().date.toDate() : null;
-    if (  !previousDate ||
-          previousDate.toDateString() !== date.toDateString() ||
-          change.before.data().week_ending.toDate().toDateString() !==
-          change.after.data().week_ending.toDate().toDateString()) {
-      // Short-circuit evaluation means that at this point either there was
-      // no previous document (i.e. create event) OR that the previous
-      // document's date has changed. The third clause ensures that manual 
-      // changes to week_ending submitted from the client are overwritten.
-      if (date.getDay() === 6) {
-        console.log("writeWeekEnding() date is already a saturday");
-        date.setHours(23,59,59,999);
-        return change.after.ref.set({ week_ending: date }, { merge: true } );
-      } else {
-        console.log("writeWeekEnding() calculating and setting next saturday");
-        const nextsat = new Date(date.valueOf());
-        nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
-        nextsat.setHours(23,59,59,999);
-        return change.after.ref.set({ week_ending: nextsat }, { merge: true } );
-      }
-    } else {
-      // the date was not changed in an update operation
-      console.log("writeWeekEnding() called but date hasn't changed");
-      return null;
+    // The TimeEntry was not deleted
+    let date
+    try {
+      date = change.after.data().date.toDate();
+    } catch (error) {
+      console.log(`unable to read date for TimeEntry with id ${change.after.id}`);
+      throw (error);
     }
+    const weekEnding = Object.prototype.hasOwnProperty.call(change.after.data(), "week_ending") ? change.after.data().week_ending.toDate() : null;
+    let calculatedSaturday;
+    if (date.getDay() === 6) {
+      console.log("writeWeekEnding() date is already a saturday");
+      date.setHours(23,59,59,999);
+      calculatedSaturday = date;
+    } else {
+      console.log("writeWeekEnding() calculating next saturday");
+      const nextsat = new Date(date.valueOf()); // start with the date value
+      nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
+      nextsat.setHours(23,59,59,999);
+      calculatedSaturday = nextsat
+    }
+
+    if (weekEnding === null || weekEnding.toDateString() !== calculatedSaturday.toDateString) {
+      return change.after.ref.set({ week_ending: calculatedSaturday }, { merge: true } );
+    }
+
+    // no changes to be made
+    return null;
   } else {
     // The TimeEntry was deleted, do nothing
     console.log("writeWeekEnding() called but time entry was deleted");
     return null;
   }
-}
+});
