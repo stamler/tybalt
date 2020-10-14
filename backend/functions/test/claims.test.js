@@ -90,7 +90,7 @@ describe("claims module", () => {
       // TODO: test the returned promise is resolved.
       // TODO: assert profiles.set() was called with expected args
     });
-    it("removes multiple claims from one user", async () => {
+    xit("removes multiple claims from one user", async () => {
       const data = {action:"remove", users:["67891011"], claims:["admin", "standard"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {}]);
@@ -112,7 +112,7 @@ describe("claims module", () => {
       // TODO: test the returned promise is resolved.
       // TODO: assert profiles.set() was called with expected args
     });
-    it("removes claims from multiple users", async () => {
+    xit("removes claims from multiple users", async () => {
       const data = {action:"remove", users:["67891011","32517281"], claims: ["audit", "standard"] };
       await modClaims(data, contextWithAdminClaim, db);
       assert.deepEqual(admin.auth().setCustomUserClaims.getCall(0).args,["67891011", {admin:true}]);
