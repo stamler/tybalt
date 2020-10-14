@@ -64,7 +64,7 @@ service cloud.firestore {
           (isPositiveNumber("jobHours") && !(newDoc().timetype == "OR")) ||
           (isPositiveNumber("hours") && !(newDoc().timetype == "OR")) ||
           (isPositiveNumber("mealsHours") && !(newDoc().timetype == "OR")) ||
-          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "uid", "week_ending"]))
+          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "week_ending"]))
         ) &&
 
         // when provided, jobHours require an existing project

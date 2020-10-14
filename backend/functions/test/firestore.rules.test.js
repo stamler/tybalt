@@ -147,10 +147,10 @@ describe("Firestore Rules", () => {
     })
     it("requires Off-Rotation (OR) entries to have only a uid, date, and timetype", async () => {      
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
-      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
-      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", hours: 5}));
-      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", jobHours: 5}));
-      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", mealsHours: 5}));
+      await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR", timetypeName: "Off Rotation (Full Day)"}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", timetypeName: "Off Rotation (Full Day)", hours: 5}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", timetypeName: "Off Rotation (Full Day)", jobHours: 5}));
+      await firebase.assertFails(doc.set({uid:"alice", date:new Date(), timetype:"OR", timetypeName: "Off Rotation (Full Day)", mealsHours: 5}));
       await firebase.assertFails(doc.set({uid:"alice", timetype:"OR"}));
       await firebase.assertFails(doc.set({uid:"alice", date:new Date()}))
     })

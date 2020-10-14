@@ -309,6 +309,12 @@ export default {
         }
       }
 
+      // if timetype is OR, delete hours too (other properties already
+      // deleted in previous if/else statement )
+      if (this.item.timetype === "OR") {
+        delete this.item["hours"];
+      }
+
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
 
       this.item.uid = this.user.uid; // include uid of the creating user
@@ -316,6 +322,8 @@ export default {
         // make the date today if not provided by user
         this.item.date = new Date();
       }
+
+      console.log(this.item);
 
       // Write to database
       if (this.id) {
