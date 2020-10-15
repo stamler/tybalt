@@ -16,7 +16,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-describe("timesheets.js", () => {
+describe("writeWeekEnding()", () => {
   const testApp = firebase.initializeAdminApp({ projectId: MY_PROJECT_ID });
   const db = testApp.firestore();
 
@@ -87,5 +87,34 @@ describe("timesheets.js", () => {
 
   it("exits and logs an error if date field is missing")
   it("exits and logs an informational message if a document was deleted")
+
+});
+
+describe("bundle", async () => {
+  const auth = { uid: "alice", email: "alice@example.com" };
+  const testApp = firebase.initializeTestApp({projectId: MY_PROJECT_ID, auth: {...auth, time: true} });
+
+  // point at the emulator and get the callable
+  testApp.functions().useFunctionsEmulator("http://localhost:5001");
+  const bundleTimesheet = testApp.functions().httpsCallable("bundleTimesheet");
+
+  // TODO: ensure the firestore is seeded with data for each test rather than
+
+  it("bundles a timesheet and deletes the TimeEntries if all conditions are met", async () => {
+    // week ending Oct 10 2020 contains correct data in the local_test_data
+    const week_ending = new Date("2020-10-10");
+    await bundleTimesheet({ week_ending: week_ending.valueOf() })
+    // assert that TimeEntries with week_ending: week_ending don't exist for this uid
+    // assert that the new TimeSheet was created
+  });
+
+
+  it("throws if there are multiple OR entries for the same day in a week"); // week ending Oct 3 2020
+  it("throws if the provided week_ending is not a saturday"); // no data required
+  it("throws if it cannot find a manager in the user's profile"); // create profile without manager_uid 
+  it("throws if a manager_uid is specified that doesn't exist"); // need to stub auth()
+  it("throws if the provided manager doesn't have the necessary permissions"); // neet to stub auth()
+  it("throws if the user doesn't have a profile"); // create entries that are correct but reference an incorrect UID
+  it("throws if it has been called for a week that has no entires"); // send a call to the emulator manually with no data
 
 });
