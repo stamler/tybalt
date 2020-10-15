@@ -5,6 +5,9 @@ chai.use(chaiAsPromised)
 
 const sinon = require('sinon');
 const shared = require('./shared.helpers.test.js');
+const functionsTest = require('firebase-functions-test')();
+functionsTest.mockConfig({tybalt: {radiator: {secret:'asdf'}}});
+
 const functions = require('firebase-functions');
 
 describe("rawLogins module", () => {
@@ -29,7 +32,6 @@ describe("rawLogins module", () => {
     // eslint-disable-next-line prefer-arrow-callback
     beforeEach( function () {
       sandbox = sinon.createSandbox();
-      sandbox.stub(functions, 'config').returns({tybalt: {radiator: {secret:'asdf'}}});
     });
 
     // eslint-disable-next-line prefer-arrow-callback
@@ -134,18 +136,6 @@ describe("rawLogins module", () => {
     });
   });
   describe("removeIfFails keyword", () => {
-    let sandbox;
-    
-    // eslint-disable-next-line prefer-arrow-callback
-    beforeEach( function () {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(functions, 'config').returns({tybalt: {radiator: {secret:'asdf'}}});    
-    });
-
-    // eslint-disable-next-line prefer-arrow-callback
-    afterEach( function () {
-      sandbox.restore();
-    });
 
     it("strips the empty email property and accepts as valid from an otherwise valid login", async () => {
       const db = makeDb();
