@@ -29,7 +29,7 @@ describe("rawLogins module", () => {
     // eslint-disable-next-line prefer-arrow-callback
     beforeEach( function () {
       sandbox = sinon.createSandbox();
-      sandbox.stub(functions, 'config').returns({tybalt: {radiator: {secret:'asdf'}}});    
+      sandbox.stub(functions, 'config').returns({tybalt: {radiator: {secret:'asdf'}}});
     });
 
     // eslint-disable-next-line prefer-arrow-callback
