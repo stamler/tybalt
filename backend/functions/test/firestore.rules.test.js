@@ -64,31 +64,6 @@ function denyAuthenticatedWrite (collection) {
 
 describe("Firestore Rules", () => {
 
-  before(() => {
-    // setup database
-    firebase.clearFirestoreData({ projectId: MY_PROJECT_ID });
-    const timetypes = ["OB", "OH", "OO", "OP", "OR", "OS", "OV", "R"];
-    const divisions = ["B", "BE", "CI"];
-    const projects = ["19-333", "19-444", "19-555", "P18-123"];
-    const batch = dbAdmin.batch();
-    timetypes.forEach(timetype => {
-      const newDoc = dbAdmin.collection("TimeTypes").doc(timetype);
-      batch.set(newDoc, { name: `${timetype} name`});
-    })
-    divisions.forEach(division => {
-      const newDoc = dbAdmin.collection("Divisions").doc(division);
-      batch.set(newDoc, { name: `${division} name`});
-    })
-    projects.forEach(project => {
-      const newDoc = dbAdmin.collection("Projects").doc(project);
-      batch.set(newDoc, { name: `${project} name`});
-    })
-    batch.commit();
-  });
-
-  after(() => {
-  })
-
   describe("Unauthenticated Reads and Writes", () => {
     ["Computers", "Config", "Divisions", "Logins", "Profiles", 
     "Projects", "RawLogins", "TimeEntries", "TimeSheets", 
