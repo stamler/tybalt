@@ -11,16 +11,13 @@ time: true
 The default. Holders of this claim can create TimeEntries, bundle and unbundle
 their own TimeSheets, and release them for approval
 
-time: approver
-Holders of this claim do everything true users can do. Additionaly they can
-approve released timesheets whose manager_uid field matches their uid.
+tapr: true
+Holders of this claim can approve released timesheets whose 
+manager_uid field matches their uid.
 
-time: admin
+tadm: true
 Holders of this claim can export a time-tracking CSV for distribution to 
 accounting for payroll and to admin for invoicing
-TODO: the way the claims are currently architected this role holder cannot
-make their own timesheet or approve other's timesheets. We need more granular
-permissions.
 */
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -71,7 +68,7 @@ exports.bundleTimesheet = async (data, context, db) => {
             throw new functions.https.HttpsError('internal', error.message);  
           }
           const claims = manager.customClaims
-          if (claims && claims['time'] === 'approver') {
+          if (claims && claims['tapr'] === true) {
             // The profile contains a valid manager, build the TimeSheet document
             const timesheet = db.collection("TimeSheets").doc();
             batch.set(timesheet, {
