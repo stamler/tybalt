@@ -21,24 +21,39 @@ accounting for payroll and to admin for invoicing
 */
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const { zonedTimeToUtc } = require('date-fns-tz');
+const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
+// time is ignored in week_ending property of data arg
 exports.bundleTimesheet = async (data, context, db) => {
-    // NB: Dates are not supported in Firebase Functions yet
+    // NB: Dates are not supported in Firebase Functions yet so
+    // data.week_ending is the valueOf() a Date object
     // https://github.com/firebase/firebase-functions/issues/316
 
-    // make week_ending a date and verify it's a Saturday
-    // NB this should be the week_ending in America/Thunder_Bay Timezone
-    // ensure on the client that it's correct, otherwise throw by testing here
-    const week = new Date(data.week_ending);
-    week.setHours(23,59,59,999);
-    if (week.getDay() !== 6) {
+    // Firestore timestamps and JS Date objects represent a point in time and
+    // have no associated time zone info. To determine time zone dependent 
+    // facts like whether a day is a saturday or to set the time specific to
+    // eastern time as desired (for week endings), we must interpret date
+    // in a time zone. Hre we rebase time objects to America/Thunder_Bay to
+    // do manipulations and validate week days, then we change it back. 
+    const tbay_week = utcToZonedTime(new Date(data.week_ending), 'America/Thunder_Bay');
+
+    // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
+    tbay_week.setHours(23, 59, 59, 999);
+
+    // verify tbay_week is a Saturday in America/Thunder_Bay time zone
+    if (tbay_week.getDay() !== 6) {
       throw new functions.https.HttpsError('invalid-argument', 'The week' + 
       ' ending specified is not a Saturday');
     }
-    
+
+    // Convert back to UTC for queries against firestore
+    const week = zonedTimeToUtc(
+      new Date(tbay_week),
+      'America/Thunder_Bay'
+    );
+            
     const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
     if (!timeEntries.empty) {
       console.log("there are TimeEntries, creating a batch");
