@@ -8,6 +8,7 @@
 
 const chai = require('chai')
 const assert = chai.assert;
+const { zonedTimeToUtc } = require('date-fns-tz');
 
 const firebase = require("@firebase/testing");
 const MY_PROJECT_ID = "charade-ca63f";
@@ -28,18 +29,18 @@ describe("writeWeekEnding()", () => {
     await abc.set({ date: new Date("2020-10-09") });
     await foo.set({ date: new Date("2020-07-31") });
     
-    await sleep(2400);
+    await sleep(3000);
     let snap = await abc.get();
     let week_ending = snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-10-10T23:59:59.999Z").valueOf());
+    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
 
     snap = await foo.get();
     week_ending = snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-08-01T23:59:59.999Z").valueOf());
+    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
     return
-  }).timeout(3000);
+  }).timeout(3400);
 
   it("updates a correct week_ending on a modified document", async () => {
     // use the document 'abc' from the first test    
@@ -53,13 +54,13 @@ describe("writeWeekEnding()", () => {
     await sleep(2400);
     let snap = await abc.get();
     let week_ending = snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-10-24T23:59:59.999Z").valueOf());
+    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
 
     snap = await foo.get();
     week_ending = snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-08-01T23:59:59.999Z").valueOf());
+    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
     return
   }).timeout(3000);
 
@@ -75,14 +76,14 @@ describe("writeWeekEnding()", () => {
     await sleep(2400);
     let snap = await abc.get();
     let week_ending = snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-10-24T23:59:59.999Z").valueOf());
+    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
 
     snap = await foo.get();
     week_ending = await snap.get('week_ending');
-
-    assert(week_ending.toDate().valueOf() === new Date("2020-08-01T23:59:59.999Z").valueOf());
-
+    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    return
   }).timeout(3000);
 
   it("exits and logs an error if date field is missing")
