@@ -116,8 +116,6 @@ describe("bundle", async () => {
     assert(!snap.empty);
 
     // run the bundle so we can make assertions about the side effects
-    console.log(week_ending.toString());
-    console.log(week_ending.valueOf());
     await bundleTimesheet({ week_ending: week_ending.valueOf() })
     
     // assert that TimeEntries with week_ending: week_ending don't exist for this uid
