@@ -21,6 +21,7 @@ accounting for payroll and to admin for invoicing
 */
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { zonedTimeToUtc } = require('date-fns-tz');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
@@ -29,6 +30,8 @@ exports.bundleTimesheet = async (data, context, db) => {
     // https://github.com/firebase/firebase-functions/issues/316
 
     // make week_ending a date and verify it's a Saturday
+    // NB this should be the week_ending in America/Thunder_Bay Timezone
+    // ensure on the client that it's correct, otherwise throw by testing here
     const week = new Date(data.week_ending);
     week.setHours(23,59,59,999);
     if (week.getDay() !== 6) {
@@ -128,25 +131,41 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
     // The TimeEntry was not deleted
     let date
     try {
+      // get the date from the TimeEntry
       date = change.after.data().date.toDate();
     } catch (error) {
       console.log(`unable to read date for TimeEntry with id ${change.after.id}`);
       throw (error);
     }
+    // If week_ending is defined on the TimeEntry, get it, otherwise set null
     const weekEnding = Object.prototype.hasOwnProperty.call(change.after.data(), "week_ending") ? change.after.data().week_ending.toDate() : null;
+
+    // Calculate the correct saturday of the week_ending 
+    // (in America/Thunder_Bay timezone)
     let calculatedSaturday;
     if (date.getDay() === 6) {
+      // assume the date is already in America/Thunder_Bay Time Zone
       console.log("writeWeekEnding() date is already a saturday");
-      date.setHours(23,59,59,999);
-      calculatedSaturday = date;
+      calculatedSaturday = zonedTimeToUtc(
+        new Date(
+          date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999
+        ),
+        'America/Thunder_Bay'
+      );
     } else {
       console.log("writeWeekEnding() calculating next saturday");
-      const nextsat = new Date(date.valueOf()); // start with the date value
+      // assume the date is already in America/Thunder_Bay Time Zone
+      const nextsat = new Date(date.valueOf());
       nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
-      nextsat.setHours(23,59,59,999);
-      calculatedSaturday = nextsat
+      calculatedSaturday = zonedTimeToUtc(
+        new Date(
+          nextsat.getFullYear(), nextsat.getMonth(), nextsat.getDate(), 23, 59, 59, 999
+        ),
+        'America/Thunder_Bay'
+      );
     }
 
+    // update the TimeEntry only if required
     if (weekEnding === null || weekEnding.toDateString() !== calculatedSaturday.toDateString) {
       return change.after.ref.set({ week_ending: calculatedSaturday }, { merge: true } );
     }
