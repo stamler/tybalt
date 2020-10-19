@@ -100,12 +100,33 @@ describe("bundle", async () => {
   const bundleTimesheet = testApp.functions().httpsCallable("bundleTimesheet");
 
   // TODO: ensure the firestore is seeded with data for each test rather than
+  const db = testApp.firestore();
 
   it("bundles a timesheet and deletes the TimeEntries if all conditions are met", async () => {
     // week ending Oct 10 2020 contains correct data in the local_test_data
-    const week_ending = new Date("2020-10-10");
+    const week_ending = zonedTimeToUtc(
+      new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay'
+    );
+
+    // assert that TimeEntries with week_ending: week_ending exist for this uid
+    let snap = await db.collection('TimeEntries')
+      .where("week_ending", "==", week_ending)
+      .where("uid", "==", "alice")
+      .get();
+    assert(!snap.empty);
+
+    // run the bundle so we can make assertions about the side effects
+    console.log(week_ending.toString());
+    console.log(week_ending.valueOf());
     await bundleTimesheet({ week_ending: week_ending.valueOf() })
+    
     // assert that TimeEntries with week_ending: week_ending don't exist for this uid
+    snap = await db.collection('TimeEntries')
+      .where("week_ending", "==", week_ending)
+      .where("uid", "==", "alice").get();
+    assert(snap.empty);
+
+    return
     // assert that the new TimeSheet was created
   });
 
