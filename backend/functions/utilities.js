@@ -31,7 +31,7 @@ exports.callableIsAuthorized = function(context, claims, validate, data) {
     context.auth.token[claim] === true )) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError("permission-denied",
-      "Caller must have admin role");
+      `Caller must have one of ${claims.toString()} roles`);
   }
 
   // the shape of data must match the schema
