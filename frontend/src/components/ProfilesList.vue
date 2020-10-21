@@ -16,7 +16,7 @@
         <div class="firstline">
           {{ item.customClaims | keysString }}
         </div>
-        <div class="secondline">Manager: {{ item.manager_uid }}</div>
+        <div class="secondline">Manager: {{ item.manager_name }}</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">

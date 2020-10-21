@@ -45,6 +45,11 @@ exports.deleteProfile = async(user, db) => {
 }
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
+
+// TODO: if the manager_uid changes, write the manager_name property so it
+// can be displayed in the UI
+// TODO: rename this to updateProfile since it triggers every time the profile
+// is updated
 exports.updateClaims = async (change, context) => {
   if (change.after.exists) {
     const originalClaims = change.before.data().customClaims;
