@@ -19,6 +19,7 @@ if (location.hostname === "localhost") {
     host: "localhost:8080",
     ssl: false
   });
+  firebase.functions().useFunctionsEmulator("http://localhost:5001");
 }
 
 export default firebase;
