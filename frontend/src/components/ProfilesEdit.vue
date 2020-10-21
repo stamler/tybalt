@@ -14,8 +14,12 @@
       <input type="text" name="email" v-model="item.email" />
     </span>
     <span class="field">
-      <label for="manager_name">Manager Name</label>
-      <input type="text" name="manager_name" v-model="item.manager_name" />
+      <label for="manager">Manager</label>
+      <select name="manager" v-model="item.manager_uid">
+        <option v-for="m in profiles" :value="m.id" v-bind:key="m.id">
+          {{ m.displayName }}
+        </option>
+      </select>
     </span>
     <span class="field">
       <label for="customClaims">Claims</label>
@@ -34,6 +38,8 @@
 </template>
 
 <script>
+import firebase from "@/firebase";
+const db = firebase.firestore();
 import _ from "lodash";
 
 export default {
@@ -42,7 +48,8 @@ export default {
     return {
       parentPath: null,
       collection: null,
-      item: {}
+      item: {},
+      profiles: []
     };
   },
   computed: {
@@ -77,6 +84,7 @@ export default {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
     this.collection = this.$parent.collection;
+    this.$bind("profiles", db.collection("Profiles"));
   },
   methods: {
     save() {
