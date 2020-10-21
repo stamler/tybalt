@@ -18,6 +18,13 @@
       <input type="text" name="manager_name" v-model="item.manager_name" />
     </span>
     <span class="field">
+      <label for="customClaims">Claims</label>
+      <span v-for="claim in Object.keys(item.customClaims)" v-bind:key="claim">
+        {{ claim }}🚫
+      </span>
+      <span><input type="new_claim"/></span>➕
+    </span>
+    <span class="field">
       <button type="button" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
         Cancel
