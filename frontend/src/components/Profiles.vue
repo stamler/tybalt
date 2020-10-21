@@ -1,6 +1,12 @@
 <template>
   <div>
-    <List />
+    <div class="actions">
+      <router-link class="navlink" to="list">List</router-link>
+      <router-link class="navlink" to="add">
+        New
+      </router-link>
+    </div>
+    <router-view />
   </div>
 </template>
 
@@ -8,10 +14,8 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
-import List from "@/components/ProfilesList.vue";
 
 export default {
-  components: { List },
   data() {
     return {
       collection: db.collection("Profiles"),

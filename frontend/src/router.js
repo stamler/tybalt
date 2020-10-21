@@ -83,7 +83,7 @@ const router = new Router({
         {
           path: "logins",
           name: "Logins",
-          meta: { claims: ["logins", "audit"] },
+          meta: { claims: ["admin"] },
           component: () =>
             import(/* webpackChunkName: "admin" */ "./components/Logins.vue")
         },
@@ -155,9 +155,25 @@ const router = new Router({
         {
           path: "profiles",
           name: "Profiles",
-          meta: { claims: ["profiles", "audit"] },
+          redirect: "/admin/profiles/list",
+          meta: { claims: ["admin"] },
           component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Profiles.vue")
+            import(/* webpackChunkName: "admin" */ "./components/Profiles.vue"),
+          children: [
+            {
+              path: "list",
+              name: "Profiles List",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/ProfilesList.vue")
+            },
+            {
+              path: ":id/edit",
+              props: true,
+              name: "Edit Profile",
+              component: () =>
+                import(/* webpackChunkName: "admin" */ "./components/ProfilesEdit.vue")
+            }
+          ]
         },
         {
           path: "projects",
