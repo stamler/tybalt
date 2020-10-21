@@ -13,11 +13,10 @@
         <div class="headline_wrapper">
           <div class="headline">{{ item.email }}</div>
         </div>
-        <div class="firstline">{{ item.customClaims | keysString }}</div>
-        <div class="secondline">
-          <button>AzureID ➡ User</button>
-          <button>Revoke ↻ tokens</button>
+        <div class="firstline">
+          {{ item.customClaims | keysString }}
         </div>
+        <div class="secondline">Manager: {{ item.manager_uid }}</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
@@ -47,22 +46,6 @@ export default {
   filters: {
     keysString(obj) {
       return obj ? Object.keys(obj).join(", ") : "";
-    },
-    dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },
-    relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    shortDate(date) {
-      return moment(date).format("MMM DD");
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
     }
   },
   data() {
@@ -78,8 +61,7 @@ export default {
       this.$route.matched.length - 1
     ].parent.path;
     this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
+    this.$bind("items", this.$parent.items).catch(error => {
       alert(`Can't load Profiles: ${error.message}`);
     });
   },
