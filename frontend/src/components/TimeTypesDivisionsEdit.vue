@@ -76,7 +76,7 @@ export default {
         this.collection
           .doc(this.id)
           .set(this.item)
-          .then(docRef => {
+          .then(() => {
             this.$router.push(this.parentPath);
           });
       } else {
@@ -87,7 +87,7 @@ export default {
         this.collection
           .doc(new_id)
           .set(this.item)
-          .then(docRef => {
+          .then(() => {
             this.clearEditor();
             // notify user save is done
           });
