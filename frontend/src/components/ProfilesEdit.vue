@@ -22,7 +22,7 @@
       </select>
     </span>
     <span class="field">
-      <label for="customClaims">Claims</label>
+      <label>Claims</label>
       <span
         class="label"
         v-for="(value, claim) in item.customClaims"
@@ -30,7 +30,8 @@
       >
         {{ claim }} <x-circle-icon></x-circle-icon>
       </span>
-      <span><input type="new_claim"/></span>➕
+      <span><input type="new_claim"/></span>
+      <plus-circle-icon></plus-circle-icon>
     </span>
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>
@@ -45,10 +46,11 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import _ from "lodash";
-import { XCircleIcon } from "vue-feather-icons";
+import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
 
 export default {
   components: {
+    PlusCircleIcon,
     XCircleIcon
   },
   props: ["id"],
