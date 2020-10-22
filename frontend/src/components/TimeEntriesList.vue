@@ -21,10 +21,10 @@
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-          ✏️
+          <edit-icon></edit-icon>
         </router-link>
         <router-link to="#" v-on:click.native="del(item.id)">
-          ❌
+          <x-circle-icon></x-circle-icon>
         </router-link>
       </div>
     </div>
@@ -33,8 +33,13 @@
 
 <script>
 import moment from "moment";
+import { EditIcon, XCircleIcon } from "vue-feather-icons";
 
 export default {
+  components: {
+    EditIcon,
+    XCircleIcon
+  },
   filters: {
     shortDate(date) {
       return moment(date).format("MMM DD");

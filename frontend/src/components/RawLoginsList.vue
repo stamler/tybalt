@@ -50,7 +50,7 @@
       </div>
       <div class="rowactionsbox">
         <router-link to="#" v-on:click.native="del(item.id)">
-          ❌
+          <x-circle-icon></x-circle-icon>
         </router-link>
         <router-link to="#" v-on:click.native="cleanup(item.computerName)">
           cleanup
@@ -63,8 +63,12 @@
 <script>
 import moment from "moment";
 import firebase from "@/firebase";
+import { XCircleIcon } from "vue-feather-icons";
 
 export default {
+  components: {
+    XCircleIcon
+  },
   computed: {
     processedItems() {
       return this.items
