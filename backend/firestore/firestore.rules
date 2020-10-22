@@ -91,6 +91,7 @@ service cloud.firestore {
     }
     match /Profiles/{profile} {
       allow read: if hasClaim("admin");
+      // TODO: allow admin write only if fields are allowed using MapDiff
     }
     match /Projects/{project} {
       allow read: if isSignedIn();
