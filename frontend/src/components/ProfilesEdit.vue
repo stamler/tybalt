@@ -25,7 +25,7 @@
       <label for="customClaims">Claims</label>
       <span
         class="label"
-        v-for="claim in Object.keys(item.customClaims)"
+        v-for="(value, claim) in item.customClaims"
         v-bind:key="claim"
       >
         {{ claim }} <x-circle-icon></x-circle-icon>
