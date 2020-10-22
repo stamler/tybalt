@@ -21,7 +21,7 @@
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-          ✏️
+          <edit-icon></edit-icon>
         </router-link>
       </div>
     </div>
@@ -30,8 +30,12 @@
 
 <script>
 import { mapState } from "vuex";
+import { EditIcon } from "vue-feather-icons";
 
 export default {
+  components: {
+    EditIcon
+  },
   computed: {
     ...mapState(["claims"]),
     processedItems() {

@@ -186,6 +186,15 @@ body,
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
 }
+#editor .label {
+  background: rgb(218, 252, 255);
+  border: 1px solid rgb(121, 242, 255);
+  border-radius: 0.25em;
+  padding: 0em 0.2em 0em;
+  font-size: 0.8em;
+  color: rgba(16, 200, 214, 1);
+  margin-right: 0.3em;
+}
 .anchorbox {
   display: flex;
   flex: 0 0 5em;

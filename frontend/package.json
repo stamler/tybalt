@@ -16,6 +16,7 @@
     "jwt-decode": "^2.2.0",
     "moment": "^2.29.0",
     "vue": "^2.6.12",
+    "vue-feather-icons": "^5.1.0",
     "vue-router": "^3.4.4",
     "vuefire": "^2.2.4",
     "vuejs-datepicker": "^1.6.2",

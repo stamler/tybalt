@@ -23,8 +23,12 @@
     </span>
     <span class="field">
       <label for="customClaims">Claims</label>
-      <span v-for="claim in Object.keys(item.customClaims)" v-bind:key="claim">
-        {{ claim }}🚫
+      <span
+        class="label"
+        v-for="claim in Object.keys(item.customClaims)"
+        v-bind:key="claim"
+      >
+        {{ claim }} <x-circle-icon></x-circle-icon>
       </span>
       <span><input type="new_claim"/></span>➕
     </span>
@@ -41,8 +45,12 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import _ from "lodash";
+import { XCircleIcon } from "vue-feather-icons";
 
 export default {
+  components: {
+    XCircleIcon
+  },
   props: ["id"],
   data() {
     return {
