@@ -2,8 +2,7 @@
   <form id="editor">
     <span class="field">
       <label for="id">id</label>
-      <span v-if="editing">{{ id }}</span>
-      <input v-else type="text" name="id" v-model="item.id" />
+      <span>{{ id }}</span>
     </span>
     <span class="field">
       <label for="displayName">Name</label>
@@ -62,11 +61,6 @@ export default {
       profiles: []
     };
   },
-  computed: {
-    editing: function() {
-      return this.id !== undefined;
-    }
-  },
   watch: {
     id: {
       immediate: true,
@@ -109,17 +103,7 @@ export default {
             this.$router.push(this.parentPath);
           });
       } else {
-        // Creating a new item
-        const new_id = this.item.id;
-        delete this.item.id;
-
-        this.collection
-          .doc(new_id)
-          .set(this.item)
-          .then(() => {
-            this.clearEditor();
-            // notify user save is done
-          });
+        alert("New profiles can only be created by the authentication system");
       }
     },
     clearEditor() {

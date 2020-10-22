@@ -91,7 +91,9 @@ service cloud.firestore {
     }
     match /Profiles/{profile} {
       allow read: if hasClaim("admin");
-      // TODO: allow admin write only if fields are allowed using MapDiff
+      allow update: if hasClaim("admin") && newDoc().keys().hasOnly([
+        "manager_uid", "manager_name","displayName","email","customClaims"
+      ])
     }
     match /Projects/{project} {
       allow read: if isSignedIn();

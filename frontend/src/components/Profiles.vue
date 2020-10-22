@@ -2,9 +2,6 @@
   <div>
     <div class="actions">
       <router-link class="navlink" to="list">List</router-link>
-      <router-link class="navlink" to="add">
-        New
-      </router-link>
     </div>
     <router-view />
   </div>
