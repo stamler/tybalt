@@ -27,7 +27,10 @@
         v-for="(value, claim) in item.customClaims"
         v-bind:key="claim"
       >
-        {{ claim }} <x-circle-icon></x-circle-icon>
+        {{ claim }}
+        <span v-on:click="$delete(item.customClaims, claim)">
+          <x-circle-icon></x-circle-icon>
+        </span>
       </span>
       <span><input type="new_claim"/></span>
       <plus-circle-icon></plus-circle-icon>
@@ -105,9 +108,6 @@ export default {
       } else {
         alert("New profiles can only be created by the authentication system");
       }
-    },
-    clearEditor() {
-      this.item = {};
     }
   }
 };
