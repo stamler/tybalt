@@ -32,8 +32,10 @@
           <x-circle-icon></x-circle-icon>
         </span>
       </span>
-      <span><input type="new_claim"/></span>
-      <plus-circle-icon></plus-circle-icon>
+      <span><input type="text" name="newClaim" v-model="newClaim"/></span>
+      <span v-on:click="addClaim(newClaim)">
+        <plus-circle-icon></plus-circle-icon>
+      </span>
     </span>
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>
@@ -61,6 +63,7 @@ export default {
       parentPath: null,
       collection: null,
       item: {},
+      newClaim: null,
       profiles: []
     };
   },
@@ -94,6 +97,10 @@ export default {
     this.$bind("profiles", db.collection("Profiles"));
   },
   methods: {
+    addClaim(claim) {
+      this.$set(this.item.customClaims, claim, true);
+      this.newClaim = null;
+    },
     save() {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       if (this.id) {
