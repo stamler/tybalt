@@ -142,9 +142,9 @@ body,
 .header a:hover {
   text-decoration: underline;
 }
-#sidenav a.router-link-exact-active,
-.actions a.router-link-exact-active,
-.header a.router-link-exact-active {
+#sidenav a.router-link-active,
+.actions a.router-link-active,
+.header a.router-link-active {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 0.25em;
   padding: 0em 0.3em 0em;
