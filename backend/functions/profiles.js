@@ -44,24 +44,31 @@ exports.deleteProfile = async(user, db) => {
   }
 }
 
-// update the Firebase Auth Custom Claims from the corresponding Profile doc
-
+// update the Firebase Auth User that corresponds to the Profile
 // TODO: if the manager_uid changes, write the manager_name property so it
 // can be displayed in the UI
-// TODO: rename this to updateProfile since it triggers every time the profile
-// is updated
-// TODO: use user.updateProfile() method to update Display name if it has changed
-// TODO: use user.updateEmail() method to update email if it has changed
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
 exports.updateAuth = async (change, context) => {
   if (change.after.exists) {
     const before = change.before.data();
     const after = change.after.data();
     const promises = [];
+    const user = await admin.auth().getUser(change.after.id);
     if (!_.isEqual(before.customClaims, after.customClaims)) {
       // customClaims were changed, update them
       // TODO: !!Validate that the customClaims format is correct!!
       promises.push(admin.auth().setCustomUserClaims(change.after.id, after.customClaims));
+    }
+    if (before.email !== after.email || 
+        before.displayName !== after.displayName) {
+      promises.push(admin.auth().updateUser(
+        change.after.id,
+        {
+          displayName: after.displayName,
+          email: after.email
+        }
+        )
+      );
     }
     return Promise.all(promises);
   } else {
