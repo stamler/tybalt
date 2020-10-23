@@ -215,4 +215,18 @@ describe("Firestore Rules", () => {
   })
   describe("TimeSheets", () => {
   })
+  describe("Profiles", () => {
+    it("requires a referenced manager to be valid", async () => {
+      const doc = dbLoggedInAdminClaim.collection("Profiles").doc("alice");
+      await firebase.assertFails(doc.set({displayName: "Alice", email: "alice@example.com", manager_uid: "ronswanson"}));
+      await firebase.assertSucceeds(doc.set({displayName: "Alice", email: "alice@example.com", manager_uid: "alice"}));
+    })
+    it("requires a displayName and email", async () => {
+      const doc = dbLoggedInAdminClaim.collection("Profiles").doc("alice");
+      await firebase.assertFails(doc.set({email: "alice@example.com", manager_uid: "alice"}));
+      await firebase.assertFails(doc.set({displayName: "Alice", manager_uid: "alice"}));
+      await firebase.assertSucceeds(doc.set({displayName: "Alice", email: "alice@example.com", manager_uid: "alice"}));
+    })
+  })
+
 })

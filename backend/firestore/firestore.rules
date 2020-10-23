@@ -91,9 +91,12 @@ service cloud.firestore {
     }
     match /Profiles/{profile} {
       allow read: if hasClaim("admin");
-      allow update: if hasClaim("admin") && newDoc().keys().hasOnly([
-        "manager_uid", "manager_name","displayName","email","customClaims"
-      ])
+      allow update: if hasClaim("admin") && 
+        newDoc().keys().hasOnly([
+          "manager_uid", "manager_name","displayName","email","customClaims"
+        ]) &&
+        newDoc().keys().hasAll(["displayName", "email"]) &&
+        isInCollection("manager_uid","Profiles")
     }
     match /Projects/{project} {
       allow read: if isSignedIn();
