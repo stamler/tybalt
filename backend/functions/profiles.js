@@ -57,16 +57,13 @@ exports.updateAuth = async (change, context) => {
   if (change.after.exists) {
     const originalClaims = change.before.data().customClaims;
     const newClaims = change.after.data().customClaims;
-    if (_.isEqual(originalClaims, newClaims)) {
-      //console.log(`No custom claims changed for ${change.after.ref.path}`);
-      // The Firebase Auth User Record customClaims weren't changed
-      return null;
-    } else {
+    if (!_.isEqual(originalClaims, newClaims)) {
       // The Firebase Auth User Record customClaims were changed, update them
       // TODO: !!Validate that the customClaims format is correct!!
       //console.log(`setting claims for ${change.after.id} to ${JSON.stringify(newClaims)}`);
       return admin.auth().setCustomUserClaims(change.after.id, newClaims);
     }
+    return null;
   } else {
     console.log("A Profile document was deleted. If a corresponding user" +
       " remains in Firebase Auth, recreate it manually");
