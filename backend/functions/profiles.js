@@ -53,7 +53,7 @@ exports.deleteProfile = async(user, db) => {
 // TODO: use user.updateProfile() method to update Display name if it has changed
 // TODO: use user.updateEmail() method to update email if it has changed
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
-exports.updateClaims = async (change, context) => {
+exports.updateAuth = async (change, context) => {
   if (change.after.exists) {
     const originalClaims = change.before.data().customClaims;
     const newClaims = change.after.data().customClaims;

@@ -69,7 +69,7 @@ exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').o
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
-exports.updateClaims = functions.firestore.document('Profiles/{uid}').onWrite(profilesModule.updateClaims);
+exports.updateAuth = functions.firestore.document('Profiles/{uid}').onWrite(profilesModule.updateAuth);
 
 // create a Profile when a new user is created in Firebase Auth
 exports.createProfile = functions.auth.user().onCreate((user) => {
