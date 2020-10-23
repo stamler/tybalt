@@ -153,14 +153,10 @@ export default {
       const assignComputerToUser = firebase
         .functions()
         .httpsCallable("assignComputerToUser");
-      return assignComputerToUser({ computer, user })
-        .then(() => {
-          console.log(`assigned computer ${computer} to ${user}`);
-        })
-        .catch(error => {
-          console.log(error);
-          console.log(`assignComputerTouser(${computer}, ${user}) didn't work`);
-        });
+      return assignComputerToUser({ computer, user }).catch(error => {
+        console.log(error);
+        alert(`assignComputerTouser(${computer}, ${user}) didn't work`);
+      });
     },
     del(item) {
       this.collection
