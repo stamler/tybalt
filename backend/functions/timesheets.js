@@ -53,7 +53,9 @@ exports.bundleTimesheet = async (data, context, db) => {
       new Date(tbay_week),
       'America/Thunder_Bay'
     );
-            
+    
+    // TODO: Check whether a bundled timesheet already exists for this week
+     
     const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
     if (!timeEntries.empty) {
       console.log("there are TimeEntries, creating a batch");
