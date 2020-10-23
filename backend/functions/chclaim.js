@@ -7,9 +7,11 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 async function chclaim(action, email, claim) {
   const user = await admin.auth().getUserByEmail(email);
   const claims = user.customClaims || {}; // preserve existing claims
-  console.log(`${user.displayName}'s existing claims: ${JSON.stringify(claims)}`);
-  if (action !== 'add' && action !== 'remove') {
+  if (action !== 'add' && action !== 'remove' && action !== 'view') {
     return Promise.reject(new Error(`chclaim(): unrecognized action "${action}"`));
+  }
+  if (action === 'view') {
+    return Promise.resolve(claims);
   }
   if (claims && claims[claim] === true) {
     if (action === 'remove') {
@@ -28,19 +30,28 @@ async function chclaim(action, email, claim) {
   return Promise.reject(new Error("Other shit went down"));
 }
 
-if (process.argv.length !== 5) {
-  console.log('Usage: \nnode chclaim.js add <claim> <email>\nnode chclaim.js remove <claim> <email>');
+let claim = null;
+if (process.argv.length === 5) {
+  claim = process.argv[4];
+} else if (process.argv.length !== 4) {
+  console.log('Usage: \nnode chclaim.js add <email> <claim>\nnode chclaim.js remove <email> <claim>\nnode chclaim.js view <email>');
   process.exit(1);
 }
 
-const action = process.argv[2]
-const claim = process.argv[3];
-const email = process.argv[4];
+const action = process.argv[2];
+const email = process.argv[3];
 
 // eslint-disable-next-line promise/always-return
-chclaim(action, email, claim).then(() => {
-  console.log(`${action} ${claim} claim to ${email} success`);
-  process.exit(0);
+chclaim(action, email, claim).then((result) => {
+  if (action === 'view') {
+    for (key in result) {
+      console.log(`${key}: ${result[key]}`);
+    }
+    return Promise.resolve(process.exit(0))
+  } else {
+    console.log(`${action} ${claim} claim to ${email} success`);
+    return Promise.resolve(process.exit(0))
+  }
 }).catch((err) => {
   console.log(`Did not ${action} claim ${claim}: ` + err);
   process.exit(1);
