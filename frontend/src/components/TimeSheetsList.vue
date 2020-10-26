@@ -19,6 +19,13 @@
         >
           <edit-icon></edit-icon>
         </router-link>
+        <router-link
+          v-else
+          v-bind:to="{ name: 'Time Sheets' }"
+          v-on:click.native="recallTs(item.id)"
+        >
+          <rewind-icon></rewind-icon>
+        </router-link>
         <span v-if="item.submitted" class="label">submitted</span>
         <router-link v-else to="#" v-on:click.native="submitTs(item.id)">
           <send-icon></send-icon>
@@ -30,13 +37,14 @@
 
 <script>
 import moment from "moment";
-import { EditIcon, SendIcon } from "vue-feather-icons";
+import { EditIcon, SendIcon, RewindIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 
 export default {
   components: {
     EditIcon,
-    SendIcon
+    SendIcon,
+    RewindIcon
   },
   filters: {
     shortDate(date) {
