@@ -9,10 +9,10 @@ below the 1000 byte limit
 
 time: true 
 The default. Holders of this claim can create TimeEntries, bundle and unbundle
-their own TimeSheets, and release them for approval
+their own TimeSheets, and submit them for approval
 
 tapr: true
-Holders of this claim can approve released timesheets whose 
+Holders of this claim can approve submitted timesheets whose 
 manager_uid field matches their uid.
 
 tadm: true
@@ -130,7 +130,7 @@ exports.bundleTimesheet = async (data, context, db) => {
               week_ending: week,
               manager: manager_uid,
               approved: false,
-              released: false,
+              submitted: false,
               entries,
               nonWorkHoursTally,
               workHoursTally,

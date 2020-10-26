@@ -13,15 +13,15 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-if="!item.released"
+          v-if="!item.submitted"
           v-bind:to="{ name: 'Time Entries' }"
           v-on:click.native="unbundle(item.id)"
         >
           <edit-icon></edit-icon>
         </router-link>
-        <span v-if="item.released" class="label">released</span>
-        <router-link v-else to="#" v-on:click.native="release(item.id)">
-          <check-circle-icon></check-circle-icon>
+        <span v-if="item.submitted" class="label">submitted</span>
+        <router-link v-else to="#" v-on:click.native="submitTs(item.id)">
+          <send-icon></send-icon>
         </router-link>
       </div>
     </div>
@@ -30,13 +30,13 @@
 
 <script>
 import moment from "moment";
-import { EditIcon, CheckCircleIcon } from "vue-feather-icons";
+import { EditIcon, SendIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 
 export default {
   components: {
     EditIcon,
-    CheckCircleIcon
+    SendIcon
   },
   filters: {
     shortDate(date) {
@@ -74,10 +74,10 @@ export default {
         alert(`Error unbundling timesheet: ${error.message}`);
       });
     },
-    release(timesheetId) {
+    submitTs(timesheetId) {
       this.collection
         .doc(timesheetId)
-        .set({ released: true }, { merge: true })
+        .set({ submitted: true }, { merge: true })
         .catch(err => {
           console.log(err);
         });
