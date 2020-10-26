@@ -1,14 +1,19 @@
 <template>
-  <List>
-    <template v-slot:taskAreaDefault></template>
-    <template v-slot:columns="{ item }">
-      <td>{{ item.week_ending.toDate().toISOString() }}</td>
-      <td>{{ item.approved }}</td>
-      <td>{{ item.jobHours }}</td>
-      <td>{{ item.hours }}</td>
-      <td>{{ item.mealsHours }}</td>
-    </template>
-  </List>
+  <div>
+    <div class="actions">
+      <router-link class="navlink" to="list">List</router-link>
+      <router-link
+        v-for="week in saturdays"
+        v-bind:key="week.valueOf()"
+        class="navlink"
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="bundle(week)"
+      >
+        {{ week.getMonth() + 1 }}/{{ week.getDate() }}
+      </router-link>
+    </div>
+    <router-view />
+  </div>
 </template>
 
 <script>
@@ -16,34 +21,52 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import store from "../store";
 import { mapState } from "vuex";
-import List from "./List";
 
 export default {
-  components: { List },
+  methods: {
+    bundle(week) {
+      const bundleTimesheet = firebase
+        .functions()
+        .httpsCallable("bundleTimesheet");
+      return bundleTimesheet({ week_ending: week.getTime() })
+        .then(() => {
+          alert(
+            `Timesheet created for the week ending ${week.getMonth() +
+              1}/${week.getDate()}`
+          );
+        })
+        .catch(error => {
+          alert(`Error bundling timesheet: ${error.message}`);
+        });
+    }
+  },
   data() {
     return {
-      schema: {
-        week_ending: { display: "Week Ending" },
-        approved: { display: "Approved" },
-        jobHours: { display: "Job Hours" },
-        hours: { display: "Non-Job Hours" },
-        mealsHours: { display: "Meal Hours" }
-      },
       collection: db.collection("TimeSheets"),
       items: []
     };
   },
-  computed: mapState(["claims"]),
   created() {
-    // Modify UI based on permissions and business requirements here
-    this.create = this.select = this.del = this.edit =
-      this.claims.hasOwnProperty("users") && this.claims["users"] === true;
     this.$bind(
       "items",
-      db.collection("TimeSheets").where("uid", "==", store.state.user.uid)
+      db
+        .collection("TimeSheets")
+        .where("uid", "==", store.state.user.uid)
+        .orderBy("week_ending", "desc")
     ).catch(error => {
       alert(`Can't load Time Sheets: ${error.message}`);
     });
+  },
+  computed: {
+    ...mapState(["claims"]),
+    saturdays() {
+      const weeks = this.items
+        .filter(x => x.hasOwnProperty("week_ending"))
+        .map(x => x.week_ending.toDate().valueOf());
+      // return an array of unique primitive date values (valueOf())
+      // We must extract Month/Day info in the UI
+      return [...new Set(weeks)].map(x => new Date(x));
+    }
   }
 };
 </script>

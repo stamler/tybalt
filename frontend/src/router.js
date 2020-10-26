@@ -65,8 +65,17 @@ const router = new Router({
         {
           path: "sheets",
           name: "Time Sheets",
+          redirect: "/time/sheets/list",
           component: () =>
-            import(/* webpackChunkName: "time" */ "./components/TimeSheets.vue")
+            import(/* webpackChunkName: "time" */ "./components/TimeSheets.vue"),
+          children: [
+            {
+              path: "list",
+              name: "TimeSheets List",
+              component: () =>
+                import(/* webpackChunkName: "time" */ "./components/TimeSheetsList.vue")
+            }
+          ]
         }
       ]
     },
