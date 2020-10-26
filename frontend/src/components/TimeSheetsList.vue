@@ -82,6 +82,13 @@ export default {
           console.log(err);
         });
     },
+    recallTs(timesheetId) {
+      // TODO: Iff this gets defined later:
+      // A transaction should be used to update the submitted field by
+      // first verifying that approved is false. Similarly an approve
+      // function for the approving manager must use a transaction and
+      // verify that the timesheet is submitted before marking it approved
+    },
     hoursWorked(item) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;
