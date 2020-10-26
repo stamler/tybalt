@@ -53,7 +53,11 @@ exports.updateAuth = async (change, context) => {
     const before = change.before.data();
     const after = change.after.data();
     const promises = [];
-    const user = await admin.auth().getUser(change.after.id);
+    try {
+      const user = await admin.auth().getUser(change.after.id);
+    } catch (error) {
+      console.log(`Error fetching user ${change.after.id}.`, error.message);
+    }
     if (!_.isEqual(before.customClaims, after.customClaims)) {
       // customClaims were changed, update them
       // TODO: !!Validate that the customClaims format is correct!!
