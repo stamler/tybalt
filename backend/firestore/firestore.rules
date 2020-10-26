@@ -112,6 +112,7 @@ service cloud.firestore {
     }
     match /TimeSheets/{sheet} {
       allow read: if hasClaim("time") && uidMatches();
+      allow update: if hasClaim("time") && uidMatches() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]);
     }
     match /TimeTypes/{timetype} {
       allow read: if isSignedIn();
