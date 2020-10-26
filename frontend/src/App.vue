@@ -186,6 +186,7 @@ body,
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
 }
+.listentry .label,
 #editor .label {
   background: rgb(218, 252, 255);
   border: 1px solid rgb(121, 242, 255);

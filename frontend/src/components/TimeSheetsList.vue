@@ -13,12 +13,14 @@
       </div>
       <div class="rowactionsbox">
         <router-link
+          v-if="!item.released"
           v-bind:to="{ name: 'Time Entries' }"
           v-on:click.native="unbundle(item.id)"
         >
           <edit-icon></edit-icon>
         </router-link>
-        <router-link to="#">
+        <span v-if="item.released" class="label">released</span>
+        <router-link v-else to="#" v-on:click.native="release(item.id)">
           <check-circle-icon></check-circle-icon>
         </router-link>
       </div>
@@ -71,6 +73,14 @@ export default {
       return unbundleTimesheet({ id: timesheetId }).catch(error => {
         alert(`Error unbundling timesheet: ${error.message}`);
       });
+    },
+    release(timesheetId) {
+      this.collection
+        .doc(timesheetId)
+        .set({ released: true }, { merge: true })
+        .catch(err => {
+          console.log(err);
+        });
     },
     hoursWorked(item) {
       let workedHours = 0;
