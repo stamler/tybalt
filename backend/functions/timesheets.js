@@ -64,11 +64,45 @@ exports.bundleTimesheet = async (data, context, db) => {
 
       // Put the existing timeEntries into an array then delete from Collection
       const entries = [];
+      const nonWorkHoursTally = {}; // key is timetype, value is total
+      const workHoursTally = { hours:0, jobHours: 0, mealsHours: 0};
+      const divisionsTally = {}; // key is division, value is divisionName
+      const projectsTally = {}; // key is project, value is projectName
       timeEntries.forEach(timeEntry => {
+        const item = timeEntry.data();
+ 
+        if (item.timetype !== 'R') {
+          // Tally the non-work hours
+          if (item.timetype in nonWorkHoursTally) {
+            nonWorkHoursTally[item.timetype] += item.hours;
+          } else {
+            nonWorkHoursTally[item.timetype] = item.hours;
+          }
+        } else {
+          // Tally the work hours
+          if ("hours" in item) {
+            workHoursTally["hours"] += item.hours;
+          }
+          if ("jobHours" in item) {
+            workHoursTally["jobHours"] += item.jobHours;
+          }
+          if ("mealsHours" in item) {
+            workHoursTally["mealsHours"] += item.mealsHours;
+          }
+
+          // Tally the divisions (must be present for work hours)
+          divisionsTally[item.division] = item.divisionName;
+          
+          // Tally the projects (may not be present)
+          if ("project" in item) {
+            projectsTally[item.project] = item.projectName;
+          }
+        }
+
         // timeEntry is of type "QueryDocumentSnapshot"
         // TODO: Possibly remove redundant data here like timetypeName etc.
         // NB if we remove fields, we'll have to re-add them in an unbundle.
-        entries.push(timeEntry.data());
+        entries.push(item);
         batch.delete(timeEntry.ref);
       });
       
@@ -94,9 +128,14 @@ exports.bundleTimesheet = async (data, context, db) => {
             batch.set(timesheet, {
               uid: context.auth.uid,
               week_ending: week,
+              manager: manager_uid,
+              approved: false,
+              released: false,
               entries,
-              manager: manager_uid, 
-              approved: false  
+              nonWorkHoursTally,
+              workHoursTally,
+              divisionsTally,
+              projectsTally,
             });
             return batch.commit();
           } else {

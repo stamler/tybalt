@@ -113,7 +113,7 @@ describe("bundle", async () => {
       .where("week_ending", "==", week_ending)
       .where("uid", "==", "alice")
       .get();
-    assert(!snap.empty);
+    assert(!snap.empty,"There are no matching TimeEntries to bundle in the test data");
 
     // run the bundle so we can make assertions about the side effects
     await bundleTimesheet({ week_ending: week_ending.valueOf() })
@@ -122,10 +122,21 @@ describe("bundle", async () => {
     snap = await db.collection('TimeEntries')
       .where("week_ending", "==", week_ending)
       .where("uid", "==", "alice").get();
-    assert(snap.empty);
+    assert(snap.empty, "Matching TimeEntries remain after bundling.");
 
+    // assert that a new TimeSheet was created
+    snap = await db.collection('TimeSheets')
+      .where("week_ending", "==", week_ending)
+      .where("uid", "==", "alice").get();
+    assert(snap.size === 1, "More or less than 1 bundled Timesheet exists for the query");
+    const timesheet = snap.docs[0].data();
+    assert(timesheet.workHoursTally.hours === 40);
+    assert(timesheet.workHoursTally.jobHours === 0);
+    assert(timesheet.workHoursTally.mealsHours === 0);
+    assert("CI" in timesheet.divisionsTally);
+    assert.isEmpty(timesheet.projectsTally);
+    assert.isEmpty(timesheet.nonWorkHoursTally);
     return
-    // assert that the new TimeSheet was created
   });
 
 
