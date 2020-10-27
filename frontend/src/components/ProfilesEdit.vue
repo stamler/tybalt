@@ -14,7 +14,7 @@
     </span>
     <span class="field">
       <label for="manager">Manager</label>
-      <select name="manager" v-model="item.manager_uid">
+      <select name="manager" v-model="item.managerUid">
         <option v-for="m in profiles" :value="m.id" v-bind:key="m.id">
           {{ m.displayName }}
         </option>

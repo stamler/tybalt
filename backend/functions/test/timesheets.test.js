@@ -142,8 +142,8 @@ describe("bundle", async () => {
 
   it("throws if there are multiple OR entries for the same day in a week"); // week ending Oct 3 2020
   it("throws if the provided weekEnding is not a saturday"); // no data required
-  it("throws if it cannot find a manager in the user's profile"); // create profile without manager_uid 
-  it("throws if a manager_uid is specified that doesn't exist"); // need to stub auth()
+  it("throws if it cannot find a manager in the user's profile"); // create profile without managerUid 
+  it("throws if a managerUid is specified that doesn't exist"); // need to stub auth()
   it("throws if the provided manager doesn't have the necessary permissions"); // neet to stub auth()
   it("throws if the user doesn't have a profile"); // create entries that are correct but reference an incorrect UID
   it("throws if it has been called for a week that has no entires"); // send a call to the emulator manually with no data

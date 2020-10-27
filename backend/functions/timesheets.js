@@ -13,7 +13,7 @@ their own TimeSheets, and submit them for approval
 
 tapr: true
 Holders of this claim can approve submitted timesheets whose 
-manager_uid field matches their uid.
+managerUid field matches their uid.
 
 tadm: true
 Holders of this claim can export a time-tracking CSV for distribution to 
@@ -109,16 +109,16 @@ exports.bundleTimesheet = async (data, context, db) => {
       // Load the profile for the user to get manager information
       const profile = await db.collection("Profiles").doc(context.auth.uid).get()
       if (profile.exists) {
-        const manager_uid = profile.get("manager_uid");
-        if (manager_uid !== undefined) {
+        const managerUid = profile.get("managerUid");
+        if (managerUid !== undefined) {
 
-          // Verify that the auth user with manager_uid exists 
+          // Verify that the auth user with managerUid exists 
           let manager;
           try {
-            manager = await admin.auth().getUser(manager_uid);
+            manager = await admin.auth().getUser(managerUid);
           } catch (error) {
             // The Profile for this user likely specifies an identifier 
-            // (manager_uid) that doesn't correspond to valid User Record.
+            // (managerUid) that doesn't correspond to valid User Record.
             throw new functions.https.HttpsError('internal', error.message);  
           }
           const claims = manager.customClaims
@@ -130,7 +130,7 @@ exports.bundleTimesheet = async (data, context, db) => {
               displayName: profile.get("displayName"),
               managerName: profile.get("managerName"),
               weekEnding: week,
-              manager: manager_uid,
+              manager: managerUid,
               approved: false,
               submitted: false,
               entries,
@@ -146,7 +146,7 @@ exports.bundleTimesheet = async (data, context, db) => {
           }
         } else {
          throw new functions.https.HttpsError('internal', "The Profile for" + 
-          " this user doesn't contain a manager_uid");
+          " this user doesn't contain a managerUid");
         }
       } else {
         throw new functions.https.HttpsError('internal', "A Profile doesn't" + 
