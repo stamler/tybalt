@@ -4,15 +4,6 @@
       <router-link class="navlink" v-bind:to="{ name: 'TimeSheets List' }">
         List
       </router-link>
-      <router-link
-        v-for="week in saturdays"
-        v-bind:key="week.valueOf()"
-        class="navlink"
-        v-bind:to="{ name: 'Time Sheets' }"
-        v-on:click.native="bundle(week)"
-      >
-        {{ week.getMonth() + 1 }}/{{ week.getDate() }}
-      </router-link>
     </div>
     <router-view />
   </div>
@@ -25,23 +16,6 @@ import store from "../store";
 import { mapState } from "vuex";
 
 export default {
-  methods: {
-    bundle(week) {
-      const bundleTimesheet = firebase
-        .functions()
-        .httpsCallable("bundleTimesheet");
-      return bundleTimesheet({ weekEnding: week.getTime() })
-        .then(() => {
-          alert(
-            `Timesheet created for the week ending ${week.getMonth() +
-              1}/${week.getDate()}`
-          );
-        })
-        .catch(error => {
-          alert(`Error bundling timesheet: ${error.message}`);
-        });
-    }
-  },
   data() {
     return {
       collection: db.collection("TimeSheets"),
