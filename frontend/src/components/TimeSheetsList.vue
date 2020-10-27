@@ -80,7 +80,6 @@ export default {
   },
   methods: {
     unbundle(timesheetId) {
-      console.log(`unbundling TimeSheet ${timesheetId}`);
       const unbundleTimesheet = firebase
         .functions()
         .httpsCallable("unbundleTimesheet");
@@ -93,7 +92,7 @@ export default {
         .doc(timesheetId)
         .set({ submitted: true }, { merge: true })
         .catch(err => {
-          console.log(err);
+          alert(`Error submitting timesheet: ${err}`);
         });
     },
     recallTs(timesheetId) {
