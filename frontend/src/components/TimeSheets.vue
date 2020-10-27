@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" to="list">List</router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'TimeSheets List' }">
+        List
+      </router-link>
       <router-link
         v-for="week in saturdays"
         v-bind:key="week.valueOf()"

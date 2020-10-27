@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" v-bind:to="{ name: 'Computers' }">
+      <router-link class="navlink" v-bind:to="{ name: 'Computers List' }">
         List
       </router-link>
       <router-link class="navlink" v-bind:to="{ name: 'Retired Computers' }">
