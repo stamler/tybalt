@@ -34,15 +34,7 @@ export default {
     });
   },
   computed: {
-    ...mapState(["claims"]),
-    saturdays() {
-      const weeks = this.items
-        .filter(x => x.hasOwnProperty("weekEnding"))
-        .map(x => x.weekEnding.toDate().valueOf());
-      // return an array of unique primitive date values (valueOf())
-      // We must extract Month/Day info in the UI
-      return [...new Set(weeks)].map(x => new Date(x));
-    }
+    ...mapState(["claims"])
   }
 };
 </script>
