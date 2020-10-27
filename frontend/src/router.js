@@ -1,9 +1,32 @@
 import Vue from "vue";
 import Router from "vue-router";
-import store from "./store";
 
 // Components
+import Main from "@/views/Main.vue";
 import Me from "@/components/Me.vue";
+import TimeEntries from "@/components/TimeEntries.vue";
+import TimeEntriesList from "@/components/TimeEntriesList.vue";
+import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
+import TimeSheets from "@/components/TimeSheets.vue";
+import TimeSheetsList from "@/components/TimeSheetsList.vue";
+import Logins from "@/components/Logins.vue";
+import RawLogins from "@/components/RawLogins.vue";
+import Computers from "@/components/Computers.vue";
+import ComputersList from "@/components/ComputersList.vue";
+import ComputersDetails from "@/components/ComputersDetails.vue";
+import Users from "@/components/Users.vue";
+import UsersList from "@/components/UsersList.vue";
+import UsersDetails from "@/components/UsersDetails.vue";
+import Profiles from "@/components/Profiles.vue";
+import ProfilesList from "@/components/ProfilesList.vue";
+import ProfilesEdit from "@/components/ProfilesEdit.vue";
+import Projects from "@/components/Projects.vue";
+import ProjectsList from "@/components/ProjectsList.vue";
+import ProjectsEdit from "@/components/ProjectsEdit.vue";
+import Divisions from "@/components/Divisions.vue";
+import TimeTypes from "@/components/TimeTypes.vue";
+import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
+import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
 
 Vue.use(Router);
 
@@ -28,37 +51,31 @@ const router = new Router({
       // route level code-splitting
       // this generates a separate chunk (time.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () =>
-        import(/* webpackChunkName: "time" */ "./views/Main.vue"),
+      component: Main,
       children: [
         {
           path: "entries",
           name: "Time Entries",
           redirect: "/time/entries/list",
-          component: () =>
-            import(/* webpackChunkName: "time" */ "./components/TimeEntries.vue"),
+          component: TimeEntries,
           children: [
             {
               path: "list",
               name: "Time Entries List",
-              // TODO: hide select/edit/del for read-only claims holders
-              component: () =>
-                import(/* webpackChunkName: "time" */ "./components/TimeEntriesList.vue")
+              component: TimeEntriesList
             },
             {
               path: "add",
               name: "Add Time Entry",
               props: { saveUid: true },
-              component: () =>
-                import(/* webpackChunkName: "time" */ "./components/TimeEntriesEdit.vue")
+              component: TimeEntriesEdit
             },
             {
               path: ":id/edit",
               // combine static saveUid prop with route-based id
               props: route => ({ id: route.params.id, saveUid: true }),
               name: "Edit Time Entry",
-              component: () =>
-                import(/* webpackChunkName: "time" */ "./components/TimeEntriesEdit.vue")
+              component: TimeEntriesEdit
             }
           ]
         },
@@ -66,14 +83,12 @@ const router = new Router({
           path: "sheets",
           name: "Time Sheets",
           redirect: "/time/sheets/list",
-          component: () =>
-            import(/* webpackChunkName: "time" */ "./components/TimeSheets.vue"),
+          component: TimeSheets,
           children: [
             {
               path: "list",
               name: "TimeSheets List",
-              component: () =>
-                import(/* webpackChunkName: "time" */ "./components/TimeSheetsList.vue")
+              component: TimeSheetsList
             }
           ]
         }
@@ -83,56 +98,46 @@ const router = new Router({
       path: "/admin",
       name: "Admin",
       redirect: "/admin/logins",
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () =>
-        import(/* webpackChunkName: "admin" */ "./views/Main.vue"),
+      component: Main,
       children: [
         {
           path: "logins",
           name: "Logins",
           meta: { claims: ["admin"] },
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Logins.vue")
+          component: Logins
         },
         {
           path: "rawlogins",
           name: "Raw Logins",
           meta: { claims: ["rawlogins", "audit"] },
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/RawLogins.vue")
+          component: RawLogins
         },
         {
           path: "computers",
           name: "Computers",
           meta: { claims: ["computers", "audit"] },
           redirect: "/admin/computers/list",
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Computers.vue"),
+          component: Computers,
           children: [
             {
               path: "list",
               name: "Computers List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ComputersList.vue")
+              component: ComputersList
             },
             {
               path: "retired",
               name: "Retired Computers",
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true, retired: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ComputersList.vue")
+              component: ComputersList
             },
             {
               path: ":id/details",
               props: true,
               name: "Computer Details",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ComputersDetails.vue")
+              component: ComputersDetails
             }
           ]
         },
@@ -141,23 +146,20 @@ const router = new Router({
           name: "Users",
           meta: { claims: ["users", "audit"] },
           redirect: "/admin/users/list",
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Users.vue"),
+          component: Users,
           children: [
             {
               path: "list",
               name: "Users List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/UsersList.vue")
+              component: UsersList
             },
             {
               path: ":id/details",
               props: true,
               name: "User Details",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/UsersDetails.vue")
+              component: UsersDetails
             }
           ]
         },
@@ -166,21 +168,18 @@ const router = new Router({
           name: "Profiles",
           redirect: "/admin/profiles/list",
           meta: { claims: ["admin"] },
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Profiles.vue"),
+          component: Profiles,
           children: [
             {
               path: "list",
               name: "Profiles List",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ProfilesList.vue")
+              component: ProfilesList
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Profile",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ProfilesEdit.vue")
+              component: ProfilesEdit
             }
           ]
         },
@@ -189,29 +188,25 @@ const router = new Router({
           name: "Projects",
           // TODO: permissions meta (redirect breaks it if placed here)
           redirect: "/admin/projects/list",
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Projects.vue"),
+          component: Projects,
           children: [
             {
               path: "list",
               name: "Projects List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ProjectsList.vue")
+              component: ProjectsList
             },
             {
               path: "add",
               name: "Add Project",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ProjectsEdit.vue")
+              component: ProjectsEdit
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Project",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/ProjectsEdit.vue")
+              component: ProjectsEdit
             }
           ]
         },
@@ -219,29 +214,25 @@ const router = new Router({
           path: "divisions",
           name: "Divisions",
           redirect: "/admin/divisions/list",
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/Divisions.vue"),
+          component: Divisions,
           children: [
             {
               path: "list",
               name: "Divisions List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { edit: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsList.vue")
+              component: TimeTypesDivisionsList
             },
             {
               path: "add",
               name: "Add Division",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
+              component: TimeTypesDivisionsEdit
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Division",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
+              component: TimeTypesDivisionsEdit
             }
           ]
         },
@@ -249,29 +240,25 @@ const router = new Router({
           path: "timetypes",
           name: "Time Types",
           redirect: "/admin/timetypes/list",
-          component: () =>
-            import(/* webpackChunkName: "admin" */ "./components/TimeTypes.vue"),
+          component: TimeTypes,
           children: [
             {
               path: "list",
               name: "Time Types List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { edit: true },
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsList.vue")
+              component: TimeTypesDivisionsList
             },
             {
               path: "add",
               name: "Add Time Type",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
+              component: TimeTypesDivisionsEdit
             },
             {
               path: ":id/edit",
               props: true,
               name: "Edit Time Type",
-              component: () =>
-                import(/* webpackChunkName: "admin" */ "./components/TimeTypesDivisionsEdit.vue")
+              component: TimeTypesDivisionsEdit
             }
           ]
         }
