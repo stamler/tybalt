@@ -93,7 +93,7 @@ service cloud.firestore {
       allow read: if hasClaim("admin");
       allow update: if hasClaim("admin") && 
         newDoc().keys().hasOnly([
-          "manager_uid", "manager_name","displayName","email","customClaims"
+          "manager_uid", "managerName","displayName","email","customClaims"
         ]) &&
         newDoc().keys().hasAll(["displayName", "email"]) &&
         isInCollection("manager_uid","Profiles")

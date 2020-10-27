@@ -9,6 +9,7 @@ import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheets from "@/components/TimeSheets.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
+import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import Logins from "@/components/Logins.vue";
 import RawLogins from "@/components/RawLogins.vue";
 import Computers from "@/components/Computers.vue";
@@ -89,6 +90,12 @@ const router = new Router({
               path: "list",
               name: "TimeSheets List",
               component: TimeSheetsList
+            },
+            {
+              path: ":id/details",
+              props: true,
+              name: "TimeSheet Details",
+              component: TimeSheetsDetails
             }
           ]
         }

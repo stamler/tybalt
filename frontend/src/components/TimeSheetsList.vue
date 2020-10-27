@@ -1,7 +1,11 @@
 <template>
   <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.week_ending.toDate() | shortDate }}</div>
+      <div class="anchorbox">
+        <router-link :to="[parentPath, item.id, 'details'].join('/')">
+          {{ item.week_ending.toDate() | shortDate }}
+        </router-link>
+      </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ hoursWorked(item) }}</div>

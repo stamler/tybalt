@@ -127,6 +127,8 @@ exports.bundleTimesheet = async (data, context, db) => {
             const timesheet = db.collection("TimeSheets").doc();
             batch.set(timesheet, {
               uid: context.auth.uid,
+              displayName: profile.get("displayName"),
+              managerName: profile.get("managerName"),
               week_ending: week,
               manager: manager_uid,
               approved: false,
