@@ -57,7 +57,7 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import moment from "moment";
+import { format, formatDistanceToNow } from "date-fns";
 
 export default {
   props: ["id"],
@@ -71,10 +71,10 @@ export default {
   },
   filters: {
     dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
+      return format(date, "yyyy MMM dd / HH:mm:ss");
     },
     relativeTime(date) {
-      return moment(date).fromNow();
+      return formatDistanceToNow(date, { addSuffix: true });
     },
     systemType(type) {
       const types = {

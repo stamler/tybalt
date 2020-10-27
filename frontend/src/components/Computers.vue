@@ -16,7 +16,6 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
-import moment from "moment";
 
 export default {
   data() {
@@ -43,14 +42,6 @@ export default {
       return (
         this.claims.hasOwnProperty("computers") && this.claims["computers"]
       );
-    }
-  },
-  filters: {
-    dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },
-    relativeTime(date) {
-      return moment(date).fromNow();
     }
   }
 };

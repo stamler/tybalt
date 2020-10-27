@@ -87,7 +87,7 @@
 
 <script>
 import firebase from "@/firebase";
-import moment from "moment";
+import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 
 export default {
@@ -114,13 +114,13 @@ export default {
   },
   filters: {
     dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
+      return format(date, "yyyy MMM dd / HH:mm:ss");
     },
     relativeTime(date) {
-      return moment(date).fromNow();
+      return formatDistanceToNow(date, { addSuffix: true });
     },
     shortDate(date) {
-      return moment(date).format("MMM DD");
+      return format(date, "MMM DD");
     },
     hoursString(item) {
       const hoursArray = [];

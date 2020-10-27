@@ -6,7 +6,6 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
-import moment from "moment";
 import List from "./LoginsList";
 
 export default {
@@ -26,11 +25,6 @@ export default {
         .limit(101)
     };
   },
-  computed: mapState(["claims"]),
-  filters: {
-    relativeTime(date) {
-      return moment(date).fromNow();
-    }
-  }
+  computed: mapState(["claims"])
 };
 </script>

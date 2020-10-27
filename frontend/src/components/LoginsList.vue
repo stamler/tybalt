@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import moment from "moment";
+import { formatDistanceToNow } from "date-fns";
 
 export default {
   computed: {
@@ -33,10 +33,7 @@ export default {
   },
   filters: {
     relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    shortDate(date) {
-      return moment(date).format("MMM DD");
+      return formatDistanceToNow(date, { addSuffix: true });
     },
     hoursString(item) {
       const hoursArray = [];
