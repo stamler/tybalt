@@ -24,7 +24,7 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import moment from "moment";
+import { format, formatDistanceToNow } from "date-fns";
 
 export default {
   props: ["id"],
@@ -38,38 +38,10 @@ export default {
   },
   filters: {
     dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
+      return format(date, "yyyy MMM dd / HH:mm:ss");
     },
     relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    systemType(type) {
-      const types = {
-        1: "Desktop",
-        2: "Mobile",
-        3: "Workstation",
-        4: "Enterprise Server",
-        5: "SOHO Server",
-        6: "Appliance PC",
-        7: "Performance Server",
-        8: "Maximum"
-      };
-      return types[type];
-    },
-    humanFileSize(bytes, si) {
-      var thresh = si ? 1000 : 1024;
-      if (Math.abs(bytes) < thresh) {
-        return bytes + " B";
-      }
-      var units = si
-        ? ["kB", "MB", "GB", "TB", "PB", "EB"]
-        : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
-      var u = -1;
-      do {
-        bytes /= thresh;
-        ++u;
-      } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-      return bytes.toFixed(1) + " " + units[u];
+      return formatDistanceToNow(date, { addSuffix: true });
     }
   },
   watch: {

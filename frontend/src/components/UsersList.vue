@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import moment from "moment";
+import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 
 export default {
@@ -54,20 +54,10 @@ export default {
   },
   filters: {
     dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
+      return format(date, "yyyy MMM dd / HH:mm:ss");
     },
     relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    shortDate(date) {
-      return moment(date).format("MMM DD");
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
+      return formatDistanceToNow(date, { addSuffix: true });
     }
   },
   data() {

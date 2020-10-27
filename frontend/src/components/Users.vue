@@ -12,7 +12,6 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import moment from "moment";
 
 export default {
   data() {
@@ -28,14 +27,6 @@ export default {
       collection: db.collection("Users"),
       items: db.collection("Users")
     };
-  },
-  filters: {
-    dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },
-    relativeTime(date) {
-      return moment(date).fromNow();
-    }
   }
 };
 </script>
