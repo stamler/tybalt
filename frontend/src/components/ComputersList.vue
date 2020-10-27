@@ -154,8 +154,7 @@ export default {
         .functions()
         .httpsCallable("assignComputerToUser");
       return assignComputerToUser({ computer, user }).catch(error => {
-        console.log(error);
-        alert(`assignComputerTouser(${computer}, ${user}) didn't work`);
+        alert(`Computer assignment failed: ${error}`);
       });
     },
     del(item) {
@@ -163,7 +162,7 @@ export default {
         .doc(item)
         .delete()
         .catch(err => {
-          console.log(err);
+          alert(`Error deleting item: ${err}`);
         });
     },
     searchString(item) {

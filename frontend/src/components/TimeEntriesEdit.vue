@@ -319,15 +319,13 @@ export default {
         this.item.date = new Date();
       }
 
-      console.log(this.item);
-
       // Write to database
       if (this.id) {
         // Editing an existing item
         this.collection
           .doc(this.id)
           .set(this.item)
-          .then(docRef => {
+          .then(() => {
             this.$router.push(this.parentPath);
           });
       } else {
@@ -335,7 +333,7 @@ export default {
         this.collection
           .doc()
           .set(this.item)
-          .then(docRef => {
+          .then(() => {
             this.$router.push(this.parentPath);
           });
       }
