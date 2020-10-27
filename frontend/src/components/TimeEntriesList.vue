@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import moment from "moment";
+import { format } from "date-fns";
 import { EditIcon, XCircleIcon } from "vue-feather-icons";
 
 export default {
@@ -42,7 +42,7 @@ export default {
   },
   filters: {
     shortDate(date) {
-      return moment(date).format("MMM DD");
+      return format(date, "MMM dd");
     },
     hoursString(item) {
       const hoursArray = [];

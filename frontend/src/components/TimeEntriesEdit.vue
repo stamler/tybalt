@@ -149,7 +149,7 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
-import moment from "moment";
+import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 
 export default {
@@ -160,12 +160,8 @@ export default {
       dps: {
         // date picker state
         disabled: {
-          to: moment()
-            .subtract(3, "weeks")
-            .toDate(),
-          from: moment()
-            .add(3, "weeks")
-            .toDate()
+          to: subWeeks(new Date(), 4),
+          from: addWeeks(new Date(), 4)
         },
         highlighted: {
           dates: [new Date()]
@@ -209,7 +205,7 @@ export default {
             });
         } else {
           this.item = {
-            date: moment().toDate(),
+            date: new Date(),
             timetype: "R"
           };
           // TODO: add defaultDivision from the User so it's pre-populated

@@ -120,7 +120,7 @@ export default {
       return formatDistanceToNow(date, { addSuffix: true });
     },
     shortDate(date) {
-      return format(date, "MMM DD");
+      return format(date, "MMM dd");
     },
     hoursString(item) {
       const hoursArray = [];

@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import moment from "moment";
+import { format } from "date-fns";
 import { EditIcon, SendIcon, RewindIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 const db = firebase.firestore();
@@ -50,7 +50,7 @@ export default {
   },
   filters: {
     shortDate(date) {
-      return moment(date).format("MMM DD");
+      return format(date, "MMM dd");
     },
     hoursString(item) {
       const hoursArray = [];
