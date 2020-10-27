@@ -41,11 +41,17 @@
         <tr>
           <td colspan="3">Totals</td>
           <td>{{ item.workHoursTally.jobHours }}</td>
-          <td>{{ item.workHoursTally.hours }}</td>
+          <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
           <td>{{ item.workHoursTally.mealsHours }}</td>
         </tr>
       </tfoot>
     </table>
+    <div>
+      <h2>Actions</h2>
+      <button>approve</button> <!-- if tapr claim and submitted true -->
+      <button>submit</button> <!-- if submitted false and uid matches logged in user-->
+      <button>reject</button> <!-- if tapr claim and submitted true -->
+    </div>
   </div>
 </template>
 
@@ -55,6 +61,13 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 export default {
   props: ["id"],
   computed: {
+    offHoursSum() {
+      let total = 0;
+      for (const code in this.item.nonWorkHoursTally) {
+        total += this.item.nonWorkHoursTally[code];
+      }
+      return total;
+    },
     weekStart() {
       if (this.item.weekEnding !== undefined) {
         return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
@@ -92,15 +105,6 @@ export default {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
     this.collection = this.$parent.collection;
-  },
-  methods: {
-    hours(item) {
-      const hours = [];
-      if ("hours" in item) hours.push(`${item.hours} hours`);
-      if ("jobHours" in item) hours.push(`${item.jobHours} job hours`);
-      if ("mealsHours" in item) hours.push(`${item.mealsHours} hours meals`);
-      return hours.join(", ");
-    }
   }
 };
 </script>
