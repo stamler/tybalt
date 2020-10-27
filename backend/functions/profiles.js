@@ -46,6 +46,7 @@ exports.deleteProfile = async(user, db) => {
 
 // update the Firebase Auth User that corresponds to the Profile
 // can be displayed in the UI
+// TODO: rename this function because it also updates managerName in Profile
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
 exports.updateAuth = async (change, context) => {
   if (change.after.exists) {
