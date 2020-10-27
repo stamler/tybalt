@@ -8,7 +8,7 @@
           <div class="byline">{{ hoursOff(item) }}</div>
         </div>
         <div class="firstline">{{ jobs(item) }}</div>
-        <div class="secondline"></div>
+        <div class="secondline">{{ divisions(item) }}</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
@@ -136,7 +136,24 @@ export default {
       }
     },
     jobs(item) {
-      return Object.keys(item.projectsTally).join(", ");
+      const jobs = Object.keys(item.projectsTally)
+        .sort()
+        .join(", ");
+      if (jobs.length > 0) {
+        return `jobs: ${jobs}`;
+      } else {
+        return;
+      }
+    },
+    divisions(item) {
+      const divisions = Object.keys(item.divisionsTally)
+        .sort()
+        .join(", ");
+      if (divisions.length > 0) {
+        return `divisions: ${divisions}`;
+      } else {
+        return;
+      }
     }
   }
 };
