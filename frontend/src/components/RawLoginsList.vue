@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import moment from "moment";
+import { formatDistanceToNow } from "date-fns";
 import firebase from "@/firebase";
 import { XCircleIcon } from "vue-feather-icons";
 
@@ -80,17 +80,7 @@ export default {
   },
   filters: {
     relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    shortDate(date) {
-      return moment(date).format("MMM DD");
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
+      return formatDistanceToNow(date, { addSuffix: true });
     }
   },
   data() {

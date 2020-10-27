@@ -26,7 +26,6 @@
 </template>
 
 <script>
-import moment from "moment";
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 
@@ -42,24 +41,6 @@ export default {
         .filter(
           p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    }
-  },
-  filters: {
-    dateFormat(date) {
-      return moment(date).format("YYYY MMM DD / HH:mm:ss");
-    },
-    relativeTime(date) {
-      return moment(date).fromNow();
-    },
-    shortDate(date) {
-      return moment(date).format("MMM DD");
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
     }
   },
   data() {

@@ -6,7 +6,6 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
-import moment from "moment";
 import List from "./RawLoginsList";
 
 export default {
@@ -42,11 +41,6 @@ export default {
       } catch (error) {
         return "";
       }
-    }
-  },
-  filters: {
-    relativeTime(date) {
-      return moment(date).fromNow();
     }
   }
 };
