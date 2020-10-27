@@ -118,7 +118,7 @@
       />
     </span>
 
-    <!-- This field is for testing only since week_ending should be 
+    <!-- This field is for testing only since weekEnding should be 
     automatically assigned with a trigger cloud function -->
     <!--
     <span class="field">
@@ -130,7 +130,7 @@
         :inline="false"
         :disabledDates="dps.disabled"
         :highlighted="dps.highlighted"
-        v-model="item.week_ending"
+        v-model="item.weekEnding"
       />
     </span>
       -->
@@ -196,12 +196,12 @@ export default {
               this.item = snap.data();
               this.item.date = this.item.date.toDate();
               // Next line is only used for testing, normally hidden in UI
-              // The user shouldn't be manually setting the week_ending because
+              // The user shouldn't be manually setting the weekEnding because
               // this is done using an onWrite() trigger. We can test this
-              // functionality by showing the week_ending field in the UI
+              // functionality by showing the weekEnding field in the UI
               // component above. The next line makes sure the format is a JS
               // date object so the date picker can display and edit it.
-              this.item.week_ending = this.item.week_ending.toDate();
+              this.item.weekEnding = this.item.weekEnding.toDate();
             });
         } else {
           this.item = {

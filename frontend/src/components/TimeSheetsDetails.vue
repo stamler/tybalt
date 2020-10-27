@@ -1,9 +1,9 @@
 <template>
   <div>
     <div>{{ item.displayName }} (reports to {{ item.managerName }})</div>
-    <div v-if="item.week_ending">
+    <div v-if="item.weekEnding">
       Sunday {{ weekStart | shortDate }} to Saturday
-      {{ item.week_ending.toDate() | shortDate }}
+      {{ item.weekEnding.toDate() | shortDate }}
     </div>
     <table>
       <thead>
@@ -56,8 +56,8 @@ export default {
   props: ["id"],
   computed: {
     weekStart() {
-      if (this.item.week_ending !== undefined) {
-        return addMilliseconds(subWeeks(this.item.week_ending.toDate(), 1), 1);
+      if (this.item.weekEnding !== undefined) {
+        return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
       } else {
         return new Date();
       }

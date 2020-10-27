@@ -65,7 +65,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "week_ending",
+          "fieldPath": "weekEnding",
           "order": "ASCENDING"
         },
         {

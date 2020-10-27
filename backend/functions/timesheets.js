@@ -25,10 +25,10 @@ const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
-// time is ignored in week_ending property of data arg
+// time is ignored in weekEnding property of data arg
 exports.bundleTimesheet = async (data, context, db) => {
     // NB: Dates are not supported in Firebase Functions yet so
-    // data.week_ending is the valueOf() a Date object
+    // data.weekEnding is the valueOf() a Date object
     // https://github.com/firebase/firebase-functions/issues/316
 
     // Firestore timestamps and JS Date objects represent a point in time and
@@ -37,7 +37,7 @@ exports.bundleTimesheet = async (data, context, db) => {
     // eastern time as desired (for week endings), we must interpret date
     // in a time zone. Hre we rebase time objects to America/Thunder_Bay to
     // do manipulations and validate week days, then we change it back. 
-    const tbay_week = utcToZonedTime(new Date(data.week_ending), 'America/Thunder_Bay');
+    const tbay_week = utcToZonedTime(new Date(data.weekEnding), 'America/Thunder_Bay');
 
     // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
     tbay_week.setHours(23, 59, 59, 999);
@@ -56,7 +56,7 @@ exports.bundleTimesheet = async (data, context, db) => {
     
     // TODO: Check whether a bundled timesheet already exists for this week
      
-    const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("week_ending", "==", week).orderBy("date", "asc").get();
+    const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("weekEnding", "==", week).orderBy("date", "asc").get();
     if (!timeEntries.empty) {
       console.log("there are TimeEntries, creating a batch");
       // Start a write batch
@@ -129,7 +129,7 @@ exports.bundleTimesheet = async (data, context, db) => {
               uid: context.auth.uid,
               displayName: profile.get("displayName"),
               managerName: profile.get("managerName"),
-              week_ending: week,
+              weekEnding: week,
               manager: manager_uid,
               approved: false,
               submitted: false,
@@ -184,7 +184,7 @@ exports.unbundleTimesheet = async(data, context, db) => {
 };
 
 exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').onWrite( async (change, context) => {
-  // TODO: overwrite any week_ending values submitted from client
+  // TODO: overwrite any weekEnding values submitted from client
   if (change.after.exists) {
     // The TimeEntry was not deleted
     let date
@@ -195,10 +195,10 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
       console.log(`unable to read date for TimeEntry with id ${change.after.id}`);
       throw (error);
     }
-    // If week_ending is defined on the TimeEntry, get it, otherwise set null
-    const weekEnding = Object.prototype.hasOwnProperty.call(change.after.data(), "week_ending") ? change.after.data().week_ending.toDate() : null;
+    // If weekEnding is defined on the TimeEntry, get it, otherwise set null
+    const weekEnding = Object.prototype.hasOwnProperty.call(change.after.data(), "weekEnding") ? change.after.data().weekEnding.toDate() : null;
 
-    // Calculate the correct saturday of the week_ending 
+    // Calculate the correct saturday of the weekEnding 
     // (in America/Thunder_Bay timezone)
     let calculatedSaturday;
     if (date.getDay() === 6) {
@@ -225,7 +225,7 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
 
     // update the TimeEntry only if required
     if (weekEnding === null || weekEnding.toDateString() !== calculatedSaturday.toDateString) {
-      return change.after.ref.set({ week_ending: calculatedSaturday }, { merge: true } );
+      return change.after.ref.set({ weekEnding: calculatedSaturday }, { merge: true } );
     }
 
     // no changes to be made

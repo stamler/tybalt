@@ -29,7 +29,7 @@ export default {
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
-      return bundleTimesheet({ week_ending: week.getTime() })
+      return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
           alert(
             `Timesheet created for the week ending ${week.getMonth() +
@@ -62,8 +62,8 @@ export default {
     ...mapState(["claims"]),
     saturdays() {
       const weeks = this.items
-        .filter(x => x.hasOwnProperty("week_ending"))
-        .map(x => x.week_ending.toDate().valueOf());
+        .filter(x => x.hasOwnProperty("weekEnding"))
+        .map(x => x.weekEnding.toDate().valueOf());
       // return an array of unique primitive date values (valueOf())
       // We must extract Month/Day info in the UI
       return [...new Set(weeks)].map(x => new Date(x));

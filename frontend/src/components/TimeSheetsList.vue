@@ -3,7 +3,7 @@
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
-          {{ item.week_ending.toDate() | shortDate }}
+          {{ item.weekEnding.toDate() | shortDate }}
         </router-link>
       </div>
       <div class="detailsbox">

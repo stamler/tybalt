@@ -65,7 +65,7 @@ exports.usersCreatedDate = functions.firestore.document('Users/{loginId}').onCre
 // Cleanup old RawLogins onCreate
 exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').onCreate(cleanup_trigger);
 
-// add week_ending property to TimeEntries on create or update
+// add weekEnding property to TimeEntries on create or update
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc

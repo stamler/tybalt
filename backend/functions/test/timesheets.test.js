@@ -21,7 +21,7 @@ describe("writeWeekEnding()", () => {
   const testApp = firebase.initializeAdminApp({ projectId: MY_PROJECT_ID });
   const db = testApp.firestore();
 
-  it("adds a correct week_ending to a fresh document", async () => {
+  it("adds a correct weekEnding to a fresh document", async () => {
 
     const abc = await db.collection('TimeEntries').doc('abc');
     const foo = await db.collection('TimeEntries').doc('foo');
@@ -31,18 +31,18 @@ describe("writeWeekEnding()", () => {
     
     await sleep(3000);
     let snap = await abc.get();
-    let week_ending = snap.get('week_ending');
-    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    let weekEnding = snap.get('weekEnding');
+    let utc_weekEnding = zonedTimeToUtc( new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
 
     snap = await foo.get();
-    week_ending = snap.get('week_ending');
-    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    weekEnding = snap.get('weekEnding');
+    utc_weekEnding = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
     return
   }).timeout(3400);
 
-  it("updates a correct week_ending on a modified document", async () => {
+  it("updates a correct weekEnding on a modified document", async () => {
     // use the document 'abc' from the first test    
     // modify the date and verify
     const abc = await db.collection('TimeEntries').doc('abc');
@@ -53,36 +53,36 @@ describe("writeWeekEnding()", () => {
 
     await sleep(2400);
     let snap = await abc.get();
-    let week_ending = snap.get('week_ending');
-    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    let weekEnding = snap.get('weekEnding');
+    let utc_weekEnding = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
 
     snap = await foo.get();
-    week_ending = snap.get('week_ending');
-    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    weekEnding = snap.get('weekEnding');
+    utc_weekEnding = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
     return
   }).timeout(3000);
 
-  it("updates the week_ending if it was modified manually by the client", async () => {
+  it("updates the weekEnding if it was modified manually by the client", async () => {
     // use the document 'abc' from the first and second test    
-    // modify the week_ending and verify
+    // modify the weekEnding and verify
     const abc = await db.collection('TimeEntries').doc('abc');
     const foo = await db.collection('TimeEntries').doc('foo');
 
-    await abc.set({ week_ending: new Date("2020-11-07") }, { merge: true });
-    await foo.set({ week_ending: new Date("2020-08-03") }, { merge: true });
+    await abc.set({ weekEnding: new Date("2020-11-07") }, { merge: true });
+    await foo.set({ weekEnding: new Date("2020-08-03") }, { merge: true });
 
     await sleep(2400);
     let snap = await abc.get();
-    let week_ending = snap.get('week_ending');
-    let utc_week_ending = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    let weekEnding = snap.get('weekEnding');
+    let utc_weekEnding = zonedTimeToUtc( new Date(2020,9,24,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
 
     snap = await foo.get();
-    week_ending = await snap.get('week_ending');
-    utc_week_ending = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
-    assert(week_ending.toDate().valueOf() === utc_week_ending.valueOf());
+    weekEnding = await snap.get('weekEnding');
+    utc_weekEnding = zonedTimeToUtc( new Date(2020,7,1,23,59,59,999), 'America/Thunder_Bay');
+    assert(weekEnding.toDate().valueOf() === utc_weekEnding.valueOf());
     return
   }).timeout(3000);
 
@@ -104,29 +104,29 @@ describe("bundle", async () => {
 
   it("bundles a timesheet and deletes the TimeEntries if all conditions are met", async () => {
     // week ending Oct 10 2020 contains correct data in the local_test_data
-    const week_ending = zonedTimeToUtc(
+    const weekEnding = zonedTimeToUtc(
       new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay'
     );
 
-    // assert that TimeEntries with week_ending: week_ending exist for this uid
+    // assert that TimeEntries with weekEnding: weekEnding exist for this uid
     let snap = await db.collection('TimeEntries')
-      .where("week_ending", "==", week_ending)
+      .where("weekEnding", "==", weekEnding)
       .where("uid", "==", "alice")
       .get();
     assert(!snap.empty,"There are no matching TimeEntries to bundle in the test data");
 
     // run the bundle so we can make assertions about the side effects
-    await bundleTimesheet({ week_ending: week_ending.valueOf() })
+    await bundleTimesheet({ weekEnding: weekEnding.valueOf() })
     
-    // assert that TimeEntries with week_ending: week_ending don't exist for this uid
+    // assert that TimeEntries with weekEnding: weekEnding don't exist for this uid
     snap = await db.collection('TimeEntries')
-      .where("week_ending", "==", week_ending)
+      .where("weekEnding", "==", weekEnding)
       .where("uid", "==", "alice").get();
     assert(snap.empty, "Matching TimeEntries remain after bundling.");
 
     // assert that a new TimeSheet was created
     snap = await db.collection('TimeSheets')
-      .where("week_ending", "==", week_ending)
+      .where("weekEnding", "==", weekEnding)
       .where("uid", "==", "alice").get();
     assert(snap.size === 1, "More or less than 1 bundled Timesheet exists for the query");
     const timesheet = snap.docs[0].data();
@@ -141,7 +141,7 @@ describe("bundle", async () => {
 
 
   it("throws if there are multiple OR entries for the same day in a week"); // week ending Oct 3 2020
-  it("throws if the provided week_ending is not a saturday"); // no data required
+  it("throws if the provided weekEnding is not a saturday"); // no data required
   it("throws if it cannot find a manager in the user's profile"); // create profile without manager_uid 
   it("throws if a manager_uid is specified that doesn't exist"); // need to stub auth()
   it("throws if the provided manager doesn't have the necessary permissions"); // neet to stub auth()
