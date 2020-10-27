@@ -2,7 +2,7 @@
   <div>
     <div>{{ item.displayName }} (reports to {{ item.managerName }})</div>
     <div v-if="item.week_ending">
-      Sunday {{ week_start | shortDate }} to Saturday
+      Sunday {{ weekStart | shortDate }} to Saturday
       {{ item.week_ending.toDate() | shortDate }}
     </div>
     <table>
@@ -55,7 +55,7 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 export default {
   props: ["id"],
   computed: {
-    week_start() {
+    weekStart() {
       if (this.item.week_ending !== undefined) {
         return addMilliseconds(subWeeks(this.item.week_ending.toDate(), 1), 1);
       } else {
@@ -105,12 +105,11 @@ export default {
 };
 </script>
 <style scoped>
-table,
 th,
-thead,
 td,
 tr {
-  border: 1px solid black;
+  text-align: center;
+  background-color: lightgray;
 }
 .anchorbox {
   flex-basis: 6.5em;
