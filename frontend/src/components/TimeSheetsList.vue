@@ -44,6 +44,7 @@
 import { format } from "date-fns";
 import { EditIcon, SendIcon, RewindIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
+import store from "../store";
 const db = firebase.firestore();
 
 export default {
@@ -76,7 +77,14 @@ export default {
       this.$route.matched.length - 1
     ].parent.path;
     this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
+    this.$bind(
+      "items",
+      this.collection
+        .where("uid", "==", store.state.user.uid)
+        .orderBy("weekEnding", "desc")
+    ).catch(error => {
+      alert(`Can't load Time Sheets: ${error.message}`);
+    });
   },
   methods: {
     unbundle(timesheetId) {

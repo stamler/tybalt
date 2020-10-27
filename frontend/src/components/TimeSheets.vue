@@ -12,27 +12,15 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import store from "../store";
 import { mapState } from "vuex";
 
 export default {
   data() {
     return {
-      collection: db.collection("TimeSheets"),
-      items: []
+      collection: db.collection("TimeSheets")
     };
   },
-  created() {
-    this.$bind(
-      "items",
-      db
-        .collection("TimeSheets")
-        .where("uid", "==", store.state.user.uid)
-        .orderBy("weekEnding", "desc")
-    ).catch(error => {
-      alert(`Can't load Time Sheets: ${error.message}`);
-    });
-  },
+  created() {},
   computed: {
     ...mapState(["claims"])
   }
