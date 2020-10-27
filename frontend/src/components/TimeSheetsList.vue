@@ -20,12 +20,13 @@
           <edit-icon></edit-icon>
         </router-link>
         <router-link
-          v-else
+          v-else-if="!item.approved"
           v-bind:to="{ name: 'Time Sheets' }"
           v-on:click.native="recallTs(item.id)"
         >
           <rewind-icon></rewind-icon>
         </router-link>
+        <span v-else class="label">approved</span>
         <span v-if="item.submitted" class="label">submitted</span>
         <router-link v-else to="#" v-on:click.native="submitTs(item.id)">
           <send-icon></send-icon>
@@ -39,6 +40,7 @@
 import moment from "moment";
 import { EditIcon, SendIcon, RewindIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
+const db = firebase.firestore();
 
 export default {
   components: {
@@ -91,11 +93,26 @@ export default {
         });
     },
     recallTs(timesheetId) {
-      // TODO: Iff this gets defined later:
-      // A transaction should be used to update the submitted field by
+      // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve
       // function for the approving manager must use a transaction and
       // verify that the timesheet is submitted before marking it approved
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (tsDoc.data().approved === false) {
+              // timesheet is recallable because it hasn't yet been approved
+              transaction.update(timesheet, { submitted: false });
+            } else {
+              throw "The timesheet was already approved by a manager";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Recall failed: ${error}`);
+        });
     },
     hoursWorked(item) {
       let workedHours = 0;
