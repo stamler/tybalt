@@ -48,7 +48,7 @@ exports.unbundleTimesheet = functions.https.onCall(async (data, context) => {
 //exports.cleanup = functions.https.onCall(async (data, context) => {
 //  return rawLoginsModule.cleanup(data, context, admin.firestore())
 //});
-const cleanup_trigger = function (snap, context) {
+const cleanupTrigger = function (snap, context) {
   return rawLoginsModule.cleanup(snap.data(), context, admin.firestore())
 }
 
@@ -63,7 +63,7 @@ exports.rawLoginsCreatedDate = functions.firestore.document('RawLogins/{loginId}
 exports.usersCreatedDate = functions.firestore.document('Users/{loginId}').onCreate(writeCreated);
 
 // Cleanup old RawLogins onCreate
-exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').onCreate(cleanup_trigger);
+exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').onCreate(cleanupTrigger);
 
 // add weekEnding property to TimeEntries on create or update
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
