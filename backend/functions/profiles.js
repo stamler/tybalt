@@ -45,7 +45,6 @@ exports.deleteProfile = async(user, db) => {
 }
 
 // update the Firebase Auth User that corresponds to the Profile
-// TODO: if the managerUid changes, write the managerName property so it
 // can be displayed in the UI
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
 exports.updateAuth = async (change, context) => {
@@ -73,6 +72,15 @@ exports.updateAuth = async (change, context) => {
         }
         )
       );
+    }
+    // if the managerUid changes, get the correct managerName for it
+    if (before.managerUid !== after.managerUid) {
+      const managerProfile = await admin.firestore().collection("Profiles").doc(after.managerUid).get();
+      if (managerProfile.exists) {
+        promises.push(change.after.ref.set({managerName: managerProfile.get("displayName")}, { merge: true }));
+      } else {
+        throw new Error(`managerUid ${after.managerUid} is not a valid Profile identifier`);
+      }
     }
     return Promise.all(promises);
   } else {
