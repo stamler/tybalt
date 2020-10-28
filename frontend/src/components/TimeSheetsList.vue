@@ -16,6 +16,7 @@
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
+        <!-- Button Label group 1 -->
         <router-link
           v-if="!item.submitted"
           v-bind:to="{ name: 'Time Entries' }"
@@ -24,16 +25,37 @@
           <edit-icon></edit-icon>
         </router-link>
         <router-link
-          v-else-if="!item.approved"
+          v-else-if="!item.approved && approved === undefined"
           v-bind:to="{ name: 'Time Sheets' }"
           v-on:click.native="recallTs(item.id)"
         >
           <rewind-icon></rewind-icon>
         </router-link>
+        <router-link
+          v-else-if="!item.approved && approved === false"
+          v-bind:to="{ name: 'Time Sheets Pending' }"
+          v-on:click.native="approveTs(item.id)"
+        >
+          <check-circle-icon></check-circle-icon>
+        </router-link>
         <span v-else class="label">approved</span>
-        <span v-if="item.submitted" class="label">submitted</span>
-        <router-link v-else to="#" v-on:click.native="submitTs(item.id)">
+
+        <!-- Button Label group 2 -->
+        <span v-if="item.submitted && approved === undefined" class="label">
+          submitted
+        </span>
+        <router-link
+          v-else-if="!item.submitted && approved === undefined"
+          to="#"
+          v-on:click.native="submitTs(item.id)"
+        >
           <send-icon></send-icon>
+        </router-link>
+        <router-link
+          v-else-if="item.submitted && approved === false"
+          v-bind:to="{ name: 'Time Sheets Pending' }"
+        >
+          <x-circle-icon></x-circle-icon>
         </router-link>
       </div>
     </div>
@@ -42,7 +64,13 @@
 
 <script>
 import { format } from "date-fns";
-import { EditIcon, SendIcon, RewindIcon } from "vue-feather-icons";
+import {
+  EditIcon,
+  SendIcon,
+  RewindIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 const db = firebase.firestore();
@@ -52,7 +80,9 @@ export default {
   components: {
     EditIcon,
     SendIcon,
-    RewindIcon
+    RewindIcon,
+    CheckCircleIcon,
+    XCircleIcon
   },
   filters: {
     shortDate(date) {
@@ -116,6 +146,7 @@ export default {
           alert(`Error submitting timesheet: ${err}`);
         });
     },
+    approveTs(timesheetId) {},
     recallTs(timesheetId) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve
