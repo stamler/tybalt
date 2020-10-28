@@ -114,9 +114,21 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /TimeSheets/{sheet} {
-      // TODO: ensure managers can only read submitted timesheets
       allow read: if hasClaim("time") && uidMatches() || hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true;
-      allow update: if hasClaim("time") && uidMatches() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]);
+      // Allow submission by directly editing the 'submitted' field
+      // Prevent settings 'submitted' to false if already 'approved'
+      allow update: if (
+        hasClaim("time") && 
+        uidMatches() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]) &&
+        request.resource.data.submitted == true
+      ) || (
+        hasClaim("time") && 
+        uidMatches() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]) &&
+        request.resource.data.submitted == false &&
+        resource.data.approved == false
+      );
     }
     match /TimeTypes/{timetype} {
       allow read: if isSignedIn();
