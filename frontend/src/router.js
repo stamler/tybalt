@@ -88,13 +88,25 @@ const router = new Router({
           children: [
             {
               path: "list",
-              name: "TimeSheets List",
+              name: "Time Sheets List",
+              component: TimeSheetsList
+            },
+            {
+              path: "pending",
+              name: "Time Sheets Pending",
+              props: { approved: false },
+              component: TimeSheetsList
+            },
+            {
+              path: "approved",
+              name: "Time Sheets Approved",
+              props: { approved: true },
               component: TimeSheetsList
             },
             {
               path: ":id/details",
               props: true,
-              name: "TimeSheet Details",
+              name: "Time Sheet Details",
               component: TimeSheetsDetails
             }
           ]

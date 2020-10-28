@@ -1,8 +1,14 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" v-bind:to="{ name: 'TimeSheets List' }">
+      <router-link class="navlink" v-bind:to="{ name: 'Time Sheets List' }">
         List
+      </router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'Time Sheets Pending' }">
+        Pending
+      </router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'Time Sheets Approved' }">
+        Approved
       </router-link>
     </div>
     <router-view />

@@ -10,6 +10,9 @@ service cloud.firestore {
     function uidMatches() { // requester uid matches field in existing doc
       return request.auth.uid == resource.data.uid;
     }
+    function managerUidMatches() {
+      return request.auth.uid == resource.data.managerUid;
+    }
     function isInCollection(field, collection) {
       return exists(/databases/$(database)/documents/$(collection)/$(request.resource.data[field]))
     }
@@ -111,7 +114,7 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /TimeSheets/{sheet} {
-      allow read: if hasClaim("time") && uidMatches();
+      allow read: if hasClaim("time") && uidMatches() || hasClaim("tapr") && managerUidMatches();
       allow update: if hasClaim("time") && uidMatches() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]);
     }
     match /TimeTypes/{timetype} {

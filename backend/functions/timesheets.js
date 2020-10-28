@@ -130,7 +130,7 @@ exports.bundleTimesheet = async (data, context, db) => {
               displayName: profile.get("displayName"),
               managerName: profile.get("managerName"),
               weekEnding: week,
-              manager: managerUid,
+              managerUid: managerUid,
               approved: false,
               submitted: false,
               entries,

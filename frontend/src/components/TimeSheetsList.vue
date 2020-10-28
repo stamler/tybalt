@@ -48,6 +48,7 @@ import store from "../store";
 const db = firebase.firestore();
 
 export default {
+  props: ["approved"],
   components: {
     EditIcon,
     SendIcon,
@@ -77,14 +78,32 @@ export default {
       this.$route.matched.length - 1
     ].parent.path;
     this.collection = this.$parent.collection;
-    this.$bind(
-      "items",
-      this.collection
-        .where("uid", "==", store.state.user.uid)
-        .orderBy("weekEnding", "desc")
-    ).catch(error => {
-      alert(`Can't load Time Sheets: ${error.message}`);
-    });
+    this.$watch(
+      "approved",
+      () => {
+        if (this.approved === true || this.approved === false) {
+          this.$bind(
+            "items",
+            this.collection
+              .where("managerUid", "==", store.state.user.uid)
+              .where("approved", "==", this.approved)
+              .orderBy("weekEnding", "desc")
+          ).catch(error => {
+            alert(`Can't load Time Sheets: ${error.message}`);
+          });
+        } else {
+          this.$bind(
+            "items",
+            this.collection
+              .where("uid", "==", store.state.user.uid)
+              .orderBy("weekEnding", "desc")
+          ).catch(error => {
+            alert(`Can't load Time Sheets: ${error.message}`);
+          });
+        }
+      },
+      { immediate: true }
+    );
   },
   methods: {
     unbundle(timesheetId) {
