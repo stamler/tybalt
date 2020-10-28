@@ -87,6 +87,7 @@ export default {
             this.collection
               .where("managerUid", "==", store.state.user.uid)
               .where("approved", "==", this.approved)
+              .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
           ).catch(error => {
             alert(`Can't load Time Sheets: ${error.message}`);
