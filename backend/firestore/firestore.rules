@@ -114,7 +114,8 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /TimeSheets/{sheet} {
-      allow read: if hasClaim("time") && uidMatches() || hasClaim("tapr") && managerUidMatches();
+      // TODO: ensure managers can only read submitted timesheets
+      allow read: if hasClaim("time") && uidMatches() || hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true;
       allow update: if hasClaim("time") && uidMatches() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]);
     }
     match /TimeTypes/{timetype} {
