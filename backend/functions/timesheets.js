@@ -133,6 +133,8 @@ exports.bundleTimesheet = async (data, context, db) => {
               managerUid: managerUid,
               locked: false,
               approved: false,
+              rejected: false,
+              rejectionReason: "",
               submitted: false,
               entries,
               nonWorkHoursTally,

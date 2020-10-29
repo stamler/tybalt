@@ -121,7 +121,8 @@ service cloud.firestore {
         hasClaim("time") && 
         uidMatches() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]) &&
-        request.resource.data.submitted == true
+        request.resource.data.submitted == true &&
+        resource.data.rejected == false
       ) || (
         hasClaim("time") && 
         uidMatches() && 
@@ -131,7 +132,14 @@ service cloud.firestore {
       ) || (
         hasClaim("tapr") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved"]) &&
-        request.resource.data.approved == true
+        request.resource.data.approved == true &&
+        resource.data.rejected == false
+      ) || (
+        hasClaim("tapr") &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) &&
+        request.resource.data.rejected == true &&
+        request.resource.data.approved == false &&
+        request.resource.data.rejectionReason.size() > 5
       );
     }
     match /TimeTypes/{timetype} {

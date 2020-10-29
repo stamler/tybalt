@@ -13,7 +13,11 @@
         </div>
         <div class="firstline">{{ jobs(item) }}</div>
         <div class="secondline">{{ divisions(item) }}</div>
-        <div class="thirdline"></div>
+        <div class="thirdline">
+          <span v-if="item.rejected" style="color:red;"
+            >Rejected: {{ item.rejectionReason }}</span
+          >
+        </div>
       </div>
       <div class="rowactionsbox">
         <template v-if="approved === undefined">
@@ -54,12 +58,26 @@
             >
               <check-circle-icon></check-circle-icon>
             </router-link>
-            <router-link v-bind:to="{ name: 'Time Sheets Pending' }">
+            <router-link
+              v-bind:to="{ name: 'Time Sheets Pending' }"
+              v-on:click.native="rejectTs(item.id)"
+            >
               <x-circle-icon></x-circle-icon>
             </router-link>
           </template>
           <template v-else>
             <span class="label">approved</span>
+          </template>
+        </template>
+
+        <template v-if="approved === true">
+          <template v-if="!item.locked">
+            <router-link
+              v-bind:to="{ name: 'Time Sheets Pending' }"
+              v-on:click.native="rejectTs(item.id)"
+            >
+              <x-circle-icon></x-circle-icon>
+            </router-link>
           </template>
         </template>
         <template v-if="item.locked === true">
@@ -164,6 +182,30 @@ export default {
               transaction.update(timesheet, { approved: true });
             } else {
               throw "The timesheet has not been submitted or was recalled";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Approval failed: ${error}`);
+        });
+    },
+    rejectTs(timesheetId) {
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (
+              tsDoc.data().submitted === true &&
+              tsDoc.data().locked === false
+            ) {
+              // timesheet is rejectable because it is submitted and not locked
+              transaction.update(timesheet, {
+                approved: false,
+                rejected: true,
+                rejectionReason: "no reason provided"
+              });
+            } else {
+              throw "The timesheet has not been submitted or is locked";
             }
           });
         })
