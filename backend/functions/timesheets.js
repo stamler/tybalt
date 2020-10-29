@@ -162,6 +162,19 @@ exports.bundleTimesheet = async (data, context, db) => {
 exports.unbundleTimesheet = async(data, context, db) => {
   const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
   if (timeSheet.exists) {
+    if (timeSheet.data().submitted === true) {
+      throw new functions.https.HttpsError('failed-precondition', 'A' + 
+      ' submitted TimeSheet cannot be unbundled');
+    }
+    if (timeSheet.data().approved === true) {
+      throw new functions.https.HttpsError('failed-precondition', 'An' + 
+      ' approved TimeSheet cannot be unbundled');
+    }
+    if (timeSheet.data().locked === true) {
+      throw new functions.https.HttpsError('failed-precondition', 'A' + 
+      ' locked TimeSheet cannot be unbundled');
+    }
+
     console.log("TimeSheet found, creating a batch");
     // Start a write batch
     const batch = db.batch();

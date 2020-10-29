@@ -149,3 +149,9 @@ describe("bundle", async () => {
   it("throws if it has been called for a week that has no entires"); // send a call to the emulator manually with no data
 
 });
+
+describe("unbundle", async () => {
+  it("throws when trying to unbundle a submitted timesheet");
+  it("throws when trying to unbundle an approved timesheet");
+  it("throws when trying to unbundle a locked timesheet");
+});
