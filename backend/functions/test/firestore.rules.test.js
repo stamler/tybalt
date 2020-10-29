@@ -115,6 +115,9 @@ describe("Firestore Rules", () => {
   })
 
   describe("TimeEntries", () => {
+    it("allows owners to read their own Time Entries if they have time claim");
+    it("prevents reading without a time claim");
+    it("prevents reading with a time claim if the owner doesn't match");
     it("requires submitted uid to match the authenticated user id", async () => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), timetype:"OR"}));
@@ -210,11 +213,20 @@ describe("Firestore Rules", () => {
         timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"F18-33-1" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"asdf" }));
-
     })
   })
+
   describe("TimeSheets", () => {
-  })
+    it("allows submission of timesheets by the owner");
+    it("allows recall of timesheets by the owner");
+    it("prevents the owner from recalling approved timesheets");
+    it("prevents the manager from reading timesheets that aren't submitted")
+    it("prevents submission of timesheets by the manager or anybody else");
+    it("prevents rejected timesheets from being submitted or approved");
+    it("prevents recall of timesheets by the manager or anybody else");
+    it("prevents recall of approved timesheets");
+  });
+
   describe("Profiles", () => {
     it("requires a referenced manager to be valid", async () => {
       const doc = dbLoggedInAdminClaim.collection("Profiles").doc("bob");
