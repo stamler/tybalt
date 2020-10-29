@@ -146,7 +146,23 @@ export default {
           alert(`Error submitting timesheet: ${err}`);
         });
     },
-    approveTs(timesheetId) {},
+    approveTs(timesheetId) {
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (tsDoc.data().submitted === true) {
+              // timesheet is approvable because it has been submitted
+              transaction.update(timesheet, { approved: true });
+            } else {
+              throw "The timesheet has not been submitted or was recalled";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Approval failed: ${error}`);
+        });
+    },
     recallTs(timesheetId) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve
