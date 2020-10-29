@@ -16,47 +16,55 @@
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
-        <!-- Button Label group 1 -->
-        <router-link
-          v-if="!item.submitted"
-          v-bind:to="{ name: 'Time Entries' }"
-          v-on:click.native="unbundle(item.id)"
-        >
-          <edit-icon></edit-icon>
-        </router-link>
-        <router-link
-          v-else-if="!item.approved && approved === undefined"
-          v-bind:to="{ name: 'Time Sheets' }"
-          v-on:click.native="recallTs(item.id)"
-        >
-          <rewind-icon></rewind-icon>
-        </router-link>
-        <router-link
-          v-else-if="!item.approved && approved === false"
-          v-bind:to="{ name: 'Time Sheets Pending' }"
-          v-on:click.native="approveTs(item.id)"
-        >
-          <check-circle-icon></check-circle-icon>
-        </router-link>
-        <span v-else class="label">approved</span>
+        <template v-if="approved === undefined">
+          <template v-if="!item.submitted">
+            <router-link
+              v-bind:to="{ name: 'Time Entries' }"
+              v-on:click.native="unbundle(item.id)"
+            >
+              <edit-icon></edit-icon>
+            </router-link>
+            <router-link
+              v-bind:to="{ name: 'Time Sheets' }"
+              v-on:click.native="submitTs(item.id)"
+            >
+              <send-icon></send-icon>
+            </router-link>
+          </template>
+          <template v-else-if="!item.approved">
+            <router-link
+              v-if="!item.approved"
+              v-bind:to="{ name: 'Time Sheets' }"
+              v-on:click.native="recallTs(item.id)"
+            >
+              <rewind-icon></rewind-icon>
+            </router-link>
+            <span class="label">submitted</span>
+          </template>
+          <template v-else>
+            <span class="label">approved</span>
+          </template>
+        </template>
 
-        <!-- Button Label group 2 -->
-        <span v-if="item.submitted && approved === undefined" class="label">
-          submitted
-        </span>
-        <router-link
-          v-else-if="!item.submitted && approved === undefined"
-          to="#"
-          v-on:click.native="submitTs(item.id)"
-        >
-          <send-icon></send-icon>
-        </router-link>
-        <router-link
-          v-else-if="item.submitted && approved === false"
-          v-bind:to="{ name: 'Time Sheets Pending' }"
-        >
-          <x-circle-icon></x-circle-icon>
-        </router-link>
+        <template v-if="approved === false">
+          <template v-if="!item.approved">
+            <router-link
+              v-bind:to="{ name: 'Time Sheets Pending' }"
+              v-on:click.native="approveTs(item.id)"
+            >
+              <check-circle-icon></check-circle-icon>
+            </router-link>
+            <router-link v-bind:to="{ name: 'Time Sheets Pending' }">
+              <x-circle-icon></x-circle-icon>
+            </router-link>
+          </template>
+          <template v-else>
+            <span class="label">approved</span>
+          </template>
+        </template>
+        <template v-if="item.locked === true">
+          <span class="label">locked</span>
+        </template>
       </div>
     </div>
   </div>
