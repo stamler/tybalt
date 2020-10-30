@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "ajv": "^6.12.5",
-    "axios": "^0.20.0",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^1.0.12",
     "firebase-admin": "^9.3.0",
