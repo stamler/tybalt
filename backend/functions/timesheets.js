@@ -144,15 +144,15 @@ exports.bundleTimesheet = async (data, context, db) => {
             });
             return batch.commit();
           } else {
-            throw new functions.https.HttpsError('internal', "The manager" +
+            throw new functions.https.HttpsError('failed-precondition', "The manager" +
               " specified in the Profile doesn't have required permissions");
           }
         } else {
-         throw new functions.https.HttpsError('internal', "The Profile for" + 
+         throw new functions.https.HttpsError('failed-precondition', "The Profile for" + 
           " this user doesn't contain a managerUid");
         }
       } else {
-        throw new functions.https.HttpsError('internal', "A Profile doesn't" + 
+        throw new functions.https.HttpsError('not-found', "A Profile doesn't" + 
         " exist for this user");
       }
     } else {
