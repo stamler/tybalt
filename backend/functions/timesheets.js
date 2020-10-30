@@ -64,7 +64,12 @@ exports.bundleTimesheet = async (data, context, db) => {
       " time sheet can exist for a week. Please edit the existing one.");
     }
 
-    const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("weekEnding", "==", week).orderBy("date", "asc").get();
+    // Look for TimeEntries to bundle
+    const timeEntries = await db.collection("TimeEntries")
+      .where("uid", "==", context.auth.uid)
+      .where("weekEnding", "==", week)
+      .orderBy("date", "asc")
+      .get();
     if (!timeEntries.empty) {
       // Outstanding TimeEntries exist, start the bundling process
       const batch = db.batch();
