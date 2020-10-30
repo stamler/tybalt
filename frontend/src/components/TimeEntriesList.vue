@@ -72,7 +72,7 @@ export default {
         .doc(item)
         .delete()
         .catch(err => {
-          console.log(err);
+          alert(`Error deleting item: ${err}`);
         });
     }
   }

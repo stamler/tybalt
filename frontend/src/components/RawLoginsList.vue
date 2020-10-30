@@ -107,19 +107,15 @@ export default {
         .doc(item)
         .delete()
         .catch(err => {
-          console.log(err);
+          alert(`Error deleting item: ${err}`);
         });
     },
     cleanup(computerName) {
       const data = { computerName };
       const cleanup_old = firebase.functions().httpsCallable("cleanup");
-      cleanup_old(data)
-        .then(result => {
-          console.log(JSON.stringify(result));
-        })
-        .catch(error => {
-          console.log(error);
-        });
+      cleanup_old(data).catch(error => {
+        alert(`Error running cleanup: ${err}`);
+      });
     },
     searchString(item) {
       const fields = Object.values(item);

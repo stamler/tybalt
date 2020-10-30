@@ -150,7 +150,6 @@ export default {
   },
   methods: {
     unbundle(timesheetId) {
-      console.log(`unbundling TimeSheet ${timesheetId}`);
       const unbundleTimesheet = firebase
         .functions()
         .httpsCallable("unbundleTimesheet");
@@ -192,7 +191,7 @@ export default {
           this.selectAll = false;
         })
         .catch(err => {
-          console.log(`Batch failed: ${err}`);
+          alert(`Error deleting item: ${err}`);
         });
     }
   }

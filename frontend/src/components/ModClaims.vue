@@ -24,15 +24,10 @@ export default {
         users: this.$parent.selected
       };
       const modClaims = firebase.functions().httpsCallable("modClaims");
-      modClaims(data)
-        .then(result => {
-          // TODO: get and handle real responses from callable
-          console.log(JSON.stringify(result));
-        })
-        .catch(error => {
-          // TODO: get and handle real responses from callable
-          console.log(error);
-        });
+      modClaims(data).catch(error => {
+        // TODO: get and handle real responses from callable
+        alert(`Error modifying claims: ${error}`);
+      });
     }
   }
 };
