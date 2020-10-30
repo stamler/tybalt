@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@firebase/app": "^0.6.12",
-    "@firebase/auth": "^0.14.9",
-    "@firebase/firestore": "^1.18.0",
-    "@firebase/functions": "^0.4.51",
+    "@firebase/auth": "^0.15.1",
+    "@firebase/firestore": "^2.0.0",
+    "@firebase/functions": "^0.6.0",
     "date-fns": "^2.16.1",
     "vue": "^2.6.12",
     "vue-feather-icons": "^5.1.0",
