@@ -54,12 +54,19 @@ exports.bundleTimesheet = async (data, context, db) => {
       'America/Thunder_Bay'
     );
     
-    // TODO: Check whether a bundled timesheet already exists for this week
-     
+    // Throw if a timesheet already exists for this week
+    const timeSheets = await db.collection("TimeSheets")
+      .where("uid", "==", context.auth.uid)
+      .where("weekEnding", "==", week)
+      .get();
+    if (!timeSheets.empty) {
+      throw new functions.https.HttpsError('failed-precondition', "Only one" +
+      " time sheet can exist for a week. Please edit the existing one.");
+    }
+
     const timeEntries = await db.collection("TimeEntries").where("uid", "==", context.auth.uid).where("weekEnding", "==", week).orderBy("date", "asc").get();
     if (!timeEntries.empty) {
-      console.log("there are TimeEntries, creating a batch");
-      // Start a write batch
+      // Outstanding TimeEntries exist, start the bundling process
       const batch = db.batch();
 
       // Put the existing timeEntries into an array then delete from Collection
@@ -100,8 +107,6 @@ exports.bundleTimesheet = async (data, context, db) => {
         }
 
         // timeEntry is of type "QueryDocumentSnapshot"
-        // TODO: Possibly remove redundant data here like timetypeName etc.
-        // NB if we remove fields, we'll have to re-add them in an unbundle.
         entries.push(item);
         batch.delete(timeEntry.ref);
       });
