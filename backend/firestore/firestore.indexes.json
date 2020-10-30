@@ -87,6 +87,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "approved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "managerUid",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "weekEnding",
           "order": "DESCENDING"
         }
