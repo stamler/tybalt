@@ -29,7 +29,7 @@ describe("writeWeekEnding()", () => {
     await abc.set({ date: new Date("2020-10-09") });
     await foo.set({ date: new Date("2020-07-31") });
     
-    await sleep(3000);
+    await sleep(3300);
     let snap = await abc.get();
     let weekEnding = snap.get('weekEnding');
     let utc_weekEnding = zonedTimeToUtc( new Date(2020,9,10,23,59,59,999), 'America/Thunder_Bay');
