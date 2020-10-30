@@ -7,7 +7,6 @@ admin.initializeApp();
 admin.firestore().settings({timestampsInSnapshots: true});
 
 const rawLoginsModule = require('./rawLogins.js')
-const claimsModule = require('./claims.js')
 const computersModule = require('./computers.js')
 const timesheetsModule = require('./timesheets.js')
 const profilesModule = require('./profiles.js')
@@ -16,17 +15,6 @@ const profilesModule = require('./profiles.js')
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
   rawLoginsModule.handler(req, res, admin.firestore());
-});
-
-// Dump the claims for each user in firebase Authentication to corresponding
-// document in 'Profiles' collection.
-exports.claimsToProfiles = functions.https.onCall(async (data, context) => {
-  return claimsModule.claimsToProfiles(data,context, admin.firestore());
-});
-
-// modify the custom claims in firebase Authentication
-exports.modClaims = functions.https.onCall(async (data, context) => {
-  return claimsModule.modClaims(data, context, admin.firestore());
 });
 
 // assign a user to a computer
