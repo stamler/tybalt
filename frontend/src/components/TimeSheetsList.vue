@@ -29,6 +29,7 @@
               <edit-icon></edit-icon>
             </router-link>
             <router-link
+              v-if="!item.rejected"
               v-bind:to="{ name: 'Time Sheets' }"
               v-on:click.native="submitTs(item.id)"
             >
@@ -53,6 +54,7 @@
         <template v-if="approved === false">
           <template v-if="!item.approved">
             <router-link
+              v-if="!item.rejected"
               v-bind:to="{ name: 'Time Sheets Pending' }"
               v-on:click.native="approveTs(item.id)"
             >
