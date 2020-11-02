@@ -210,7 +210,6 @@ exports.unbundleTimesheet = async(data, context, db) => {
 };
 
 exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').onWrite( async (change, context) => {
-  // TODO: overwrite any weekEnding values submitted from client
   if (change.after.exists) {
     // The TimeEntry was not deleted
     let date
