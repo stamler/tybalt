@@ -27,7 +27,9 @@ const { format } = require('date-fns');
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
 // time is ignored in weekEnding property of data arg
-exports.bundleTimesheet = async (data, context, db) => {
+exports.bundleTimesheet = async (data, context) => {
+    const db = admin.firestore();
+
     // NB: Dates are not supported in Firebase Functions yet so
     // data.weekEnding is the valueOf() a Date object
     // https://github.com/firebase/firebase-functions/issues/316
@@ -189,7 +191,8 @@ exports.bundleTimesheet = async (data, context, db) => {
     }
 };
 
-exports.unbundleTimesheet = async(data, context, db) => {
+exports.unbundleTimesheet = async(data, context) => {
+  const db = admin.firestore();
   const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
   if (timeSheet.exists) {
     if (timeSheet.data().submitted === true) {
@@ -279,3 +282,7 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
     return null;
   }
 });
+
+exports.exportTimesheets = async(data, context) => {
+  const db = admin.firestore();
+}

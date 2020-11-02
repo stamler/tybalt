@@ -23,14 +23,13 @@ exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
 });
 
 // bundle a timesheet
-exports.bundleTimesheet = functions.https.onCall(async (data, context) => {
-  return timesheetsModule.bundleTimesheet(data, context, admin.firestore());
-});
+exports.bundleTimesheet = functions.https.onCall(timesheetsModule.bundleTimesheet);
 
 // unbundle a timesheet
-exports.unbundleTimesheet = functions.https.onCall(async (data, context) => {
-  return timesheetsModule.unbundleTimesheet(data, context, admin.firestore());
-});
+exports.unbundleTimesheet = functions.https.onCall(timesheetsModule.unbundleTimesheet);
+
+// export approved timesheets
+exports.exportTimesheets = functions.https.onCall(timesheetsModule.exportTimesheets);
 
 // cleanup RawLogins with computerName
 //exports.cleanup = functions.https.onCall(async (data, context) => {
