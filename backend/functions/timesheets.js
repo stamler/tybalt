@@ -22,6 +22,7 @@ accounting for payroll and to admin for invoicing
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
+const { format } = require('date-fns');
 
 // The bundleTimesheet groups TimeEntries together 
 // into a timesheet for a given user and week
@@ -76,14 +77,25 @@ exports.bundleTimesheet = async (data, context, db) => {
 
       // Put the existing timeEntries into an array then delete from Collection
       const entries = [];
+      const offRotationDates = [];
       const nonWorkHoursTally = {}; // key is timetype, value is total
       const workHoursTally = { hours:0, jobHours: 0, mealsHours: 0};
       const divisionsTally = {}; // key is division, value is divisionName
       const projectsTally = {}; // key is project, value is projectName
       timeEntries.forEach(timeEntry => {
         const item = timeEntry.data();
- 
-        if (item.timetype !== 'R') {
+        if (item.timetype === 'OR') {
+          // Count the off rotation dates and ensure that there are not two
+          // off rotation entries for a given date.
+          const orDate = new Date(item.date.toDate().setHours(0,0,0,0));
+          if (offRotationDates.includes(orDate.getTime())) {
+            throw new functions.https.HttpsError('failed-precondition', "More than" +
+              ` one Off-Rotation entry exists for ${ format(orDate, "yyyy MMM dd") }`);
+          } else {
+            offRotationDates.push(orDate.getTime());
+          }
+          console.log(offRotationDates.toString());
+        } else if (item.timetype !== 'R') {
           // Tally the non-work hours
           if (item.timetype in nonWorkHoursTally) {
             nonWorkHoursTally[item.timetype] += item.hours;
@@ -116,6 +128,11 @@ exports.bundleTimesheet = async (data, context, db) => {
         batch.delete(timeEntry.ref);
       });
       
+      if (offRotationDates.length > 0) {
+        // TODO: check sum of two previous timesheets to ensure that the 
+        // total isn't greater than 14 days in a two week period
+      }
+
       // Load the profile for the user to get manager information
       const profile = await db.collection("Profiles").doc(context.auth.uid).get()
       if (profile.exists) {
@@ -148,6 +165,7 @@ exports.bundleTimesheet = async (data, context, db) => {
               submitted: false,
               entries,
               nonWorkHoursTally,
+              offRotationDaysTally: offRotationDates.length,
               workHoursTally,
               divisionsTally,
               projectsTally,
@@ -166,8 +184,8 @@ exports.bundleTimesheet = async (data, context, db) => {
         " exist for this user");
       }
     } else {
-      console.log("there are no entries, returning null");
-      return null;
+      throw new functions.https.HttpsError('failed-precondition', "There are" +
+      ` no entries for the week ending ${ format(week, "yyyy MMM dd") }`);
     }
 };
 
