@@ -285,4 +285,42 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
 
 exports.exportTimesheets = async(data, context) => {
   const db = admin.firestore();
+  const tbay_week = utcToZonedTime(new Date(data.weekEnding), 'America/Thunder_Bay');
+
+  // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
+  tbay_week.setHours(23, 59, 59, 999);
+
+  // verify tbay_week is a Saturday in America/Thunder_Bay time zone
+  if (tbay_week.getDay() !== 6) {
+    throw new functions.https.HttpsError('invalid-argument', 'The week' + 
+    ' ending specified is not a Saturday');
+  }
+
+  // Convert back to UTC for queries against firestore
+  const week = zonedTimeToUtc(
+    new Date(tbay_week),
+    'America/Thunder_Bay'
+  );
+
+  const timeSheets = await db.collection("TimeSheets")
+    .where("approved", "==", true)
+    .where("locked", "==", false)
+    .where("weekEnding", "==", week)
+    .get();
+
+  /* TODO: iterate over each Timesheet then create a transaction to verify
+    that all of the approved, submitted values are true, lock them, then
+    create an export document with the week_ending.getTime() as ID. 
+    This will be a map (JSON) which can be exported to CSV as well via another
+    cloud function.
+
+    If an export document already exists, just add the new timesheets to it
+    after locking them in a transaction.
+
+    The idea here is that at some point we can delete locked TimeSheets from
+    the database as they're aggregated into Exports. This assists in data
+    management while preserving values for future use and reducing queries
+  */
 }
+
+exports.generateExportsCSV = async(data, context) => {};
