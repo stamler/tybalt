@@ -1,15 +1,15 @@
 // Entry point for tybalt app
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 admin.initializeApp();
-admin.firestore().settings({timestampsInSnapshots: true});
+admin.firestore().settings({ timestampsInSnapshots: true });
 
-const rawLoginsModule = require('./rawLogins.js')
-const computersModule = require('./computers.js')
-const timesheetsModule = require('./timesheets.js')
-const profilesModule = require('./profiles.js')
+const rawLoginsModule = require("./rawLogins.js");
+const computersModule = require("./computers.js");
+const timesheetsModule = require("./timesheets.js");
+const profilesModule = require("./profiles.js");
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
@@ -23,40 +23,61 @@ exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
 });
 
 // bundle a timesheet
-exports.bundleTimesheet = functions.https.onCall(timesheetsModule.bundleTimesheet);
+exports.bundleTimesheet = functions.https.onCall(
+  timesheetsModule.bundleTimesheet
+);
 
 // unbundle a timesheet
-exports.unbundleTimesheet = functions.https.onCall(timesheetsModule.unbundleTimesheet);
+exports.unbundleTimesheet = functions.https.onCall(
+  timesheetsModule.unbundleTimesheet
+);
 
 // export approved timesheets
-exports.exportTimesheets = functions.https.onCall(timesheetsModule.exportTimesheets);
+exports.exportTimesheets = functions.https.onCall(
+  timesheetsModule.exportTimesheets
+);
 
 // cleanup RawLogins with computerName
 //exports.cleanup = functions.https.onCall(async (data, context) => {
 //  return rawLoginsModule.cleanup(data, context, admin.firestore())
 //});
 const cleanupTrigger = function (snap, context) {
-  return rawLoginsModule.cleanup(snap.data(), context, admin.firestore())
-}
+  return rawLoginsModule.cleanup(snap.data(), context, admin.firestore());
+};
 
 const writeCreated = function (snap, context) {
-  return snap.ref.set({ created: admin.firestore.FieldValue.serverTimestamp() }, { merge: true } );
-}
+  return snap.ref.set(
+    { created: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+};
 
 // Write the created timestamp on created Documents
-exports.computersCreatedDate = functions.firestore.document('Computers/{computerId}').onCreate(writeCreated);
-exports.loginsCreatedDate = functions.firestore.document('Logins/{loginId}').onCreate(writeCreated);
-exports.rawLoginsCreatedDate = functions.firestore.document('RawLogins/{loginId}').onCreate(writeCreated);
-exports.usersCreatedDate = functions.firestore.document('Users/{loginId}').onCreate(writeCreated);
+exports.computersCreatedDate = functions.firestore
+  .document("Computers/{computerId}")
+  .onCreate(writeCreated);
+exports.loginsCreatedDate = functions.firestore
+  .document("Logins/{loginId}")
+  .onCreate(writeCreated);
+exports.rawLoginsCreatedDate = functions.firestore
+  .document("RawLogins/{loginId}")
+  .onCreate(writeCreated);
+exports.usersCreatedDate = functions.firestore
+  .document("Users/{loginId}")
+  .onCreate(writeCreated);
 
 // Cleanup old RawLogins onCreate
-exports.rawLoginsCleanup = functions.firestore.document('RawLogins/{loginId}').onCreate(cleanupTrigger);
+exports.rawLoginsCleanup = functions.firestore
+  .document("RawLogins/{loginId}")
+  .onCreate(cleanupTrigger);
 
 // add weekEnding property to TimeEntries on create or update
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
-exports.updateAuth = functions.firestore.document('Profiles/{uid}').onWrite(profilesModule.updateAuth);
+exports.updateAuth = functions.firestore
+  .document("Profiles/{uid}")
+  .onWrite(profilesModule.updateAuth);
 
 // create a Profile when a new user is created in Firebase Auth
 exports.createProfile = functions.auth.user().onCreate((user) => {
