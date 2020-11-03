@@ -1,7 +1,11 @@
 <template>
   <div>
-    <h1>Time Export</h1>
-    Weeks
+    <div class="actions">
+      <router-link class="navlink" v-bind:to="{ name: 'Time Exports List' }">
+        List
+      </router-link>
+    </div>
+    <router-view />
   </div>
 </template>
 <script>
@@ -12,8 +16,8 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
+      collection: db.collection("TimeExports"),
       timeSheets: db.collection("TimeSheets").where("approved", "==", true).where("locked", "==", false),
-      timeExports: db.collection("TimeExports")
     };
   },
   computed: {

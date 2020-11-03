@@ -10,7 +10,8 @@ import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheets from "@/components/TimeSheets.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
-import TimeExport from "@/components/TimeExport.vue";
+import TimeExports from "@/components/TimeExports.vue";
+import TimeExportsList from "@/components/TimeExportsList.vue";
 import Logins from "@/components/Logins.vue";
 import RawLogins from "@/components/RawLogins.vue";
 import Computers from "@/components/Computers.vue";
@@ -113,9 +114,17 @@ const router = new Router({
           ]
         },
         {
-          path: "export",
-          name: "Time Export",
-          component: TimeExport
+          path: "exports",
+          name: "Time Exports",
+          redirect: "/time/exports/list",
+          component: TimeExports,
+          children: [
+            {
+              path: "list",
+              name: "Time Exports List",
+              component: TimeExportsList
+            }
+          ]
         }
       ]
     },
