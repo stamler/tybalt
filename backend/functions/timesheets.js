@@ -211,6 +211,14 @@ exports.unbundleTimesheet = async (data, context) => {
   const db = admin.firestore();
   const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
   if (timeSheet.exists) {
+    // Ensure the caller is authorized
+    if (timeSheet.data().uid !== context.auth.uid) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "A timesheet can only be unbundled by its owner"
+      );
+    }
+
     if (timeSheet.data().submitted === true) {
       throw new functions.https.HttpsError(
         "failed-precondition",
