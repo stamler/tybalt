@@ -398,7 +398,7 @@ exports.exportTimesheets = async (data, context) => {
       if it doesn't already exist.
         
       The idea here is that at some point we can delete locked TimeSheets from
-      the database as they're aggregated into Exports. This assists in data
+      the database as they're aggregated into TimeExports. This assists in data
       management while preserving values for future use and reducing queries
     */
 
@@ -406,7 +406,7 @@ exports.exportTimesheets = async (data, context) => {
       db.runTransaction(async (transaction) => {
         return transaction.get(timeSheet.ref).then(async (tsSnap) => {
           const weekEnding = tsSnap.get("weekEnding").toDate().getTime();
-          const exportDoc = db.collection("Exports").doc(weekEnding);
+          const exportDoc = db.collection("TimeExports").doc(weekEnding);
           if (
             tsSnap.data().submitted === true &&
             tsSnap.data().approved === true &&
