@@ -283,44 +283,85 @@ exports.writeWeekEnding = functions.firestore.document('TimeEntries/{entryId}').
   }
 });
 
-exports.exportTimesheets = async(data, context) => {
+exports.exportTimesheets = async (data, context) => {
   const db = admin.firestore();
-  const tbay_week = utcToZonedTime(new Date(data.weekEnding), 'America/Thunder_Bay');
+  const tbay_week = utcToZonedTime(
+    new Date(data.weekEnding),
+    "America/Thunder_Bay"
+  );
 
   // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
   tbay_week.setHours(23, 59, 59, 999);
 
   // verify tbay_week is a Saturday in America/Thunder_Bay time zone
   if (tbay_week.getDay() !== 6) {
-    throw new functions.https.HttpsError('invalid-argument', 'The week' + 
-    ' ending specified is not a Saturday');
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The week ending specified is not a Saturday"
+    );
   }
 
   // Convert back to UTC for queries against firestore
-  const week = zonedTimeToUtc(
-    new Date(tbay_week),
-    'America/Thunder_Bay'
-  );
+  const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
-  const timeSheets = await db.collection("TimeSheets")
+  // Look for TimeSheets to export
+  const timeSheets = await db
+    .collection("TimeSheets")
     .where("approved", "==", true)
     .where("locked", "==", false)
     .where("weekEnding", "==", week)
     .get();
 
-  /* TODO: iterate over each Timesheet then create a transaction to verify
-    that all of the approved, submitted values are true, lock them, then
-    create an export document with the week_ending.getTime() as ID. 
-    This will be a map (JSON) which can be exported to CSV as well via another
-    cloud function.
+  if (!timeSheets.empty) {
+    /* TODO: for each Timesheet, run a transaction to verify
+      that submitted & approved are true and that it isn't locked. Then lock it, 
+      and add it as an array element to the timeSheets property of the export
+      document that has week_ending.getTime() as ID. Create the export document
+      if it doesn't already exist.
+        
+      The idea here is that at some point we can delete locked TimeSheets from
+      the database as they're aggregated into Exports. This assists in data
+      management while preserving values for future use and reducing queries
+    */
 
-    If an export document already exists, just add the new timesheets to it
-    after locking them in a transaction.
+    timeSheets.forEach((timeSheet) => {
+      db.runTransaction(async (transaction) => {
+        return transaction.get(timeSheet.ref).then(async (tsSnap) => {
+          const weekEnding = tsSnap.get("weekEnding").toDate().getTime();
+          const exportDoc = db.collection("Exports").doc(weekEnding);
+          if (
+            tsSnap.data().submitted === true &&
+            tsSnap.data().approved === true &&
+            tsSnap.data().locked === false
+          ) {
+            // timesheet is lockable, lock it then add it to the export
+            return transaction
+              .update(timeSheet.ref, { locked: true })
+              .update(exportDoc, {
+                timeSheets: admin.firestore.FieldValue.arrayUnion(
+                  tsSnap.data()
+                ),
+              });
+          } else {
+            throw new Error(
+              "The timesheet has either not been submitted and approved " +
+                "or it was already locked"
+            );
+          }
+        });
+      }).catch((error) => {
+        console.log(`Failed exporting: ${error}`);
+      });
+    });
+  } else {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `There are no approved timesheets for the week ending ${format(
+        week,
+        "yyyy MMM dd"
+      )}`
+    );
+  }
+};
 
-    The idea here is that at some point we can delete locked TimeSheets from
-    the database as they're aggregated into Exports. This assists in data
-    management while preserving values for future use and reducing queries
-  */
-}
-
-exports.generateExportsCSV = async(data, context) => {};
+exports.generateExportsCSV = async (data, context) => {};
