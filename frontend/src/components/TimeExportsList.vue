@@ -2,7 +2,7 @@
   <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.weekEnding.toDate() | shortDate }}
+        {{ item.weekEnding.toDate() | exportDate }}
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
         </router-link>
       </div>
@@ -36,8 +36,8 @@ export default {
     DownloadIcon
   },
   filters: {
-    shortDate(date) {
-      return format(date, "MMM dd");
+    exportDate(date) {
+      return format(date, "EEE MMM dd");
     }
   },
   data() {
