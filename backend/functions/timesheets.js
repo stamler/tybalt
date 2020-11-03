@@ -340,7 +340,28 @@ exports.writeWeekEnding = functions.firestore
   });
 
 exports.exportTimesheets = async (data, context) => {
-  const db = admin.firestore();
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  // caller must have the "tadm" claim
+  if (
+    !(
+      Object.prototype.hasOwnProperty.call(context.auth.token, "tadm") &&
+      context.auth.token["tadm"] === true
+    )
+  ) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      `Caller must have the time administration permission`
+    );
+  }
+
   const tbay_week = utcToZonedTime(
     new Date(data.weekEnding),
     "America/Thunder_Bay"
@@ -361,6 +382,7 @@ exports.exportTimesheets = async (data, context) => {
   const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
   // Look for TimeSheets to export
+  const db = admin.firestore();
   const timeSheets = await db
     .collection("TimeSheets")
     .where("approved", "==", true)
