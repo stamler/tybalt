@@ -17,6 +17,8 @@ const validate = ajv.compile(schema);
 
 // The claimsHandler writes user information under the assigned property of a
 // computer based on a userSourceAnchor and Computer ID
+// TODO: possibly do this in the client with a transaction by opening up
+// appropriate permissions in firestore security rules
 exports.assignComputerToUser = async (data, context, db) => {
   callableIsAuthorized(context, ["computers"], validate, data);
 
