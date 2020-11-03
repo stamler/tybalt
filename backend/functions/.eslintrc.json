@@ -16,7 +16,7 @@
   ],
   "rules": {
     "prettier/prettier": [
-      "error"
+      "warn"
     ],
     // Removed rule "disallow the use of console" from recommended eslint rules
     "no-console": "off",
