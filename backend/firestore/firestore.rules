@@ -113,8 +113,16 @@ service cloud.firestore {
       allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
       allow create: if hasClaim("time") && validTimeEntry();
     }
+    match /TimeExports/{entry} {
+      allow read: if hasClaim("tadm") || hasClaim("admin");
+    }
     match /TimeSheets/{sheet} {
-      allow read: if hasClaim("time") && uidMatches() || hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true;
+      allow read: if (
+        hasClaim("time") && uidMatches() || 
+        hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("tadm") ||
+        hasClaim("admin")
+      );
       // Allow submission by directly editing the 'submitted' field
       // Prevent settings 'submitted' to false if already 'approved'
       allow update: if (
