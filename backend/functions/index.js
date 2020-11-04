@@ -74,6 +74,9 @@ exports.rawLoginsCleanup = functions.firestore
 // add weekEnding property to TimeEntries on create or update
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
 
+// update the corresponding TimeExports document on TimeSheet write
+exports.updateTimeExports = timesheetsModule.updateTimeExports;
+
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
 exports.updateAuth = functions.firestore
   .document("Profiles/{uid}")

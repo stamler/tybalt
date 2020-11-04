@@ -339,6 +339,37 @@ exports.writeWeekEnding = functions.firestore
     }
   });
 
+exports.updateTimeExports = functions.firestore
+  .document("TimeSheets/{timesheetId}")
+  .onWrite(async (change, context) => {
+    const db = admin.firestore();
+    const after = change.after.data();
+    if (
+      change.after.exists &&
+      after.approved !== change.before.data().approved &&
+      after.approved === true &&
+      after.locked === false
+    ) {
+      db.collection("TimeExports")
+        .doc(after.weekEnding.toDate().getTime())
+        .set(
+          {
+            pending: admin.firestore.FieldValue.arrayUnion(change.after.ref),
+          },
+          { merge: true }
+        );
+    } else {
+      db.collection("TimeExports")
+        .doc(after.weekEnding.toDate().getTime())
+        .set(
+          {
+            pending: admin.firestore.FieldValue.arrayRemove(change.after.ref),
+          },
+          { merge: true }
+        );
+    }
+  });
+
 exports.exportTimesheets = async (data, context) => {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
