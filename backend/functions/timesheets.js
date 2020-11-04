@@ -442,7 +442,7 @@ exports.exportTimesheets = async (data, context) => {
   }
 
   // Convert back to UTC for queries against firestore
-  const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
+  const weekEnding = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
   // Look for TimeSheets to export
   const db = admin.firestore();
@@ -450,7 +450,7 @@ exports.exportTimesheets = async (data, context) => {
     .collection("TimeSheets")
     .where("approved", "==", true)
     .where("locked", "==", false)
-    .where("weekEnding", "==", week)
+    .where("weekEnding", "==", weekEnding)
     .get();
 
   if (!timeSheets.empty) {
@@ -465,11 +465,28 @@ exports.exportTimesheets = async (data, context) => {
       management while preserving values for future use and reducing queries
     */
 
+    // Get the TimeExports doc if it exists, otherwise create it.
+    const querySnap = await db
+      .collection("TimeExports")
+      .where("weekEnding", "==", weekEnding)
+      .get();
+
+    let timeExportsDocRef;
+    if (querySnap.size > 1) {
+      throw new Error(
+        `There is more than one document in TimeExports for weekEnding ${weekEnding}`
+      );
+    } else if (querySnap.size === 1) {
+      timeExportsDocRef = querySnap.docs[0].ref;
+    } else {
+      throw new Error(
+        `There is no TimeExports document for weekEnding ${weekEnding}`
+      );
+    }
+
     timeSheets.forEach((timeSheet) => {
       db.runTransaction(async (transaction) => {
         return transaction.get(timeSheet.ref).then(async (tsSnap) => {
-          const weekEnding = tsSnap.get("weekEnding").toDate().getTime();
-          const exportDoc = db.collection("TimeExports").doc(weekEnding);
           if (
             tsSnap.data().submitted === true &&
             tsSnap.data().approved === true &&
@@ -478,7 +495,7 @@ exports.exportTimesheets = async (data, context) => {
             // timesheet is lockable, lock it then add it to the export
             return transaction
               .update(timeSheet.ref, { locked: true })
-              .update(exportDoc, {
+              .update(timeExportsDocRef, {
                 timeSheets: admin.firestore.FieldValue.arrayUnion(
                   tsSnap.data()
                 ),
