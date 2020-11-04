@@ -9,14 +9,19 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline"></div>
-          <div class="byline">{{ item.pending.length }} time sheets pending export</div>
+          <div class="byline"></div>
         </div>
-        <div class="firstline"></div>
-        <div class="secondline"></div>
+        <div class="firstline" v-if="item.pending !== undefined">{{ item.pending.length }} time sheets pending export</div>
+        <div class="secondline" v-if="item.timeSheets !== undefined">{{ item.timeSheets.length }} time sheets exported</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
-        <refresh-cw-icon></refresh-cw-icon>
+        <router-link
+          v-bind:to="{ name: 'Time Exports' }"
+          v-on:click.native="exportTimesheets(item.weekEnding)"
+        >
+          <refresh-cw-icon></refresh-cw-icon>
+        </router-link>
         <download-icon></download-icon>
       </div>
     </div>
@@ -55,6 +60,16 @@ export default {
     this.$bind("items", this.collection).catch(error => {
       alert(`Can't load TimeExports: ${error.message}`);
     });
+  },
+  methods: {
+    exportTimesheets(weekEnding) {
+      const exportTimesheets = firebase
+        .functions()
+        .httpsCallable("exportTimesheets");
+      return exportTimesheets({ weekEnding: weekEnding.toDate().getTime() }).catch(error => {
+        alert(`Error exporting timesheets: ${error.message}`);
+      });
+    }
   }
 };
 </script>
