@@ -80,11 +80,11 @@ exports.updateAuth = functions.firestore
   .onWrite(profilesModule.updateAuth);
 
 // create a Profile when a new user is created in Firebase Auth
-exports.createProfile = functions.auth.user().onCreate((user) => {
-  return profilesModule.createProfile(user, admin.firestore());
-});
+exports.createProfile = functions.auth
+  .user()
+  .onCreate(profilesModule.createProfile);
 
 // delete a Profile when a user is deleted in Firebase Auth
-exports.deleteProfile = functions.auth.user().onDelete((user) => {
-  return profilesModule.deleteProfile(user, admin.firestore());
-});
+exports.deleteProfile = functions.auth
+  .user()
+  .onDelete(profilesModule.deleteProfile);

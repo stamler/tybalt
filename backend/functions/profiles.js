@@ -15,8 +15,9 @@
 const admin = require("firebase-admin");
 const _ = require("lodash");
 
-// Create the corresponding Profile document when an auth user is deleted
-exports.createProfile = async (user, db) => {
+// Create the corresponding Profile document when an auth user is created
+exports.createProfile = async (user) => {
+  const db = admin.firestore();
   const customClaims = { time: true };
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
 
@@ -34,7 +35,8 @@ exports.createProfile = async (user, db) => {
 };
 
 // Delete the corresponding Profile document when an auth user is deleted
-exports.deleteProfile = async (user, db) => {
+exports.deleteProfile = async (user) => {
+  const db = admin.firestore();
   try {
     await db.collection("Profiles").doc(user.uid).delete();
   } catch (error) {
