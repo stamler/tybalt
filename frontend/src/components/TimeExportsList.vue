@@ -2,14 +2,14 @@
   <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.weekEnding.toDate() | exportDate }}
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
+          {{ item.weekEnding.toDate() | exportDate }}
         </router-link>
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline"></div>
-          <div class="byline"></div>
+          <div class="byline">{{ item.pending.length }} time sheets pending export</div>
         </div>
         <div class="firstline"></div>
         <div class="secondline"></div>

@@ -347,41 +347,49 @@ exports.updateTimeExports = functions.firestore
     const beforeApproved = change.before.exists
       ? change.before.data().approved
       : false;
+    const weekEnding = change.before.exists
+      ? change.before.data().weekEnding.toDate()
+      : after.weekEnding.toDate();
+
+    // Get the TimeExports doc if it exists, otherwise create it.
+    const querySnap = await db
+      .collection("TimeExports")
+      .where("weekEnding", "==", weekEnding)
+      .get();
+
+    let timeExportsDocRef;
+    if (querySnap.size > 1) {
+      throw new Error(
+        `There is more than one document in TimeExports for weekEnding ${weekEnding}`
+      );
+    } else if (querySnap.size === 1) {
+      timeExportsDocRef = querySnap.docs[0].ref;
+    } else {
+      timeExportsDocRef = db.collection("TimeExports").doc();
+      await timeExportsDocRef.set({ weekEnding });
+    }
+
     if (
       change.after.exists &&
       after.approved !== beforeApproved &&
       after.approved === true &&
       after.locked === false
     ) {
-      const key = format(
-        utcToZonedTime(after.weekEnding.toDate(), "America/Thunder_Bay"),
-        "yyyy-MMM-dd-HHmmss"
+      timeExportsDocRef.set(
+        {
+          pending: admin.firestore.FieldValue.arrayUnion(change.after.ref.path),
+        },
+        { merge: true }
       );
-      db.collection("TimeExports")
-        .doc(key)
-        .set(
-          {
-            pending: admin.firestore.FieldValue.arrayUnion(
-              change.after.ref.path
-            ),
-          },
-          { merge: true }
-        );
     } else {
-      const key = format(
-        utcToZonedTime(after.weekEnding.toDate(), "America/Thunder_Bay"),
-        "yyyy-MMM-dd-HHmmss"
+      timeExportsDocRef.set(
+        {
+          pending: admin.firestore.FieldValue.arrayRemove(
+            change.after.ref.path
+          ),
+        },
+        { merge: true }
       );
-      db.collection("TimeExports")
-        .doc(key)
-        .set(
-          {
-            pending: admin.firestore.FieldValue.arrayRemove(
-              change.after.ref.path
-            ),
-          },
-          { merge: true }
-        );
     }
   });
 
