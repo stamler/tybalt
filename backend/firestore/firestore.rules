@@ -103,7 +103,7 @@ service cloud.firestore {
     }
     match /Projects/{project} {
       allow read: if isSignedIn();
-      allow write: if hasClaim("admin");
+      allow write: if hasClaim("proj");
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");
