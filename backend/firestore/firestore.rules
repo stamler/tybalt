@@ -28,6 +28,9 @@ service cloud.firestore {
     function hasValidWorkrecord() {
       return "workrecord" in newDoc() && newDoc().workrecord.matches('[FKQ][0-9]{2}-[0-9]{3,}(-[0-9]+)?');
     }
+    function hasValidProposal() {
+      return "proposal" in newDoc() && newDoc().proposal.matches('P[0-9]{2}-[0-9]{3,}');
+    }
     function validTimeEntry() {
       // TODO: Boolean Simplification
       return
@@ -101,9 +104,9 @@ service cloud.firestore {
         newDoc().keys().hasAll(["displayName", "email"]) &&
         isInCollection("managerUid","Profiles")
     }
-    match /Projects/{project} {
+    match /Projects/{projectId} {
       allow read: if isSignedIn();
-      allow write: if hasClaim("proj");
+      allow write: if hasClaim("proj") && ( isMissing("proposal") || hasValidProposal());
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");
