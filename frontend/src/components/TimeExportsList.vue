@@ -11,8 +11,8 @@
           <div class="headline"></div>
           <div class="byline"></div>
         </div>
-        <div class="firstline" v-if="item.pending !== undefined">{{ item.pending.length }} time sheets pending export</div>
-        <div class="secondline" v-if="item.timeSheets !== undefined">{{ item.timeSheets.length }} time sheets exported</div>
+        <div class="firstline" v-if="item.pending !== undefined && item.pending.length > 0">{{ item.pending.length }} time sheets pending export</div>
+        <div class="secondline" v-if="item.timeSheets !== undefined && item.timeSheets.length > 0">{{ item.timeSheets.length }} time sheets exported</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
