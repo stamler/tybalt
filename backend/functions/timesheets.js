@@ -344,26 +344,41 @@ exports.updateTimeExports = functions.firestore
   .onWrite(async (change, context) => {
     const db = admin.firestore();
     const after = change.after.data();
+    const beforeApproved = change.before.exists
+      ? change.before.data().approved
+      : false;
     if (
       change.after.exists &&
-      after.approved !== change.before.data().approved &&
+      after.approved !== beforeApproved &&
       after.approved === true &&
       after.locked === false
     ) {
+      const key = format(
+        utcToZonedTime(after.weekEnding.toDate(), "America/Thunder_Bay"),
+        "yyyy-MMM-dd-HHmmss"
+      );
       db.collection("TimeExports")
-        .doc(after.weekEnding.toDate().getTime())
+        .doc(key)
         .set(
           {
-            pending: admin.firestore.FieldValue.arrayUnion(change.after.ref),
+            pending: admin.firestore.FieldValue.arrayUnion(
+              change.after.ref.path
+            ),
           },
           { merge: true }
         );
     } else {
+      const key = format(
+        utcToZonedTime(after.weekEnding.toDate(), "America/Thunder_Bay"),
+        "yyyy-MMM-dd-HHmmss"
+      );
       db.collection("TimeExports")
-        .doc(after.weekEnding.toDate().getTime())
+        .doc(key)
         .set(
           {
-            pending: admin.firestore.FieldValue.arrayRemove(change.after.ref),
+            pending: admin.firestore.FieldValue.arrayRemove(
+              change.after.ref.path
+            ),
           },
           { merge: true }
         );
