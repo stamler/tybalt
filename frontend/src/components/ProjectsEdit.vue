@@ -97,6 +97,8 @@ export default {
           .set(this.item)
           .then(() => {
             this.$router.push(this.parentPath);
+          }).catch(error => {
+            alert(`Editing failed: ${error.message}`);
           });
       } else {
         // Creating a new item
@@ -109,6 +111,8 @@ export default {
           .then(() => {
             this.clearEditor();
             // notify user save is done
+          }).catch(error => {
+            alert(`Creating failed: ${error.message}`);
           });
       }
     },
