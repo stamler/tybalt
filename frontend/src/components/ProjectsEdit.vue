@@ -17,7 +17,7 @@
       <label for="client">Client</label>
       <input type="text" name="client" v-model="item.client" />
     </span>
-    <span class="field" v-if="item.id && !item.id.startsWith('P')">
+    <span class="field" v-if="item.id && !item.id.startsWith('P') || editing && !id.startsWith('P')">
       <!-- Hide if id is proposal (starts with 'P') -->
       <!-- TODO: Restrict to existing proposals -->
       <label for="proposal">Proposal</label>
