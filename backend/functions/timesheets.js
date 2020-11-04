@@ -514,8 +514,8 @@ exports.exportTimesheets = async (data, context) => {
   } else {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      `There are no approved timesheets for the week ending ${format(
-        week,
+      `There are no outstanding approved timesheets for the week ending ${format(
+        utcToZonedTime(weekEnding, "America/Thunder_Bay"),
         "yyyy MMM dd"
       )}`
     );
