@@ -339,6 +339,10 @@ exports.writeWeekEnding = functions.firestore
     }
   });
 
+/*
+  If a timesheet is approved, make sure that it is included in the pending
+  property of the TimeExports document for the corresponding weekEnding.
+ */
 exports.updateTimeExports = functions.firestore
   .document("TimeSheets/{timesheetId}")
   .onWrite(async (change, context) => {
@@ -393,6 +397,11 @@ exports.updateTimeExports = functions.firestore
     }
   });
 
+/*
+  Given a weekEnding as a property of data, export all of the currently
+  approved TimeSheets for the corresponding weekEnding into the TimeExports
+  document and mark all of the exported TimeSheets as locked.
+ */
 exports.exportTimesheets = async (data, context) => {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
