@@ -36,11 +36,16 @@ export default {
   computed: {
     ...mapState(["claims"]),
     processedItems() {
+      // display maximum of 100 items though there may be way more
+      // TODO: don't pull more than 100 items from the server at a time
+      // scroll to the bottom to load more, search hits the server
+      // searchString is stored in the document
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
           p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
-        );
+        )
+        .slice(0,100);
     }
   },
   data() {
@@ -60,14 +65,6 @@ export default {
     this.$bind("items", this.items);
   },
   methods: {
-    del(item) {
-      this.collection
-        .doc(item)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    },
     searchString(item) {
       const fields = Object.values(item);
       fields.push(item.id);
