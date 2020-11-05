@@ -12,6 +12,13 @@ async function writeJobs(filename, jobtype, collection) {
   const db = admin.firestore();
 
   for (const item of json) {
+    // delete string properties with zero length
+    for (const field in item) {
+      if (item[field] === "") {
+        delete item[field];
+      }
+    }
+
     // check if the proposal or project name matches corresponding regex
     // and do any other validation, log and skip if it fails
     const proposalRegex = /^P[0-9]{2}-[0-9]{3,}(-[0-9]+)?$/;
