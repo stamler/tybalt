@@ -134,7 +134,7 @@ describe("bundle", async () => {
     assert(timesheet.workHoursTally.jobHours === 0);
     assert(timesheet.workHoursTally.mealsHours === 0);
     assert("CI" in timesheet.divisionsTally);
-    assert.isEmpty(timesheet.projectsTally);
+    assert.isEmpty(timesheet.jobsTally);
     assert.isEmpty(timesheet.nonWorkHoursTally);
     return
   });
