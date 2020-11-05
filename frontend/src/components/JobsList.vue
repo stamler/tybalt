@@ -37,8 +37,8 @@ export default {
     ...mapState(["claims"]),
     processedItems() {
       // display maximum of 100 items though there may be way more
-      // TODO: don't pull more than 100 items from the server at a time
-      // scroll to the bottom to load more
+      // TODO: don't pull more than 50 items from the server at a time
+      // scroll to the bottom to load more (infinite scroll)
       // TODO: possibly use full text search like
       // https://www.npmjs.com/package/adv-firestore-functions
       return this.items
