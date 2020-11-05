@@ -245,6 +245,8 @@ export default {
       this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
     updateJobCandidates: _.debounce(function(e) {
+      // TODO: possibly use full text search like
+      // https://www.npmjs.com/package/adv-firestore-functions
       this.showSuggestions = true;
       const loBound = e.target.value.trim();
       if (loBound.length > 0) {

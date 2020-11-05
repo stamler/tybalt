@@ -38,8 +38,9 @@ export default {
     processedItems() {
       // display maximum of 100 items though there may be way more
       // TODO: don't pull more than 100 items from the server at a time
-      // scroll to the bottom to load more, search hits the server
-      // searchString is stored in the document
+      // scroll to the bottom to load more
+      // TODO: possibly use full text search like
+      // https://www.npmjs.com/package/adv-firestore-functions
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
