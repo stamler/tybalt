@@ -23,9 +23,9 @@ import UsersDetails from "@/components/UsersDetails.vue";
 import Profiles from "@/components/Profiles.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
-import Projects from "@/components/Projects.vue";
-import ProjectsList from "@/components/ProjectsList.vue";
-import ProjectsEdit from "@/components/ProjectsEdit.vue";
+import Jobs from "@/components/Jobs.vue";
+import JobsList from "@/components/JobsList.vue";
+import JobsEdit from "@/components/JobsEdit.vue";
 import Divisions from "@/components/Divisions.vue";
 import TimeTypes from "@/components/TimeTypes.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
@@ -218,29 +218,29 @@ const router = new Router({
           ]
         },
         {
-          path: "projects",
-          name: "Projects",
+          path: "jobs",
+          name: "Jobs",
           // TODO: permissions meta (redirect breaks it if placed here)
-          redirect: "/admin/projects/list",
-          component: Projects,
+          redirect: "/admin/jobs/list",
+          component: Jobs,
           children: [
             {
               path: "list",
-              name: "Projects List",
+              name: "Jobs List",
               // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
-              component: ProjectsList
+              component: JobsList
             },
             {
               path: "add",
-              name: "Add Project",
-              component: ProjectsEdit
+              name: "Add Job",
+              component: JobsEdit
             },
             {
               path: ":id/edit",
               props: true,
-              name: "Edit Project",
-              component: ProjectsEdit
+              name: "Edit Job",
+              component: JobsEdit
             }
           ]
         },

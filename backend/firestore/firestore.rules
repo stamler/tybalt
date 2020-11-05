@@ -32,9 +32,9 @@ service cloud.firestore {
       // TODO: Boolean Simplification
       return
         // allowed fields
-        newDoc().keys().hasOnly([ "date", "timetype", "division", "project",
+        newDoc().keys().hasOnly([ "date", "timetype", "division", "job",
           "hours", "jobHours", "workrecord", "notes", "mealsHours", "uid",
-          "timetypeName", "divisionName", "projectName", "weekEnding" ]) &&
+          "timetypeName", "divisionName", "jobName", "weekEnding" ]) &&
 
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
@@ -45,12 +45,12 @@ service cloud.firestore {
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'] &&
 
-        // when project provided, project & division exist in db, timetype is 'R'
+        // when job provided, job & division exist in db, timetype is 'R'
         (
-          ( isInCollection("project","Projects") && 
+          ( isInCollection("job","Jobs") && 
             isInCollection("division","Divisions") &&
             newDoc().timetype == "R" ) || 
-          isMissing("project")
+          isMissing("job")
         ) &&
 
         // when provided, division exists in db, Time Type is 'R'
@@ -70,15 +70,15 @@ service cloud.firestore {
           (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"]))
         ) &&
 
-        // when provided, jobHours require an existing project
+        // when provided, jobHours require an existing job
         (
-          ( isPositiveNumber("jobHours") && isInCollection("project", "Projects") ) ||
+          ( isPositiveNumber("jobHours") && isInCollection("job", "Jobs") ) ||
           isMissing("jobHours") 
         ) &&
 
-        // when provided workrecord requires an existing project
+        // when provided workrecord requires an existing job
         (
-          ( hasValidWorkrecord() && isInCollection("project", "Projects") ) ||
+          ( hasValidWorkrecord() && isInCollection("job", "Jobs") ) ||
           isMissing("workrecord")
         );
     }
@@ -101,12 +101,11 @@ service cloud.firestore {
         newDoc().keys().hasAll(["displayName", "email"]) &&
         isInCollection("managerUid","Profiles")
     }
-    // TODO: should Projects be renamed to Jobs everywhere in the app?
-    match /Projects/{projectId} {
+    match /Jobs/{jobId} {
       allow read: if isSignedIn();
-      allow write: if hasClaim("proj") && 
-        ( isMissing("proposal") || isInCollection("proposal","Projects")) && 
-        projectId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]+)?');
+      allow write: if hasClaim("job") && 
+        ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
+        jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]+)?');
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");

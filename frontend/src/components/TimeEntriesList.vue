@@ -9,8 +9,8 @@
           </div>
           <div class="byline"></div>
         </div>
-        <div v-if="item.timetype === 'R' && item.project" class="firstline">
-          {{ item.project }} - {{ item.projectName }}
+        <div v-if="item.timetype === 'R' && item.job" class="firstline">
+          {{ item.job }} - {{ item.jobName }}
         </div>
         <div class="secondline">
           {{ item | hoursString }}

@@ -69,14 +69,14 @@ describe("Firestore Rules", () => {
 
   describe("Unauthenticated Reads and Writes", () => {
     ["Computers", "Config", "Divisions", "Logins", "Profiles", 
-    "Projects", "RawLogins", "TimeEntries", "TimeSheets", 
+    "Jobs", "RawLogins", "TimeEntries", "TimeSheets", 
     "TimeTypes", "Users"].forEach(collection => {
       denyUnauthenticatedReadWrite(collection);
     })
   })
 
   describe("Authenticated Reads", () => {
-    ["Computers", "Divisions", "Projects", "TimeTypes"].forEach(collection => {
+    ["Computers", "Divisions", "Jobs", "TimeTypes"].forEach(collection => {
       allowAuthenticatedRead(collection);
     });
     ["Config", "RawLogins"].forEach(collection => {
@@ -85,13 +85,13 @@ describe("Firestore Rules", () => {
   })
 
   describe("Authenticated Writes", () => {
-    ["Computers", "Config", "Divisions", "Projects", "RawLogins", "TimeTypes"].forEach(collection => {
+    ["Computers", "Config", "Divisions", "Jobs", "RawLogins", "TimeTypes"].forEach(collection => {
       denyAuthenticatedWrite(collection);
     })
   })
 
   describe("Admin Writes", () => {
-    ["Divisions", "Projects", "TimeTypes"].forEach(collection => {
+    ["Divisions", "Jobs", "TimeTypes"].forEach(collection => {
       allowAdminWrite(collection);
     });
     ["Computers", "Config", "RawLogins"].forEach(collection => {
@@ -158,32 +158,32 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"NONVALIDTIMETYPE", division: "CI", hours:5 }));      
     })
-    it("requires documents with workrecord key to reference a valid project", async() => {
+    it("requires documents with workrecord key to reference a valid job", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"K20-420" }));
+        timetype:"R", division: "CI", hours:5, job: "19-333", workrecord:"K20-420" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "notproject", workrecord:"K20-420" }));
+        timetype:"R", division: "CI", hours:5, job: "notjob", workrecord:"K20-420" }));
         await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", hours:5, workrecord:"K20-420" }));
     })
-    it("requires documents with jobHours key to reference a valid project", async() => {
+    it("requires documents with jobHours key to reference a valid job", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", project: "19-333", jobHours: 5 }));
+        timetype:"R", division: "CI", job: "19-333", jobHours: 5 }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", project: "notproject", jobHours: 5 }));
+        timetype:"R", division: "CI", job: "notjob", jobHours: 5 }));
         await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", jobHours: 5 }));
     })
     it("requires hours, jobHours, and mealsHours to be positive real numbers", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", project: "19-333", jobHours: 5 }));
+        timetype:"R", division: "CI", job: "19-333", jobHours: 5 }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", project: "19-333", jobHours: -1 }));
+        timetype:"R", division: "CI", job: "19-333", jobHours: -1 }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", project: "19-333", jobHours: "duck" }));
+        timetype:"R", division: "CI", job: "19-333", jobHours: "duck" }));
 
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", hours: 5 }));
@@ -199,23 +199,23 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
         timetype:"R", division: "CI", mealsHours: "duck" }));
     })
-    it("requires a referenced project to be valid", async () => {
+    it("requires a referenced job to be valid", async () => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "P18-123" }));
+        timetype:"R", division: "CI", hours:5, job: "P18-123" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "18-123" }));
+        timetype:"R", division: "CI", hours:5, job: "18-123" }));
     })
     it("requires workrecords to match the correct format", async() => {
       const doc = dbLoggedInTimeClaim.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"Q20-423" }));
+        timetype:"R", division: "CI", hours:5, job: "19-333", workrecord:"Q20-423" }));
       await firebase.assertSucceeds(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"K20-423-1" }));
+        timetype:"R", division: "CI", hours:5, job: "19-333", workrecord:"K20-423-1" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"F18-33-1" }));
+        timetype:"R", division: "CI", hours:5, job: "19-333", workrecord:"F18-33-1" }));
       await firebase.assertFails(doc.set({uid: "alice", date:new Date(), 
-        timetype:"R", division: "CI", hours:5, project: "19-333", workrecord:"asdf" }));
+        timetype:"R", division: "CI", hours:5, job: "19-333", workrecord:"asdf" }));
     })
   })
 

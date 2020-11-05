@@ -259,7 +259,7 @@ export default {
       }
     },
     jobs(item) {
-      const jobs = Object.keys(item.projectsTally)
+      const jobs = Object.keys(item.jobsTally)
         .sort()
         .join(", ");
       if (jobs.length > 0) {

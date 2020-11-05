@@ -18,15 +18,15 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
-      collection: db.collection("Projects"),
-      items: db.collection("Projects")
+      collection: db.collection("Jobs"),
+      items: db.collection("Jobs")
     };
   },
   computed: {
     ...mapState(["claims"]),
     // Determine whether to show UI controls based on claims
     hasPermission() {
-      return this.claims.hasOwnProperty("proj") && this.claims["proj"];
+      return this.claims.hasOwnProperty("job") && this.claims["job"];
     }
   }
 };

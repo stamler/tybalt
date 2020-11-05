@@ -32,28 +32,28 @@
       class="field"
       v-if="item.timetype === 'R' && item.division && item.division !== ''"
     >
-      <label for="project">Job</label>
+      <label for="job">Job</label>
       <input
         type="text"
-        name="project"
+        name="job"
         placeholder="Project or Proposal number"
-        v-bind:value="item.project"
+        v-bind:value="item.job"
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
-        v-on:keyup.enter="selectProject"
-        v-on:input="updateProjectCandidates"
+        v-on:keyup.enter="selectJob"
+        v-on:input="updateJobCandidates"
       />
     </span>
     <div
       id="suggestions"
-      v-if="showSuggestions && projectCandidates.length > 0"
+      v-if="showSuggestions && jobCandidates.length > 0"
     >
       <ul>
         <li
-          v-for="(c, index) in projectCandidates"
+          v-for="(c, index) in jobCandidates"
           v-bind:class="{ selected: index === selectedIndex }"
           v-bind:key="c.id"
-          v-on:click="setProject(c.id)"
+          v-on:click="setJob(c.id)"
         >
           {{ c.id }} - {{ c.name }}
         </li>
@@ -63,8 +63,8 @@
     <span
       class="field"
       v-if="
-        item.project &&
-          item.project !== '' &&
+        item.job &&
+          item.job !== '' &&
           item.division &&
           item.timetype === 'R'
       "
@@ -81,8 +81,8 @@
     <span
       class="field"
       v-if="
-        item.project &&
-          item.project !== '' &&
+        item.job &&
+          item.job !== '' &&
           item.division &&
           item.timetype === 'R'
       "
@@ -94,8 +94,8 @@
     <span
       class="field"
       v-if="
-        item.project &&
-          item.project !== '' &&
+        item.job &&
+          item.job !== '' &&
           item.division &&
           item.timetype === 'R'
       "
@@ -171,10 +171,10 @@ export default {
       collection: null,
       divisions: [],
       timetypes: [],
-      projects: [],
+      jobs: [],
       showSuggestions: false,
       selectedIndex: null,
-      projectCandidates: [],
+      jobCandidates: [],
       item: {}
     };
   },
@@ -219,48 +219,48 @@ export default {
     this.collection = this.$parent.collection;
     this.$bind("divisions", db.collection("Divisions"));
     this.$bind("timetypes", db.collection("TimeTypes"));
-    this.$bind("projects", db.collection("Projects"));
+    this.$bind("jobs", db.collection("Jobs"));
   },
   methods: {
-    setProject(id) {
-      this.item.project = id;
+    setJob(id) {
+      this.item.job = id;
       this.showSuggestions = false;
     },
-    selectProject() {
-      this.item.project = this.projectCandidates[this.selectedIndex].id;
+    selectJob() {
+      this.item.job = this.jobCandidates[this.selectedIndex].id;
       this.showSuggestions = false;
     },
     onArrowUp() {
-      const count = this.projectCandidates.length;
+      const count = this.jobCandidates.length;
       this.selectedIndex =
         this.selectedIndex === null
           ? count - 1
           : (this.selectedIndex + count - 1) % count;
-      this.item.project = this.projectCandidates[this.selectedIndex].id;
+      this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
     onArrowDown() {
-      const count = this.projectCandidates.length;
+      const count = this.jobCandidates.length;
       this.selectedIndex =
         this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
-      this.item.project = this.projectCandidates[this.selectedIndex].id;
+      this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
-    updateProjectCandidates: _.debounce(function(e) {
+    updateJobCandidates: _.debounce(function(e) {
       this.showSuggestions = true;
       const loBound = e.target.value.trim();
       if (loBound.length > 0) {
         const hiBound = e.target.value.trim() + "\uf8ff";
-        this.item.project = loBound; // preserve the value in the input field
+        this.item.job = loBound; // preserve the value in the input field
         this.$bind(
-          "projectCandidates",
+          "jobCandidates",
           db
-            .collection("Projects")
+            .collection("Jobs")
             .where(firebase.firestore.FieldPath.documentId(), ">=", loBound)
             .where(firebase.firestore.FieldPath.documentId(), "<=", hiBound)
             .limit(5)
         );
       } else {
-        this.projectCandidates = [];
-        delete this.item.project;
+        this.jobCandidates = [];
+        delete this.item.job;
       }
     }, 400),
     save() {
@@ -274,8 +274,8 @@ export default {
         [
           "division",
           "divisionName",
-          "project",
-          "projectName",
+          "job",
+          "jobName",
           "jobHours",
           "mealsHours",
           "workrecord"
@@ -291,15 +291,17 @@ export default {
           throw "Division Missing";
         }
 
-        // Populate or Clear the Project Name
-        if (this.item.project && this.item.project.length > 5) {
+        // Populate or Clear the Job Name
+        if (this.item.job && this.item.job.length > 5) {
           // Update
-          this.item.projectName = this.projects.filter(
-            i => i.id === this.item.project
+          // TODO: BUG: when the job has no name, this will
+          // become undefined and cause an error
+          this.item.jobName = this.jobs.filter(
+            i => i.id === this.item.job
           )[0].name;
         } else {
           // Clear
-          delete this.item.projectName;
+          delete this.item.jobName;
           delete this.item.jobHours;
           delete this.item.workorder;
         }

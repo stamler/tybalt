@@ -13,7 +13,7 @@
           <th rowspan="2">date</th>
           <th colspan="3">hours</th>
           <th rowspan="2">work record</th>
-          <th rowspan="2">project</th>
+          <th rowspan="2">job</th>
           <th rowspan="2">notes</th>
         </tr>
         <tr>
@@ -24,7 +24,7 @@
       </thead>
       <tbody>
         <tr v-for="(entry, index) in item.entries" v-bind:key="index">
-          <td>{{ entry.project }}</td>
+          <td>{{ entry.job }}</td>
           <td>{{ entry.timetype }}</td>
           <td>
             {{ entry.date.toDate() | shortDate }}
@@ -33,7 +33,7 @@
           <td>{{ entry.hours }}</td>
           <td>{{ entry.mealsHours }}</td>
           <td>{{ entry.workrecord }}</td>
-          <td>{{ entry.projectName }}</td>
+          <td>{{ entry.jobName }}</td>
           <td>{{ entry.notes }}</td>
         </tr>
       </tbody>

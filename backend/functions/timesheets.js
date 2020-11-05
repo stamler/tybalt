@@ -89,7 +89,7 @@ exports.bundleTimesheet = async (data, context) => {
     const nonWorkHoursTally = {}; // key is timetype, value is total
     const workHoursTally = { hours: 0, jobHours: 0, mealsHours: 0 };
     const divisionsTally = {}; // key is division, value is divisionName
-    const projectsTally = {}; // key is project, value is projectName
+    const jobsTally = {}; // key is job, value is jobName
     timeEntries.forEach((timeEntry) => {
       const item = timeEntry.data();
       if (item.timetype === "OR") {
@@ -128,9 +128,9 @@ exports.bundleTimesheet = async (data, context) => {
         // Tally the divisions (must be present for work hours)
         divisionsTally[item.division] = item.divisionName;
 
-        // Tally the projects (may not be present)
-        if ("project" in item) {
-          projectsTally[item.project] = item.projectName;
+        // Tally the jobs (may not be present)
+        if ("job" in item) {
+          jobsTally[item.job] = item.jobName;
         }
       }
 
@@ -178,7 +178,7 @@ exports.bundleTimesheet = async (data, context) => {
             offRotationDaysTally: offRotationDates.length,
             workHoursTally,
             divisionsTally,
-            projectsTally,
+            jobsTally,
           });
           return batch.commit();
         } else {

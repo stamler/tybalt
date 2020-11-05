@@ -1,9 +1,9 @@
 <template>
   <form id="editor">
     <span class="field">
-      <label for="project">Project/Proposal</label>
+      <label for="job">Project/Proposal #</label>
       <span v-if="editing">{{ id }}</span>
-      <input v-else type="text" name="project" v-model="item.id" />
+      <input v-else type="text" name="job" v-model="item.id" />
     </span>
     <span class="field">
       <label for="name">Name</label>
