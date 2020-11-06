@@ -11,7 +11,7 @@ import TimeSheets from "@/components/TimeSheets.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTracking from "@/components/TimeTracking.vue";
-import TimeTracking from "@/components/TimeTrackingList.vue";
+import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import Logins from "@/components/Logins.vue";
 import RawLogins from "@/components/RawLogins.vue";
 import Computers from "@/components/Computers.vue";
