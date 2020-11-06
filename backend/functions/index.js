@@ -32,9 +32,9 @@ exports.unbundleTimesheet = functions.https.onCall(
   timesheetsModule.unbundleTimesheet
 );
 
-// export approved timesheets
-exports.exportTimesheets = functions.https.onCall(
-  timesheetsModule.exportTimesheets
+// lock approved timesheets
+exports.lockTimesheets = functions.https.onCall(
+  timesheetsModule.lockTimesheets
 );
 
 // cleanup RawLogins with computerName

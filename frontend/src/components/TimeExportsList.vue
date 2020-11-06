@@ -18,7 +18,7 @@
       <div class="rowactionsbox">
         <router-link
           v-bind:to="{ name: 'Time Exports' }"
-          v-on:click.native="exportTimesheets(item.weekEnding)"
+          v-on:click.native="lockTimesheets(item.weekEnding)"
         >
           <lock-icon></lock-icon>
         </router-link>
@@ -27,12 +27,6 @@
           v-on:click.native="exportTimesheets(item.weekEnding)"
         >
           <file-plus-icon></file-plus-icon>
-        </router-link>
-        <router-link
-          v-bind:to="{ name: 'Time Exports' }"
-          v-on:click.native="exportTimesheets(item.weekEnding)"
-        >
-          <refresh-cw-icon></refresh-cw-icon>
         </router-link>
         <a 
           v-bind:download="downloadFilename(item)" 
@@ -53,14 +47,13 @@
 
 <script>
 import { format } from "date-fns";
-import { RefreshCwIcon, LockIcon, FilePlusIcon, DownloadIcon} from "vue-feather-icons";
+import { LockIcon, FilePlusIcon, DownloadIcon} from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 const db = firebase.firestore();
 
 export default {
   components: {
-    RefreshCwIcon,
     LockIcon,
     FilePlusIcon,
     DownloadIcon
@@ -97,13 +90,16 @@ export default {
       return "data:text/json;charset=utf-8," + 
         encodeURIComponent(JSON.stringify({ [item.weekEnding]: item.timeSheets }));
     },
-    exportTimesheets(weekEnding) {
-      const exportTimesheets = firebase
+    lockTimesheets(weekEnding) {
+      const lockTimesheets = firebase
         .functions()
-        .httpsCallable("exportTimesheets");
-      return exportTimesheets({ weekEnding: weekEnding.toDate().getTime() }).catch(error => {
-        alert(`Error exporting timesheets: ${error.message}`);
-      });
+        .httpsCallable("lockTimesheets");
+      // TODO: replace confirm() with modal in Vue
+      if (confirm("Locking Timesheets is not reversible. Do you want to proceed?")) {
+        return lockTimesheets({ weekEnding: weekEnding.toDate().getTime() }).catch(error => {
+          alert(`Error exporting timesheets: ${error.message}`);
+        });
+      }
     }
   }
 };

@@ -398,20 +398,19 @@ exports.updateTimeExports = functions.firestore
   });
 
 /*
-  Given a weekEnding as a property of data, export all of the currently
-  approved TimeSheets for the corresponding weekEnding into the TimeExports
-  document and mark all of the exported TimeSheets as locked.
+  Given a weekEnding as a property of data, lock all of the currently
+  approved TimeSheets and add their ids to the timeSheets property array
+  of the TimeExports doc.
 
-  TODO: change this to lockTimesheets which simply locks TimeSheets then 
-  aggregates TimeSheet ids into the timeSheets field array.
-
-  afterward a separate exportTimesheets function can trigger on TimeExports
-  write which looks for *new* items in the timeSheets array and creates/updates
-  the actual exported JSON file in Google Cloud Storage, the stores a link
-  to the updated file in the TimeExports document which is presented 
-  to the user
+  TODO:
+  write exportTimesheets function that triggers on TimeExports write and
+  exports *new* items in the timeSheets array to a new JSON doc in Google Cloud
+  Storage. The TimeExports "exports" array field is updated with a link to
+  the new document. The function also updates a "consolidated" document which
+  contains all of the exports together as well as the individual exports. In
+  this way users can see what they've already done.
  */
-exports.exportTimesheets = async (data, context) => {
+exports.lockTimesheets = async (data, context) => {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
@@ -505,9 +504,7 @@ exports.exportTimesheets = async (data, context) => {
             return transaction
               .update(timeSheet.ref, { locked: true })
               .update(timeExportsDocRef, {
-                timeSheets: admin.firestore.FieldValue.arrayUnion(
-                  tsSnap.data()
-                ),
+                timeSheets: admin.firestore.FieldValue.arrayUnion(tsSnap.id),
               });
           } else {
             throw new Error(

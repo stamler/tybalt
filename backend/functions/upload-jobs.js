@@ -37,6 +37,7 @@ async function writeJobs(filename, jobtype, collection) {
 
     const id = item.id.slice();
     delete item.id;
+    // eslint-disable-next-line no-await-in-loop
     await db.collection(collection).doc(id).set(item);
     console.log(`wrote ${id} to firestore`);
   }
