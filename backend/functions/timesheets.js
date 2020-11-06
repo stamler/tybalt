@@ -341,9 +341,9 @@ exports.writeWeekEnding = functions.firestore
 
 /*
   If a timesheet is approved, make sure that it is included in the pending
-  property of the TimeExports document for the corresponding weekEnding.
+  property of the TimeTracking document for the corresponding weekEnding.
  */
-exports.updateTimeExports = functions.firestore
+exports.updateTimeTracking = functions.firestore
   .document("TimeSheets/{timesheetId}")
   .onWrite(async (change, context) => {
     const db = admin.firestore();
@@ -355,21 +355,21 @@ exports.updateTimeExports = functions.firestore
       ? change.before.data().weekEnding.toDate()
       : after.weekEnding.toDate();
 
-    // Get the TimeExports doc if it exists, otherwise create it.
+    // Get the TimeTracking doc if it exists, otherwise create it.
     const querySnap = await db
-      .collection("TimeExports")
+      .collection("TimeTracking")
       .where("weekEnding", "==", weekEnding)
       .get();
 
     let timeExportsDocRef;
     if (querySnap.size > 1) {
       throw new Error(
-        `There is more than one document in TimeExports for weekEnding ${weekEnding}`
+        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
       timeExportsDocRef = querySnap.docs[0].ref;
     } else {
-      timeExportsDocRef = db.collection("TimeExports").doc();
+      timeExportsDocRef = db.collection("TimeTracking").doc();
       await timeExportsDocRef.set({ weekEnding });
     }
 
@@ -400,12 +400,12 @@ exports.updateTimeExports = functions.firestore
 /*
   Given a weekEnding as a property of data, lock all of the currently
   approved TimeSheets and add their ids to the timeSheets property array
-  of the TimeExports doc.
+  of the TimeTracking doc.
 
   TODO:
-  write exportTimesheets function that triggers on TimeExports write and
+  write exportTimesheets function that triggers on TimeTracking write and
   exports *new* items in the timeSheets array to a new JSON doc in Google Cloud
-  Storage. The TimeExports "exports" array field is updated with a link to
+  Storage. The TimeTracking "exports" array field is updated with a link to
   the new document. The function also updates a "consolidated" document which
   contains all of the exports together as well as the individual exports. In
   this way users can see what they've already done.
@@ -469,26 +469,26 @@ exports.lockTimesheets = async (data, context) => {
       if it doesn't already exist.
         
       The idea here is that at some point we can delete locked TimeSheets from
-      the database as they're aggregated into TimeExports. This assists in data
+      the database as they're aggregated into TimeTracking. This assists in data
       management while preserving values for future use and reducing queries
     */
 
-    // Get the TimeExports doc if it exists, otherwise create it.
+    // Get the TimeTracking doc if it exists, otherwise create it.
     const querySnap = await db
-      .collection("TimeExports")
+      .collection("TimeTracking")
       .where("weekEnding", "==", weekEnding)
       .get();
 
     let timeExportsDocRef;
     if (querySnap.size > 1) {
       throw new Error(
-        `There is more than one document in TimeExports for weekEnding ${weekEnding}`
+        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
       timeExportsDocRef = querySnap.docs[0].ref;
     } else {
       throw new Error(
-        `There is no TimeExports document for weekEnding ${weekEnding}`
+        `There is no TimeTracking document for weekEnding ${weekEnding}`
       );
     }
 

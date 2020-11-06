@@ -116,7 +116,7 @@ service cloud.firestore {
       allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
       allow create: if hasClaim("time") && validTimeEntry();
     }
-    match /TimeExports/{entry} {
+    match /TimeTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");
     }
     match /TimeSheets/{sheet} {

@@ -16,7 +16,7 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
-      collection: db.collection("TimeExports"),
+      collection: db.collection("TimeTracking"),
       timeSheets: db.collection("TimeSheets").where("approved", "==", true).where("locked", "==", false),
     };
   },

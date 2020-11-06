@@ -76,7 +76,7 @@ export default {
     ].parent.path;
     this.collection = this.$parent.collection;
     this.$bind("items", this.collection).catch(error => {
-      alert(`Can't load TimeExports: ${error.message}`);
+      alert(`Can't load TimeTracking: ${error.message}`);
     });
   },
   methods: {
