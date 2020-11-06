@@ -22,7 +22,12 @@
         >
           <refresh-cw-icon></refresh-cw-icon>
         </router-link>
-        <download-icon></download-icon>
+        <a 
+          v-bind:download="downloadFilename(item)" 
+          v-bind:href="jsonDownload(item)"
+        >
+          <download-icon></download-icon>
+        </a>
       </div>
     </div>
   </div>
@@ -62,6 +67,16 @@ export default {
     });
   },
   methods: {
+    downloadFilename(item) {
+      // generate the filename for the downloaded export
+      return format(item.weekEnding.toDate(), "yyyy MMM dd") + ".json";
+    },
+    jsonDownload(item) {
+      // return a json file where the key is the weekEnding and 
+      // the value is the array of timeSheets
+      return "data:text/json;charset=utf-8," + 
+        encodeURIComponent(JSON.stringify({ [item.weekEnding]: item.timeSheets }));
+    },
     exportTimesheets(weekEnding) {
       const exportTimesheets = firebase
         .functions()
