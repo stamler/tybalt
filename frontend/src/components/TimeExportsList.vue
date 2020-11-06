@@ -20,6 +20,18 @@
           v-bind:to="{ name: 'Time Exports' }"
           v-on:click.native="exportTimesheets(item.weekEnding)"
         >
+          <lock-icon></lock-icon>
+        </router-link>
+        <router-link
+          v-bind:to="{ name: 'Time Exports' }"
+          v-on:click.native="exportTimesheets(item.weekEnding)"
+        >
+          <file-plus-icon></file-plus-icon>
+        </router-link>
+        <router-link
+          v-bind:to="{ name: 'Time Exports' }"
+          v-on:click.native="exportTimesheets(item.weekEnding)"
+        >
           <refresh-cw-icon></refresh-cw-icon>
         </router-link>
         <a 
@@ -41,7 +53,7 @@
 
 <script>
 import { format } from "date-fns";
-import { RefreshCwIcon, DownloadIcon} from "vue-feather-icons";
+import { RefreshCwIcon, LockIcon, FilePlusIcon, DownloadIcon} from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 const db = firebase.firestore();
@@ -49,6 +61,8 @@ const db = firebase.firestore();
 export default {
   components: {
     RefreshCwIcon,
+    LockIcon,
+    FilePlusIcon,
     DownloadIcon
   },
   filters: {
