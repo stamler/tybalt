@@ -401,6 +401,15 @@ exports.updateTimeExports = functions.firestore
   Given a weekEnding as a property of data, export all of the currently
   approved TimeSheets for the corresponding weekEnding into the TimeExports
   document and mark all of the exported TimeSheets as locked.
+
+  TODO: change this to lockTimesheets which simply locks TimeSheets then 
+  aggregates TimeSheet ids into the timeSheets field array.
+
+  afterward a separate exportTimesheets function can trigger on TimeExports
+  write which looks for *new* items in the timeSheets array and creates/updates
+  the actual exported JSON file in Google Cloud Storage, the stores a link
+  to the updated file in the TimeExports document which is presented 
+  to the user
  */
 exports.exportTimesheets = async (data, context) => {
   if (!context.auth) {
