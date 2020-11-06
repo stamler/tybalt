@@ -26,7 +26,13 @@
           v-bind:download="downloadFilename(item)" 
           v-bind:href="jsonDownload(item)"
         >
-          <download-icon></download-icon>
+          .json<download-icon></download-icon>
+        </a>
+        <a 
+          download="filename.csv" 
+          href="filePath"
+        >
+          .csv<download-icon></download-icon>
         </a>
       </div>
     </div>
