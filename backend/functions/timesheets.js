@@ -23,7 +23,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { zonedTimeToUtc, utcToZonedTime } = require("date-fns-tz");
 const { format } = require("date-fns");
-const { uuid } = require("uuidv4");
+const { v4: uuidv4 } = require("uuid");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -575,7 +575,7 @@ exports.exportJson = async (data, context) => {
             // https://github.com/firebase/firebase-admin-node/issues/694
             metadata: {
               metadata: {
-                firebaseStorageDownloadTokens: uuid(),
+                firebaseStorageDownloadTokens: uuidv4(),
               },
             },
           })
