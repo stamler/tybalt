@@ -114,14 +114,14 @@ const router = new Router({
           ]
         },
         {
-          path: "exports",
-          name: "Time Exports",
-          redirect: "/time/exports/list",
+          path: "tracking",
+          name: "Time Tracking",
+          redirect: "/time/tracking/list",
           component: TimeTracking,
           children: [
             {
               path: "list",
-              name: "Time Exports List",
+              name: "Time Tracking List",
               component: TimeTrackingList
             }
           ]

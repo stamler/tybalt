@@ -17,14 +17,14 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Time Exports' }"
+          v-bind:to="{ name: 'Time Tracking' }"
           v-on:click.native="lockTimesheets(item.weekEnding)"
         >
           <lock-icon></lock-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Time Exports' }"
-          v-on:click.native="exportTimesheets(item.weekEnding)"
+          v-bind:to="{ name: 'Time Tracking' }"
+          v-on:click.native="exportTimesheets(item.id)"
         >
           <file-plus-icon></file-plus-icon>
         </router-link>
@@ -100,6 +100,14 @@ export default {
           alert(`Error exporting timesheets: ${error.message}`);
         });
       }
+    },
+    exportTimesheets(timeTrackingId) {
+      const exportJson = firebase
+        .functions()
+        .httpsCallable("exportJson");
+      return exportJson({ timeTrackingId }).catch(error => {
+        alert(`Export JSON error: ${error.message}`);
+      })
     }
   }
 };

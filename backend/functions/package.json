@@ -22,7 +22,8 @@
     "firebase-functions": "^3.11.0",
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^2.0.4",
-    "lodash": "^4.17.20"
+    "lodash": "^4.17.20",
+    "uuidv4": "^6.2.5"
   },
   "devDependencies": {
     "@firebase/testing": "^0.20.11",

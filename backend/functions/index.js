@@ -37,6 +37,9 @@ exports.lockTimesheets = functions.https.onCall(
   timesheetsModule.lockTimesheets
 );
 
+// export JSON for locked timesheets to Google Cloud Storage
+exports.exportJson = functions.https.onCall(timesheetsModule.exportJson);
+
 // cleanup RawLogins with computerName
 //exports.cleanup = functions.https.onCall(async (data, context) => {
 //  return rawLoginsModule.cleanup(data, context, admin.firestore())

@@ -23,6 +23,10 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { zonedTimeToUtc, utcToZonedTime } = require("date-fns-tz");
 const { format } = require("date-fns");
+const { uuid } = require("uuidv4");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 // The bundleTimesheet groups TimeEntries together
 // into a timesheet for a given user and week
@@ -411,25 +415,10 @@ exports.updateTimeTracking = functions.firestore
   this way users can see what they've already done.
  */
 exports.lockTimesheets = async (data, context) => {
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Caller must be authenticated"
-    );
-  }
-
-  // caller must have the "tadm" claim
-  if (
-    !(
-      Object.prototype.hasOwnProperty.call(context.auth.token, "tadm") &&
-      context.auth.token["tadm"] === true
-    )
-  ) {
-    // Throw an HttpsError so that the client gets the error details
+  if (!hasPermission(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
-      `Caller must have the time administration permission`
+      "Call to lockTimesheets() failed"
     );
   }
 
@@ -528,4 +517,110 @@ exports.lockTimesheets = async (data, context) => {
   }
 };
 
-exports.generateExportsCSV = async (data, context) => {};
+// Given a TimeTracking id, create or update a file on Google storage
+// with the locked timeSheets
+exports.exportJson = async (data, context) => {
+  if (hasPermission(context)) {
+    // Get locked TimeSheets
+    const db = admin.firestore();
+    const trackingSnapshot = await db
+      .collection("TimeTracking")
+      .doc(data.timeTrackingId)
+      .get();
+    const timeSheetsSnapshot = await db
+      .collection("TimeSheets")
+      .where("approved", "==", true)
+      .where("locked", "==", true)
+      .where("weekEnding", "==", trackingSnapshot.get("weekEnding"))
+      .get();
+
+    // delete internal properties for each timeSheet
+    const timeSheets = timeSheetsSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      delete data.submitted;
+      delete data.approved;
+      delete data.locked;
+      delete data.rejected;
+      delete data.rejectionReason;
+      return data;
+    });
+
+    // generate JSON output
+    const output = JSON.stringify(timeSheets);
+
+    // make the local filename
+    const filename = `${format(
+      trackingSnapshot.get("weekEnding").toDate(),
+      "yyyy-MMM-dd"
+    )}.json`;
+    const tempLocalFileName = path.join(os.tmpdir(), filename);
+
+    return new Promise((resolve, reject) => {
+      //write contents of csv into the temp file
+      fs.writeFile(tempLocalFileName, output, (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        const bucket = admin.storage().bucket();
+        const destination = "TimeTrackingExports/" + filename;
+
+        // upload the file into the current firebase project default bucket
+        bucket
+          .upload(tempLocalFileName, {
+            destination,
+            // Workaround: firebase console not generating token for files
+            // uploaded via Firebase Admin SDK
+            // https://github.com/firebase/firebase-admin-node/issues/694
+            metadata: {
+              metadata: {
+                firebaseStorageDownloadTokens: uuid(),
+              },
+            },
+          })
+          .then(async () => {
+            // put the path to the new file into the TimeTracking document
+            await trackingSnapshot.ref.update({ json: destination });
+            return resolve();
+          })
+          .catch((error) => reject(error));
+      });
+    });
+  } else {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "call to exportJson() failed"
+    );
+  }
+};
+
+// Confirm the context has "tadm" claim and throw userful errors as necessary
+function hasPermission(context) {
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  // caller must have the "tadm" claim
+  if (
+    !(
+      Object.prototype.hasOwnProperty.call(context.auth.token, "tadm") &&
+      context.auth.token["tadm"] === true
+    )
+  ) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      `Caller must have the time administration permission`
+    );
+  } else {
+    return true;
+  }
+}
+
+// TODO: run this on a trigger when a file is written on Google Storage
+exports.generateCSV = async (data, context) => {};
