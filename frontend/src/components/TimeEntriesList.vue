@@ -1,7 +1,7 @@
 <template>
   <div id="list">
     <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
-      <span>Week ending {{ tallies[week].weekEnding | shortDate }}</span>
+      <span class="listheader">Week ending {{ tallies[week].weekEnding | shortDate }}</span>
       <div class="listentry" v-for="item in itemsByWeekEnding(week)" v-bind:key="item.id">
         <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
         <div class="detailsbox">
@@ -30,15 +30,18 @@
           </router-link>
         </div>
       </div>
-      <div class="listentry">
+      <div class="listsummary">
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
             <div class="headline">
-              {{ tallies[week].workHoursTally }}
+              {{ Object.values(tallies[week].workHoursTally).reduce((a, c) => a + c, 0) }} hours worked
+            </div>
+            <div class="byline">
+              {{ Object.values(tallies[week].nonWorkHoursTally).reduce((a, c) => a + c, 0) }} hours off
             </div>
           </div>
-          <div class="firstline">{{ tallies[week].nonWorkHoursTally }}</div>
+          <div class="firstline"></div>
             <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
               {{ tallies[week].offRotationDates.length }} days off rotation
             </div>

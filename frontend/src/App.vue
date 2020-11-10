@@ -180,11 +180,21 @@ body,
   flex: 1 0 5.5em;
   padding-right: 0.3em;
 }
-.listentry {
+.listentry, .listsummary, .listheader {
   display: flex;
   font-size: 0.8em;
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
+}
+.listsummary {
+  border-bottom: none;
+  margin-bottom: 1em;
+}
+.listheader {
+  padding: 0.1em 0.5em;
+  font-weight: bold;
+  color: #555555;
+  background-color: #b6e1fc;
 }
 .listentry .label,
 #editor .label {
