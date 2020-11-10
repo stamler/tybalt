@@ -37,18 +37,18 @@
             <div class="headline">
               {{ tallies[week].workHoursTally }}
             </div>
-            <div class="firstline">{{ tallies[week].nonWorkHoursTally }}</div>
+          </div>
+          <div class="firstline">{{ tallies[week].nonWorkHoursTally }}</div>
             <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
               {{ tallies[week].offRotationDates.length }} days off rotation
             </div>
-          </div>
         </div>
-        <div class="rowactionbox">
+        <div class="rowactionsbox">
           <router-link
             v-bind:to="{ name: 'Time Sheets' }"
             v-on:click.native="bundle(new Date(Number(week)))"
           >
-            Bundle
+            <package-icon></package-icon>
           </router-link>
         </div>
       </div>
@@ -58,14 +58,15 @@
 
 <script>
 import { format } from "date-fns";
-import { EditIcon, XCircleIcon } from "vue-feather-icons";
+import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
 import firebase from "@/firebase";
 
 export default {
   components: {
     EditIcon,
-    XCircleIcon
+    XCircleIcon,
+    PackageIcon
   },
   filters: {
     shortDate(date) {
