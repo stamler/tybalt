@@ -1,32 +1,41 @@
 <template>
   <div id="list">
-    <div class="listentry" v-for="item in items" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
-      <div class="detailsbox">
-        <div class="headline_wrapper">
-          <div class="headline">
-            {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+    <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
+      <span>{{ tallies[week].weekEnding | shortDate }}</span>
+      <div class="listentry" v-for="item in itemsByWeekEnding(week)" v-bind:key="item.id">
+        <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
+        <div class="detailsbox">
+          <div class="headline_wrapper">
+            <div class="headline">
+              {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+            </div>
+            <div class="byline"></div>
           </div>
-          <div class="byline"></div>
+          <div v-if="item.timetype === 'R' && item.job" class="firstline">
+            {{ item.job }} - {{ item.jobName }}
+          </div>
+          <div class="secondline">
+            {{ item | hoursString }}
+          </div>
+          <div v-if="item.notes" class="thirdline">
+            {{ item.notes }}
+          </div>
         </div>
-        <div v-if="item.timetype === 'R' && item.job" class="firstline">
-          {{ item.job }} - {{ item.jobName }}
-        </div>
-        <div class="secondline">
-          {{ item | hoursString }}
-        </div>
-        <div v-if="item.notes" class="thirdline">
-          {{ item.notes }}
+        <div class="rowactionsbox">
+          <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+            <edit-icon></edit-icon>
+          </router-link>
+          <router-link to="#" v-on:click.native="del(item.id)">
+            <x-circle-icon></x-circle-icon>
+          </router-link>
         </div>
       </div>
-      <div class="rowactionsbox">
-        <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-          <edit-icon></edit-icon>
-        </router-link>
-        <router-link to="#" v-on:click.native="del(item.id)">
-          <x-circle-icon></x-circle-icon>
-        </router-link>
-      </div>
+      <router-link
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="bundle(new Date(Number(week)))"
+      >
+        Bundle
+      </router-link>
     </div>
   </div>
 </template>
@@ -34,6 +43,8 @@
 <script>
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon } from "vue-feather-icons";
+import store from "../store";
+import firebase from "@/firebase";
 
 export default {
   components: {
@@ -56,7 +67,7 @@ export default {
     return {
       parentPath: null,
       collection: null, // collection: a reference to the parent collection
-      items: []
+      items: [],
     };
   },
   created() {
@@ -64,9 +75,35 @@ export default {
       this.$route.matched.length - 1
     ].parent.path;
     this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
+    this.$bind(
+      "items",
+      this.collection
+        .where("uid", "==", store.state.user.uid)
+        .orderBy("date", "desc")
+    ).catch(error => {
+      alert(`Can't load Time Entries: ${error.message}`);
+    });
   },
   methods: {
+    bundle(week) {
+      const bundleTimesheet = firebase
+        .functions()
+        .httpsCallable("bundleTimesheet");
+      return bundleTimesheet({ weekEnding: week.getTime() })
+        .then(() => {
+          alert(
+            `Timesheet created for the week ending ${week.getMonth() +
+              1}/${week.getDate()}`
+          );
+        })
+        .catch(error => {
+          alert(`Error bundling timesheet: ${error.message}`);
+        });
+    },
+    itemsByWeekEnding(weekEnding) {
+      return this.items
+        .filter(x => (x.hasOwnProperty("weekEnding") && x.weekEnding.toDate().valueOf() === Number(weekEnding) ));
+    },
     del(item) {
       this.collection
         .doc(item)
@@ -75,6 +112,73 @@ export default {
           alert(`Error deleting item: ${err}`);
         });
     }
+  },
+  computed: {
+    // A an object where the keys are saturdays and the values are tallies
+    // to be used in the UI
+    tallies() {
+      const tallyObject = {}
+
+      for (const item of this.items) {       
+        if (item.hasOwnProperty("weekEnding")) {
+          const key = item.weekEnding.toDate().valueOf();
+          // this item can be tallied because it has a weekEnding property
+          // Check if it already has an entry in the tally object to 
+          // accumulate values and create it if not.
+          if (!tallyObject.hasOwnProperty(key)) {
+            tallyObject[key] = {
+              weekEnding: new Date(key),
+              offRotationDates: [],
+              nonWorkHoursTally: {}, // key is timetype, value is total
+              workHoursTally: { hours: 0, jobHours: 0, mealsHours: 0 },
+              divisionsTally: {}, // key is division, value is divisionName
+              jobsTally: {}, // key is job, value is jobName
+            }
+          }
+
+          if (item.timetype === "OR") {
+            // Count the off rotation dates and ensure that there are not two
+            // off rotation entries for a given date.
+            const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
+            if (tallyObject[key].offRotationDates.includes(orDate.getTime())) {
+              throw new Error(
+                "More than one Off-Rotation entry exists for" +
+                  format(orDate, "yyyy MMM dd")
+              );
+            } else {
+              tallyObject[key].offRotationDates.push(orDate.getTime());
+            }
+          } else if (item.timetype !== "R") {
+            // Tally the non-work hours
+            if (item.timetype in tallyObject[key].nonWorkHoursTally) {
+              tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
+            } else {
+              tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
+            }
+          } else {
+            // Tally the work hours
+            if ("hours" in item) {
+              tallyObject[key].workHoursTally["hours"] += item.hours;
+            }
+            if ("jobHours" in item) {
+              tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
+            }
+            if ("mealsHours" in item) {
+              tallyObject[key].workHoursTally["mealsHours"] += item.mealsHours;
+            }
+
+            // Tally the divisions (must be present for work hours)
+            tallyObject[key].divisionsTally[item.division] = item.divisionName;
+
+            // Tally the jobs (may not be present)
+            if ("job" in item) {
+              tallyObject[key].jobsTally[item.job] = item.jobName;
+            }
+          }
+        }
+      }
+      return tallyObject;
+    }    
   }
 };
 </script>
