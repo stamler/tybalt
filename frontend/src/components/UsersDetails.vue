@@ -76,7 +76,7 @@ export default {
                       // TODO: show a message to the user
                       this.$router.push(this.parentPath);
                     } else {
-                      console.log("id not found, using userSourceAnchor");
+                      alert("id not found, using userSourceAnchor");
                       this.item = snap.docs[0].data();
                       this.$bind(
                         "logins",
