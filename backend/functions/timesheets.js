@@ -548,11 +548,11 @@ exports.exportJson = async (data, context) => {
     // generate JSON output
     const output = JSON.stringify(timeSheets);
 
-    // make the local filename
-    const filename = `${format(
-      trackingSnapshot.get("weekEnding").toDate(),
-      "yyyy-MMM-dd"
-    )}.json`;
+    // make the filename based on milliseconds since UTC epoch
+    const filename = `${trackingSnapshot
+      .get("weekEnding")
+      .toDate()
+      .getTime()}.json`;
     const tempLocalFileName = path.join(os.tmpdir(), filename);
 
     return new Promise((resolve, reject) => {
@@ -565,6 +565,7 @@ exports.exportJson = async (data, context) => {
 
         const bucket = admin.storage().bucket();
         const destination = "TimeTrackingExports/" + filename;
+        const newToken = uuidv4();
 
         // upload the file into the current firebase project default bucket
         bucket
@@ -575,13 +576,19 @@ exports.exportJson = async (data, context) => {
             // https://github.com/firebase/firebase-admin-node/issues/694
             metadata: {
               metadata: {
-                firebaseStorageDownloadTokens: uuidv4(),
+                firebaseStorageDownloadTokens: newToken,
               },
             },
           })
-          .then(async () => {
+          .then(async (uploadResponse) => {
             // put the path to the new file into the TimeTracking document
-            await trackingSnapshot.ref.update({ json: destination });
+            await trackingSnapshot.ref.update({
+              json: createPersistentDownloadUrl(
+                admin.storage().bucket().name,
+                destination,
+                newToken
+              ),
+            });
             return resolve();
           })
           .catch((error) => reject(error));
@@ -621,6 +628,61 @@ function hasPermission(context) {
     return true;
   }
 }
+
+// If a file object's metadata changes, ensure that the links to it
+// inside the corresponding TimeTracking object are updated so that
+// downloads continue to work. This allows us to update the token in
+// the firebase console for security reasons without breaking the app
+// https://www.sentinelstand.com/article/guide-to-firebase-storage-download-urls-tokens
+exports.writeFileLinks = functions.storage
+  .object()
+  .onMetadataUpdate(async (object) => {
+    const db = admin.firestore();
+
+    // The object name is milliseconds since epoch UTC of weekEnding
+    // derrive the weekEnding from it.
+    const parsed = path.parse(object.name);
+    const weekEnding = new Date(Number(parsed.name));
+
+    if (isNaN(weekEnding)) {
+      throw new Error(
+        `filename ${parsed.name} cannot be converted to a date object`
+      );
+    }
+
+    // Get the TimeTracking doc or throw
+    const querySnap = await db
+      .collection("TimeTracking")
+      .where("weekEnding", "==", weekEnding)
+      .get();
+
+    let timeTrackingDocRef;
+    if (querySnap.size > 1) {
+      throw new Error(
+        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
+      );
+    } else if (querySnap.size === 1) {
+      timeTrackingDocRef = querySnap.docs[0].ref;
+    } else {
+      throw new Error(
+        `There are no documents in TimeTracking for weekEnding ${weekEnding}`
+      );
+    }
+
+    return timeTrackingDocRef.update({
+      [parsed.ext.substring(1)]: createPersistentDownloadUrl(
+        admin.storage().bucket().name,
+        object.name,
+        object.metadata.firebaseStorageDownloadTokens
+      ),
+    });
+  });
+
+const createPersistentDownloadUrl = (bucket, pathToFile, downloadToken) => {
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
+    pathToFile
+  )}?alt=media&token=${downloadToken}`;
+};
 
 // TODO: run this on a trigger when a file is written on Google Storage
 exports.generateCSV = async (data, context) => {};

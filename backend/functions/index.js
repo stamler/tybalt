@@ -37,6 +37,10 @@ exports.lockTimesheets = functions.https.onCall(
   timesheetsModule.lockTimesheets
 );
 
+// each time a cloud storage object's metadata changes, write its
+// download link to the corresponding TimeTracking document.
+exports.writeFileLinks = timesheetsModule.writeFileLinks;
+
 // export JSON for locked timesheets to Google Cloud Storage
 exports.exportJson = functions.https.onCall(timesheetsModule.exportJson);
 
