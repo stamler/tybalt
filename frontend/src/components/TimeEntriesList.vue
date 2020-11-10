@@ -30,15 +30,28 @@
           </router-link>
         </div>
       </div>
-      <router-link
-        v-bind:to="{ name: 'Time Sheets' }"
-        v-on:click.native="bundle(new Date(Number(week)))"
-      >
-        Bundle
-      </router-link>
-      <span>{{ tallies[week].workHoursTally }}</span>
-      <span>{{ tallies[week].nonWorkHoursTally }}</span>
-      <span v-if="tallies[week].offRotationDates.length > 0">{{ tallies[week].offRotationDates.length }} days off rotation</span>
+      <div class="listentry">
+        <div class="anchorbox">Totals</div>
+        <div class="detailsbox">
+          <div class="headline_wrapper">
+            <div class="headline">
+              {{ tallies[week].workHoursTally }}
+            </div>
+            <div class="firstline">{{ tallies[week].nonWorkHoursTally }}</div>
+            <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
+              {{ tallies[week].offRotationDates.length }} days off rotation
+            </div>
+          </div>
+        </div>
+        <div class="rowactionbox">
+          <router-link
+            v-bind:to="{ name: 'Time Sheets' }"
+            v-on:click.native="bundle(new Date(Number(week)))"
+          >
+            Bundle
+          </router-link>
+        </div>
+      </div>
     </div>
   </div>
 </template>
