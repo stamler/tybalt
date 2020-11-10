@@ -365,16 +365,16 @@ exports.updateTimeTracking = functions.firestore
       .where("weekEnding", "==", weekEnding)
       .get();
 
-    let timeExportsDocRef;
+    let timeTrackingDocRef;
     if (querySnap.size > 1) {
       throw new Error(
         `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
-      timeExportsDocRef = querySnap.docs[0].ref;
+      timeTrackingDocRef = querySnap.docs[0].ref;
     } else {
-      timeExportsDocRef = db.collection("TimeTracking").doc();
-      await timeExportsDocRef.set({ weekEnding });
+      timeTrackingDocRef = db.collection("TimeTracking").doc();
+      await timeTrackingDocRef.set({ weekEnding });
     }
 
     if (
@@ -383,14 +383,14 @@ exports.updateTimeTracking = functions.firestore
       after.approved === true &&
       after.locked === false
     ) {
-      timeExportsDocRef.set(
+      timeTrackingDocRef.set(
         {
           pending: admin.firestore.FieldValue.arrayUnion(change.after.ref.path),
         },
         { merge: true }
       );
     } else {
-      timeExportsDocRef.set(
+      timeTrackingDocRef.set(
         {
           pending: admin.firestore.FieldValue.arrayRemove(
             change.after.ref.path
@@ -468,13 +468,13 @@ exports.lockTimesheets = async (data, context) => {
       .where("weekEnding", "==", weekEnding)
       .get();
 
-    let timeExportsDocRef;
+    let timeTrackingDocRef;
     if (querySnap.size > 1) {
       throw new Error(
         `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
-      timeExportsDocRef = querySnap.docs[0].ref;
+      timeTrackingDocRef = querySnap.docs[0].ref;
     } else {
       throw new Error(
         `There is no TimeTracking document for weekEnding ${weekEnding}`
@@ -492,7 +492,7 @@ exports.lockTimesheets = async (data, context) => {
             // timesheet is lockable, lock it then add it to the export
             return transaction
               .update(timeSheet.ref, { locked: true })
-              .update(timeExportsDocRef, {
+              .update(timeTrackingDocRef, {
                 timeSheets: admin.firestore.FieldValue.arrayUnion(tsSnap.id),
               });
           } else {
