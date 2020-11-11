@@ -11,32 +11,36 @@
           <div class="headline"></div>
           <div class="byline"></div>
         </div>
-        <div class="firstline" v-if="item.pending !== undefined && item.pending.length > 0">{{ item.pending.length }} time sheet(s) pending</div>
-        <div class="secondline" v-if="item.timeSheets !== undefined && item.timeSheets.length > 0">{{ item.timeSheets.length }} locked time sheet(s)</div>
+        <div class="firstline" v-if="hasPending(item)">{{ item.pending.length }} time sheet(s) pending</div>
+        <div class="secondline" v-if="hasLocked(item)">{{ item.timeSheets.length }} locked time sheet(s)</div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
         <router-link
+          v-if="hasPending(item)"
           v-bind:to="{ name: 'Time Tracking' }"
           v-on:click.native="lockTimesheets(item.weekEnding)"
         >
           <lock-icon></lock-icon>
         </router-link>
         <router-link
+          v-if="hasLocked(item)"
           v-bind:to="{ name: 'Time Tracking' }"
           v-on:click.native="exportTimesheets(item.id)"
         >
           <file-plus-icon></file-plus-icon>
         </router-link>
-        <a 
+        <a
+          v-if="hasLink(item, 'json')"
           download
           v-bind:href="item['json']"
         >
           .json<download-icon></download-icon>
         </a>
         <a 
-          download="filename.csv" 
-          href="filePath"
+          v-if="hasLink(item, 'csv')"
+          download 
+          v-bind:href="item['csv']"
         >
           .csv<download-icon></download-icon>
         </a>
@@ -60,12 +64,10 @@ export default {
   },
   computed: {
     processedItems() {
-      //TODO: filter out items with no pending or timeSheets properties
-      // or where the arrays exist but have length zero
-      return this.items.filter(x => {
-          return x.hasOwnProperty("pending") && x.pending.length > 0 || 
-            x.hasOwnProperty("timeSheets") && x.timeSheets.length > 0 
-      });
+      // Show only items with pending or locked TimeSheets
+      return this.items.filter(x => 
+          this.hasPending(x) || this.hasLocked(x)
+      );
     }
   },
   filters: {
@@ -90,6 +92,15 @@ export default {
     });
   },
   methods: {
+    hasLink(item, property) {
+      return item.hasOwnProperty(property) && item[property].length > 32;
+    },
+    hasPending(item) {
+      return item.hasOwnProperty("pending") && item.pending.length > 0;
+    },
+    hasLocked(item) {
+      return item.hasOwnProperty("timeSheets") && item.timeSheets.length > 0;
+    },
     lockTimesheets(weekEnding) {
       const lockTimesheets = firebase
         .functions()
