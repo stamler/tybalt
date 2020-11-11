@@ -1,6 +1,6 @@
 <template>
   <div id="list">
-    <div class="listentry" v-for="item in items" v-bind:key="item.id">
+    <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
           {{ item.weekEnding.toDate() | exportDate }}
@@ -57,6 +57,16 @@ export default {
     LockIcon,
     FilePlusIcon,
     DownloadIcon
+  },
+  computed: {
+    processedItems() {
+      //TODO: filter out items with no pending or timeSheets properties
+      // or where the arrays exist but have length zero
+      return this.items.filter(x => {
+          return x.hasOwnProperty("pending") && x.pending.length > 0 || 
+            x.hasOwnProperty("timeSheets") && x.timeSheets.length > 0 
+      });
+    }
   },
   filters: {
     exportDate(date) {
