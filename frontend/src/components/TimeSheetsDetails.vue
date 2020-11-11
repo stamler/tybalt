@@ -1,6 +1,29 @@
 <template>
   <div>
-    <div>{{ item.displayName }} (reports to {{ item.managerName }})</div>
+    <div>
+      {{ item.displayName }} (reports to {{ item.managerName }})
+      <router-link 
+        v-if="canApprove() && item.submitted === true && item.approved === false" 
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="approveTs(id)"
+      >
+        <check-circle-icon></check-circle-icon>
+      </router-link>
+      <router-link
+        v-if="!item.rejected && belongsToMe(item) && item.submitted === false"
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="submitTs(id)"
+      >
+        <send-icon></send-icon>
+      </router-link>
+      <router-link
+        v-if="canApprove() && item.submitted === true && item.locked === false"
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="rejectTs(id)"
+      >
+        <x-circle-icon></x-circle-icon>
+      </router-link>
+    </div>
     <div v-if="item.weekEnding">
       Sunday {{ weekStart | shortDate }} to Saturday
       {{ item.weekEnding.toDate() | shortDate }}
@@ -46,21 +69,31 @@
         </tr>
       </tfoot>
     </table>
-    <div>
-      <h2>Actions</h2>
-      <button>approve</button> <!-- if tapr claim and submitted true -->
-      <button>submit</button> <!-- if submitted false and uid matches logged in user-->
-      <button>reject</button> <!-- if tapr claim and submitted true -->
-    </div>
   </div>
 </template>
 
 <script>
 import { format, subWeeks, addMilliseconds } from "date-fns";
+import { mapState } from "vuex";
+import {
+  SendIcon,
+  RewindIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from "vue-feather-icons";
+import firebase from "@/firebase";
+const db = firebase.firestore();
+
 
 export default {
+  components: {
+    SendIcon,
+    CheckCircleIcon,
+    XCircleIcon
+  },
   props: ["id"],
   computed: {
+    ...mapState(["user", "claims"]),
     offHoursSum() {
       let total = 0;
       for (const code in this.item.nonWorkHoursTally) {
@@ -105,6 +138,85 @@ export default {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
     this.collection = this.$parent.collection;
+  },
+  methods: {
+    belongsToMe(item) {
+      return this.user.uid === this.item.uid;
+    },
+    canApprove() {
+      return this.claims.hasOwnProperty("tapr") && this.claims["tapr"] === true;
+    },
+    submitTs(timesheetId) {
+      this.collection
+        .doc(timesheetId)
+        .set({ submitted: true }, { merge: true })
+        .catch(err => {
+          alert(`Error submitting timesheet: ${err}`);
+        });
+    },
+    approveTs(timesheetId) {
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (tsDoc.data().submitted === true) {
+              // timesheet is approvable because it has been submitted
+              transaction.update(timesheet, { approved: true });
+            } else {
+              throw "The timesheet has not been submitted or was recalled";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Approval failed: ${error}`);
+        });
+    },
+    rejectTs(timesheetId) {
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (
+              tsDoc.data().submitted === true &&
+              tsDoc.data().locked === false
+            ) {
+              // timesheet is rejectable because it is submitted and not locked
+              transaction.update(timesheet, {
+                approved: false,
+                rejected: true,
+                rejectionReason: "no reason provided"
+              });
+            } else {
+              throw "The timesheet has not been submitted or is locked";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Approval failed: ${error}`);
+        });
+    },
+    recallTs(timesheetId) {
+      // A transaction is used to update the submitted field by
+      // first verifying that approved is false. Similarly an approve
+      // function for the approving manager must use a transaction and
+      // verify that the timesheet is submitted before marking it approved
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+
+      return db
+        .runTransaction(function(transaction) {
+          return transaction.get(timesheet).then(function(tsDoc) {
+            if (tsDoc.data().approved === false) {
+              // timesheet is recallable because it hasn't yet been approved
+              transaction.update(timesheet, { submitted: false });
+            } else {
+              throw "The timesheet was already approved by a manager";
+            }
+          });
+        })
+        .catch(function(error) {
+          alert(`Recall failed: ${error}`);
+        });
+    },
   }
 };
 </script>
