@@ -34,11 +34,12 @@
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline" v-if="sumValues(week, 'workHoursTally') > 0">
-              {{ sumValues(week,"workHoursTally") }} hours worked
+            <div class="headline">
+              {{ totalHours(week) }} hours
             </div>
-            <div class="byline" v-if="sumValues(week, 'nonWorkHoursTally') > 0">
-              {{ sumValues(week,"nonWorkHoursTally") }} hours off
+            <div class="byline">
+              {{ sumValues(week,"workHoursTally") }} worked /
+              {{ sumValues(week,"nonWorkHoursTally") }} off
             </div>
           </div>
           <div class="firstline">
@@ -48,8 +49,8 @@
             <span v-if="tallies[week].workHoursTally.hours > 0">
               {{ tallies[week].workHoursTally.hours }} non-job hours
             </span>
-            <span v-if="tallies[week].nonWorkHoursTally.mealsHours > 0">
-              {{ tallies[week].nonWorkHoursTally.mealsHours }} hours meals
+            <span v-if="tallies[week].mealsHoursTally > 0">
+              {{ tallies[week].mealsHoursTally }} hours meals
             </span>
           </div>
             <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
@@ -130,6 +131,10 @@ export default {
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
+    totalHours(week) {
+      return this.sumValues(week, "nonWorkHoursTally") + 
+        this.sumValues(week,"workHoursTally");
+    },
     sumValues(week, property) {
       return Object.values(this.tallies[week][property]).reduce((a, c) => a + c, 0);
     },
@@ -162,7 +167,8 @@ export default {
             tallyObject[key] = {
               weekEnding: new Date(key),
               offRotationDates: [],
-              nonWorkHoursTally: { mealsHours: 0 }, // key is timetype, value is total
+              mealsHoursTally: 0,
+              nonWorkHoursTally: {}, // key is timetype, value is total
               workHoursTally: { hours: 0, jobHours: 0 },
               divisionsTally: {}, // key is division, value is divisionName
               jobsTally: {}, // key is job, value is jobName
@@ -197,7 +203,7 @@ export default {
               tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
             }
             if ("mealsHours" in item) {
-              tallyObject[key].nonWorkHoursTally["mealsHours"] += item.mealsHours;
+              tallyObject[key].mealsHoursTally += item.mealsHours;
             }
 
             // Tally the divisions (must be present for work hours)

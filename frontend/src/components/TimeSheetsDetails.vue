@@ -42,7 +42,7 @@
           <td colspan="3">Totals</td>
           <td>{{ item.workHoursTally.jobHours }}</td>
           <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
-          <td>{{ item.workHoursTally.mealsHours }}</td>
+          <td>{{ item.mealsHoursTally }}</td>
         </tr>
       </tfoot>
     </table>

@@ -91,7 +91,8 @@ exports.bundleTimesheet = async (data, context) => {
     const entries = [];
     const offRotationDates = [];
     const nonWorkHoursTally = {}; // key is timetype, value is total
-    const workHoursTally = { hours: 0, jobHours: 0, mealsHours: 0 };
+    let mealsHoursTally = 0;
+    const workHoursTally = { hours: 0, jobHours: 0 };
     const divisionsTally = {}; // key is division, value is divisionName
     const jobsTally = {}; // key is job, value is jobName
     timeEntries.forEach((timeEntry) => {
@@ -126,7 +127,7 @@ exports.bundleTimesheet = async (data, context) => {
           workHoursTally["jobHours"] += item.jobHours;
         }
         if ("mealsHours" in item) {
-          workHoursTally["mealsHours"] += item.mealsHours;
+          mealsHoursTally += item.mealsHours;
         }
 
         // Tally the divisions (must be present for work hours)
@@ -181,6 +182,7 @@ exports.bundleTimesheet = async (data, context) => {
             nonWorkHoursTally,
             offRotationDaysTally: offRotationDates.length,
             workHoursTally,
+            mealsHoursTally,
             divisionsTally,
             jobsTally,
           });
