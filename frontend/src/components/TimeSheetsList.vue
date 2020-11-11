@@ -10,6 +10,9 @@
         <div class="headline_wrapper">
           <div class="headline">{{ hoursWorked(item) }}</div>
           <div class="byline">{{ hoursOff(item) }}</div>
+          <div class="byline" v-if="item.offRotationDaysTally > 0">
+            {{ item.offRotationDaysTally }} day(s) off rotation
+          </div>
         </div>
         <div class="firstline">{{ jobs(item) }}</div>
         <div class="secondline">{{ divisions(item) }}</div>
@@ -244,7 +247,7 @@ export default {
       if (workedHours > 0) {
         return `${workedHours} hours worked`;
       } else {
-        return "no work in this period";
+        return "no work";
       }
     },
     hoursOff(item) {

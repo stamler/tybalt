@@ -54,7 +54,7 @@
             </span>
           </div>
             <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
-              {{ tallies[week].offRotationDates.length }} days off rotation
+              {{ tallies[week].offRotationDates.length }} day(s) off rotation
             </div>
         </div>
         <div class="rowactionsbox">
