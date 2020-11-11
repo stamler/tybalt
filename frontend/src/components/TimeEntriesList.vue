@@ -34,14 +34,24 @@
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline">
-              {{ Object.values(tallies[week].workHoursTally).reduce((a, c) => a + c, 0) }} hours worked
+            <div class="headline" v-if="sumValues(week, 'workHoursTally') > 0">
+              {{ sumValues(week,"workHoursTally") }} hours worked
             </div>
-            <div class="byline">
-              {{ Object.values(tallies[week].nonWorkHoursTally).reduce((a, c) => a + c, 0) }} hours off
+            <div class="byline" v-if="sumValues(week, 'nonWorkHoursTally') > 0">
+              {{ sumValues(week,"nonWorkHoursTally") }} hours off
             </div>
           </div>
-          <div class="firstline"></div>
+          <div class="firstline">
+            <span v-if="tallies[week].workHoursTally.jobHours > 0">
+              {{ tallies[week].workHoursTally.jobHours }} hours on jobs
+            </span>
+            <span v-if="tallies[week].workHoursTally.hours > 0">
+              {{ tallies[week].workHoursTally.hours }} non-job hours
+            </span>
+            <span v-if="tallies[week].nonWorkHoursTally.mealsHours > 0">
+              {{ tallies[week].nonWorkHoursTally.mealsHours }} hours meals
+            </span>
+          </div>
             <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
               {{ tallies[week].offRotationDates.length }} days off rotation
             </div>
@@ -120,6 +130,9 @@ export default {
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
+    sumValues(week, property) {
+      return Object.values(this.tallies[week][property]).reduce((a, c) => a + c, 0);
+    },
     itemsByWeekEnding(weekEnding) {
       return this.items
         .filter(x => (x.hasOwnProperty("weekEnding") && x.weekEnding.toDate().valueOf() === Number(weekEnding) ));
@@ -149,8 +162,8 @@ export default {
             tallyObject[key] = {
               weekEnding: new Date(key),
               offRotationDates: [],
-              nonWorkHoursTally: {}, // key is timetype, value is total
-              workHoursTally: { hours: 0, jobHours: 0, mealsHours: 0 },
+              nonWorkHoursTally: { mealsHours: 0 }, // key is timetype, value is total
+              workHoursTally: { hours: 0, jobHours: 0 },
               divisionsTally: {}, // key is division, value is divisionName
               jobsTally: {}, // key is job, value is jobName
             }
@@ -176,7 +189,7 @@ export default {
               tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
             }
           } else {
-            // Tally the work hours
+            // Tally the work hours and meals hours
             if ("hours" in item) {
               tallyObject[key].workHoursTally["hours"] += item.hours;
             }
@@ -184,7 +197,7 @@ export default {
               tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
             }
             if ("mealsHours" in item) {
-              tallyObject[key].workHoursTally["mealsHours"] += item.mealsHours;
+              tallyObject[key].nonWorkHoursTally["mealsHours"] += item.mealsHours;
             }
 
             // Tally the divisions (must be present for work hours)
