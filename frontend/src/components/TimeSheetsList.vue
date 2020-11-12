@@ -162,12 +162,18 @@ export default {
   },
   methods: {
     unbundle(timesheetId) {
+      store.commit("startTask", { id:"unbundle", message: "unbundling"});
       const unbundleTimesheet = firebase
         .functions()
         .httpsCallable("unbundleTimesheet");
-      return unbundleTimesheet({ id: timesheetId }).catch(error => {
-        alert(`Error unbundling timesheet: ${error.message}`);
-      });
+      return unbundleTimesheet({ id: timesheetId })
+        .then(() => {
+          store.commit("endTask", { id:"unbundle" });
+        })        
+        .catch(error => {
+          store.commit("endTask", { id:"unbundle" });
+          alert(`Error unbundling timesheet: ${error.message}`);
+        });
     },
     submitTs(timesheetId) {
       this.collection

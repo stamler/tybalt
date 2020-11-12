@@ -125,10 +125,6 @@ export default {
       return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
           store.commit("endTask", { id:"bundle" });
-          alert(
-            `Timesheet created for the week ending ${week.getMonth() +
-              1}/${week.getDate()}`
-          );
         })
         .catch(error => {
           store.commit("endTask", { id:"bundle" });

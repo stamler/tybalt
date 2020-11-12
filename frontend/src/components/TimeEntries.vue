@@ -3,6 +3,7 @@
     <div class="actions">
       <router-link class="navlink" to="list">List</router-link>
       <router-link class="navlink" to="add">New</router-link>
+      <WaitMessages v-if="showTasks" />
     </div>
     <router-view />
   </div>
@@ -12,9 +13,16 @@
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
+import WaitMessages from "./WaitMessages";
 import { format } from "date-fns";
 
 export default {
+  components: {
+    WaitMessages
+  },
+  computed: {
+    ...mapState(["showTasks"]),
+  },
   data() {
     return {
       collection: db.collection("TimeEntries")

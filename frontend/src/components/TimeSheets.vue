@@ -10,7 +10,7 @@
       <router-link class="navlink" v-bind:to="{ name: 'Time Sheets Approved' }">
         Approved
       </router-link>
-      <span v-if="showTasks">{{ oneMessage }}</span>
+      <WaitMessages v-if="showTasks" />
     </div>
     <router-view />
   </div>
@@ -19,18 +19,20 @@
 <script>
 import firebase from "@/firebase";
 const db = firebase.firestore();
-import { mapGetters, mapState } from "vuex";
+import { mapState } from "vuex";
+import WaitMessages from "./WaitMessages";
 
 export default {
+  components: {
+    WaitMessages
+  },
   data() {
     return {
       collection: db.collection("TimeSheets")
     };
   },
-  created() {},
   computed: {
-    ...mapState(["claims","activeTasks", "showTasks"]),
-    ...mapGetters(["oneMessage"]),
+    ...mapState(["showTasks"])
   }
 };
 </script>
