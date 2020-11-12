@@ -105,20 +105,33 @@ export default {
       const lockTimesheets = firebase
         .functions()
         .httpsCallable("lockTimesheets");
+      const week = weekEnding.toDate().getTime();
       // TODO: replace confirm() with modal in Vue
       if (confirm("Locking Timesheets is not reversible. Do you want to proceed?")) {
-        return lockTimesheets({ weekEnding: weekEnding.toDate().getTime() }).catch(error => {
-          alert(`Error exporting timesheets: ${error.message}`);
-        });
+        store.commit("startTask", { id:`lock${week}`, message: "locking"});
+        return lockTimesheets({ weekEnding: week })
+          .then(() => {
+            store.commit("endTask", { id:`lock${week}`});
+          })
+          .catch(error => {
+            store.commit("endTask", { id:`lock${week}`});
+            alert(`Error exporting timesheets: ${error.message}`);
+          });
       }
     },
     exportTimesheets(timeTrackingId) {
+      store.commit("startTask", { id:`export${timeTrackingId}`, message: "exporting"});
       const exportJson = firebase
         .functions()
         .httpsCallable("exportJson");
-      return exportJson({ timeTrackingId }).catch(error => {
-        alert(`Export JSON error: ${error.message}`);
-      })
+      return exportJson({ timeTrackingId })
+        .then(() => {
+          store.commit("endTask", { id:`export${timeTrackingId}`});
+        })
+        .catch(error => {
+          store.commit("endTask", { id:`export${timeTrackingId}`});
+          alert(`Export JSON error: ${error.message}`);
+        })
     }
   }
 };
