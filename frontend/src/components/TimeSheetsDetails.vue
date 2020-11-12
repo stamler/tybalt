@@ -73,6 +73,7 @@
 </template>
 
 <script>
+import mixins from "./mixins"
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import {
@@ -86,6 +87,7 @@ const db = firebase.firestore();
 
 
 export default {
+  mixins: [mixins],
   components: {
     SendIcon,
     CheckCircleIcon,
@@ -145,77 +147,6 @@ export default {
     },
     canApprove() {
       return this.claims.hasOwnProperty("tapr") && this.claims["tapr"] === true;
-    },
-    submitTs(timesheetId) {
-      this.collection
-        .doc(timesheetId)
-        .set({ submitted: true }, { merge: true })
-        .catch(err => {
-          alert(`Error submitting timesheet: ${err}`);
-        });
-    },
-    approveTs(timesheetId) {
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
-      return db
-        .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (tsDoc.data().submitted === true) {
-              // timesheet is approvable because it has been submitted
-              transaction.update(timesheet, { approved: true });
-            } else {
-              throw "The timesheet has not been submitted or was recalled";
-            }
-          });
-        })
-        .catch(function(error) {
-          alert(`Approval failed: ${error}`);
-        });
-    },
-    rejectTs(timesheetId) {
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
-      return db
-        .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (
-              tsDoc.data().submitted === true &&
-              tsDoc.data().locked === false
-            ) {
-              // timesheet is rejectable because it is submitted and not locked
-              transaction.update(timesheet, {
-                approved: false,
-                rejected: true,
-                rejectionReason: "no reason provided"
-              });
-            } else {
-              throw "The timesheet has not been submitted or is locked";
-            }
-          });
-        })
-        .catch(function(error) {
-          alert(`Approval failed: ${error}`);
-        });
-    },
-    recallTs(timesheetId) {
-      // A transaction is used to update the submitted field by
-      // first verifying that approved is false. Similarly an approve
-      // function for the approving manager must use a transaction and
-      // verify that the timesheet is submitted before marking it approved
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
-
-      return db
-        .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (tsDoc.data().approved === false) {
-              // timesheet is recallable because it hasn't yet been approved
-              transaction.update(timesheet, { submitted: false });
-            } else {
-              throw "The timesheet was already approved by a manager";
-            }
-          });
-        })
-        .catch(function(error) {
-          alert(`Recall failed: ${error}`);
-        });
     },
   }
 };

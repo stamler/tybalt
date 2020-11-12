@@ -71,6 +71,7 @@
 </template>
 
 <script>
+import mixins from "./mixins"
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
@@ -78,6 +79,7 @@ import { mapState } from "vuex";
 import firebase from "@/firebase";
 
 export default {
+  mixins: [mixins],
   components: {
     EditIcon,
     XCircleIcon,
@@ -117,20 +119,6 @@ export default {
     });
   },
   methods: {
-    bundle(week) {
-      store.commit("startTask", { id:"bundle", message: "bundling"});
-      const bundleTimesheet = firebase
-        .functions()
-        .httpsCallable("bundleTimesheet");
-      return bundleTimesheet({ weekEnding: week.getTime() })
-        .then(() => {
-          store.commit("endTask", { id:"bundle" });
-        })
-        .catch(error => {
-          store.commit("endTask", { id:"bundle" });
-          alert(`Error bundling timesheet: ${error.message}`);
-        });
-    },
     totalHours(week) {
       return this.sumValues(week, "nonWorkHoursTally") + 
         this.sumValues(week,"workHoursTally");
