@@ -74,6 +74,7 @@
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
+import { mapState } from "vuex";
 import firebase from "@/firebase";
 
 export default {
@@ -117,17 +118,20 @@ export default {
   },
   methods: {
     bundle(week) {
+      store.commit("startTask", { id:"bundle", message: "bundling"});
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
       return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
+          store.commit("endTask", { id:"bundle" });
           alert(
             `Timesheet created for the week ending ${week.getMonth() +
               1}/${week.getDate()}`
           );
         })
         .catch(error => {
+          store.commit("endTask", { id:"bundle" });
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
@@ -152,6 +156,8 @@ export default {
     }
   },
   computed: {
+    ...mapState(["activeTasks", "showTasks"]),
+
     // A an object where the keys are saturdays and the values are tallies
     // to be used in the UI
     tallies() {
