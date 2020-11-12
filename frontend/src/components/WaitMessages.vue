@@ -1,7 +1,7 @@
 <template>
   <span>
-    <half-circle-spinner display: inline v-bind:size="20"></half-circle-spinner> 
     {{ oneMessage }}
+    <half-circle-spinner style="display:inline-block;" v-bind:size="20"></half-circle-spinner> 
   </span>
 </template>
 
