@@ -157,6 +157,10 @@ describe("Firestore Rules", () => {
   });
 
   describe("TimeEntries", () => {
+    it("requires jobHours not be present if there is no job");
+    it(
+      "requires Banking (RB) entries to have only a uid, date, and timetype, and hours"
+    );
     it("allows owners to read their own Time Entries if they have time claim");
     it("prevents reading without a time claim");
     it("prevents reading with a time claim if the owner doesn't match");
