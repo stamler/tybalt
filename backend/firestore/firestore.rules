@@ -70,6 +70,12 @@ service cloud.firestore {
           (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"]))
         ) &&
 
+        // if timetype is "RB", only hours is provided and is a positive number
+        (
+          (isPositiveNumber("hours") && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
+          newDoc().timetype != "RB"
+        ) &&
+
         // when provided, jobHours require an existing job
         (
           ( isPositiveNumber("jobHours") && isInCollection("job", "Jobs") ) ||
