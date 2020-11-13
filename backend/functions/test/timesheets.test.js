@@ -114,10 +114,7 @@ describe("bundle", async () => {
   const process = require("process");
   process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099";
   const admin = require("firebase-admin");
-
-  console.log("tsbundleTEST checkpoint1");
   const adminApp = admin.initializeApp({ projectId: MY_PROJECT_ID });
-  console.log("tsbundleTEST checkpoint2");
 
   try {
     await adminApp.auth().createUser({

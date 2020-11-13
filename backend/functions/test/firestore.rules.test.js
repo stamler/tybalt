@@ -131,7 +131,7 @@ describe("Firestore Rules", () => {
   });
 
   describe("Admin Writes", () => {
-    ["Divisions", "Jobs", "TimeTypes"].forEach((collection) => {
+    ["Divisions", "TimeTypes"].forEach((collection) => {
       allowAdminWrite(collection);
     });
     ["Computers", "Config", "RawLogins"].forEach((collection) => {
@@ -574,5 +574,13 @@ describe("Firestore Rules", () => {
         })
       );
     });
+  });
+
+  describe("Jobs", () => {
+    it("requires the job claim to create or update");
+    it("requires the proposal to reference a valid job if present");
+    it("requires the proposal to be in the valid format if present");
+    it("requires the job id to be in the correct format");
+    it("requires the job name field to be at least 5 characters long");
   });
 });
