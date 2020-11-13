@@ -25,21 +25,36 @@ describe("timesheets.js", () => {
     const admin = require("firebase-admin");
     const adminApp = admin.initializeApp({ projectId: MY_PROJECT_ID });
 
-    try {
-      await adminApp.auth().createUser({
+    const userRecords = [
+      {
         uid: "alice",
         email: "alice@example.com",
         emailVerified: true,
         password: "secretPassword",
         displayName: "Alice",
         disabled: false,
-      });
-    } catch (error) {
-      if (error.code === "auth/email-already-exists") {
-        console.log("User already exists, proceeding");
-      } else {
-        console.log(JSON.stringify(error));
-        throw error;
+      },
+      {
+        uid: "bob",
+        email: "bob@example.com",
+        emailVerified: true,
+        password: "secretPassword",
+        displayName: "Bob",
+        disabled: false,
+      },
+    ];
+
+    for (const userRecord of userRecords) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await adminApp.auth().createUser(userRecord);
+      } catch (error) {
+        if (error.code === "auth/email-already-exists") {
+          console.log("User already exists, proceeding");
+        } else {
+          console.log(JSON.stringify(error));
+          throw error;
+        }
       }
     }
   });
@@ -194,7 +209,7 @@ describe("timesheets.js", () => {
       const timesheet = snap.docs[0].data();
       assert(timesheet.workHoursTally.hours === 40);
       assert(timesheet.workHoursTally.jobHours === 0);
-      assert(timesheet.workHoursTally.mealsHours === 0);
+      assert(timesheet.mealsHoursTally === 0);
       assert("CI" in timesheet.divisionsTally);
       assert.isEmpty(timesheet.jobsTally);
       assert.isEmpty(timesheet.nonWorkHoursTally);
