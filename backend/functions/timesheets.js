@@ -94,7 +94,7 @@ exports.bundleTimesheet = async (data, context) => {
     let mealsHoursTally = 0;
     const workHoursTally = { hours: 0, jobHours: 0 };
     const divisionsTally = {}; // key is division, value is divisionName
-    const jobsTally = {}; // key is job, value is jobName
+    const jobsTally = {}; // key is job, value is object of name and totals
     timeEntries.forEach((timeEntry) => {
       const item = timeEntry.data();
       if (item.timetype === "OR") {
@@ -135,7 +135,23 @@ exports.bundleTimesheet = async (data, context) => {
 
         // Tally the jobs (may not be present)
         if ("job" in item) {
-          jobsTally[item.job] = item.jobName;
+          if (item.job in jobsTally) {
+            // a previous entry already tracked this job, add to totals
+            const hours = isNaN(item.hours)
+              ? jobsTally[item.job].hours
+              : jobsTally[item.job].hours + item.hours;
+            const jobHours = isNaN(item.jobHours)
+              ? jobsTally[item.job].jobHours
+              : jobsTally[item.job].jobHours + item.jobHours;
+            jobsTally[item.job] = { name: item.jobName, hours, jobHours };
+          } else {
+            // first instance of this job in the timesheet, set totals to zero
+            jobsTally[item.job] = {
+              name: item.jobName,
+              hours: item.hours || 0,
+              jobHours: item.jobHours || 0,
+            };
+          }
         }
       }
 
