@@ -126,7 +126,12 @@ describe("bundle", async () => {
       disabled: false,
     });
   } catch (error) {
-    console.log("Error creating new user:", error);
+    if (error.code === "auth/email-already-exists") {
+      console.log("User already exists, proceeding");
+    } else {
+      console.log(JSON.stringify(error));
+      throw error;
+    }
   }
 
   const auth = { uid: "alice", email: "alice@example.com" };
