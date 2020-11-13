@@ -53,9 +53,17 @@
               {{ tallies[week].mealsHoursTally }} hours meals
             </span>
           </div>
-            <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
-              {{ tallies[week].offRotationDates.length }} day(s) off rotation
-            </div>
+          <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
+            {{ tallies[week].offRotationDates.length }} day(s) off rotation
+          </div>
+          <div class="thirdline">
+            <span v-if="tallies[week].bankEntries.length === 1">
+              {{ tallies[week].bankEntries[0].hours }} hours banked
+            </span>
+            <span v-else-if="tallies[week].bankEntries.length > 1" class="attention">
+              More than one banked time entry exists.
+            </span>
+          </div>
         </div>
         <div class="rowactionsbox">
           <router-link
@@ -156,9 +164,10 @@ export default {
           if (!tallyObject.hasOwnProperty(key)) {
             tallyObject[key] = {
               weekEnding: new Date(key),
+              bankEntries: [],
               offRotationDates: [],
-              mealsHoursTally: 0,
               nonWorkHoursTally: {}, // key is timetype, value is total
+              mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0 },
               divisionsTally: {}, // key is division, value is divisionName
               jobsTally: {}, // key is job, value is jobName
@@ -177,14 +186,11 @@ export default {
             } else {
               tallyObject[key].offRotationDates.push(orDate.getTime());
             }
-          } else if (item.timetype !== "R") {
-            // Tally the non-work hours
-            if (item.timetype in tallyObject[key].nonWorkHoursTally) {
-              tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
-            } else {
-              tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
-            }
-          } else {
+          } else if (item.timetype === "RB") {
+            // This is an overtime bank entry, store it in the bankEntries
+            // array for processing after completing the tallies.
+            tallyObject[key].bankEntries.push(item);
+          } else if (item.timetype === "R") {
             // Tally the work hours and meals hours
             if ("hours" in item) {
               tallyObject[key].workHoursTally["hours"] += item.hours;
@@ -202,6 +208,13 @@ export default {
             // Tally the jobs (may not be present)
             if ("job" in item) {
               tallyObject[key].jobsTally[item.job] = item.jobName;
+            }
+          } else {
+            // Tally the non-work hours
+            if (item.timetype in tallyObject[key].nonWorkHoursTally) {
+              tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
+            } else {
+              tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
             }
           }
         }

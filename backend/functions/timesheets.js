@@ -88,8 +88,8 @@ exports.bundleTimesheet = async (data, context) => {
     const batch = db.batch();
 
     // Put the existing timeEntries into an array then delete from Collection
-    const bankEntries = [];
     const entries = [];
+    const bankEntries = [];
     const offRotationDates = [];
     const nonWorkHoursTally = {}; // key is timetype, value is total
     let mealsHoursTally = 0;
@@ -223,6 +223,7 @@ exports.bundleTimesheet = async (data, context) => {
             mealsHoursTally,
             divisionsTally,
             jobsTally,
+            bankedHours,
           });
           return batch.commit();
         } else {
