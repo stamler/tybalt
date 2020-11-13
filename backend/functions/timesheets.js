@@ -93,8 +93,7 @@ exports.bundleTimesheet = async (data, context) => {
     const offRotationDates = [];
     const nonWorkHoursTally = {}; // key is timetype, value is total
     let mealsHoursTally = 0;
-    let nonJobHoursTally = 0;
-    const workHoursTally = { hours: 0, jobHours: 0 };
+    const workHoursTally = { hours: 0, jobHours: 0, nonJob: 0 };
     const divisionsTally = {}; // key is division, value is divisionName
     const jobsTally = {}; // key is job, value is object of name and totals
     timeEntries.forEach((timeEntry) => {
@@ -153,7 +152,8 @@ exports.bundleTimesheet = async (data, context) => {
           }
         } else {
           // keep track of the number of hours not associated with a job
-          nonJobHoursTally += item.hours;
+          // (as opposed to job hours not billable to the client)
+          workHoursTally["nonJob"] += item.hours;
         }
       } else {
         // Tally the non-work hours
@@ -228,7 +228,6 @@ exports.bundleTimesheet = async (data, context) => {
             divisionsTally,
             jobsTally,
             bankedHours,
-            nonJobHoursTally,
           });
           return batch.commit();
         } else {
