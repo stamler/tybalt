@@ -88,6 +88,7 @@ exports.bundleTimesheet = async (data, context) => {
     const batch = db.batch();
 
     // Put the existing timeEntries into an array then delete from Collection
+    const bankEntries = [];
     const entries = [];
     const offRotationDates = [];
     const nonWorkHoursTally = {}; // key is timetype, value is total
@@ -111,15 +112,12 @@ exports.bundleTimesheet = async (data, context) => {
           offRotationDates.push(orDate.getTime());
         }
         console.log(offRotationDates.toString());
-      } else if (item.timetype !== "R") {
-        // Tally the non-work hours
-        if (item.timetype in nonWorkHoursTally) {
-          nonWorkHoursTally[item.timetype] += item.hours;
-        } else {
-          nonWorkHoursTally[item.timetype] = item.hours;
-        }
-      } else {
-        // Tally the work hours
+      } else if (item.timetype === "RB") {
+        // This is an overtime bank entry, store it in the bankEntries
+        // array for processing after completing the tallies.
+        bankEntries.push(item);
+      } else if (item.timetype === "R") {
+        // Tally the regular work hours
         if ("hours" in item) {
           workHoursTally["hours"] += item.hours;
         }
@@ -153,6 +151,13 @@ exports.bundleTimesheet = async (data, context) => {
             };
           }
         }
+      } else {
+        // Tally the non-work hours
+        if (item.timetype in nonWorkHoursTally) {
+          nonWorkHoursTally[item.timetype] += item.hours;
+        } else {
+          nonWorkHoursTally[item.timetype] = item.hours;
+        }
       }
 
       // timeEntry is of type "QueryDocumentSnapshot"
@@ -160,6 +165,23 @@ exports.bundleTimesheet = async (data, context) => {
       batch.delete(timeEntry.ref);
     });
 
+    let bankedHours = 0;
+    if (bankEntries.length > 1) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Only one overtime banking entry can exist on a timesheet."
+      );
+    } else if (bankEntries.length === 1) {
+      bankedHours = bankEntries[0].hours;
+
+      // The sum of all hours worked minus the banked hours mustn't be under 44
+      if (workHoursTally.hours + workHoursTally.jobHours - bankedHours < 44) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Banked hours cannot bring your total worked hours below 44 hours on a timesheet."
+        );
+      }
+    }
     if (offRotationDates.length > 0) {
       // TODO: check sum of two previous timesheets to ensure that the
       // total isn't greater than 14 days in a two week period
