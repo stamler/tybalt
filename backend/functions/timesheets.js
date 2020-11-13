@@ -16,7 +16,7 @@ Holders of this claim can approve submitted timesheets whose
 managerUid field matches their uid.
 
 tadm: true
-Holders of this claim can export a time-tracking CSV for distribution to 
+Holders of this claim can export a time-tracking files for distribution to 
 accounting for payroll and to admin for invoicing
 */
 const functions = require("firebase-functions");
@@ -574,7 +574,7 @@ exports.exportJson = async (data, context) => {
     const tempLocalFileName = path.join(os.tmpdir(), filename);
 
     return new Promise((resolve, reject) => {
-      //write contents of csv into the temp file
+      //write contents of json into the temp file
       fs.writeFile(tempLocalFileName, output, (error) => {
         if (error) {
           reject(error);
