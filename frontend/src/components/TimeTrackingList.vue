@@ -37,13 +37,13 @@
         >
           .json<download-icon></download-icon>
         </a>
-        <a 
-          v-if="hasLink(item, 'csv')"
-          download 
-          v-bind:href="item['csv']"
+        <router-link
+          v-if="hasLink(item, 'json')"
+          v-bind:to="{ name: 'Time Tracking' }"
+          v-on:click.native="generatePayrollCSV(item['json'])"
         >
           .csv<download-icon></download-icon>
-        </a>
+        </router-link>
       </div>
     </div>
   </div>
@@ -65,7 +65,7 @@ export default {
   computed: {
     processedItems() {
       // Show only items with pending or locked TimeSheets
-      return this.items.filter(x => 
+      return this.items.filter(x =>
           this.hasPending(x) || this.hasLocked(x)
       );
     }
@@ -132,6 +132,65 @@ export default {
           store.commit("endTask", { id:`export${timeTrackingId}`});
           alert(`Export JSON error: ${error.message}`);
         })
+    },
+    async generatePayrollCSV(url) {
+      const { parse } = require("json2csv");
+      //const fields = ['field1', 'field2', 'field3'];
+      //const opts = { fields };
+
+      const response = await fetch(url);
+      const items = await response.json();
+
+      for (const item of items) {
+        delete item.uid;
+        delete item.managerUid;
+        delete item.jobsTally;
+        delete item.divisionsTally;
+        delete item.entries;
+        item["R"] = item.workHoursTally.jobHours + item.workHoursTally.hours;
+        delete item.workHoursTally;
+        for (const key in item.nonWorkHoursTally) {
+          item[key] = item.nonWorkHoursTally[key];
+        }
+        delete item.nonWorkHoursTally;
+        item["RB"] = item.bankedHours;
+        delete item.bankedHours;
+      }
+      const csv = parse(items);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      this.downloadBlob(blob, "file.csv");
+    },
+    // Force the download of a blob to a file by creating an
+    // anchor and programmatically clicking it.
+    downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'download';
+
+      // release object URL after element has been clicked
+      // required for one-off downloads of the blob content
+      const clickHandler = () => {
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.removeEventListener('click', clickHandler);
+        }, 150);
+      };
+
+      // Add the click event listener on the anchor element
+      // Comment out this line if you don't want a one-off download of the blob content
+      a.addEventListener('click', clickHandler, false);
+
+      // Programmatically trigger a click on the anchor element
+      // Useful if you want the download to happen automatically
+      // Without attaching the anchor element to the DOM
+      // Comment out this line if you don't want an automatic download of the blob content
+      a.click();
+
+      // Return the anchor element
+      // Useful if you want a reference to the element
+      // in order to attach it to the DOM or use it in some other way
+      return a;
     }
   }
 };

@@ -734,11 +734,3 @@ const createPersistentDownloadUrl = (bucket, pathToFile, downloadToken) => {
     pathToFile
   )}?alt=media&token=${downloadToken}`;
 };
-
-// Run this on a trigger when a json file is written on Google Storage
-// TODO: implement converting the existing JSON to CSV in the proper format
-exports.generateCSV = functions.storage.object().onFinalize(async (object) => {
-  const bucket = object.bucket;
-  const name = object.name;
-  const tmpFilePath = path.join(os.tmpdir(), "src.json");
-});
