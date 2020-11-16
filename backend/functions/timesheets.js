@@ -587,6 +587,12 @@ exports.exportJson = async (data, context) => {
       delete data.locked;
       delete data.rejected;
       delete data.rejectionReason;
+      data.weekEnding = data.weekEnding.toDate();
+      data.entries.map((entry) => {
+        delete entry.weekEnding;
+        entry.date = entry.date.toDate();
+        return entry;
+      });
       return data;
     });
 
