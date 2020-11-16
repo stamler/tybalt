@@ -42,7 +42,14 @@
           v-bind:to="{ name: 'Time Tracking' }"
           v-on:click.native="generatePayrollCSV(item['json'])"
         >
-          .csv<download-icon></download-icon>
+          payroll<download-icon></download-icon>
+        </router-link>
+        <router-link
+          v-if="hasLink(item, 'json')"
+          v-bind:to="{ name: 'Time Tracking' }"
+          v-on:click.native="generateInvoicingCSV(item['json'])"
+        >
+          invoicing<download-icon></download-icon>
         </router-link>
       </div>
     </div>
@@ -158,7 +165,40 @@ export default {
       }
       const csv = parse(items);
       const blob = new Blob([csv], { type: 'text/csv' });
-      this.downloadBlob(blob, "file.csv");
+      this.downloadBlob(blob, "payroll.csv");
+    },
+    async generateInvoicingCSV(url) {
+      const { parse } = require("json2csv");
+      //const fields = ['field1', 'field2', 'field3'];
+      //const opts = { fields };
+
+      const response = await fetch(url);
+      const items = await response.json();
+      const output = [];
+
+      for (const item of items) {
+        for (const entry of item.entries) {
+          if (entry.timetype !== "R") continue;
+          const line = {
+            client: "TOGET",
+            job: entry.job,
+            code: entry.division,
+            date: entry.date, // do format to day, month, year in eastern
+            qty: entry.jobHours || 0,
+            unit: "hours",
+            nc: entry.hours || 0,
+            meals: entry.mealsHours || 0,
+            ref: entry.workrecord || "",
+            project: "TOGET",
+            notes: entry.notes, // consolidate comments and description
+            employee: item.displayName, 
+          }
+          output.push(line);
+        };
+      }
+      const csv = parse(output);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      this.downloadBlob(blob, "invoicing.csv");
     },
     // Force the download of a blob to a file by creating an
     // anchor and programmatically clicking it.
