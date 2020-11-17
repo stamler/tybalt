@@ -41,9 +41,6 @@ exports.lockTimesheets = functions.https.onCall(
 // download link to the corresponding TimeTracking document.
 exports.writeFileLinks = timesheetsModule.writeFileLinks;
 
-// export JSON for locked timesheets to Google Cloud Storage
-exports.exportJson = functions.https.onCall(timesheetsModule.exportJson);
-
 // cleanup RawLogins with computerName
 //exports.cleanup = functions.https.onCall(async (data, context) => {
 //  return rawLoginsModule.cleanup(data, context, admin.firestore())
