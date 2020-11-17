@@ -179,17 +179,21 @@ export default {
       for (const item of items) {
         for (const entry of item.entries) {
           if (entry.timetype !== "R") continue;
+          // TODO: verify that time zone conversion isn't needed here
+          const date = new Date(entry.date);
           const line = {
-            client: "TOGET",
+            client: item.jobsTally[entry.job].client,
             job: entry.job,
             code: entry.division,
-            date: entry.date, // do format to day, month, year in eastern
+            date: date.getDate(),
+            month: date.getMonth() + 1,
+            year: date.getFullYear(),
             qty: entry.jobHours || 0,
             unit: "hours",
             nc: entry.hours || 0,
             meals: entry.mealsHours || 0,
             ref: entry.workrecord || "",
-            project: "TOGET",
+            project: item.jobsTally[entry.job].description,
             notes: entry.notes, // consolidate comments and description
             employee: item.displayName, 
           }
