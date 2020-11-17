@@ -141,11 +141,17 @@ exports.bundleTimesheet = async (data, context) => {
             const jobHours = isNaN(item.jobHours)
               ? jobsTally[item.job].jobHours
               : jobsTally[item.job].jobHours + item.jobHours;
-            jobsTally[item.job] = { name: item.jobName, hours, jobHours };
+            jobsTally[item.job] = {
+              description: item.jobDescription,
+              client: item.client,
+              hours,
+              jobHours,
+            };
           } else {
             // first instance of this job in the timesheet, set totals to zero
             jobsTally[item.job] = {
-              name: item.jobName,
+              description: item.jobDescription,
+              client: item.client,
               hours: item.hours || 0,
               jobHours: item.jobHours || 0,
             };

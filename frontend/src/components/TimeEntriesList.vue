@@ -12,7 +12,7 @@
             <div class="byline"></div>
           </div>
           <div v-if="item.timetype === 'R' && item.job" class="firstline">
-            {{ item.job }} - {{ item.jobName }}
+            {{ item.job }} {{ item.client }}: {{ item.jobDescription }}
           </div>
           <div class="secondline">
             {{ item | hoursString }}
@@ -170,7 +170,7 @@ export default {
               mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0 },
               divisionsTally: {}, // key is division, value is divisionName
-              jobsTally: {}, // key is job, value is jobName
+              jobsTally: {}, // key is job, value is object with client and description
             }
           }
 
@@ -207,7 +207,7 @@ export default {
 
             // Tally the jobs (may not be present)
             if ("job" in item) {
-              tallyObject[key].jobsTally[item.job] = item.jobName;
+              tallyObject[key].jobsTally[item.job] = { client: item.client, description: item.jobDescription };
             }
           } else {
             // Tally the non-work hours

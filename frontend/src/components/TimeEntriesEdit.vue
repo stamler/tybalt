@@ -55,7 +55,7 @@
           v-bind:key="c.id"
           v-on:click="setJob(c.id)"
         >
-          {{ c.id }} - {{ c.name }}
+          {{ c.id }} - {{ c.client }}: {{ c.description }}
         </li>
       </ul>
     </div>
@@ -277,7 +277,8 @@ export default {
           "division",
           "divisionName",
           "job",
-          "jobName",
+          "jobDescription",
+          "client",
           "jobHours",
           "mealsHours",
           "workrecord"
@@ -298,12 +299,15 @@ export default {
           // Update
           // TODO: BUG: when the job has no name, this will
           // become undefined and cause an error
-          this.item.jobName = this.jobs.filter(
+          const job = this.jobs.filter(
             i => i.id === this.item.job
-          )[0].name;
+          )[0];
+          this.item.jobDescription = job.description;
+          this.item.client = job.client;
         } else {
           // Clear
-          delete this.item.jobName;
+          delete this.item.client
+          delete this.item.jobDescription;
           delete this.item.jobHours;
           delete this.item.workorder;
         }

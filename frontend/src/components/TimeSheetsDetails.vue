@@ -56,7 +56,7 @@
           <td>{{ entry.hours }}</td>
           <td>{{ entry.mealsHours }}</td>
           <td>{{ entry.workrecord }}</td>
-          <td>{{ entry.jobName }}</td>
+          <td>{{ entry.client }}:{{ entry.jobDescription }}</td>
           <td>{{ entry.notes }}</td>
         </tr>
       </tbody>

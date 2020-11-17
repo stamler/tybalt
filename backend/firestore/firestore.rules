@@ -34,7 +34,7 @@ service cloud.firestore {
         // allowed fields
         newDoc().keys().hasOnly([ "date", "timetype", "division", "job",
           "hours", "jobHours", "workrecord", "notes", "mealsHours", "uid",
-          "timetypeName", "divisionName", "jobName", "weekEnding" ]) &&
+          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding" ]) &&
 
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
