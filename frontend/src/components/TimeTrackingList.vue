@@ -23,13 +23,6 @@
         >
           <lock-icon></lock-icon>
         </router-link>
-        <router-link
-          v-if="hasLocked(item)"
-          v-bind:to="{ name: 'Time Tracking' }"
-          v-on:click.native="exportTimesheets(item.id)"
-        >
-          <file-plus-icon></file-plus-icon>
-        </router-link>
         <a
           v-if="hasLink(item, 'json')"
           download
@@ -58,7 +51,7 @@
 
 <script>
 import { format } from "date-fns";
-import { LockIcon, FilePlusIcon, DownloadIcon} from "vue-feather-icons";
+import { LockIcon, DownloadIcon} from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 const db = firebase.firestore();
@@ -66,7 +59,6 @@ const db = firebase.firestore();
 export default {
   components: {
     LockIcon,
-    FilePlusIcon,
     DownloadIcon
   },
   computed: {
@@ -115,7 +107,7 @@ export default {
       const week = weekEnding.toDate().getTime();
       // TODO: replace confirm() with modal in Vue
       if (confirm("Locking Timesheets is not reversible. Do you want to proceed?")) {
-        store.commit("startTask", { id:`lock${week}`, message: "locking"});
+        store.commit("startTask", { id:`lock${week}`, message: "locking + exporting"});
         return lockTimesheets({ weekEnding: week })
           .then(() => {
             store.commit("endTask", { id:`lock${week}`});
@@ -125,20 +117,6 @@ export default {
             alert(`Error exporting timesheets: ${error.message}`);
           });
       }
-    },
-    exportTimesheets(timeTrackingId) {
-      store.commit("startTask", { id:`export${timeTrackingId}`, message: "exporting"});
-      const exportJson = firebase
-        .functions()
-        .httpsCallable("exportJson");
-      return exportJson({ timeTrackingId })
-        .then(() => {
-          store.commit("endTask", { id:`export${timeTrackingId}`});
-        })
-        .catch(error => {
-          store.commit("endTask", { id:`export${timeTrackingId}`});
-          alert(`Export JSON error: ${error.message}`);
-        })
     },
     async generatePayrollCSV(url) {
       const { parse } = require("json2csv");
