@@ -6,16 +6,16 @@
       <input v-else type="text" name="job" v-model="item.id" />
     </span>
     <span class="field">
-      <label for="name">Name</label>
-      <input type="text" name="name" v-model="item.name" />
-    </span>
-    <span class="field">
       <label for="manager">Manager</label>
       <input type="text" name="manager" v-model="item.manager" />
     </span>
     <span class="field">
       <label for="client">Client</label>
       <input type="text" name="client" v-model="item.client" />
+    </span>
+    <span class="field">
+      <label for="clientContact">Client Contact</label>
+      <input type="text" name="clientContact" v-model="item.clientContact" />
     </span>
     <span class="field" v-if="item.id && !item.id.startsWith('P') || editing && !id.startsWith('P')">
       <!-- Hide if id is proposal (starts with 'P') -->

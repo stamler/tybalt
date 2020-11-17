@@ -10,11 +10,12 @@
       <div class="anchorbox">{{ item.id }}</div>
       <div class="detailsbox">
         <div class="headline_wrapper">
-          <div class="headline">{{ item.name }}</div>
+          <div class="headline">{{ item.client }}</div>
+          <div class="byline">{{ item.description }}</div>
         </div>
-        <div class="firstline">{{ item.manager }} for {{ item.client }}</div>
+        <div class="firstline">{{ item.manager }}</div>
         <div class="secondline">{{ item.proposal }} {{ item.status }}</div>
-        <div class="thirdline">{{ item.description }}</div>
+        <div v-if="item.clientContact" class="thirdline">Contact: {{ item.clientContact }}</div>
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">

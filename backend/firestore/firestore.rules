@@ -112,7 +112,7 @@ service cloud.firestore {
       allow create, update: if hasClaim("job") && 
         ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
         jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]+)?') &&
-        newDoc().name.size() > 5;
+        newDoc().description.size() > 3;
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");
