@@ -197,11 +197,17 @@ exports.bundleTimesheet = async (data, context) => {
     // and store it in the tally so the info is available for reports
     // jobsTally entries already have name, hours, jobHours properties
     for (const job in jobsTally) {
-      // eslint-disable-next-line no-await-in-loop
-      const snap = await db.collection("Jobs").doc(job).get();
-
-      // fold in existing data
-      Object.assign(jobsTally[job], snap.data());
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const snap = await db.collection("Jobs").doc(job).get();
+        // fold in existing data
+        Object.assign(jobsTally[job], snap.data());
+      } catch (error) {
+        throw new functions.https.HttpsError(
+          "internal",
+          `failed to tally details of job ${job}: ${error.message}`
+        );
+      }
     }
     // Load the profile for the user to get manager information
     const profile = await db.collection("Profiles").doc(context.auth.uid).get();
