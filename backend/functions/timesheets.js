@@ -169,6 +169,8 @@ exports.bundleTimesheet = async (data, context) => {
       batch.delete(timeEntry.ref);
     });
 
+    // TimeEntries are done being enumerated, now work on summaries
+    // and validation of the TimeSheet as a whole
     let bankedHours = 0;
     if (bankEntries.length > 1) {
       throw new functions.https.HttpsError(
@@ -191,6 +193,16 @@ exports.bundleTimesheet = async (data, context) => {
       // total isn't greater than 14 days in a two week period
     }
 
+    // get the entire job document for each key in the jobsTally
+    // and store it in the tally so the info is available for reports
+    // jobsTally entries already have name, hours, jobHours properties
+    for (const job in jobsTally) {
+      // eslint-disable-next-line no-await-in-loop
+      const snap = await db.collection("Jobs").doc(job).get();
+
+      // fold in existing data
+      Object.assign(jobsTally[job], snap.data());
+    }
     // Load the profile for the user to get manager information
     const profile = await db.collection("Profiles").doc(context.auth.uid).get();
     if (profile.exists) {
