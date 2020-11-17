@@ -550,8 +550,9 @@ exports.lockTimesheets = async (data, context) => {
       );
     }
 
+    const transactions = [];
     timeSheets.forEach((timeSheet) => {
-      db.runTransaction(async (transaction) => {
+      const trans = db.runTransaction(async (transaction) => {
         return transaction.get(timeSheet.ref).then(async (tsSnap) => {
           if (
             tsSnap.data().submitted === true &&
@@ -571,9 +572,14 @@ exports.lockTimesheets = async (data, context) => {
             );
           }
         });
-      }).catch((error) => {
-        console.log(`Failed exporting: ${error}`);
       });
+      transactions.push(trans);
+    });
+    return Promise.all(transactions).then(() => {
+      return this.exportJson(
+        { timeTrackingId: timeTrackingDocRef.id },
+        context
+      );
     });
   } else {
     throw new functions.https.HttpsError(
