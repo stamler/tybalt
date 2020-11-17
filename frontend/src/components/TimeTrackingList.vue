@@ -182,8 +182,8 @@ export default {
           // TODO: verify that time zone conversion isn't needed here
           const date = new Date(entry.date);
           const line = {
-            client: item.jobsTally[entry.job].client,
-            job: entry.job,
+            client: "TBTE",
+            job: "", // the job number
             code: entry.division,
             date: date.getDate(),
             month: date.getMonth() + 1,
@@ -193,9 +193,15 @@ export default {
             nc: entry.hours || 0,
             meals: entry.mealsHours || 0,
             ref: entry.workrecord || "",
-            project: item.jobsTally[entry.job].description,
+            project: "",
             notes: entry.notes, // consolidate comments and description
             employee: item.displayName, 
+          }
+          if (entry.job !== undefined) {
+            // There is a job number, populate client, job, description
+            line.client = item.jobsTally[entry.job].client;
+            line.job = entry.job;
+            line.project = item.jobsTally[entry.job].description;
           }
           output.push(line);
         };
