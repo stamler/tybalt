@@ -1,7 +1,10 @@
 <template>
   <span>
     {{ oneMessage }}
-    <half-circle-spinner style="display:inline-block;" v-bind:size="20"></half-circle-spinner> 
+    <half-circle-spinner
+      style="display:inline-block;"
+      v-bind:size="20"
+    ></half-circle-spinner>
   </span>
 </template>
 
@@ -15,11 +18,9 @@ export default {
   },
   computed: {
     ...mapState(["showTasks"]),
-    ...mapGetters(["oneMessage"]),
-  },
-}
+    ...mapGetters(["oneMessage"])
+  }
+};
 </script>
 
-<style>
-
-</style>
+<style></style>

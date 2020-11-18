@@ -22,11 +22,14 @@ export default {
   data() {
     return {
       collection: db.collection("TimeTracking"),
-      timeSheets: db.collection("TimeSheets").where("approved", "==", true).where("locked", "==", false),
+      timeSheets: db
+        .collection("TimeSheets")
+        .where("approved", "==", true)
+        .where("locked", "==", false)
     };
   },
   computed: {
     ...mapState(["claims", "showTasks"])
-  }  
-}
+  }
+};
 </script>

@@ -15,7 +15,9 @@
         </div>
         <div class="firstline">{{ item.manager }}</div>
         <div class="secondline">{{ item.proposal }} {{ item.status }}</div>
-        <div v-if="item.clientContact" class="thirdline">Contact: {{ item.clientContact }}</div>
+        <div v-if="item.clientContact" class="thirdline">
+          Contact: {{ item.clientContact }}
+        </div>
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
@@ -47,7 +49,7 @@ export default {
         .filter(
           p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         )
-        .slice(0,100);
+        .slice(0, 100);
     }
   },
   data() {

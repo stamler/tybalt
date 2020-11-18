@@ -2,8 +2,10 @@
   <div>
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
-      <router-link 
-        v-if="canApprove() && item.submitted === true && item.approved === false" 
+      <router-link
+        v-if="
+          canApprove() && item.submitted === true && item.approved === false
+        "
         v-bind:to="{ name: 'Time Sheets' }"
         v-on:click.native="approveTs(id)"
       >
@@ -73,7 +75,7 @@
 </template>
 
 <script>
-import mixins from "./mixins"
+import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import {
@@ -84,7 +86,6 @@ import {
 } from "vue-feather-icons";
 import firebase from "@/firebase";
 const db = firebase.firestore();
-
 
 export default {
   mixins: [mixins],
@@ -147,7 +148,7 @@ export default {
     },
     canApprove() {
       return this.claims.hasOwnProperty("tapr") && this.claims["tapr"] === true;
-    },
+    }
   }
 };
 </script>

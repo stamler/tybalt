@@ -1,13 +1,21 @@
 <template>
   <div id="list">
     <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
-      <span class="listheader">Week ending {{ tallies[week].weekEnding | shortDate }}</span>
-      <div class="listentry" v-for="item in itemsByWeekEnding(week)" v-bind:key="item.id">
+      <span class="listheader"
+        >Week ending {{ tallies[week].weekEnding | shortDate }}</span
+      >
+      <div
+        class="listentry"
+        v-for="item in itemsByWeekEnding(week)"
+        v-bind:key="item.id"
+      >
         <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
             <div class="headline">
-              {{ item.timetype === "R" ? item.divisionName : item.timetypeName }}
+              {{
+                item.timetype === "R" ? item.divisionName : item.timetypeName
+              }}
             </div>
             <div class="byline"></div>
           </div>
@@ -34,12 +42,10 @@
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline">
-              {{ totalHours(week) }} hours
-            </div>
+            <div class="headline">{{ totalHours(week) }} hours</div>
             <div class="byline">
-              {{ sumValues(week,"workHoursTally") }} worked /
-              {{ sumValues(week,"nonWorkHoursTally") }} off
+              {{ sumValues(week, "workHoursTally") }} worked /
+              {{ sumValues(week, "nonWorkHoursTally") }} off
             </div>
           </div>
           <div class="firstline">
@@ -53,14 +59,20 @@
               {{ tallies[week].mealsHoursTally }} hours meals
             </span>
           </div>
-          <div class="secondline" v-if="tallies[week].offRotationDates.length > 0">
+          <div
+            class="secondline"
+            v-if="tallies[week].offRotationDates.length > 0"
+          >
             {{ tallies[week].offRotationDates.length }} day(s) off rotation
           </div>
           <div class="thirdline">
             <span v-if="tallies[week].bankEntries.length === 1">
               {{ tallies[week].bankEntries[0].hours }} hours banked
             </span>
-            <span v-else-if="tallies[week].bankEntries.length > 1" class="attention">
+            <span
+              v-else-if="tallies[week].bankEntries.length > 1"
+              class="attention"
+            >
               More than one banked time entry exists.
             </span>
           </div>
@@ -79,7 +91,7 @@
 </template>
 
 <script>
-import mixins from "./mixins"
+import mixins from "./mixins";
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
@@ -109,7 +121,7 @@ export default {
     return {
       parentPath: null,
       collection: null, // collection: a reference to the parent collection
-      items: [],
+      items: []
     };
   },
   created() {
@@ -128,15 +140,23 @@ export default {
   },
   methods: {
     totalHours(week) {
-      return this.sumValues(week, "nonWorkHoursTally") + 
-        this.sumValues(week,"workHoursTally");
+      return (
+        this.sumValues(week, "nonWorkHoursTally") +
+        this.sumValues(week, "workHoursTally")
+      );
     },
     sumValues(week, property) {
-      return Object.values(this.tallies[week][property]).reduce((a, c) => a + c, 0);
+      return Object.values(this.tallies[week][property]).reduce(
+        (a, c) => a + c,
+        0
+      );
     },
     itemsByWeekEnding(weekEnding) {
-      return this.items
-        .filter(x => (x.hasOwnProperty("weekEnding") && x.weekEnding.toDate().valueOf() === Number(weekEnding) ));
+      return this.items.filter(
+        x =>
+          x.hasOwnProperty("weekEnding") &&
+          x.weekEnding.toDate().valueOf() === Number(weekEnding)
+      );
     },
     del(item) {
       this.collection
@@ -153,13 +173,13 @@ export default {
     // A an object where the keys are saturdays and the values are tallies
     // to be used in the UI
     tallies() {
-      const tallyObject = {}
+      const tallyObject = {};
 
-      for (const item of this.items) {       
+      for (const item of this.items) {
         if (item.hasOwnProperty("weekEnding")) {
           const key = item.weekEnding.toDate().valueOf();
           // this item can be tallied because it has a weekEnding property
-          // Check if it already has an entry in the tally object to 
+          // Check if it already has an entry in the tally object to
           // accumulate values and create it if not.
           if (!tallyObject.hasOwnProperty(key)) {
             tallyObject[key] = {
@@ -170,8 +190,8 @@ export default {
               mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0 },
               divisionsTally: {}, // key is division, value is divisionName
-              jobsTally: {}, // key is job, value is object with client and description
-            }
+              jobsTally: {} // key is job, value is object with client and description
+            };
           }
 
           if (item.timetype === "OR") {
@@ -207,7 +227,10 @@ export default {
 
             // Tally the jobs (may not be present)
             if ("job" in item) {
-              tallyObject[key].jobsTally[item.job] = { client: item.client, description: item.jobDescription };
+              tallyObject[key].jobsTally[item.job] = {
+                client: item.client,
+                description: item.jobDescription
+              };
             }
           } else {
             // Tally the non-work hours
@@ -220,7 +243,7 @@ export default {
         }
       }
       return tallyObject;
-    }    
+    }
   }
 };
 </script>

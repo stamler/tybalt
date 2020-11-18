@@ -44,10 +44,7 @@
         v-on:input="updateJobCandidates"
       />
     </span>
-    <div
-      id="suggestions"
-      v-if="showSuggestions && jobCandidates.length > 0"
-    >
+    <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
       <ul>
         <li
           v-for="(c, index) in jobCandidates"
@@ -63,10 +60,7 @@
     <span
       class="field"
       v-if="
-        item.job &&
-          item.job !== '' &&
-          item.division &&
-          item.timetype === 'R'
+        item.job && item.job !== '' && item.division && item.timetype === 'R'
       "
     >
       <label for="jobHours">Job Hours</label>
@@ -81,10 +75,7 @@
     <span
       class="field"
       v-if="
-        item.job &&
-          item.job !== '' &&
-          item.division &&
-          item.timetype === 'R'
+        item.job && item.job !== '' && item.division && item.timetype === 'R'
       "
     >
       <label for="mealsHours">Meals Hours</label>
@@ -94,10 +85,7 @@
     <span
       class="field"
       v-if="
-        item.job &&
-          item.job !== '' &&
-          item.division &&
-          item.timetype === 'R'
+        item.job && item.job !== '' && item.division && item.timetype === 'R'
       "
     >
       <label for="workrecord">Work Record</label>
@@ -299,14 +287,12 @@ export default {
           // Update
           // TODO: BUG: when the job has no name, this will
           // become undefined and cause an error
-          const job = this.jobs.filter(
-            i => i.id === this.item.job
-          )[0];
+          const job = this.jobs.filter(i => i.id === this.item.job)[0];
           this.item.jobDescription = job.description;
           this.item.client = job.client;
         } else {
           // Clear
-          delete this.item.client
+          delete this.item.client;
           delete this.item.jobDescription;
           delete this.item.jobHours;
           delete this.item.workorder;

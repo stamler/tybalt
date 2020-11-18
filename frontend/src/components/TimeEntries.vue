@@ -21,7 +21,7 @@ export default {
     WaitMessages
   },
   computed: {
-    ...mapState(["showTasks"]),
+    ...mapState(["showTasks"])
   },
   data() {
     return {

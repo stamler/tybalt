@@ -17,7 +17,13 @@
       <label for="clientContact">Client Contact</label>
       <input type="text" name="clientContact" v-model="item.clientContact" />
     </span>
-    <span class="field" v-if="item.id && !item.id.startsWith('P') || editing && !id.startsWith('P')">
+    <span
+      class="field"
+      v-if="
+        (item.id && !item.id.startsWith('P')) ||
+          (editing && !id.startsWith('P'))
+      "
+    >
       <!-- Hide if id is proposal (starts with 'P') -->
       <!-- TODO: Restrict to existing proposals -->
       <label for="proposal">Proposal</label>
@@ -97,7 +103,8 @@ export default {
           .set(this.item)
           .then(() => {
             this.$router.push(this.parentPath);
-          }).catch(error => {
+          })
+          .catch(error => {
             alert(`Editing failed: ${error.message}`);
           });
       } else {
@@ -111,7 +118,8 @@ export default {
           .then(() => {
             this.clearEditor();
             // notify user save is done
-          }).catch(error => {
+          })
+          .catch(error => {
             alert(`Creating failed: ${error.message}`);
           });
       }

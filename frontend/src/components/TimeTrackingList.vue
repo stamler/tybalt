@@ -11,8 +11,12 @@
           <div class="headline"></div>
           <div class="byline"></div>
         </div>
-        <div class="firstline" v-if="hasPending(item)">{{ item.pending.length }} time sheet(s) pending</div>
-        <div class="secondline" v-if="hasLocked(item)">{{ item.timeSheets.length }} locked time sheet(s)</div>
+        <div class="firstline" v-if="hasPending(item)">
+          {{ item.pending.length }} time sheet(s) pending
+        </div>
+        <div class="secondline" v-if="hasLocked(item)">
+          {{ item.timeSheets.length }} locked time sheet(s)
+        </div>
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
@@ -23,11 +27,7 @@
         >
           <lock-icon></lock-icon>
         </router-link>
-        <a
-          v-if="hasLink(item, 'json')"
-          download
-          v-bind:href="item['json']"
-        >
+        <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
         <router-link
@@ -51,7 +51,7 @@
 
 <script>
 import { format } from "date-fns";
-import { LockIcon, DownloadIcon} from "vue-feather-icons";
+import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 const db = firebase.firestore();
@@ -64,9 +64,7 @@ export default {
   computed: {
     processedItems() {
       // Show only items with pending or locked TimeSheets
-      return this.items.filter(x =>
-          this.hasPending(x) || this.hasLocked(x)
-      );
+      return this.items.filter(x => this.hasPending(x) || this.hasLocked(x));
     }
   },
   filters: {
@@ -106,14 +104,19 @@ export default {
         .httpsCallable("lockTimesheets");
       const week = weekEnding.toDate().getTime();
       // TODO: replace confirm() with modal in Vue
-      if (confirm("Locking Timesheets is not reversible. Do you want to proceed?")) {
-        store.commit("startTask", { id:`lock${week}`, message: "locking + exporting"});
+      if (
+        confirm("Locking Timesheets is not reversible. Do you want to proceed?")
+      ) {
+        store.commit("startTask", {
+          id: `lock${week}`,
+          message: "locking + exporting"
+        });
         return lockTimesheets({ weekEnding: week })
           .then(() => {
-            store.commit("endTask", { id:`lock${week}`});
+            store.commit("endTask", { id: `lock${week}` });
           })
           .catch(error => {
-            store.commit("endTask", { id:`lock${week}`});
+            store.commit("endTask", { id: `lock${week}` });
             alert(`Error exporting timesheets: ${error.message}`);
           });
       }
@@ -142,7 +145,7 @@ export default {
         delete item.bankedHours;
       }
       const csv = parse(items);
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(blob, "payroll.csv");
     },
     async generateInvoicingCSV(url) {
@@ -173,8 +176,8 @@ export default {
             ref: entry.workrecord || "",
             project: "",
             notes: entry.notes, // consolidate comments and description
-            employee: item.displayName, 
-          }
+            employee: item.displayName
+          };
           if (entry.job !== undefined) {
             // There is a job number, populate client, job, description
             line.client = item.jobsTally[entry.job].client;
@@ -182,32 +185,32 @@ export default {
             line.project = item.jobsTally[entry.job].description;
           }
           output.push(line);
-        };
+        }
       }
       const csv = parse(output);
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(blob, "invoicing.csv");
     },
     // Force the download of a blob to a file by creating an
     // anchor and programmatically clicking it.
     downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = filename || 'download';
+      a.download = filename || "download";
 
       // release object URL after element has been clicked
       // required for one-off downloads of the blob content
       const clickHandler = () => {
         setTimeout(() => {
           URL.revokeObjectURL(url);
-          a.removeEventListener('click', clickHandler);
+          a.removeEventListener("click", clickHandler);
         }, 150);
       };
 
       // Add the click event listener on the anchor element
       // Comment out this line if you don't want a one-off download of the blob content
-      a.addEventListener('click', clickHandler, false);
+      a.addEventListener("click", clickHandler, false);
 
       // Programmatically trigger a click on the anchor element
       // Useful if you want the download to happen automatically

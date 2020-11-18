@@ -5,48 +5,54 @@ const db = firebase.firestore();
 const mixins = {
   methods: {
     bundle(week) {
-      store.commit("startTask", { id:"bundle", message: "bundling"});
+      store.commit("startTask", { id: "bundle", message: "bundling" });
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
       return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
-          store.commit("endTask", { id:"bundle" });
+          store.commit("endTask", { id: "bundle" });
         })
         .catch(error => {
-          store.commit("endTask", { id:"bundle" });
+          store.commit("endTask", { id: "bundle" });
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
     unbundle(timesheetId) {
-      store.commit("startTask", { id:"unbundle", message: "unbundling"});
+      store.commit("startTask", { id: "unbundle", message: "unbundling" });
       const unbundleTimesheet = firebase
         .functions()
         .httpsCallable("unbundleTimesheet");
       return unbundleTimesheet({ id: timesheetId })
         .then(() => {
-          store.commit("endTask", { id:"unbundle" });
-        })        
+          store.commit("endTask", { id: "unbundle" });
+        })
         .catch(error => {
-          store.commit("endTask", { id:"unbundle" });
+          store.commit("endTask", { id: "unbundle" });
           alert(`Error unbundling timesheet: ${error.message}`);
         });
     },
     submitTs(timesheetId) {
-      store.commit("startTask", { id:`submit${timesheetId}`, message: "submitting"});
+      store.commit("startTask", {
+        id: `submit${timesheetId}`,
+        message: "submitting"
+      });
       this.collection
         .doc(timesheetId)
         .set({ submitted: true }, { merge: true })
         .then(() => {
-          store.commit("endTask", { id:`submit${timesheetId}`});
+          store.commit("endTask", { id: `submit${timesheetId}` });
         })
         .catch(err => {
-          store.commit("endTask", { id:`submit${timesheetId}`});
+          store.commit("endTask", { id: `submit${timesheetId}` });
           alert(`Error submitting timesheet: ${err}`);
         });
     },
     approveTs(timesheetId) {
-      store.commit("startTask", { id:`approve${timesheetId}`, message: "approving"});
+      store.commit("startTask", {
+        id: `approve${timesheetId}`,
+        message: "approving"
+      });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
         .runTransaction(function(transaction) {
@@ -60,15 +66,18 @@ const mixins = {
           });
         })
         .then(() => {
-          store.commit("endTask", { id:`approve${timesheetId}`});
+          store.commit("endTask", { id: `approve${timesheetId}` });
         })
         .catch(function(error) {
-          store.commit("endTask", { id:`approve${timesheetId}`});
+          store.commit("endTask", { id: `approve${timesheetId}` });
           alert(`Approval failed: ${error}`);
         });
     },
     rejectTs(timesheetId) {
-      store.commit("startTask", { id:`reject${timesheetId}`, message: "rejecting"});
+      store.commit("startTask", {
+        id: `reject${timesheetId}`,
+        message: "rejecting"
+      });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
         .runTransaction(function(transaction) {
@@ -89,10 +98,10 @@ const mixins = {
           });
         })
         .then(() => {
-          store.commit("endTask", { id:`reject${timesheetId}`});
+          store.commit("endTask", { id: `reject${timesheetId}` });
         })
         .catch(function(error) {
-          store.commit("endTask", { id:`reject${timesheetId}`});
+          store.commit("endTask", { id: `reject${timesheetId}` });
           alert(`Approval failed: ${error}`);
         });
     },
@@ -101,7 +110,10 @@ const mixins = {
       // first verifying that approved is false. Similarly an approve
       // function for the approving manager must use a transaction and
       // verify that the timesheet is submitted before marking it approved
-      store.commit("startTask", { id:`recall${timesheetId}`, message: "recalling"});
+      store.commit("startTask", {
+        id: `recall${timesheetId}`,
+        message: "recalling"
+      });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
 
       return db
@@ -116,13 +128,13 @@ const mixins = {
           });
         })
         .then(() => {
-          store.commit("endTask", { id:`recall${timesheetId}`});
+          store.commit("endTask", { id: `recall${timesheetId}` });
         })
         .catch(function(error) {
-          store.commit("endTask", { id:`recall${timesheetId}`});
+          store.commit("endTask", { id: `recall${timesheetId}` });
           alert(`Recall failed: ${error}`);
         });
-    },
+    }
   }
-}
-export default mixins
+};
+export default mixins;

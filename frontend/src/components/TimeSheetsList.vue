@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import mixins from "./mixins"
+import mixins from "./mixins";
 import { format } from "date-fns";
 import {
   EditIcon,

@@ -180,7 +180,9 @@ body,
   flex: 1 0 5.5em;
   padding-right: 0.3em;
 }
-.listentry, .listsummary, .listheader {
+.listentry,
+.listsummary,
+.listheader {
   display: flex;
   font-size: 0.8em;
   flex: 0 0 5em;
