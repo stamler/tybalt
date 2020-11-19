@@ -8,14 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@firebase/app": "^0.6.13",
-    "@firebase/auth": "^0.15.2",
-    "@firebase/firestore": "2.0.1",
-    "@firebase/functions": "^0.6.1",
-    "@firebase/storage": "^0.4.2",
     "core-js": "^3.7.0",
     "date-fns": "^2.16.1",
     "epic-spinners": "^1.1.0",
+    "firebase": "8.0.1",
     "json2csv": "^5.0.5",
     "vue": "^2.6.12",
     "vue-class-component": "^7.2.3",

@@ -4,22 +4,23 @@ Vue.config.productionTip = false;
 Vue.use(firestorePlugin);
 
 // first import is here to initializeApp()
-import firebase from "@/firebase";
+import firebase from "./firebase";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 
-let app = null;
+let app: Vue | null = null;
 
 // https://github.com/firebase/quickstart-js/blob/master/auth/microsoft-redirect.html
 /* Handle the redirect extracting a token if it exists */
 firebase
   .auth()
   .getRedirectResult()
-  .then(function(result) {
+  .then(function(result: firebase.auth.UserCredential) {
+    const credential = result.credential as firebase.auth.OAuthCredential;
     if (result.credential) {
-      let token = result.credential.accessToken;
-      let idToken = result.credential.idToken;
+      let token = credential.accessToken;
+      let idToken = credential.idToken;
     }
     let user = result.user;
     //console.log(user);

@@ -3,14 +3,16 @@ import Vuex from "vuex";
 
 Vue.use(Vuex);
 
+interface TaskList {
+  [key: string]: { message: string };
+}
+
 export default new Vuex.Store({
   state: {
     sidenav: false,
     user: null,
     claims: null,
-
-    // state of the waiting message system
-    activeTasks: {}, // items to show in the progress UI element
+    activeTasks: {} as TaskList, // items to show in the progress UI element
     showTasks: false, // whether to display the progress UI element
 
     // state of the notification system
@@ -33,8 +35,7 @@ export default new Vuex.Store({
     },
     startTask(state, task) {
       const id = task.id;
-      delete task.id;
-      state.activeTasks[id] = task;
+      state.activeTasks[id] = { message: task.message };
       state.showTasks = true;
     },
     endTask(state, task) {

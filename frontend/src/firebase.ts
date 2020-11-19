@@ -1,8 +1,8 @@
-import firebase from "@firebase/app";
-import "@firebase/auth";
-import "@firebase/functions";
-import "@firebase/firestore";
-import "@firebase/storage";
+import firebase from "firebase/app";
+import "firebase/functions";
+import "firebase/firestore";
+import "firebase/auth";
+import "firebase/storage";
 
 // Initialize Firebase
 firebase.initializeApp({
