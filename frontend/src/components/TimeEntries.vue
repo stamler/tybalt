@@ -14,7 +14,6 @@ import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import WaitMessages from "./WaitMessages";
-import { format } from "date-fns";
 
 export default {
   components: {

@@ -26,7 +26,10 @@ export default {
     ...mapState(["claims"]),
     // Determine whether to show UI controls based on claims
     hasPermission() {
-      return this.claims.hasOwnProperty("job") && this.claims["job"];
+      return (
+        Object.prototype.hasOwnProperty.call(this.claims, "job") &&
+        this.claims["job"]
+      );
     }
   }
 };

@@ -30,7 +30,8 @@ export default {
     // Determine whether to show UI controls based on claims
     hasPermission() {
       return (
-        this.claims.hasOwnProperty("rawlogins") && this.claims["rawlogins"]
+        Object.prototype.hasOwnProperty.call(this.claims, "rawlogins") &&
+        this.claims["rawlogins"]
       );
     }
   },

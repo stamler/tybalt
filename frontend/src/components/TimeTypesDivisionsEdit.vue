@@ -81,11 +81,11 @@ export default {
           });
       } else {
         // Creating a new item
-        const new_id = this.item.id;
+        const newId = this.item.id;
         delete this.item.id;
 
         this.collection
-          .doc(new_id)
+          .doc(newId)
           .set(this.item)
           .then(() => {
             this.clearEditor();

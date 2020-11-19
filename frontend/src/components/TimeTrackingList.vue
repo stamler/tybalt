@@ -54,7 +54,7 @@ import { format } from "date-fns";
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
-const db = firebase.firestore();
+import { parse } from "json2csv";
 
 export default {
   components: {
@@ -90,13 +90,22 @@ export default {
   },
   methods: {
     hasLink(item, property) {
-      return item.hasOwnProperty(property) && item[property].length > 32;
+      return (
+        Object.prototype.hasOwnProperty.call(item, property) &&
+        item[property].length > 32
+      );
     },
     hasPending(item) {
-      return item.hasOwnProperty("pending") && item.pending.length > 0;
+      return (
+        Object.prototype.hasOwnProperty.call(item, "pending") &&
+        item.pending.length > 0
+      );
     },
     hasLocked(item) {
-      return item.hasOwnProperty("timeSheets") && item.timeSheets.length > 0;
+      return (
+        Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
+        item.timeSheets.length > 0
+      );
     },
     lockTimesheets(weekEnding) {
       const lockTimesheets = firebase
@@ -122,10 +131,6 @@ export default {
       }
     },
     async generatePayrollCSV(url) {
-      const { parse } = require("json2csv");
-      //const fields = ['field1', 'field2', 'field3'];
-      //const opts = { fields };
-
       const response = await fetch(url);
       const items = await response.json();
 
@@ -149,10 +154,6 @@ export default {
       this.downloadBlob(blob, "payroll.csv");
     },
     async generateInvoicingCSV(url) {
-      const { parse } = require("json2csv");
-      //const fields = ['field1', 'field2', 'field3'];
-      //const opts = { fields };
-
       const response = await fetch(url);
       const items = await response.json();
       const output = [];

@@ -19,17 +19,17 @@ firebase
   .then(function(result: firebase.auth.UserCredential) {
     const credential = result.credential as firebase.auth.OAuthCredential;
     if (result.credential) {
-      let token = credential.accessToken;
-      let idToken = credential.idToken;
+      const token = credential.accessToken;
+      const idToken = credential.idToken;
     }
-    let user = result.user;
+    const user = result.user;
     //console.log(user);
   })
   .catch(function(error) {
-    var errorCode = error.code;
-    var errorMessage = error.message;
-    var email = error.email;
-    var credential = error.credential;
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    const email = error.email;
+    const credential = error.credential;
     if (errorCode === "auth/account-exists-with-different-credential") {
       alert(
         "You have already signed up with a different auth provider for that email."
@@ -68,7 +68,7 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
       }
     });
   } else {
-    let provider = new firebase.auth.OAuthProvider("microsoft.com");
+    const provider = new firebase.auth.OAuthProvider("microsoft.com");
     provider.setCustomParameters({ tenant: "tbte.onmicrosoft.com" });
     firebase.auth().signInWithRedirect(provider);
   }

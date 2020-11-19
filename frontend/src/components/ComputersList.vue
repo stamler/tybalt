@@ -98,14 +98,14 @@ export default {
       if (this.retired) {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter(p => p.hasOwnProperty("retired"))
+          .filter(p => Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
             p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       } else {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter(p => !p.hasOwnProperty("retired"))
+          .filter(p => !Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
             p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );

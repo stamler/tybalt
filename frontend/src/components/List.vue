@@ -163,7 +163,7 @@ export default {
     toggleAll() {
       this.selected = [];
       if (!this.selectAll) {
-        for (let i in this.items) {
+        for (const i in this.items) {
           this.selected.push(this.items[i].id);
         }
       }

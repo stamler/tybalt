@@ -96,7 +96,6 @@ import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
-import firebase from "@/firebase";
 
 export default {
   mixins: [mixins],
@@ -154,7 +153,7 @@ export default {
     itemsByWeekEnding(weekEnding) {
       return this.items.filter(
         x =>
-          x.hasOwnProperty("weekEnding") &&
+          Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().valueOf() === Number(weekEnding)
       );
     },
@@ -176,12 +175,12 @@ export default {
       const tallyObject = {};
 
       for (const item of this.items) {
-        if (item.hasOwnProperty("weekEnding")) {
+        if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
           const key = item.weekEnding.toDate().valueOf();
           // this item can be tallied because it has a weekEnding property
           // Check if it already has an entry in the tally object to
           // accumulate values and create it if not.
-          if (!tallyObject.hasOwnProperty(key)) {
+          if (!Object.prototype.hasOwnProperty.call(tallyObject, key)) {
             tallyObject[key] = {
               weekEnding: new Date(key),
               bankEntries: [],

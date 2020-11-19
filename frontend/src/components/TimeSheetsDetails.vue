@@ -84,8 +84,6 @@ import {
   CheckCircleIcon,
   XCircleIcon
 } from "vue-feather-icons";
-import firebase from "@/firebase";
-const db = firebase.firestore();
 
 export default {
   mixins: [mixins],
@@ -144,10 +142,13 @@ export default {
   },
   methods: {
     belongsToMe(item) {
-      return this.user.uid === this.item.uid;
+      return this.user.uid === item.uid;
     },
     canApprove() {
-      return this.claims.hasOwnProperty("tapr") && this.claims["tapr"] === true;
+      return (
+        Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
+        this.claims["tapr"] === true
+      );
     }
   }
 };

@@ -112,9 +112,9 @@ export default {
     },
     cleanup(computerName) {
       const data = { computerName };
-      const cleanup_old = firebase.functions().httpsCallable("cleanup");
-      cleanup_old(data).catch(error => {
-        alert(`Error running cleanup: ${err}`);
+      const cleanupOld = firebase.functions().httpsCallable("cleanup");
+      cleanupOld(data).catch(error => {
+        alert(`Error running cleanup: ${error}`);
       });
     },
     searchString(item) {

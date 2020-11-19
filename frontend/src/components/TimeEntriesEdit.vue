@@ -308,7 +308,7 @@ export default {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
 
       this.item.uid = this.user.uid; // include uid of the creating user
-      if (!this.item.hasOwnProperty("date")) {
+      if (!Object.prototype.hasOwnProperty.call(this.item, "date")) {
         // make the date today if not provided by user
         this.item.date = new Date();
       }
