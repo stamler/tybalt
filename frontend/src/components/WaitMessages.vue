@@ -8,11 +8,12 @@
   </span>
 </template>
 
-<script>
+<script lang="ts">
 import { HalfCircleSpinner } from "epic-spinners";
 import { mapGetters, mapState } from "vuex";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
   components: {
     HalfCircleSpinner
   },
@@ -20,7 +21,7 @@ export default {
     ...mapState(["showTasks"]),
     ...mapGetters(["oneMessage"])
   }
-};
+});
 </script>
 
 <style></style>
