@@ -37,63 +37,59 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
+import firebase from "firebase/app";
+import "firebase/firestore";
 
-export default {
+const db = firebase.firestore();
+
+export default Vue.extend({
+  data() {
+    return {
+      search: "",
+      parentPath: null as string | null,
+      collection: db.collection("Users"),
+      items: []
+    };
+  },
   computed: {
     ...mapState(["claims"]),
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          (p: firebase.firestore.DocumentData) =>
+            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     }
   },
   filters: {
-    dateFormat(date) {
+    dateFormat(date: Date) {
       return format(date, "yyyy MMM dd / HH:mm:ss");
     },
-    relativeTime(date) {
+    relativeTime(date: Date) {
       return formatDistanceToNow(date, { addSuffix: true });
     }
   },
-  data() {
-    return {
-      search: "",
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
-      items: []
-    };
-  },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
+      null;
+    this.$bind("items", this.collection).catch(error => {
       alert(`Can't load Users: ${error.message}`);
     });
   },
   methods: {
-    del(item) {
-      this.collection
-        .doc(item)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    },
-    searchString(item) {
+    searchString(item: firebase.firestore.DocumentData) {
       const fields = Object.values(item);
       fields.push(item.id);
       return fields.join(",").toLowerCase();
     }
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {

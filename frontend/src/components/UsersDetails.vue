@@ -31,7 +31,7 @@ export default {
   data() {
     return {
       parentPath: null,
-      collection: null,
+      collection: db.collection("Users"),
       item: {},
       logins: []
     };
@@ -49,7 +49,7 @@ export default {
       immediate: true,
       handler(id) {
         if (id) {
-          this.$parent.collection
+          this.collection
             .doc(id)
             .get()
             .then(snap => {
@@ -66,7 +66,7 @@ export default {
                 // The provided id is either a userSourceAnchor or the actual
                 // object id. Since the object id doesn't exist, try the
                 // userSourceAnchor before failing.
-                this.$parent.collection
+                this.collection
                   .where("userSourceAnchor", "==", id)
                   .get()
                   .then(snap => {
@@ -102,7 +102,6 @@ export default {
   created() {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
   },
   methods: {
     assign(computer, user) {
