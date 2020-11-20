@@ -36,14 +36,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(["claims"]),
-    // Determine whether to show UI controls based on claims
-    hasPermission() {
-      return (
-        Object.prototype.hasOwnProperty.call(this.claims, "computers") &&
-        this.claims["computers"] === true
-      );
-    }
+    ...mapState(["claims"])
   }
 };
 </script>

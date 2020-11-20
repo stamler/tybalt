@@ -26,14 +26,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(["claims"]),
-    // Determine whether to show UI controls based on claims
-    hasPermission() {
-      return (
-        Object.prototype.hasOwnProperty.call(this.claims, "rawlogins") &&
-        this.claims["rawlogins"]
-      );
-    }
+    ...mapState(["claims"])
   },
   methods: {
     guessSerial(dnsHostname) {

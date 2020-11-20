@@ -2,7 +2,7 @@
   <div>
     <div class="actions">
       <router-link class="navlink" to="list">List</router-link>
-      <router-link class="navlink" v-if="hasPermission" to="add">
+      <router-link class="navlink" v-if="hasPermission('admin')" to="add">
         New
       </router-link>
     </div>
@@ -11,11 +11,13 @@
 </template>
 
 <script>
+import mixins from "./mixins";
 import firebase from "@/firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 
 export default {
+  mixins: [mixins],
   data() {
     return {
       collection: db.collection("Divisions"),
@@ -23,14 +25,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(["claims"]),
-    // Determine whether to show UI controls based on claims
-    hasPermission() {
-      return (
-        Object.prototype.hasOwnProperty.call(this.claims, "admin") &&
-        this.claims["admin"]
-      );
-    }
+    ...mapState(["claims"])
   }
 };
 </script>

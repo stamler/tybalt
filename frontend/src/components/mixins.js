@@ -134,6 +134,12 @@ const mixins = {
           store.commit("endTask", { id: `recall${timesheetId}` });
           alert(`Recall failed: ${error}`);
         });
+    },
+    hasPermission(claim) {
+      return (
+        Object.prototype.hasOwnProperty.call(this.claims, claim) &&
+        this.claims[claim] === true
+      );
     }
   }
 };
