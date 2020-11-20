@@ -2,7 +2,7 @@
   <span>
     {{ oneMessage }}
     <half-circle-spinner
-      style="display:inline-block;"
+      class="inline-item"
       v-bind:size="20"
     ></half-circle-spinner>
   </span>
@@ -24,4 +24,8 @@ export default Vue.extend({
 });
 </script>
 
-<style></style>
+<style>
+.inline-item {
+  display: inline-block;
+}
+</style>
