@@ -16,23 +16,10 @@ let app: Vue | null = null;
 firebase
   .auth()
   .getRedirectResult()
-  .then(function(result: firebase.auth.UserCredential) {
-    const credential = result.credential as firebase.auth.OAuthCredential;
-    if (result.credential) {
-      const token = credential.accessToken;
-      const idToken = credential.idToken;
-    }
-    const user = result.user;
-    //console.log(user);
-  })
   .catch(function(error) {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    const email = error.email;
-    const credential = error.credential;
-    if (errorCode === "auth/account-exists-with-different-credential") {
+    if (error.code === "auth/account-exists-with-different-credential") {
       alert(
-        "You have already signed up with a different auth provider for that email."
+        `You have already signed up with a different auth provider for email ${error.email}.`
       );
       // If you are using multiple auth providers on your app you should handle linking
       // the user's accounts here.
