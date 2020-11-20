@@ -41,8 +41,7 @@
 import Vue from "vue";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
-import firebase from "firebase/app";
-import "firebase/firestore";
+import firebase from "../firebase";
 
 const db = firebase.firestore();
 
