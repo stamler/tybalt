@@ -38,14 +38,17 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import mixins from "./mixins";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 
 const db = firebase.firestore();
 
-export default Vue.extend({
+// TODO: mixins cannot be used in TypeScript in Vue 2 without hacks.
+// https://github.com/vuejs/vue/issues/8721
+// In this case instead of using Vue.extend() we're extending the mixin.
+export default mixins.extend({
   data() {
     return {
       search: "",
@@ -60,9 +63,8 @@ export default Vue.extend({
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          // TODO: address use of 'any' https://github.com/vuejs/vue/issues/8721
           (p: firebase.firestore.DocumentData) =>
-            (this as any).searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     }
   },
