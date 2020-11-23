@@ -1,10 +1,15 @@
-import firebase from "@/firebase";
+import Vue from "vue";
+import { mapState } from "vuex";
+import firebase from "../firebase";
 import store from "../store";
 const db = firebase.firestore();
 
-const mixins = {
+export default Vue.extend({
+  computed: {
+    ...mapState(["claims"])
+  },
   methods: {
-    bundle(week) {
+    bundle(week: Date) {
       store.commit("startTask", { id: "bundle", message: "bundling" });
       const bundleTimesheet = firebase
         .functions()
@@ -18,7 +23,7 @@ const mixins = {
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
-    unbundle(timesheetId) {
+    unbundle(timesheetId: string) {
       store.commit("startTask", { id: "unbundle", message: "unbundling" });
       const unbundleTimesheet = firebase
         .functions()
@@ -32,23 +37,23 @@ const mixins = {
           alert(`Error unbundling timesheet: ${error.message}`);
         });
     },
-    submitTs(timesheetId) {
+    submitTs(timesheetId: string) {
       store.commit("startTask", {
         id: `submit${timesheetId}`,
         message: "submitting"
       });
-      this.collection
+      db.collection("TimeSheets")
         .doc(timesheetId)
         .set({ submitted: true }, { merge: true })
         .then(() => {
           store.commit("endTask", { id: `submit${timesheetId}` });
         })
-        .catch(err => {
+        .catch(error => {
           store.commit("endTask", { id: `submit${timesheetId}` });
-          alert(`Error submitting timesheet: ${err}`);
+          alert(`Error submitting timesheet: ${error}`);
         });
     },
-    approveTs(timesheetId) {
+    approveTs(timesheetId: string) {
       store.commit("startTask", {
         id: `approve${timesheetId}`,
         message: "approving"
@@ -56,14 +61,20 @@ const mixins = {
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
         .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (tsDoc.data().submitted === true) {
-              // timesheet is approvable because it has been submitted
-              transaction.update(timesheet, { approved: true });
-            } else {
-              throw "The timesheet has not been submitted or was recalled";
-            }
-          });
+          return transaction
+            .get(timesheet)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (data !== undefined && data.submitted === true) {
+                // timesheet is approvable because it has been submitted
+                transaction.update(timesheet, { approved: true });
+              } else {
+                throw "The timesheet has not been submitted";
+              }
+            });
         })
         .then(() => {
           store.commit("endTask", { id: `approve${timesheetId}` });
@@ -73,7 +84,7 @@ const mixins = {
           alert(`Approval failed: ${error}`);
         });
     },
-    rejectTs(timesheetId) {
+    rejectTs(timesheetId: string) {
       store.commit("startTask", {
         id: `reject${timesheetId}`,
         message: "rejecting"
@@ -81,21 +92,28 @@ const mixins = {
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
         .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (
-              tsDoc.data().submitted === true &&
-              tsDoc.data().locked === false
-            ) {
-              // timesheet is rejectable because it is submitted and not locked
-              transaction.update(timesheet, {
-                approved: false,
-                rejected: true,
-                rejectionReason: "no reason provided"
-              });
-            } else {
-              throw "The timesheet has not been submitted or is locked";
-            }
-          });
+          return transaction
+            .get(timesheet)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (
+                data !== undefined &&
+                data.submitted === true &&
+                data.locked === false
+              ) {
+                // timesheet is rejectable because it is submitted and not locked
+                transaction.update(timesheet, {
+                  approved: false,
+                  rejected: true,
+                  rejectionReason: "no reason provided"
+                });
+              } else {
+                throw "The timesheet has not been submitted or is locked";
+              }
+            });
         })
         .then(() => {
           store.commit("endTask", { id: `reject${timesheetId}` });
@@ -105,7 +123,7 @@ const mixins = {
           alert(`Approval failed: ${error}`);
         });
     },
-    recallTs(timesheetId) {
+    recallTs(timesheetId: string) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve
       // function for the approving manager must use a transaction and
@@ -118,14 +136,20 @@ const mixins = {
 
       return db
         .runTransaction(function(transaction) {
-          return transaction.get(timesheet).then(function(tsDoc) {
-            if (tsDoc.data().approved === false) {
-              // timesheet is recallable because it hasn't yet been approved
-              transaction.update(timesheet, { submitted: false });
-            } else {
-              throw "The timesheet was already approved by a manager";
-            }
-          });
+          return transaction
+            .get(timesheet)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (data !== undefined && data.approved === false) {
+                // timesheet is recallable because it hasn't yet been approved
+                transaction.update(timesheet, { submitted: false });
+              } else {
+                throw "The timesheet was already approved by a manager";
+              }
+            });
         })
         .then(() => {
           store.commit("endTask", { id: `recall${timesheetId}` });
@@ -135,12 +159,16 @@ const mixins = {
           alert(`Recall failed: ${error}`);
         });
     },
-    hasPermission(claim) {
+    hasPermission(claim: string): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, claim) &&
         this.claims[claim] === true
       );
+    },
+    searchString(item: firebase.firestore.DocumentData) {
+      const fields = Object.values(item);
+      fields.push(item.id);
+      return fields.join(",").toLowerCase();
     }
   }
-};
-export default mixins;
+});

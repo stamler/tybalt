@@ -126,7 +126,7 @@ export default {
     id: {
       immediate: true,
       handler(id) {
-        this.$parent.collection
+        this.collection
           .doc(id)
           .get()
           .then(snap => {
