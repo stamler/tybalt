@@ -61,11 +61,13 @@
 </template>
 
 <script>
+import mixins from "./mixins";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "@/firebase";
 import { XCircleIcon } from "vue-feather-icons";
 
 export default {
+  mixins: [mixins],
   components: {
     XCircleIcon
   },
@@ -116,11 +118,6 @@ export default {
       cleanupOld(data).catch(error => {
         alert(`Error running cleanup: ${error}`);
       });
-    },
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
     },
     guessSerial(dnsHostname) {
       try {

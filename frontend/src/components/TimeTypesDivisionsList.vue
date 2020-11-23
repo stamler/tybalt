@@ -24,10 +24,12 @@
 </template>
 
 <script>
+import mixins from "./mixins";
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 
 export default {
+  mixins: [mixins],
   components: {
     EditIcon
   },
@@ -65,11 +67,6 @@ export default {
         .catch(err => {
           alert(`Error deleting item: ${err}`);
         });
-    },
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
     }
   }
 };
