@@ -23,6 +23,8 @@ firebase
       );
       // If you are using multiple auth providers on your app you should handle linking
       // the user's accounts here.
+    } else if (error.code === "auth/timeout") {
+      history.go();
     } else {
       // eslint-disable-next-line no-console
       console.error(error);
