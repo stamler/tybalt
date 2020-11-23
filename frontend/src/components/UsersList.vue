@@ -60,8 +60,9 @@ export default Vue.extend({
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
+          // TODO: address use of 'any' https://github.com/vuejs/vue/issues/8721
           (p: firebase.firestore.DocumentData) =>
-            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (this as any).searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     }
   },
@@ -80,13 +81,6 @@ export default Vue.extend({
     this.$bind("items", this.collection).catch(error => {
       alert(`Can't load Users: ${error.message}`);
     });
-  },
-  methods: {
-    searchString(item: firebase.firestore.DocumentData) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
-    }
   }
 });
 </script>
