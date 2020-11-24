@@ -74,7 +74,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
@@ -87,7 +88,7 @@ import {
 } from "vue-feather-icons";
 const db = firebase.firestore();
 
-export default {
+export default Vue.extend({
   mixins: [mixins],
   components: {
     SendIcon,
@@ -97,15 +98,17 @@ export default {
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
-    offHoursSum() {
+    offHoursSum(): number {
       let total = 0;
-      for (const code in this.item.nonWorkHoursTally) {
-        total += this.item.nonWorkHoursTally[code];
+      if (this.item !== undefined) {
+        for (const code in this.item.nonWorkHoursTally) {
+          total += this.item.nonWorkHoursTally[code];
+        }
       }
       return total;
     },
-    weekStart() {
-      if (this.item.weekEnding !== undefined) {
+    weekStart(): Date {
+      if (this.item?.weekEnding !== undefined) {
         return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
       } else {
         return new Date();
@@ -115,28 +118,28 @@ export default {
   data() {
     return {
       parentPath: "",
-      collectionObject: null,
-      item: {}
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      item: {} as firebase.firestore.DocumentData | undefined
     };
   },
   filters: {
-    shortDate(date) {
+    shortDate(date: Date) {
       return format(date, "MMM dd");
     }
   },
   watch: {
-    id: function(id) {
+    id: function(id: string) {
       this.setItem(id);
     } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
   },
   methods: {
-    setItem(id) {
+    setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -157,17 +160,17 @@ export default {
         this.item = {};
       }
     },
-    belongsToMe(item) {
+    belongsToMe(item: firebase.firestore.DocumentData) {
       return this.user.uid === item.uid;
     },
-    canApprove() {
+    canApprove(): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true
       );
     }
   }
-};
+});
 </script>
 <style scoped>
 th,
