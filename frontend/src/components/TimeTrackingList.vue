@@ -49,67 +49,67 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import { format } from "date-fns";
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
-import firebase from "@/firebase";
+import firebase from "../firebase";
 import store from "../store";
 import { parse } from "json2csv";
 const db = firebase.firestore();
 
-export default {
+export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
     LockIcon,
     DownloadIcon
   },
   computed: {
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       // Show only items with pending or locked TimeSheets
       return this.items.filter(x => this.hasPending(x) || this.hasLocked(x));
     }
   },
   filters: {
-    exportDate(date) {
+    exportDate(date: Date) {
       return format(date, "EEE MMM dd");
     }
   },
   data() {
     return {
       parentPath: "",
-      collectionObject: null,
+      collectionObject: null as firebase.firestore.CollectionReference | null,
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load TimeTracking: ${error.message}`);
     });
   },
   methods: {
-    hasLink(item, property) {
+    hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
       );
     },
-    hasPending(item) {
+    hasPending(item: firebase.firestore.DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "pending") &&
         item.pending.length > 0
       );
     },
-    hasLocked(item) {
+    hasLocked(item: firebase.firestore.DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
         item.timeSheets.length > 0
       );
     },
-    lockTimesheets(weekEnding) {
+    lockTimesheets(weekEnding: firebase.firestore.Timestamp) {
       const lockTimesheets = firebase
         .functions()
         .httpsCallable("lockTimesheets");
@@ -132,7 +132,7 @@ export default {
           });
       }
     },
-    async generatePayrollCSV(url) {
+    async generatePayrollCSV(url: string) {
       const response = await fetch(url);
       const items = await response.json();
 
@@ -155,7 +155,7 @@ export default {
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(blob, "payroll.csv");
     },
-    async generateInvoicingCSV(url) {
+    async generateInvoicingCSV(url: string) {
       const response = await fetch(url);
       const items = await response.json();
       const output = [];
@@ -196,7 +196,7 @@ export default {
     },
     // Force the download of a blob to a file by creating an
     // anchor and programmatically clicking it.
-    downloadBlob(blob, filename) {
+    downloadBlob(blob: Blob, filename: string) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -227,5 +227,5 @@ export default {
       return a;
     }
   }
-};
+});
 </script>
