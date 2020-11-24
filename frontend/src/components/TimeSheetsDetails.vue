@@ -78,12 +78,14 @@
 import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
+import firebase from "../firebase";
 import {
   SendIcon,
   RewindIcon,
   CheckCircleIcon,
   XCircleIcon
 } from "vue-feather-icons";
+const db = firebase.firestore();
 
 export default {
   mixins: [mixins],
@@ -92,7 +94,7 @@ export default {
     CheckCircleIcon,
     XCircleIcon
   },
-  props: ["id"],
+  props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
     offHoursSum() {
@@ -113,7 +115,7 @@ export default {
   data() {
     return {
       parentPath: "",
-      collection: null,
+      collectionObject: null,
       item: {}
     };
   },
@@ -123,24 +125,38 @@ export default {
     }
   },
   watch: {
-    id: {
-      immediate: true,
-      handler(id) {
-        this.collection
-          .doc(id)
-          .get()
-          .then(snap => {
-            this.item = snap.data();
-          });
-      }
-    }
+    id: function(id) {
+      this.setItem(id);
+    } // first arg is newVal, second is oldVal
   },
   created() {
     const currentRoute = this.$route.matched[this.$route.matched.length - 1];
     this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
+    this.collectionObject = db.collection(this.collection);
+    this.setItem(this.id);
   },
   methods: {
+    setItem(id) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
+        this.collectionObject
+          .doc(id)
+          .get()
+          .then(snap => {
+            if (snap.exists) {
+              this.item = snap.data();
+            } else {
+              // A document with this id doesn't exist in the database,
+              // list instead.  TODO: show a message to the user
+              this.$router.push(this.parentPath);
+            }
+          });
+      } else {
+        this.item = {};
+      }
+    },
     belongsToMe(item) {
       return this.user.uid === item.uid;
     },

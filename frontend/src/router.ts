@@ -91,23 +91,26 @@ const router = new Router({
             {
               path: "list",
               name: "Time Sheets List",
+              props: { collection: "TimeSheets" },
               component: TimeSheetsList
             },
             {
               path: "pending",
               name: "Time Sheets Pending",
-              props: { approved: false },
+              props: { approved: false, collection: "TimeSheets" },
               component: TimeSheetsList
             },
             {
               path: "approved",
               name: "Time Sheets Approved",
-              props: { approved: true },
+              props: { approved: true, collection: "TimeSheets" },
               component: TimeSheetsList
             },
             {
               path: ":id/details",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "TimeSheets" };
+              },
               name: "Time Sheet Details",
               component: TimeSheetsDetails
             }
@@ -122,6 +125,7 @@ const router = new Router({
             {
               path: "list",
               name: "Time Tracking List",
+              props: { collection: "TimeTracking" },
               component: TimeTrackingList
             }
           ]

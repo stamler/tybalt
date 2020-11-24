@@ -99,6 +99,7 @@
 </template>
 
 <script>
+import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import {
@@ -109,10 +110,11 @@ import {
   XCircleIcon
 } from "vue-feather-icons";
 import store from "../store";
+const db = firebase.firestore();
 
 export default {
   mixins: [mixins],
-  props: ["approved"],
+  props: ["approved", "collection"],
   components: {
     EditIcon,
     SendIcon,
@@ -128,7 +130,7 @@ export default {
   data() {
     return {
       parentPath: "",
-      collection: null, // collection: a reference to the parent collection
+      collectionObject: null,
       items: []
     };
   },
@@ -136,14 +138,14 @@ export default {
     this.parentPath = this.$route.matched[
       this.$route.matched.length - 1
     ].parent.path;
-    this.collection = this.$parent.collection;
+    this.collectionObject = db.collection(this.collection);
     this.$watch(
       "approved",
       () => {
         if (this.approved === true || this.approved === false) {
           this.$bind(
             "items",
-            this.collection
+            this.collectionObject
               .where("managerUid", "==", store.state.user.uid)
               .where("approved", "==", this.approved)
               .where("submitted", "==", true)
@@ -154,7 +156,7 @@ export default {
         } else {
           this.$bind(
             "items",
-            this.collection
+            this.collectionObject
               .where("uid", "==", store.state.user.uid)
               .orderBy("weekEnding", "desc")
           ).catch(error => {

@@ -55,8 +55,10 @@ import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "@/firebase";
 import store from "../store";
 import { parse } from "json2csv";
+const db = firebase.firestore();
 
 export default {
+  props: ["collection"], // a string, the Firestore Collection name
   components: {
     LockIcon,
     DownloadIcon
@@ -75,7 +77,7 @@ export default {
   data() {
     return {
       parentPath: "",
-      collection: null, // collection: a reference to the parent collection
+      collectionObject: null,
       items: []
     };
   },
@@ -83,8 +85,8 @@ export default {
     this.parentPath = this.$route.matched[
       this.$route.matched.length - 1
     ].parent.path;
-    this.collection = this.$parent.collection;
-    this.$bind("items", this.collection).catch(error => {
+    this.collectionObject = db.collection(this.collection);
+    this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load TimeTracking: ${error.message}`);
     });
   },

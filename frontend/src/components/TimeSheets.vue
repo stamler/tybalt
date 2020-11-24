@@ -17,19 +17,12 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
 import { mapState } from "vuex";
 import WaitMessages from "./WaitMessages";
 
 export default {
   components: {
     WaitMessages
-  },
-  data() {
-    return {
-      collection: db.collection("TimeSheets")
-    };
   },
   computed: {
     ...mapState(["showTasks"])

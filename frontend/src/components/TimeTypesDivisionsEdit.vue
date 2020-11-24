@@ -51,9 +51,7 @@ export default Vue.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).then(() => {
-      this.setItem(this.id);
-    });
+    this.setItem(this.id);
   },
   methods: {
     setItem(id: string) {

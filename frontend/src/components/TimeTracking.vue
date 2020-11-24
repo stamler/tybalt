@@ -9,27 +9,17 @@
     <router-view />
   </div>
 </template>
-<script>
-import WaitMessages from "./WaitMessages";
-import firebase from "@/firebase";
-const db = firebase.firestore();
+<script lang="ts">
+import Vue from "vue";
+import WaitMessages from "./WaitMessages.vue";
 import { mapState } from "vuex";
 
-export default {
+export default Vue.extend({
   components: {
     WaitMessages
   },
-  data() {
-    return {
-      collection: db.collection("TimeTracking"),
-      timeSheets: db
-        .collection("TimeSheets")
-        .where("approved", "==", true)
-        .where("locked", "==", false)
-    };
-  },
   computed: {
-    ...mapState(["claims", "showTasks"])
+    ...mapState(["showTasks"])
   }
-};
+});
 </script>
