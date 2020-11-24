@@ -33,6 +33,7 @@
       v-if="item.timetype === 'R' && item.division && item.division !== ''"
     >
       <label for="job">Job</label>
+      <!-- TODO: Show job description/client in uneditable part of field -->
       <input
         type="text"
         name="job"
@@ -40,7 +41,7 @@
         v-bind:value="item.job"
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
-        v-on:keyup.enter="selectJob"
+        v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
         v-on:input="updateJobCandidates"
       />
     </span>
@@ -159,7 +160,6 @@ export default {
       collectionObject: null,
       divisions: [],
       timetypes: [],
-      jobs: [],
       showSuggestions: false,
       selectedIndex: null,
       jobCandidates: [],
@@ -183,7 +183,6 @@ export default {
     this.collectionObject = db.collection(this.collection);
     this.$bind("divisions", db.collection("Divisions"));
     this.$bind("timetypes", db.collection("TimeTypes"));
-    this.$bind("jobs", db.collection("Jobs"));
     this.setItem(this.id);
   },
   methods: {
@@ -217,10 +216,9 @@ export default {
     setJob(id) {
       this.item.job = id;
       this.showSuggestions = false;
-    },
-    selectJob() {
-      this.item.job = this.jobCandidates[this.selectedIndex].id;
-      this.showSuggestions = false;
+      const job = this.jobCandidates.filter(i => i.id === id)[0];
+      this.item.jobDescription = job.description;
+      this.item.client = job.client;
     },
     onArrowUp() {
       const count = this.jobCandidates.length;
@@ -286,21 +284,9 @@ export default {
           throw "Division Missing";
         }
 
-        // Populate or Clear the Job Name
-        if (this.item.job && this.item.job.length > 5) {
-          // Update
-          // TODO: BUG: when the job has no name, this will
-          // become undefined and cause an error
-          // TODO: URGENT, eliminate the jobs property and either
-          // populate the job details from the jobCandidates OR
-          // set the details on the server in a cloud function OR
-          // poll the database for the details of that specific job
-          // THIS IS VERY IMPORTANT BECAUSE THE jobs PROPERTY binds
-          // all of the items every time it is called!
-          const job = this.jobs.filter(i => i.id === this.item.job)[0];
-          this.item.jobDescription = job.description;
-          this.item.client = job.client;
-        } else {
+        // Clear the Job if it's empty or too short
+        // The back end will actually validate that it exists
+        if (!this.item.job || this.item.job.length < 6) {
           // Clear
           delete this.item.client;
           delete this.item.jobDescription;
