@@ -10,22 +10,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
-import firebase from "@/firebase";
-const db = firebase.firestore();
-import { mapState } from "vuex";
-
-export default {
-  mixins: [mixins],
-  data() {
-    return {
-      collection: db.collection("TimeTypes"),
-      items: db.collection("TimeTypes")
-    };
-  },
-  computed: {
-    ...mapState(["claims"])
-  }
-};
+// We extend mixins because hasPermission() is in the mixin
+export default mixins.extend({});
 </script>

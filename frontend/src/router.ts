@@ -254,17 +254,20 @@ const router = new Router({
               path: "list",
               name: "Divisions List",
               // TODO: hide select/edit/del for read-only claims holders
-              props: { edit: true },
+              props: { collection: "Divisions" },
               component: TimeTypesDivisionsList
             },
             {
               path: "add",
               name: "Add Division",
+              props: { collection: "Divisions" },
               component: TimeTypesDivisionsEdit
             },
             {
               path: ":id/edit",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "Divisions" };
+              },
               name: "Edit Division",
               component: TimeTypesDivisionsEdit
             }
@@ -280,17 +283,20 @@ const router = new Router({
               path: "list",
               name: "Time Types List",
               // TODO: hide select/edit/del for read-only claims holders
-              props: { edit: true },
+              props: { collection: "TimeTypes" },
               component: TimeTypesDivisionsList
             },
             {
               path: "add",
               name: "Add Time Type",
+              props: { collection: "TimeTypes" },
               component: TimeTypesDivisionsEdit
             },
             {
               path: ":id/edit",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "TimeTypes" };
+              },
               name: "Edit Time Type",
               component: TimeTypesDivisionsEdit
             }

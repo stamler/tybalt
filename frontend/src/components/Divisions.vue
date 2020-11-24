@@ -10,22 +10,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
-import firebase from "@/firebase";
-const db = firebase.firestore();
-import { mapState } from "vuex";
-
-export default {
-  mixins: [mixins],
-  data() {
-    return {
-      collection: db.collection("Divisions"),
-      items: db.collection("Divisions")
-    };
-  },
-  computed: {
-    ...mapState(["claims"])
-  }
-};
+export default mixins.extend({});
 </script>

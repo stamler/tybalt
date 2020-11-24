@@ -23,19 +23,21 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
+import firebase from "../firebase";
+const db = firebase.firestore();
 
-export default {
-  mixins: [mixins],
+export default mixins.extend({
+  props: ["collection"], // a string, the Firestore Collection name
   components: {
     EditIcon
   },
   computed: {
     ...mapState(["claims"]),
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
@@ -46,28 +48,17 @@ export default {
   data() {
     return {
       search: "",
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
+      parentPath: null as string | null,
+      collectionObject: null as firebase.firestore.CollectionReference | null,
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items);
-  },
-  methods: {
-    del(item) {
-      this.collection
-        .doc(item)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    }
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
+      null;
+    this.collectionObject = db.collection(this.collection);
+    this.$bind("items", this.collectionObject);
   }
-};
+});
 </script>
