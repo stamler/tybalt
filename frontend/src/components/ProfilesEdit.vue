@@ -38,6 +38,15 @@
       </span>
     </span>
     <span class="field">
+      <label for="defaultDivision">Default Division</label>
+      <input
+        type="text"
+        name="defaultDivision"
+        v-model="item.defaultDivision"
+      />
+    </span>
+
+    <span class="field">
       <button type="button" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
         Cancel
