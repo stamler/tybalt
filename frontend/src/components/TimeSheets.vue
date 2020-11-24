@@ -15,17 +15,17 @@
     <router-view />
   </div>
 </template>
-
-<script>
+<script lang="ts">
+import Vue from "vue";
+import WaitMessages from "./WaitMessages.vue";
 import { mapState } from "vuex";
-import WaitMessages from "./WaitMessages";
 
-export default {
+export default Vue.extend({
   components: {
     WaitMessages
   },
   computed: {
     ...mapState(["showTasks"])
   }
-};
+});
 </script>
