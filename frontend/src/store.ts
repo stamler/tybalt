@@ -1,3 +1,4 @@
+import firebase from "./firebase";
 import Vue from "vue";
 import Vuex from "vuex";
 
@@ -10,8 +11,8 @@ interface TaskList {
 export default new Vuex.Store({
   state: {
     sidenav: false,
-    user: null,
-    claims: null,
+    user: null as firebase.User | null,
+    claims: null as { [claim: string]: boolean } | null,
     activeTasks: {} as TaskList, // items to show in the progress UI element
     showTasks: false, // whether to display the progress UI element
 
@@ -42,10 +43,10 @@ export default new Vuex.Store({
       delete state.activeTasks[task.id];
       state.showTasks = Object.keys(state.activeTasks).length > 0;
     },
-    setUser(state, user) {
+    setUser(state, user: firebase.User) {
       state.user = user;
     },
-    setClaims(state, claims) {
+    setClaims(state, claims: { [claim: string]: boolean }) {
       state.claims = claims;
     }
   },

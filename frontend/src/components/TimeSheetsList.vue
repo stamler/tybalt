@@ -98,7 +98,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
@@ -112,7 +113,7 @@ import {
 import store from "../store";
 const db = firebase.firestore();
 
-export default {
+export default Vue.extend({
   mixins: [mixins],
   props: ["approved", "collection"],
   components: {
@@ -123,30 +124,38 @@ export default {
     XCircleIcon
   },
   filters: {
-    shortDate(date) {
+    shortDate(date: Date) {
       return format(date, "MMM dd");
     }
   },
   data() {
     return {
       parentPath: "",
-      collectionObject: null,
+      collectionObject: null as firebase.firestore.CollectionReference | null,
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$watch(
       "approved",
       () => {
-        if (this.approved === true || this.approved === false) {
+        if (this.collectionObject === null) {
+          throw "There is no valid collection object";
+        }
+        const uid = store.state.user?.uid;
+        if (uid === undefined) {
+          throw "There is no valid uid";
+        }
+        if (typeof this.approved === "boolean") {
+          // approved prop is defined, show pending or approved TimeSheets
+          // belonging to users that this user manages
           this.$bind(
             "items",
             this.collectionObject
-              .where("managerUid", "==", store.state.user.uid)
+              .where("managerUid", "==", uid)
               .where("approved", "==", this.approved)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
@@ -154,10 +163,11 @@ export default {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
         } else {
+          // approved prop is not defined, show this user's own timesheets
           this.$bind(
             "items",
             this.collectionObject
-              .where("uid", "==", store.state.user.uid)
+              .where("uid", "==", uid)
               .orderBy("weekEnding", "desc")
           ).catch(error => {
             alert(`Can't load Time Sheets: ${error.message}`);
@@ -168,7 +178,7 @@ export default {
     );
   },
   methods: {
-    hoursWorked(item) {
+    hoursWorked(item: firebase.firestore.DocumentData) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;
       workedHours += item.workHoursTally.jobHours;
@@ -178,7 +188,7 @@ export default {
         return "no work";
       }
     },
-    hoursOff(item) {
+    hoursOff(item: firebase.firestore.DocumentData) {
       let hoursOff = 0;
       for (const timetype in item.nonWorkHoursTally) {
         hoursOff += item.nonWorkHoursTally[timetype];
@@ -189,7 +199,7 @@ export default {
         return "no time off";
       }
     },
-    jobs(item) {
+    jobs(item: firebase.firestore.DocumentData) {
       const jobs = Object.keys(item.jobsTally)
         .sort()
         .join(", ");
@@ -199,7 +209,7 @@ export default {
         return;
       }
     },
-    divisions(item) {
+    divisions(item: firebase.firestore.DocumentData) {
       const divisions = Object.keys(item.divisionsTally)
         .sort()
         .join(", ");
@@ -210,5 +220,5 @@ export default {
       }
     }
   }
-};
+});
 </script>
