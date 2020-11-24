@@ -112,7 +112,7 @@ export default {
   },
   data() {
     return {
-      parentPath: null,
+      parentPath: "",
       collection: null,
       item: {}
     };

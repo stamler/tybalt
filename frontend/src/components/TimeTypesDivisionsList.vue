@@ -48,15 +48,14 @@ export default mixins.extend({
   data() {
     return {
       search: "",
-      parentPath: null as string | null,
+      parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: []
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
-      null;
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject);
   }

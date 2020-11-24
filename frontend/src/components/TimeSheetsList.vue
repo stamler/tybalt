@@ -127,7 +127,7 @@ export default {
   },
   data() {
     return {
-      parentPath: null,
+      parentPath: "",
       collection: null, // collection: a reference to the parent collection
       items: []
     };

@@ -133,7 +133,7 @@ export default {
   data() {
     return {
       search: "",
-      parentPath: null,
+      parentPath: "",
       collection: null, // collection: a reference to the parent collection
       items: []
     };

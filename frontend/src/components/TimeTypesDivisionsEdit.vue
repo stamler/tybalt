@@ -22,7 +22,7 @@
   </form>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from "vue";
 import _ from "lodash";
 import firebase from "../firebase";
@@ -32,9 +32,9 @@ export default Vue.extend({
   props: ["id", "collection"],
   data() {
     return {
-      parentPath: null,
-      collectionObject: null,
-      item: {}
+      parentPath: "",
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      item: {} as firebase.firestore.DocumentData | undefined
     };
   },
   computed: {
@@ -48,23 +48,28 @@ export default Vue.extend({
     } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).then(this.setItem(this.id));
+    this.$bind("items", this.collectionObject).then(() => {
+      this.setItem(this.id);
+    });
   },
   methods: {
-    setItem(id) {
-      if (this.collectionObject !== null && id) {
+    setItem(id: string) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
             if (snap.exists) {
               this.item = snap.data();
             } else {
-              // The id doesn't exist, list instead
-              // TODO: show a message to the user
+              // A document with this id doesn't exist in the database,
+              // list instead.  TODO: show a message to the user
               this.$router.push(this.parentPath);
             }
           });
@@ -74,6 +79,9 @@ export default Vue.extend({
     },
     save() {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
