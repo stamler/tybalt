@@ -65,18 +65,20 @@ const router = new Router({
             {
               path: "list",
               name: "Time Entries List",
+              props: { collection: "TimeEntries" },
               component: TimeEntriesList
             },
             {
               path: "add",
               name: "Add Time Entry",
-              props: { saveUid: true },
+              props: { collection: "TimeEntries" },
               component: TimeEntriesEdit
             },
             {
               path: ":id/edit",
-              // combine static saveUid prop with route-based id
-              props: route => ({ id: route.params.id, saveUid: true }),
+              props: route => {
+                return { id: route.params.id, collection: "TimeEntries" };
+              },
               name: "Edit Time Entry",
               component: TimeEntriesEdit
             }

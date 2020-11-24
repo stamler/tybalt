@@ -133,7 +133,7 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
+import firebase from "../firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
@@ -142,7 +142,7 @@ import _ from "lodash";
 
 export default {
   components: { Datepicker },
-  props: ["id"],
+  props: ["id", "collection"],
   data() {
     return {
       dps: {
@@ -155,8 +155,8 @@ export default {
           dates: [new Date()]
         }
       },
-      parentPath: null,
-      collection: null,
+      parentPath: "",
+      collectionObject: null,
       divisions: [],
       timetypes: [],
       jobs: [],
@@ -173,43 +173,47 @@ export default {
     }
   },
   watch: {
-    id: {
-      immediate: true,
-      handler(id) {
-        if (id) {
-          this.$parent.collection
-            .doc(id)
-            .get()
-            .then(snap => {
-              this.item = snap.data();
-              this.item.date = this.item.date.toDate();
-              // Next line is only used for testing, normally hidden in UI
-              // The user shouldn't be manually setting the weekEnding because
-              // this is done using an onWrite() trigger. We can test this
-              // functionality by showing the weekEnding field in the UI
-              // component above. The next line makes sure the format is a JS
-              // date object so the date picker can display and edit it.
-              this.item.weekEnding = this.item.weekEnding.toDate();
-            });
-        } else {
-          this.item = {
-            date: new Date(),
-            timetype: "R"
-          };
-          // TODO: add defaultDivision from the User so it's pre-populated
-        }
-      }
-    }
+    id: function(id) {
+      this.setItem(id);
+    } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
     this.$bind("divisions", db.collection("Divisions"));
     this.$bind("timetypes", db.collection("TimeTypes"));
     this.$bind("jobs", db.collection("Jobs"));
+    this.setItem(this.id);
   },
   methods: {
+    setItem(id) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
+        this.collectionObject
+          .doc(id)
+          .get()
+          .then(snap => {
+            this.item = snap.data();
+            this.item.date = this.item.date.toDate();
+            // Next line is only used for testing, normally hidden in UI
+            // The user shouldn't be manually setting the weekEnding because
+            // this is done using an onWrite() trigger. We can test this
+            // functionality by showing the weekEnding field in the UI
+            // component above. The next line makes sure the format is a JS
+            // date object so the date picker can display and edit it.
+            this.item.weekEnding = this.item.weekEnding.toDate();
+          });
+      } else {
+        this.item = {
+          date: new Date(),
+          timetype: "R"
+        };
+        // TODO: add defaultDivision from the User so it's pre-populated
+      }
+    },
     setJob(id) {
       this.item.job = id;
       this.showSuggestions = false;
@@ -287,6 +291,12 @@ export default {
           // Update
           // TODO: BUG: when the job has no name, this will
           // become undefined and cause an error
+          // TODO: URGENT, eliminate the jobs property and either
+          // populate the job details from the jobCandidates OR
+          // set the details on the server in a cloud function OR
+          // poll the database for the details of that specific job
+          // THIS IS VERY IMPORTANT BECAUSE THE jobs PROPERTY binds
+          // all of the items every time it is called!
           const job = this.jobs.filter(i => i.id === this.item.job)[0];
           this.item.jobDescription = job.description;
           this.item.client = job.client;
@@ -316,7 +326,7 @@ export default {
       // Write to database
       if (this.id) {
         // Editing an existing item
-        this.collection
+        this.collectionObject
           .doc(this.id)
           .set(this.item)
           .then(() => {
@@ -324,7 +334,7 @@ export default {
           });
       } else {
         // Creating a new item
-        this.collection
+        this.collectionObject
           .doc()
           .set(this.item)
           .then(() => {

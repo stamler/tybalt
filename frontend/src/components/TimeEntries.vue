@@ -10,8 +10,6 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
 import { mapState } from "vuex";
 import WaitMessages from "./WaitMessages";
 
@@ -21,11 +19,6 @@ export default {
   },
   computed: {
     ...mapState(["showTasks"])
-  },
-  data() {
-    return {
-      collection: db.collection("TimeEntries")
-    };
   }
 };
 </script>

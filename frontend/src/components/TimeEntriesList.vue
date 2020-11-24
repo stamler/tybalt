@@ -96,8 +96,11 @@ import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
+import firebase from "../firebase";
+const db = firebase.firestore();
 
 export default {
+  props: ["collection"],
   mixins: [mixins],
   components: {
     EditIcon,
@@ -118,19 +121,18 @@ export default {
   },
   data() {
     return {
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
+      parentPath: "",
+      collectionObject: null, // collection: a reference to the parent collection
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
     this.$bind(
       "items",
-      this.collection
+      this.collectionObject
         .where("uid", "==", store.state.user.uid)
         .orderBy("date", "desc")
     ).catch(error => {
@@ -158,7 +160,7 @@ export default {
       );
     },
     del(item) {
-      this.collection
+      this.collectionObject
         .doc(item)
         .delete()
         .catch(err => {
