@@ -102,10 +102,11 @@ service cloud.firestore {
       allow read: if hasClaim("admin");
       allow update: if hasClaim("admin") && 
         newDoc().keys().hasOnly([
-          "managerUid", "managerName","displayName","email","customClaims"
+          "managerUid", "managerName","displayName","email","customClaims", "defaultDivision"
         ]) &&
         newDoc().keys().hasAll(["displayName", "email"]) &&
-        isInCollection("managerUid","Profiles")
+        isInCollection("managerUid","Profiles") && 
+        (isMissing("defaultDivision") || isInCollection("defaultDivision", "Divisions"))
     }
     match /Jobs/{jobId} {
       allow read: if isSignedIn();
