@@ -44,8 +44,8 @@
           <div class="headline_wrapper">
             <div class="headline">{{ totalHours(week) }} hours</div>
             <div class="byline">
-              {{ sumValues(week, "workHoursTally") }} worked /
-              {{ sumValues(week, "nonWorkHoursTally") }} off
+              {{ tallies[week].workHoursTally.total }} worked /
+              {{ tallies[week].nonWorkHoursTally.total }} off
             </div>
           </div>
           <div class="firstline">
@@ -145,17 +145,8 @@ export default Vue.extend({
   methods: {
     totalHours(week: number): number {
       return (
-        this.sumValues(week, "nonWorkHoursTally") +
-        this.sumValues(week, "workHoursTally")
-      );
-    },
-    sumValues(
-      week: number,
-      property: "nonWorkHoursTally" | "workHoursTally"
-    ): number {
-      return Object.values(this.tallies[week][property]).reduce(
-        (a, c) => a + c,
-        0
+        this.tallies[week].nonWorkHoursTally.total +
+        this.tallies[week].workHoursTally.total
       );
     },
     itemsByWeekEnding(weekEnding: number) {
@@ -187,9 +178,9 @@ export default Vue.extend({
         weekEnding: Date;
         bankEntries: firebase.firestore.DocumentData[];
         offRotationDates: number[];
-        nonWorkHoursTally: { [timetype: string]: number };
+        nonWorkHoursTally: { [timetype: string]: number; total: number };
         mealsHoursTally: number;
-        workHoursTally: { hours: number; jobHours: number };
+        workHoursTally: { hours: number; jobHours: number; total: number };
         divisionsTally: { [division: string]: string }; // value is divisionName
         jobsTally: { [job: string]: { client: string; description: string } };
       }
@@ -207,9 +198,9 @@ export default Vue.extend({
               weekEnding: new Date(key),
               bankEntries: [],
               offRotationDates: [],
-              nonWorkHoursTally: {}, // key is timetype, value is total
+              nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
               mealsHoursTally: 0,
-              workHoursTally: { hours: 0, jobHours: 0 },
+              workHoursTally: { hours: 0, jobHours: 0, total: 0 },
               divisionsTally: {}, // key is division, value is divisionName
               jobsTally: {} // key is job, value is object with client and description
             };
@@ -235,9 +226,11 @@ export default Vue.extend({
             // Tally the work hours and meals hours
             if ("hours" in item) {
               tallyObject[key].workHoursTally["hours"] += item.hours;
+              tallyObject[key].workHoursTally.total += item.hours;
             }
             if ("jobHours" in item) {
               tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
+              tallyObject[key].workHoursTally.total += item.jobHours;
             }
             if ("mealsHours" in item) {
               tallyObject[key].mealsHoursTally += item.mealsHours;
@@ -257,8 +250,10 @@ export default Vue.extend({
             // Tally the non-work hours
             if (item.timetype in tallyObject[key].nonWorkHoursTally) {
               tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
+              tallyObject[key].nonWorkHoursTally.total += item.hours;
             } else {
               tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
+              tallyObject[key].nonWorkHoursTally.total = item.hours;
             }
           }
         }
