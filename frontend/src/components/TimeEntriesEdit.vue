@@ -133,7 +133,8 @@
   </form>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
@@ -141,7 +142,7 @@ import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 
-export default {
+export default Vue.extend({
   components: { Datepicker },
   props: ["id", "collection"],
   data() {
@@ -157,18 +158,18 @@ export default {
         }
       },
       parentPath: "",
-      collectionObject: null,
-      divisions: [],
-      timetypes: [],
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      divisions: [] as firebase.firestore.DocumentData[],
+      timetypes: [] as firebase.firestore.DocumentData[],
       showSuggestions: false,
-      selectedIndex: null,
-      jobCandidates: [],
-      item: {}
+      selectedIndex: null as number | null,
+      jobCandidates: [] as firebase.firestore.DocumentData[],
+      item: {} as firebase.firestore.DocumentData
     };
   },
   computed: {
     ...mapState(["user"]),
-    editing: function() {
+    editing: function(): boolean {
       return this.id !== undefined;
     }
   },
@@ -186,7 +187,7 @@ export default {
     this.setItem(this.id);
   },
   methods: {
-    setItem(id) {
+    setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -194,26 +195,29 @@ export default {
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
-            this.item = snap.data();
-            this.item.date = this.item.date.toDate();
-            // Next line is only used for testing, normally hidden in UI
-            // The user shouldn't be manually setting the weekEnding because
-            // this is done using an onWrite() trigger. We can test this
-            // functionality by showing the weekEnding field in the UI
-            // component above. The next line makes sure the format is a JS
-            // date object so the date picker can display and edit it.
-            this.item.weekEnding = this.item.weekEnding.toDate();
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
+            const result = snap.data();
+            if (result === undefined) {
+              // A document with this id doesn't exist in the database,
+              // list instead.
+              this.$router.push(this.parentPath);
+            } else {
+              this.item = result;
+              this.item.date = result.date.toDate();
+            }
+          })
+          .catch(() => {
+            this.$router.push(this.parentPath);
           });
       } else {
         this.item = {
           date: new Date(),
           timetype: "R"
+          // TODO: add defaultDivision from the User so it's pre-populated
         };
-        // TODO: add defaultDivision from the User so it's pre-populated
       }
     },
-    setJob(id) {
+    setJob(id: string) {
       this.item.job = id;
       this.showSuggestions = false;
       const job = this.jobCandidates.filter(i => i.id === id)[0];
@@ -234,13 +238,15 @@ export default {
         this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
       this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
-    updateJobCandidates: _.debounce(function(e) {
+    // any annotation in next line due to the following:
+    // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
+    updateJobCandidates: _.debounce(function(this: any, e: Event) {
       // TODO: possibly use full text search like
       // https://www.npmjs.com/package/adv-firestore-functions
       this.showSuggestions = true;
-      const loBound = e.target.value.trim();
+      const loBound = (e.target as HTMLInputElement).value.trim();
       if (loBound.length > 0) {
-        const hiBound = e.target.value.trim() + "\uf8ff";
+        const hiBound = (e.target as HTMLInputElement).value.trim() + "\uf8ff";
         this.item.job = loBound; // preserve the value in the input field
         this.$bind(
           "jobCandidates",
@@ -310,6 +316,9 @@ export default {
       }
 
       // Write to database
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
       if (this.id) {
         // Editing an existing item
         this.collectionObject
@@ -329,7 +338,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 <style>
 #suggestions {
