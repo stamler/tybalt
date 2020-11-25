@@ -33,7 +33,7 @@
           <router-link :to="[parentPath, item.id, 'edit'].join('/')">
             <edit-icon></edit-icon>
           </router-link>
-          <router-link to="#" v-on:click.native="del(item.id)">
+          <router-link to="#" v-on:click.native="del(item)">
             <x-circle-icon></x-circle-icon>
           </router-link>
         </div>
@@ -90,7 +90,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
@@ -99,7 +100,7 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default {
+export default Vue.extend({
   props: ["collection"],
   mixins: [mixins],
   components: {
@@ -108,10 +109,10 @@ export default {
     PackageIcon
   },
   filters: {
-    shortDate(date) {
+    shortDate(date: Date) {
       return format(date, "MMM dd");
     },
-    hoursString(item) {
+    hoursString(item: firebase.firestore.DocumentData) {
       const hoursArray = [];
       if (item.hours) hoursArray.push(item.hours + " hrs");
       if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
@@ -122,46 +123,54 @@ export default {
   data() {
     return {
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
+    const uid = store.state.user?.uid;
+    if (uid === undefined) {
+      throw "There is no valid uid";
+    }
     this.$bind(
       "items",
-      this.collectionObject
-        .where("uid", "==", store.state.user.uid)
-        .orderBy("date", "desc")
+      this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
     ).catch(error => {
       alert(`Can't load Time Entries: ${error.message}`);
     });
   },
   methods: {
-    totalHours(week) {
+    totalHours(week: number): number {
       return (
         this.sumValues(week, "nonWorkHoursTally") +
         this.sumValues(week, "workHoursTally")
       );
     },
-    sumValues(week, property) {
+    sumValues(
+      week: number,
+      property: "nonWorkHoursTally" | "workHoursTally"
+    ): number {
       return Object.values(this.tallies[week][property]).reduce(
         (a, c) => a + c,
         0
       );
     },
-    itemsByWeekEnding(weekEnding) {
+    itemsByWeekEnding(weekEnding: number) {
       return this.items.filter(
         x =>
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().valueOf() === Number(weekEnding)
       );
     },
-    del(item) {
+    del(item: firebase.firestore.DocumentData) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
       this.collectionObject
-        .doc(item)
+        .doc(item.id)
         .delete()
         .catch(err => {
           alert(`Error deleting item: ${err}`);
@@ -174,7 +183,18 @@ export default {
     // A an object where the keys are saturdays and the values are tallies
     // to be used in the UI
     tallies() {
-      const tallyObject = {};
+      interface WeekTally {
+        weekEnding: Date;
+        bankEntries: firebase.firestore.DocumentData[];
+        offRotationDates: number[];
+        nonWorkHoursTally: { [timetype: string]: number };
+        mealsHoursTally: number;
+        workHoursTally: { hours: number; jobHours: number };
+        divisionsTally: { [division: string]: string }; // value is divisionName
+        jobsTally: { [job: string]: { client: string; description: string } };
+      }
+
+      const tallyObject: { [key: number]: WeekTally } = {};
 
       for (const item of this.items) {
         if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
@@ -246,5 +266,5 @@ export default {
       return tallyObject;
     }
   }
-};
+});
 </script>

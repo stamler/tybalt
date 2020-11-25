@@ -9,16 +9,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import { mapState } from "vuex";
-import WaitMessages from "./WaitMessages";
+import WaitMessages from "./WaitMessages.vue";
 
-export default {
+export default Vue.extend({
   components: {
     WaitMessages
   },
   computed: {
     ...mapState(["showTasks"])
   }
-};
+});
 </script>
