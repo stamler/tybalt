@@ -168,10 +168,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["user"]),
-    editing: function(): boolean {
-      return this.id !== undefined;
-    }
+    ...mapState(["user"])
   },
   watch: {
     id: function(id) {
@@ -187,7 +184,7 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
-    setItem(id: string) {
+    async setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -210,11 +207,18 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           });
       } else {
+        const profile = await db
+          .collection("Profiles")
+          .doc(this.user.uid)
+          .get();
+        const defaultDivision = profile.get("defaultDivision");
         this.item = {
           date: new Date(),
           timetype: "R"
-          // TODO: add defaultDivision from the User so it's pre-populated
         };
+        if (defaultDivision !== undefined) {
+          this.item.division = defaultDivision;
+        }
       }
     },
     setJob(id: string) {
