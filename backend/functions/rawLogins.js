@@ -138,6 +138,9 @@ async function storeValidLogin(d, db) {
     return db.collection("RawLogins").doc().set(d);
   }
 
+  // TODO: delete all RawLogins where the serial matches this one since
+  // we are getting a real login now, making them redundant
+
   // Start a write batch
   var batch = db.batch();
 
@@ -221,8 +224,6 @@ async function getUserRef(d, db) {
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
 exports.cleanup = async (data, context, db) => {
-  // unComment this line if calling from client rather than onCreate()
-  //callableIsAuthorized(context, ['admin'], validateCleanup, data);
   console.log(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
   let latest_item_snapshot = await db
