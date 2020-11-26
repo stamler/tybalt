@@ -169,6 +169,20 @@ export default Vue.extend({
       const fields = Object.values(item);
       fields.push(item.id);
       return fields.join(",").toLowerCase();
+    },
+    del(
+      item: firebase.firestore.DocumentData,
+      collection: firebase.firestore.CollectionReference
+    ) {
+      if (collection === null) {
+        throw "There is no valid collection object";
+      }
+      collection
+        .doc(item.id)
+        .delete()
+        .catch(err => {
+          alert(`Error deleting item: ${err}`);
+        });
     }
   }
 });

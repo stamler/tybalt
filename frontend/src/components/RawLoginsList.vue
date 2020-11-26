@@ -43,7 +43,7 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link to="#" v-on:click.native="del(item)">
+        <router-link to="#" v-on:click.native="del(item, collectionObject)">
           <x-circle-icon></x-circle-icon>
         </router-link>
       </div>
@@ -97,17 +97,6 @@ export default mixins.extend({
     );
   },
   methods: {
-    del(item: firebase.firestore.DocumentData) {
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-      this.collectionObject
-        .doc(item.id)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    },
     guessSerial(item: firebase.firestore.DocumentData): string {
       const dnsHostname =
         item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname;

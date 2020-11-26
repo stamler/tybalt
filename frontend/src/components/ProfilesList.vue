@@ -69,14 +69,6 @@ export default {
     });
   },
   methods: {
-    del(item) {
-      this.collection
-        .doc(item)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    },
     searchString(item) {
       const fields = Object.values(item);
       fields.push(item.id);

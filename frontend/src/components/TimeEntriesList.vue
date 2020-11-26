@@ -33,7 +33,7 @@
           <router-link :to="[parentPath, item.id, 'edit'].join('/')">
             <edit-icon></edit-icon>
           </router-link>
-          <router-link to="#" v-on:click.native="del(item)">
+          <router-link to="#" v-on:click.native="del(item, collectionObject)">
             <x-circle-icon></x-circle-icon>
           </router-link>
         </div>
@@ -153,17 +153,6 @@ export default mixins.extend({
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().valueOf() === Number(weekEnding)
       );
-    },
-    del(item: firebase.firestore.DocumentData) {
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-      this.collectionObject
-        .doc(item.id)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
     }
   },
   computed: {
