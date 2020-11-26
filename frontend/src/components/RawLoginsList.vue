@@ -49,11 +49,8 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link to="#" v-on:click.native="del(item.id)">
+        <router-link to="#" v-on:click.native="del(item)">
           <x-circle-icon></x-circle-icon>
-        </router-link>
-        <router-link to="#" v-on:click.native="cleanup(item.computerName)">
-          cleanup
         </router-link>
       </div>
     </div>
@@ -98,28 +95,21 @@ export default {
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db
-      .collection(this.collection)
-      .orderBy("created", "desc");
-    this.$bind("items", this.collectionObject).catch(error => {
-      alert(`Can't load Raw Logins: ${error.message}`);
-    });
+    this.collectionObject = db.collection(this.collection);
+    this.$bind("items", this.collectionObject.orderBy("created", "desc")).catch(
+      error => {
+        alert(`Can't load Raw Logins: ${error.message}`);
+      }
+    );
   },
   methods: {
     del(item) {
       this.collectionObject
-        .doc(item)
+        .doc(item.id)
         .delete()
         .catch(err => {
           alert(`Error deleting item: ${err}`);
         });
-    },
-    cleanup(computerName) {
-      const data = { computerName };
-      const cleanupOld = firebase.functions().httpsCallable("cleanup");
-      cleanupOld(data).catch(error => {
-        alert(`Error running cleanup: ${error}`);
-      });
     },
     guessSerial(dnsHostname) {
       try {
