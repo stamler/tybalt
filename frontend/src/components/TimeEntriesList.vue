@@ -91,7 +91,6 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
@@ -100,9 +99,8 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default Vue.extend({
+export default mixins.extend({
   props: ["collection"],
-  mixins: [mixins],
   components: {
     EditIcon,
     XCircleIcon,
