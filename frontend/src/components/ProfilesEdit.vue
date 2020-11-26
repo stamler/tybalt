@@ -15,7 +15,7 @@
     <span class="field">
       <label for="manager">Manager</label>
       <select name="manager" v-model="item.managerUid">
-        <option v-for="m in profiles" :value="m.id" v-bind:key="m.id">
+        <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
           {{ m.displayName }}
         </option>
       </select>
@@ -39,11 +39,11 @@
     </span>
     <span class="field">
       <label for="defaultDivision">Default Division</label>
-      <input
-        type="text"
-        name="defaultDivision"
-        v-model="item.defaultDivision"
-      />
+      <select name="defaultDivision" v-model="item.defaultDivision">
+        <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
+          {{ d.name }}
+        </option>
+      </select>
     </span>
 
     <span class="field">
@@ -66,46 +66,55 @@ export default {
     PlusCircleIcon,
     XCircleIcon
   },
-  props: ["id"],
+  props: ["id", "collection"],
   data() {
     return {
-      parentPath: null,
-      collection: null,
+      parentPath: "",
+      collectionObject: null,
       item: {},
       newClaim: null,
-      profiles: []
+      managers: [],
+      divisions: []
     };
   },
   watch: {
-    id: {
-      immediate: true,
-      handler(id) {
-        if (id) {
-          this.$parent.collection
-            .doc(id)
-            .get()
-            .then(snap => {
-              if (snap.exists) {
-                this.item = snap.data();
-              } else {
-                // The id doesn't exist, list instead
-                // TODO: show a message to the user
-                this.$router.push(this.parentPath);
-              }
-            });
-        } else {
-          this.item = {};
-        }
-      }
-    }
+    id: function(id) {
+      this.setItem(id);
+    } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
-    this.$bind("profiles", db.collection("Profiles"));
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.$bind(
+      "managers",
+      db.collection("Profiles").where("customClaims.tapr", "==", true)
+    );
+    this.$bind("divisions", db.collection("Divisions"));
+    this.setItem(this.id);
   },
   methods: {
+    setItem(id) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
+        this.collectionObject
+          .doc(id)
+          .get()
+          .then(snap => {
+            if (snap.exists) {
+              this.item = snap.data();
+            } else {
+              // A document with this id doesn't exist in the database,
+              // list instead.  TODO: show a message to the user
+              this.$router.push(this.parentPath);
+            }
+          });
+      } else {
+        this.item = {};
+      }
+    },
     addClaim(claim) {
       this.$set(this.item.customClaims, claim, true);
       this.newClaim = null;
@@ -115,7 +124,7 @@ export default {
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
-        this.collection
+        this.collectionObject
           .doc(this.id)
           .set(this.item)
           .then(() => {

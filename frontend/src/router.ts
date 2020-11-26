@@ -223,11 +223,14 @@ const router = new Router({
             {
               path: "list",
               name: "Profiles List",
+              props: { collection: "Profiles" },
               component: ProfilesList
             },
             {
               path: ":id/edit",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "Profiles" };
+              },
               name: "Edit Profile",
               component: ProfilesEdit
             }

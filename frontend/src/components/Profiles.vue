@@ -1,24 +1,18 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" to="list">List</router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'Profiles List' }">
+        List
+      </router-link>
     </div>
     <router-view />
   </div>
 </template>
 
-<script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
+<script lang="ts">
 import { mapState } from "vuex";
 
 export default {
-  data() {
-    return {
-      collection: db.collection("Profiles"),
-      items: db.collection("Profiles")
-    };
-  },
   computed: {
     ...mapState(["claims", "user"])
   }
