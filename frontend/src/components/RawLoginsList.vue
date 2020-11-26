@@ -16,7 +16,7 @@
               <router-link
                 v-bind:to="{
                   name: 'Computer Details',
-                  params: { id: makeSlug(item.serial, item.mfg) }
+                  params: { id: makeSlug(item) }
                 }"
               >
                 {{ item.serial }}
@@ -35,13 +35,7 @@
         <div class="thirdline">
           <span v-if="!item.userSourceAnchor">missing userSourceAnchor</span>
           <span v-if="!item.serial">
-            missing serial
-            {{
-              guessSerial(
-                item.networkConfig[Object.keys(item.networkConfig)[0]]
-                  .dnsHostname
-              )
-            }}
+            missing serial {{ guessSerial(item) }}
           </span>
           <span v-if="isNaN(item.radiatorVersion)">
             missing radiatorVersion
@@ -57,30 +51,30 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { XCircleIcon } from "vue-feather-icons";
 
-export default {
+export default mixins.extend({
   props: ["collection"],
-  mixins: [mixins],
   components: {
     XCircleIcon
   },
   computed: {
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          (p: firebase.firestore.DocumentData) =>
+            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     }
   },
   filters: {
-    relativeTime(date) {
+    relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
     }
   },
@@ -88,8 +82,8 @@ export default {
     return {
       search: "",
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
@@ -103,7 +97,10 @@ export default {
     );
   },
   methods: {
-    del(item) {
+    del(item: firebase.firestore.DocumentData) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
       this.collectionObject
         .doc(item.id)
         .delete()
@@ -111,14 +108,18 @@ export default {
           alert(`Error deleting item: ${err}`);
         });
     },
-    guessSerial(dnsHostname) {
+    guessSerial(item: firebase.firestore.DocumentData): string {
+      const dnsHostname =
+        item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname;
       try {
         return dnsHostname.split("-")[1] || "";
       } catch (error) {
         return "";
       }
     },
-    makeSlug(serial, mfg) {
+    makeSlug(item: firebase.firestore.DocumentData): string {
+      const serial = item.serial;
+      const mfg = item.mfg;
       const sc = serial.replace(/\s|\/|,/g, "");
       const mc = mfg
         .toLowerCase()
@@ -132,7 +133,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {
