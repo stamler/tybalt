@@ -63,10 +63,12 @@
 <script>
 import mixins from "./mixins";
 import { formatDistanceToNow } from "date-fns";
-import firebase from "@/firebase";
+import firebase from "../firebase";
+const db = firebase.firestore();
 import { XCircleIcon } from "vue-feather-icons";
 
 export default {
+  props: ["collection"],
   mixins: [mixins],
   components: {
     XCircleIcon
@@ -88,24 +90,24 @@ export default {
   data() {
     return {
       search: "",
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
+      parentPath: "",
+      collectionObject: null, // collection: a reference to the parent collection
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db
+      .collection(this.collection)
+      .orderBy("created", "desc");
+    this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load Raw Logins: ${error.message}`);
     });
   },
   methods: {
     del(item) {
-      this.collection
+      this.collectionObject
         .doc(item)
         .delete()
         .catch(err => {
