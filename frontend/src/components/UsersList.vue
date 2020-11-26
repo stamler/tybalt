@@ -53,7 +53,7 @@ export default mixins.extend({
     return {
       search: "",
       parentPath: "",
-      collection: db.collection("Users"),
+      collectionObject: db.collection("Users"),
       items: []
     };
   },
@@ -79,7 +79,7 @@ export default mixins.extend({
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.$bind("items", this.collection).catch(error => {
+    this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load Users: ${error.message}`);
     });
   }
