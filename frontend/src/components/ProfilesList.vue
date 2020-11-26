@@ -28,20 +28,21 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import mixins from "./mixins";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 
-export default {
+export default mixins.extend({
   props: ["collection"],
   components: {
     EditIcon
   },
   computed: {
     ...mapState(["claims"]),
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
@@ -50,7 +51,7 @@ export default {
     }
   },
   filters: {
-    keysString(obj) {
+    keysString(obj: { [key: string]: any }): string {
       return obj ? Object.keys(obj).join(", ") : "";
     }
   },
@@ -58,8 +59,8 @@ export default {
     return {
       search: "",
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
@@ -69,15 +70,8 @@ export default {
     this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load Profiles: ${error.message}`);
     });
-  },
-  methods: {
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
-    }
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {

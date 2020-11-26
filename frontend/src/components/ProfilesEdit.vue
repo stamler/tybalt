@@ -55,13 +55,14 @@
   </form>
 </template>
 
-<script>
-import firebase from "@/firebase";
+<script lang="ts">
+import Vue from "vue";
+import firebase from "../firebase";
 const db = firebase.firestore();
 import _ from "lodash";
 import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
 
-export default {
+export default Vue.extend({
   components: {
     PlusCircleIcon,
     XCircleIcon
@@ -70,11 +71,11 @@ export default {
   data() {
     return {
       parentPath: "",
-      collectionObject: null,
-      item: {},
-      newClaim: null,
-      managers: [],
-      divisions: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      item: {} as firebase.firestore.DocumentData,
+      newClaim: "",
+      managers: [] as firebase.firestore.DocumentData[],
+      divisions: [] as firebase.firestore.DocumentData[]
     };
   },
   watch: {
@@ -94,7 +95,7 @@ export default {
     this.setItem(this.id);
   },
   methods: {
-    setItem(id) {
+    setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -102,26 +103,34 @@ export default {
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
-            if (snap.exists) {
-              this.item = snap.data();
-            } else {
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
+            const result = snap.data();
+            if (result === undefined) {
               // A document with this id doesn't exist in the database,
-              // list instead.  TODO: show a message to the user
+              // list instead.
               this.$router.push(this.parentPath);
+            } else {
+              this.item = result;
             }
+          })
+          .catch(() => {
+            this.$router.push(this.parentPath);
           });
       } else {
         this.item = {};
       }
     },
-    addClaim(claim) {
+    addClaim(claim: string) {
       this.$set(this.item.customClaims, claim, true);
-      this.newClaim = null;
+      this.newClaim = "";
     },
     save() {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       if (this.id) {
+        if (this.collectionObject === null) {
+          throw "There is no valid collection object";
+        }
+
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
         this.collectionObject
@@ -135,5 +144,5 @@ export default {
       }
     }
   }
-};
+});
 </script>
