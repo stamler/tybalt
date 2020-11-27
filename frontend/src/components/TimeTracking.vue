@@ -15,11 +15,7 @@ import WaitMessages from "./WaitMessages.vue";
 import { mapState } from "vuex";
 
 export default Vue.extend({
-  components: {
-    WaitMessages
-  },
-  computed: {
-    ...mapState(["showTasks"])
-  }
+  components: { WaitMessages },
+  computed: mapState(["showTasks"])
 });
 </script>

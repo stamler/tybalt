@@ -11,9 +11,5 @@
 
 <script lang="ts">
 import { mapState } from "vuex";
-export default {
-  computed: {
-    ...mapState(["claims"])
-  }
-};
+export default { computed: mapState(["claims"]) };
 </script>

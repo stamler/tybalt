@@ -12,6 +12,5 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-// We extend mixins because hasPermission() is in the mixin
-export default mixins.extend({});
+export default mixins.extend({}); // hasPermission() is in the mixin
 </script>
