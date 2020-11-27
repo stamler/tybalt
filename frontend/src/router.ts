@@ -256,18 +256,20 @@ const router = new Router({
             {
               path: "list",
               name: "Jobs List",
-              // TODO: hide select/edit/del for read-only claims holders
-              props: { select: true, edit: true, del: true },
+              props: { collection: "Jobs" },
               component: JobsList
             },
             {
               path: "add",
               name: "Add Job",
+              props: { collection: "Jobs" },
               component: JobsEdit
             },
             {
               path: ":id/edit",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "Jobs" };
+              },
               name: "Edit Job",
               component: JobsEdit
             }

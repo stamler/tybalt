@@ -12,20 +12,9 @@
 
 <script>
 import mixins from "./mixins";
-import firebase from "@/firebase";
-const db = firebase.firestore();
 import { mapState } from "vuex";
-
 export default {
   mixins: [mixins],
-  data() {
-    return {
-      collection: db.collection("Jobs"),
-      items: db.collection("Jobs")
-    };
-  },
-  computed: {
-    ...mapState(["claims"])
-  }
+  computed: mapState(["claims"])
 };
 </script>

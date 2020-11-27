@@ -49,13 +49,15 @@
 
 <script>
 import _ from "lodash";
+import firebase from "../firebase";
+const db = firebase.firestore();
 
 export default {
-  props: ["id"],
+  props: ["id", "collection"],
   data() {
     return {
-      parentPath: null,
-      collection: null,
+      parentPath: "",
+      collectionObject: null,
       item: {}
     };
   },
@@ -65,40 +67,44 @@ export default {
     }
   },
   watch: {
-    id: {
-      immediate: true,
-      handler(id) {
-        if (id) {
-          this.$parent.collection
-            .doc(id)
-            .get()
-            .then(snap => {
-              if (snap.exists) {
-                this.item = snap.data();
-              } else {
-                // The id doesn't exist, list instead
-                // TODO: show a message to the user
-                this.$router.push(this.parentPath);
-              }
-            });
-        } else {
-          this.item = {};
-        }
-      }
-    }
+    id: function(id) {
+      this.setItem(id);
+    } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.setItem(this.id);
   },
   methods: {
+    setItem(id) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
+        this.collectionObject
+          .doc(id)
+          .get()
+          .then(snap => {
+            if (snap.exists) {
+              this.item = snap.data();
+            } else {
+              // A document with this id doesn't exist in the database,
+              // list instead.  TODO: show a message to the user
+              this.$router.push(this.parentPath);
+            }
+          });
+      } else {
+        this.item = {};
+      }
+    },
     save() {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
-        this.collection
+        this.collectionObject
           .doc(this.id)
           .set(this.item)
           .then(() => {
@@ -112,7 +118,7 @@ export default {
         const newId = this.item.id;
         delete this.item.id;
 
-        this.collection
+        this.collectionObject
           .doc(newId)
           .set(this.item)
           .then(() => {

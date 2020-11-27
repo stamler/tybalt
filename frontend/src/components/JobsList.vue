@@ -31,8 +31,10 @@
 <script>
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
-
+import firebase from "../firebase";
+const db = firebase.firestore();
 export default {
+  props: ["collection"],
   components: {
     EditIcon
   },
@@ -55,18 +57,16 @@ export default {
   data() {
     return {
       search: "",
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
+      parentPath: "",
+      collectionObject: null, // collection: a reference to the parent collection
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items);
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.$bind("items", this.collectionObject);
   },
   methods: {
     searchString(item) {
