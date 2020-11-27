@@ -1,30 +1,15 @@
 <template>
-  <List />
+  <div>
+    <div class="actions">
+      <router-link class="navlink" v-bind:to="{ name: 'Logins List' }">
+        List
+      </router-link>
+    </div>
+    <router-view />
+  </div>
 </template>
 
-<script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
+<script lang="ts">
 import { mapState } from "vuex";
-import List from "./LoginsList";
-
-export default {
-  components: { List },
-  data() {
-    return {
-      schema: {
-        givenName: { display: "First Name" },
-        surname: { display: "Last Name" },
-        created: true,
-        computer: { display: "Computer" }
-      },
-      collection: db.collection("Logins"),
-      items: db
-        .collection("Logins")
-        .orderBy("created", "desc")
-        .limit(101)
-    };
-  },
-  computed: mapState(["claims"])
-};
+export default { computed: mapState(["claims"]) };
 </script>

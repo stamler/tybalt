@@ -16,9 +16,7 @@ import { mapState } from "vuex";
 
 export default {
   computed: mapState(["user"]),
-  methods: {
-    signOut
-  }
+  methods: { signOut }
 };
 </script>
 <style>

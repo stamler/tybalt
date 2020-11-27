@@ -13,6 +13,7 @@ import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTracking from "@/components/TimeTracking.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import Logins from "@/components/Logins.vue";
+import LoginsList from "@/components/LoginsList.vue";
 import RawLogins from "@/components/RawLogins.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import Computers from "@/components/Computers.vue";
@@ -145,7 +146,16 @@ const router = new Router({
           path: "logins",
           name: "Logins",
           meta: { claims: ["admin"] },
-          component: Logins
+          redirect: "/admin/logins/list",
+          component: Logins,
+          children: [
+            {
+              path: "list",
+              name: "Logins List",
+              props: { collection: "Logins" },
+              component: LoginsList
+            }
+          ]
         },
         {
           path: "rawlogins",

@@ -19,9 +19,14 @@
 </template>
 
 <script>
+import mixins from "./mixins";
 import { formatDistanceToNow } from "date-fns";
+import firebase from "../firebase";
+const db = firebase.firestore();
 
 export default {
+  props: ["collection"],
+  mixins: [mixins],
   computed: {
     processedItems() {
       return this.items
@@ -46,35 +51,21 @@ export default {
   data() {
     return {
       search: "",
-      parentPath: null,
-      collection: null, // collection: a reference to the parent collection
+      parentPath: "",
+      collectionObject: null, // collection: a reference to the parent collection
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.$bind(
+      "items",
+      this.collectionObject.orderBy("created", "desc").limit(101)
+    ).catch(error => {
       alert(`Can't load Logins: ${error.message}`);
     });
-  },
-  methods: {
-    del(item) {
-      this.collection
-        .doc(item)
-        .delete()
-        .catch(err => {
-          alert(`Error deleting item: ${err}`);
-        });
-    },
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
-    }
   }
 };
 </script>
