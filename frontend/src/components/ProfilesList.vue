@@ -51,7 +51,7 @@ export default mixins.extend({
     }
   },
   filters: {
-    keysString(obj: { [key: string]: any }): string {
+    keysString(obj: { [key: string]: unknown }): string {
       return obj ? Object.keys(obj).join(", ") : "";
     }
   },

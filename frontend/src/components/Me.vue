@@ -10,8 +10,8 @@
     </div>
   </div>
 </template>
-<script>
-import { signOut } from "@/main";
+<script lang="ts">
+import { signOut } from "../main";
 import { mapState } from "vuex";
 
 export default {
