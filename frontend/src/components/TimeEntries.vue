@@ -1,8 +1,12 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" to="list">List</router-link>
-      <router-link class="navlink" to="add">New</router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'Time Entries List' }">
+        List
+      </router-link>
+      <router-link class="navlink" v-bind:to="{ name: 'Add Time Entry' }">
+        New
+      </router-link>
       <WaitMessages v-if="showTasks" />
     </div>
     <router-view />

@@ -1,8 +1,14 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" to="list">List</router-link>
-      <router-link class="navlink" v-if="hasPermission('job')" to="add">
+      <router-link class="navlink" v-bind:to="{ name: 'Jobs List' }">
+        List
+      </router-link>
+      <router-link
+        class="navlink"
+        v-bind:to="{ name: 'Add Job' }"
+        v-if="hasPermission('job')"
+      >
         New
       </router-link>
     </div>

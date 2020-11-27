@@ -1,8 +1,14 @@
 <template>
   <div>
     <div class="actions">
-      <router-link class="navlink" to="list">List</router-link>
-      <router-link class="navlink" v-if="hasPermission('admin')" to="add">
+      <router-link class="navlink" v-bind:to="{ name: 'Time Types List' }">
+        List
+      </router-link>
+      <router-link
+        class="navlink"
+        v-bind:to="{ name: 'Add Time Type' }"
+        v-if="hasPermission('admin')"
+      >
         New
       </router-link>
     </div>

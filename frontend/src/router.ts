@@ -51,11 +51,7 @@ const router = new Router({
       path: "/time",
       name: "Time",
       meta: { claims: ["time"] },
-      // TODO: permissions meta (redirect breaks it if placed here)
       redirect: "/time/entries",
-      // route level code-splitting
-      // this generates a separate chunk (time.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: Main,
       children: [
         {
@@ -182,14 +178,12 @@ const router = new Router({
             {
               path: "list",
               name: "Computers List",
-              // TODO: hide select/edit/del for read-only claims holders
               props: { collection: "Computers" },
               component: ComputersList
             },
             {
               path: "retired",
               name: "Retired Computers",
-              // TODO: hide select/edit/del for read-only claims holders
               props: { collection: "Computers", retired: true },
               component: ComputersList
             },
@@ -213,7 +207,6 @@ const router = new Router({
             {
               path: "list",
               name: "Users List",
-              // TODO: hide select/edit/del for read-only claims holders
               props: { select: true, edit: true, del: true },
               component: UsersList
             },
@@ -251,7 +244,6 @@ const router = new Router({
         {
           path: "jobs",
           name: "Jobs",
-          // TODO: permissions meta (redirect breaks it if placed here)
           redirect: "/admin/jobs/list",
           component: Jobs,
           children: [
@@ -286,7 +278,6 @@ const router = new Router({
             {
               path: "list",
               name: "Divisions List",
-              // TODO: hide select/edit/del for read-only claims holders
               props: { collection: "Divisions" },
               component: TimeTypesDivisionsList
             },
@@ -315,7 +306,6 @@ const router = new Router({
             {
               path: "list",
               name: "Time Types List",
-              // TODO: hide select/edit/del for read-only claims holders
               props: { collection: "TimeTypes" },
               component: TimeTypesDivisionsList
             },
