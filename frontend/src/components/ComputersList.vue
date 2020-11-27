@@ -86,12 +86,13 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
+import firebase from "../firebase";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
+const db = firebase.firestore();
 
 export default {
-  props: ["retired"],
+  props: ["retired", "collection"],
   computed: {
     ...mapState(["claims"]),
     processedItems() {
@@ -127,17 +128,15 @@ export default {
     return {
       search: "",
       parentPath: "",
-      collection: null, // collection: a reference to the parent collection
+      collectionObject: null, // collection: a reference to the parent collection
       items: []
     };
   },
   created() {
-    this.parentPath = this.$route.matched[
-      this.$route.matched.length - 1
-    ].parent.path;
-    this.collection = this.$parent.collection;
-    this.items = this.$parent.items;
-    this.$bind("items", this.items).catch(error => {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.$bind("items", this.collectionObject).catch(error => {
       alert(`Can't load computers: ${error.message}`);
     });
   },

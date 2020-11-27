@@ -183,19 +183,21 @@ const router = new Router({
               path: "list",
               name: "Computers List",
               // TODO: hide select/edit/del for read-only claims holders
-              props: { select: true, edit: true, del: true },
+              props: { collection: "Computers" },
               component: ComputersList
             },
             {
               path: "retired",
               name: "Retired Computers",
               // TODO: hide select/edit/del for read-only claims holders
-              props: { select: true, edit: true, del: true, retired: true },
+              props: { collection: "Computers", retired: true },
               component: ComputersList
             },
             {
               path: ":id/details",
-              props: true,
+              props: route => {
+                return { id: route.params.id, collection: "Computers" };
+              },
               name: "Computer Details",
               component: ComputersDetails
             }

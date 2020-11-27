@@ -12,31 +12,7 @@
   </div>
 </template>
 
-<script>
-import firebase from "@/firebase";
-const db = firebase.firestore();
+<script lang="ts">
 import { mapState } from "vuex";
-
-export default {
-  data() {
-    return {
-      schema: {
-        computerName: { display: "Computer" },
-        osVersion: { display: "Windows" },
-        mfg: true,
-        model: true,
-        userGivenName: { display: "First" },
-        userSurname: { display: "Last" },
-        assigned: { sort: false },
-        updated: true,
-        created: true
-      },
-      collection: db.collection("Computers"),
-      items: db.collection("Computers")
-    };
-  },
-  computed: {
-    ...mapState(["claims"])
-  }
-};
+export default { computed: mapState(["claims"]) };
 </script>
