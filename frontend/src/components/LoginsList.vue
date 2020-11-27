@@ -18,17 +18,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default {
+export default mixins.extend({
   props: ["collection"],
-  mixins: [mixins],
   computed: {
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
@@ -37,23 +36,16 @@ export default {
     }
   },
   filters: {
-    relativeTime(date) {
+    relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
     }
   },
   data() {
     return {
       search: "",
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
@@ -67,7 +59,7 @@ export default {
       alert(`Can't load Logins: ${error.message}`);
     });
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {

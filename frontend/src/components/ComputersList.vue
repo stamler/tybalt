@@ -121,13 +121,6 @@ export default {
     },
     shortDate(date) {
       return format(date, "MMM dd");
-    },
-    hoursString(item) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
     }
   },
   data() {
