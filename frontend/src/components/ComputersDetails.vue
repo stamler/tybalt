@@ -54,42 +54,43 @@
   </div>
 </template>
 
-<script>
-import firebase from "@/firebase";
+<script lang="ts">
+import Vue from "vue";
+import firebase from "../firebase";
 const db = firebase.firestore();
 import { format, formatDistanceToNow } from "date-fns";
 
-export default {
-  props: ["id"],
+export default Vue.extend({
+  props: ["id", "collection"],
   data() {
     return {
-      parentPath: null,
-      collection: null,
-      item: {},
+      parentPath: "",
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      item: {} as firebase.firestore.DocumentData,
       logins: []
     };
   },
   filters: {
-    dateFormat(date) {
+    dateFormat(date: Date): string {
       return format(date, "yyyy MMM dd / HH:mm:ss");
     },
-    relativeTime(date) {
+    relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
     },
-    systemType(type) {
-      const types = {
-        1: "Desktop",
-        2: "Mobile",
-        3: "Workstation",
-        4: "Enterprise Server",
-        5: "SOHO Server",
-        6: "Appliance PC",
-        7: "Performance Server",
-        8: "Maximum"
-      };
-      return types[type];
+    systemType(type: number): string {
+      enum SystemTypes {
+        Desktop = 1,
+        Mobile,
+        Workstation,
+        "Enterprise Server",
+        "SOHO Server",
+        "Appliance PC",
+        "Performance Server",
+        Maximum
+      }
+      return SystemTypes[type];
     },
-    humanFileSize(bytes, si) {
+    humanFileSize(bytes: number, si: boolean): string {
       const thresh = si ? 1000 : 1024;
       if (Math.abs(bytes) < thresh) {
         return bytes + " B";
@@ -106,53 +107,58 @@ export default {
     }
   },
   watch: {
-    id: {
-      immediate: true,
-      handler(id) {
-        if (id) {
-          this.$parent.collection
-            .doc(id)
-            .get()
-            .then(snap => {
-              if (snap.exists) {
-                this.item = snap.data();
-                this.$bind(
-                  "logins",
-                  db
-                    .collection("Logins")
-                    .where("computer", "==", id)
-                    .orderBy("created", "desc")
-                ).catch(error => {
-                  alert(`Can't load logins: ${error.message}`);
-                });
-              } else {
-                // The id doesn't exist, list instead
-                // TODO: show a message to the user
-                this.$router.push(this.parentPath);
-              }
-            });
-        } else {
-          this.item = {};
-        }
-      }
-    }
+    id: function(id) {
+      this.setItem(id);
+    } // first arg is newVal, second is oldVal
   },
   created() {
-    const currentRoute = this.$route.matched[this.$route.matched.length - 1];
-    this.parentPath = currentRoute.parent.path;
-    this.collection = this.$parent.collection;
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.setItem(this.id);
   },
   methods: {
-    assign(computer, user) {
+    setItem(id: string) {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      if (id) {
+        this.collectionObject
+          .doc(id)
+          .get()
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
+            const result = snap.data();
+            if (result === undefined) {
+              // A document with this id doesn't exist in the database,
+              // list instead.
+              this.$router.push(this.parentPath);
+            } else {
+              this.item = result;
+              this.$bind(
+                "logins",
+                db
+                  .collection("Logins")
+                  .where("computer", "==", id)
+                  .orderBy("created", "desc")
+              ).catch(error => {
+                alert(`Can't load logins: ${error.message}`);
+              });
+            }
+          });
+      } else {
+        this.item = {};
+      }
+    },
+    assign(computerId: string, userId: string) {
       const assignComputerToUser = firebase
         .functions()
         .httpsCallable("assignComputerToUser");
-      return assignComputerToUser({ computer, user }).catch(error => {
+      return assignComputerToUser({ computerId, userId }).catch(error => {
         alert(`Computer assignment failed: ${error}`);
       });
     }
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {
