@@ -28,19 +28,20 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import mixins from "./mixins";
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
-export default {
+export default mixins.extend({
   props: ["collection"],
   components: {
     EditIcon
   },
   computed: {
     ...mapState(["claims"]),
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       // display maximum of 100 items though there may be way more
       // TODO: don't pull more than 50 items from the server at a time
       // scroll to the bottom to load more (infinite scroll)
@@ -58,8 +59,8 @@ export default {
     return {
       search: "",
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
@@ -67,13 +68,6 @@ export default {
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject);
-  },
-  methods: {
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
-    }
   }
-};
+});
 </script>

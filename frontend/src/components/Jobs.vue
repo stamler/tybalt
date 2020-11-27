@@ -10,11 +10,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import mixins from "./mixins";
 import { mapState } from "vuex";
-export default {
-  mixins: [mixins],
-  computed: mapState(["claims"])
-};
+export default mixins.extend({ computed: mapState(["claims"]) });
 </script>

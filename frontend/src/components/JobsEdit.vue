@@ -47,22 +47,23 @@
   </form>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import _ from "lodash";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default {
+export default Vue.extend({
   props: ["id", "collection"],
   data() {
     return {
       parentPath: "",
-      collectionObject: null,
-      item: {}
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      item: {} as firebase.firestore.DocumentData
     };
   },
   computed: {
-    editing: function() {
+    editing: function(): boolean {
       return this.id !== undefined;
     }
   },
@@ -78,7 +79,7 @@ export default {
     this.setItem(this.id);
   },
   methods: {
-    setItem(id) {
+    setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -86,13 +87,14 @@ export default {
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
-            if (snap.exists) {
-              this.item = snap.data();
-            } else {
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
+            const result = snap.data();
+            if (result === undefined) {
               // A document with this id doesn't exist in the database,
-              // list instead.  TODO: show a message to the user
+              // list instead.
               this.$router.push(this.parentPath);
+            } else {
+              this.item = result;
             }
           });
       } else {
@@ -101,6 +103,9 @@ export default {
     },
     save() {
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
@@ -131,8 +136,8 @@ export default {
       }
     },
     clearEditor() {
-      this.item = {};
+      this.item = {} as firebase.firestore.DocumentData;
     }
   }
-};
+});
 </script>
