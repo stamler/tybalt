@@ -85,17 +85,18 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import mixins from "./mixins";
 import firebase from "../firebase";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 const db = firebase.firestore();
 
-export default {
+export default mixins.extend({
   props: ["retired", "collection"],
   computed: {
     ...mapState(["claims"]),
-    processedItems() {
+    processedItems(): firebase.firestore.DocumentData[] {
       if (this.retired) {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
@@ -114,13 +115,13 @@ export default {
     }
   },
   filters: {
-    dateFormat(date) {
+    dateFormat(date: Date): string {
       return format(date, "yyyy MMM dd / HH:mm:ss");
     },
-    relativeTime(date) {
+    relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
     },
-    shortDate(date) {
+    shortDate(date: Date): string {
       return format(date, "MMM dd");
     }
   },
@@ -128,8 +129,8 @@ export default {
     return {
       search: "",
       parentPath: "",
-      collectionObject: null, // collection: a reference to the parent collection
-      items: []
+      collectionObject: null as firebase.firestore.CollectionReference | null,
+      items: [] as firebase.firestore.DocumentData[]
     };
   },
   created() {
@@ -141,21 +142,16 @@ export default {
     });
   },
   methods: {
-    assign(computer, user) {
+    assign(computerId: string, userId: string) {
       const assignComputerToUser = firebase
         .functions()
         .httpsCallable("assignComputerToUser");
-      return assignComputerToUser({ computer, user }).catch(error => {
+      return assignComputerToUser({ computerId, userId }).catch(error => {
         alert(`Computer assignment failed: ${error}`);
       });
-    },
-    searchString(item) {
-      const fields = Object.values(item);
-      fields.push(item.id);
-      return fields.join(",").toLowerCase();
     }
   }
-};
+});
 </script>
 <style scoped>
 .anchorbox {
