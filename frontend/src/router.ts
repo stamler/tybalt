@@ -16,7 +16,7 @@ import Logins from "@/components/Logins.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLogins from "@/components/RawLogins.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
-import Computers from "@/components/Computers.vue";
+import ContentShell from "@/components/ContentShell.vue";
 import ComputersList from "@/components/ComputersList.vue";
 import ComputersDetails from "@/components/ComputersDetails.vue";
 import Users from "@/components/Users.vue";
@@ -173,15 +173,17 @@ const router = new Router({
           name: "Computers",
           meta: { claims: ["computers", "audit"] },
           redirect: "/admin/computers/list",
-          component: Computers,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Computers List",
               props: { collection: "Computers" },
               component: ComputersList
             },
             {
+              meta: { showInUi: true, uiName: "Retired" },
               path: "retired",
               name: "Retired Computers",
               props: { collection: "Computers", retired: true },
