@@ -237,11 +237,10 @@ export default mixins.extend({
             // Tally the non-work hours
             if (item.timetype in tallyObject[key].nonWorkHoursTally) {
               tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
-              tallyObject[key].nonWorkHoursTally.total += item.hours;
             } else {
               tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
-              tallyObject[key].nonWorkHoursTally.total = item.hours;
             }
+            tallyObject[key].nonWorkHoursTally.total += item.hours;
           }
         }
       }
