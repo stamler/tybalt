@@ -4,32 +4,22 @@ import Router from "vue-router";
 // Components
 import Main from "@/views/Main.vue";
 import Me from "@/components/Me.vue";
-import TimeEntries from "@/components/TimeEntries.vue";
 import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
-import TimeSheets from "@/components/TimeSheets.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
-import TimeTracking from "@/components/TimeTracking.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
-import Logins from "@/components/Logins.vue";
 import LoginsList from "@/components/LoginsList.vue";
-import RawLogins from "@/components/RawLogins.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
 import ComputersList from "@/components/ComputersList.vue";
 import ComputersDetails from "@/components/ComputersDetails.vue";
-import Users from "@/components/Users.vue";
 import UsersList from "@/components/UsersList.vue";
 import UsersDetails from "@/components/UsersDetails.vue";
-import Profiles from "@/components/Profiles.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
-import Jobs from "@/components/Jobs.vue";
 import JobsList from "@/components/JobsList.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
-import Divisions from "@/components/Divisions.vue";
-import TimeTypes from "@/components/TimeTypes.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
 
@@ -58,15 +48,17 @@ const router = new Router({
           path: "entries",
           name: "Time Entries",
           redirect: "/time/entries/list",
-          component: TimeEntries,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Entries List",
               props: { collection: "TimeEntries" },
               component: TimeEntriesList
             },
             {
+              meta: { showInUi: true, uiName: "Add" },
               path: "add",
               name: "Add Time Entry",
               props: { collection: "TimeEntries" },
@@ -86,21 +78,32 @@ const router = new Router({
           path: "sheets",
           name: "Time Sheets",
           redirect: "/time/sheets/list",
-          component: TimeSheets,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Sheets List",
               props: { collection: "TimeSheets" },
               component: TimeSheetsList
             },
             {
+              meta: {
+                showInUi: true,
+                uiName: "Pending",
+                requiredClaims: ["tapr"]
+              },
               path: "pending",
               name: "Time Sheets Pending",
               props: { approved: false, collection: "TimeSheets" },
               component: TimeSheetsList
             },
             {
+              meta: {
+                showInUi: true,
+                uiName: "Approved",
+                requiredClaims: ["tapr"]
+              },
               path: "approved",
               name: "Time Sheets Approved",
               props: { approved: true, collection: "TimeSheets" },
@@ -120,9 +123,10 @@ const router = new Router({
           path: "tracking",
           name: "Time Tracking",
           redirect: "/time/tracking/list",
-          component: TimeTracking,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Tracking List",
               props: { collection: "TimeTracking" },
@@ -143,9 +147,10 @@ const router = new Router({
           name: "Logins",
           meta: { claims: ["admin"] },
           redirect: "/admin/logins/list",
-          component: Logins,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Logins List",
               props: { collection: "Logins" },
@@ -158,9 +163,10 @@ const router = new Router({
           name: "Raw Logins",
           meta: { claims: ["rawlogins", "audit"] },
           redirect: "/admin/rawlogins/list",
-          component: RawLogins,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Raw Logins List",
               props: { collection: "RawLogins" },
@@ -204,9 +210,10 @@ const router = new Router({
           name: "Users",
           meta: { claims: ["users", "audit"] },
           redirect: "/admin/users/list",
-          component: Users,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Users List",
               props: { select: true, edit: true, del: true },
@@ -225,9 +232,10 @@ const router = new Router({
           name: "Profiles",
           redirect: "/admin/profiles/list",
           meta: { claims: ["admin"] },
-          component: Profiles,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Profiles List",
               props: { collection: "Profiles" },
@@ -247,15 +255,21 @@ const router = new Router({
           path: "jobs",
           name: "Jobs",
           redirect: "/admin/jobs/list",
-          component: Jobs,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Jobs List",
               props: { collection: "Jobs" },
               component: JobsList
             },
             {
+              meta: {
+                showInUi: true,
+                uiName: "Add",
+                requiredClaims: ["job"]
+              },
               path: "add",
               name: "Add Job",
               props: { collection: "Jobs" },
@@ -275,15 +289,21 @@ const router = new Router({
           path: "divisions",
           name: "Divisions",
           redirect: "/admin/divisions/list",
-          component: Divisions,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Divisions List",
               props: { collection: "Divisions" },
               component: TimeTypesDivisionsList
             },
             {
+              meta: {
+                showInUi: true,
+                uiName: "Add",
+                requiredClaims: ["admin"]
+              },
               path: "add",
               name: "Add Division",
               props: { collection: "Divisions" },
@@ -303,15 +323,21 @@ const router = new Router({
           path: "timetypes",
           name: "Time Types",
           redirect: "/admin/timetypes/list",
-          component: TimeTypes,
+          component: ContentShell,
           children: [
             {
+              meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Types List",
               props: { collection: "TimeTypes" },
               component: TimeTypesDivisionsList
             },
             {
+              meta: {
+                showInUi: true,
+                uiName: "Add",
+                requiredClaims: ["admin"]
+              },
               path: "add",
               name: "Add Time Type",
               props: { collection: "TimeTypes" },
