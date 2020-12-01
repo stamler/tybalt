@@ -135,7 +135,40 @@ export default Vue.extend({
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
       const items = await response.json();
-
+      const fields = [
+        "weekEnding",
+        {
+          label: "name",
+          value: "displayName"
+        },
+        {
+          label: "manager",
+          value: "managerName"
+        },
+        {
+          label: "meals",
+          value: "mealsHoursTally"
+        },
+        {
+          label: "days off rotation",
+          value: "offRotationDaysTally"
+        },
+        {
+          label: "hours worked",
+          value: "R"
+        },
+        "OB",
+        "OH",
+        "OO",
+        "OP",
+        "OS",
+        "OV",
+        {
+          label: "overtime hours to bank",
+          value: "RB"
+        }
+      ];
+      const opts = { fields };
       for (const item of items) {
         delete item.uid;
         delete item.managerUid;
@@ -151,7 +184,7 @@ export default Vue.extend({
         item["RB"] = item.bankedHours;
         delete item.bankedHours;
       }
-      const csv = parse(items);
+      const csv = parse(items, opts);
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(blob, "payroll.csv");
     },
