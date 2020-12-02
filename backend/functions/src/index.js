@@ -14,7 +14,7 @@ const profilesModule = require("./profiles.js");
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest((req, res) => {
-  rawLoginsModule.handler(req, res, admin.firestore());
+  rawLoginsModule.handler(req, res, admin.firestore()).catch((err) = {});
 });
 
 // assign a user to a computer

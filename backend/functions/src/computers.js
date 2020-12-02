@@ -23,7 +23,7 @@ exports.assignComputerToUser = async (data, context, db) => {
   callableIsAuthorized(context, ["computers"], validate, data);
 
   // Get the user docRef
-  let snapshot = await db
+  const snapshot = await db
     .collection("Users")
     .where("userSourceAnchor", "==", data.user)
     .get();

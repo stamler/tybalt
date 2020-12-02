@@ -15,7 +15,7 @@ describe("rawLogins module", () => {
   const Req = shared.makeReqObject; // Stub request object
   const Res = shared.makeResObject; // Stub response object
 
-  const handler = require("../rawLogins.js").handler;
+  const handler = require("../src/rawLogins.js").handler;
 
   // Use object rather than string for body since requests w/ JSON Content-Type
   // are parsed with a JSON body parser in express / firebase functions.

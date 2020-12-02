@@ -43,18 +43,18 @@ async function writeJobs(filename, jobtype, collection) {
   }
 }
 
-let collection = "Jobs";
-const filename = process.argv[2];
-const jobtype = process.argv[3];
+let collectionArg = "Jobs";
+const filenameArg = process.argv[2];
+const jobtypeArg = process.argv[3];
 if (process.argv.length === 5) {
-  collection = process.argv[4];
+  collectionArg = process.argv[4];
 } else if (process.argv.length !== 4) {
   console.log(
     "Usage: \nnode upload-jobs.js <filename> <project/proposal> [<collection>]\n"
   );
   process.exit(1);
 } else {
-  writeJobs(filename, jobtype, collection)
+  writeJobs(filenameArg, jobtypeArg, collectionArg)
     .then((result) => {
       return Promise.resolve(process.exit(0));
     })

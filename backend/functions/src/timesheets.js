@@ -319,7 +319,7 @@ exports.unbundleTimesheet = async (data, context) => {
     timeSheet.data().entries.forEach((timeEntry) => {
       // timeEntry is of type "QueryDocumentSnapshot"
       // TODO: Possibly must add back redundant data removed in bundle
-      let entry = db.collection("TimeEntries").doc();
+      const entry = db.collection("TimeEntries").doc();
       batch.set(entry, timeEntry);
     });
 
@@ -457,7 +457,7 @@ exports.updateTimeTracking = functions.firestore
           pending: admin.firestore.FieldValue.arrayUnion(change.after.ref.path),
         },
         { merge: true }
-      );
+      ).catch((err) => reject(err));
     } else {
       timeTrackingDocRef.set(
         {
@@ -466,7 +466,7 @@ exports.updateTimeTracking = functions.firestore
           ),
         },
         { merge: true }
-      );
+      ).catch((err) => reject(err));
     }
   });
 
@@ -576,7 +576,7 @@ exports.lockTimesheets = async (data, context) => {
       transactions.push(trans);
     });
     return Promise.all(transactions).then(() => {
-      return this.exportJson(
+      return exportJson(
         { timeTrackingId: timeTrackingDocRef.id },
         context
       );
@@ -611,19 +611,19 @@ exports.exportJson = async (data, context) => {
 
     // delete internal properties for each timeSheet
     const timeSheets = timeSheetsSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      delete data.submitted;
-      delete data.approved;
-      delete data.locked;
-      delete data.rejected;
-      delete data.rejectionReason;
-      data.weekEnding = data.weekEnding.toDate();
-      data.entries.map((entry) => {
+      const docData = doc.data();
+      delete docData.submitted;
+      delete docData.approved;
+      delete docData.locked;
+      delete docData.rejected;
+      delete docData.rejectionReason;
+      docData.weekEnding = docData.weekEnding.toDate();
+      docData.entries.map((entry) => {
         delete entry.weekEnding;
         entry.date = entry.date.toDate();
         return entry;
       });
-      return data;
+      return docData;
     });
 
     // generate JSON output
@@ -672,7 +672,7 @@ exports.exportJson = async (data, context) => {
             });
             return resolve();
           })
-          .catch((error) => reject(error));
+          .catch((err) => reject(err));
       });
     });
   } else {

@@ -1,7 +1,7 @@
 const assert = require("chai").assert;
 
 describe("utilities module", () => {
-  const utilitiesModule = require("../utilities.js");
+  const utilitiesModule = require("../src/utilities.js");
   describe("makeSlug()", () => {
     // Test setup for makeSlug() in utilities.js
     const makeSlug = utilitiesModule.makeSlug;

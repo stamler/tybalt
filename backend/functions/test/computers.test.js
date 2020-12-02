@@ -24,7 +24,7 @@ describe("computers module", () => {
   });
 
   describe("assignComputerToUser()", () => {
-    const assignComputerToUser = require("../computers.js")
+    const assignComputerToUser = require("../src/computers.js")
       .assignComputerToUser;
     it("rejects if the user isn't authenticated", async () => {
       const result = assignComputerToUser(undefined, {}, db);

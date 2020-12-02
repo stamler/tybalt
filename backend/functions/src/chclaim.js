@@ -36,9 +36,9 @@ async function chclaim(action, email, claim) {
   return Promise.reject(new Error("Other shit went down"));
 }
 
-let claim = null;
+let claimArg = null;
 if (process.argv.length === 5) {
-  claim = process.argv[4];
+  claimArg = process.argv[4];
 } else if (process.argv.length !== 4) {
   console.log(
     "Usage: \nnode chclaim.js add <email> <claim>\nnode chclaim.js remove <email> <claim>\nnode chclaim.js view <email>"
@@ -46,23 +46,22 @@ if (process.argv.length === 5) {
   process.exit(1);
 }
 
-const action = process.argv[2];
-const email = process.argv[3];
+const actionArg = process.argv[2];
+const emailArg = process.argv[3];
 
-// eslint-disable-next-line promise/always-return
-chclaim(action, email, claim)
+chclaim(actionArg, emailArg, claimArg)
   .then((result) => {
-    if (action === "view") {
+    if (actionArg === "view") {
       for (key in result) {
         console.log(`${key}: ${result[key]}`);
       }
       return Promise.resolve(process.exit(0));
     } else {
-      console.log(`${action} ${claim} claim to ${email} success`);
+      console.log(`${actionArg} ${claimArg} claim to ${emailArg} success`);
       return Promise.resolve(process.exit(0));
     }
   })
   .catch((err) => {
-    console.log(`Did not ${action} claim ${claim}: ` + err);
+    console.log(`Did not ${actionArg} claim ${claim}: ` + err);
     process.exit(1);
   });

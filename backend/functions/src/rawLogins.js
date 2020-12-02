@@ -142,7 +142,7 @@ async function storeValidLogin(d, db) {
   // we are getting a real login now, making them redundant
 
   // Start a write batch
-  var batch = db.batch();
+  const batch = db.batch();
 
   d.updated = serverTimestamp();
   batch.set(computerRef, d, {
@@ -170,7 +170,7 @@ async function storeValidLogin(d, db) {
   });
 
   // Create new Login document
-  let loginObject = {
+  const loginObject = {
     userSourceAnchor: d.userSourceAnchor.toLowerCase(),
     givenName: d.userGivenName,
     surname: d.userSurname,
@@ -193,7 +193,7 @@ async function getUserRef(d, db) {
   // a userSourceAnchor
 
   const usersRef = db.collection("Users");
-  for (let prop of ["userSourceAnchor", "upn", "email"]) {
+  for (const prop of ["userSourceAnchor", "upn", "email"]) {
     // skip a property if it doesn't exist in d
     if (d[prop] === null || d[prop] === undefined) {
       continue;
@@ -201,7 +201,7 @@ async function getUserRef(d, db) {
 
     // query for a user with matching prop
     // eslint-disable-next-line no-await-in-loop
-    let result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
+    const result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
 
     // throw if >1 result is returned, caller will set RawLogin
     if (result.size > 1) {
@@ -226,7 +226,7 @@ async function getUserRef(d, db) {
 exports.cleanup = async (data, context, db) => {
   console.log(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
-  let latest_item_snapshot = await db
+  const latest_item_snapshot = await db
     .collection("RawLogins")
     .where("computerName", "==", data.computerName)
     .orderBy("created", "desc")
@@ -241,7 +241,7 @@ exports.cleanup = async (data, context, db) => {
   }
 
   // Get previous rawLogin with specified computerName for deletion
-  let old_items_snapshot = await db
+  const old_items_snapshot = await db
     .collection("RawLogins")
     .where("computerName", "==", data.computerName)
     .where("created", "<", latest_item_snapshot.docs[0].data().created)
