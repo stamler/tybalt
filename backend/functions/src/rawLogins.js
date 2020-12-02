@@ -6,6 +6,7 @@ const Ajv = require("ajv");
 const schema = require("./RawLogins.schema.json");
 const functions = require("firebase-functions");
 const _ = require("lodash");
+const admin = require("firebase-admin");
 
 const ajv = new Ajv({
   removeAdditional: true,
@@ -62,7 +63,8 @@ ajv.addKeyword("removeIfFails", {
 
 const validate = ajv.compile(schema);
 
-exports.handler = async (req, res, db) => {
+exports.handler = async (req, res) => {
+  const db = admin.firestore();
   // Validate the secret sent in the header from the client.
   const appSecret = functions.config().tybalt.radiator.secret;
   if (appSecret !== undefined) {
@@ -149,7 +151,7 @@ async function storeValidLogin(d, db) {
     merge: true,
   });
 
-  userObject = {
+  const userObject = {
     upn: d.upn.toLowerCase(),
     givenName: d.userGivenName,
     surname: d.userSurname,
@@ -223,7 +225,9 @@ async function getUserRef(d, db) {
 // for each computerName. The deletion will be done on a batched
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
-exports.cleanup = async (data, context, db) => {
+exports.cleanup = async (data, context) => {
+  const db = admin.firestore();
+
   console.log(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
   const latest_item_snapshot = await db

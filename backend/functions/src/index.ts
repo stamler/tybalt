@@ -1,21 +1,19 @@
 // Entry point for tybalt app
 
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
 
 admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
-const rawLoginsModule = require("./rawLogins.js");
-const computersModule = require("./computers.js");
-const timesheetsModule = require("./timesheets.js");
-const profilesModule = require("./profiles.js");
+import * as rawLoginsModule from "./rawLogins.js";
+import * as computersModule from "./computers.js";
+import * as timesheetsModule from "./timesheets.js";
+import * as profilesModule from "./profiles.js";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
-exports.rawLogins = functions.https.onRequest((req, res) => {
-  rawLoginsModule.handler(req, res, admin.firestore()).catch((err) = {});
-});
+exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
 
 // assign a user to a computer
 exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
@@ -41,15 +39,14 @@ exports.lockTimesheets = functions.https.onCall(
 // download link to the corresponding TimeTracking document.
 exports.writeFileLinks = timesheetsModule.writeFileLinks;
 
-const cleanupTrigger = function (snap, context) {
-  return rawLoginsModule.cleanup(snap.data(), context, admin.firestore());
-};
-
-const writeCreated = function (snap, context) {
-  return snap.ref.set(
-    { created: admin.firestore.FieldValue.serverTimestamp() },
-    { merge: true }
-  );
+const writeCreated = function (
+    snap: admin.firestore.DocumentSnapshot,
+    context: functions.EventContext
+  ) {
+    return snap.ref.set(
+      { created: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
 };
 
 // Write the created timestamp on created Documents
@@ -69,7 +66,7 @@ exports.usersCreatedDate = functions.firestore
 // Cleanup old RawLogins onCreate
 exports.rawLoginsCleanup = functions.firestore
   .document("RawLogins/{loginId}")
-  .onCreate(cleanupTrigger);
+  .onCreate(rawLoginsModule.cleanup);
 
 // add weekEnding property to TimeEntries on create or update
 exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
