@@ -9,7 +9,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import * as rawLoginsModule from "./rawLogins.js";
 import { assignComputerToUser } from "./computers";
 import * as timesheetsModule from "./timesheets.js";
-import * as profilesModule from "./profiles.js";
+import { updateAuth, createProfile, deleteProfile } from "./profiles";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
@@ -75,14 +75,8 @@ exports.updateTimeTracking = timesheetsModule.updateTimeTracking;
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
 exports.updateAuth = functions.firestore
   .document("Profiles/{uid}")
-  .onWrite(profilesModule.updateAuth);
+  .onWrite(updateAuth);
 
-// create a Profile when a new user is created in Firebase Auth
-exports.createProfile = functions.auth
-  .user()
-  .onCreate(profilesModule.createProfile);
-
-// delete a Profile when a user is deleted in Firebase Auth
-exports.deleteProfile = functions.auth
-  .user()
-  .onDelete(profilesModule.deleteProfile);
+// create and delete profiles
+exports.createProfile = functions.auth.user().onCreate(createProfile);
+exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);

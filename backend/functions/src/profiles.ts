@@ -12,11 +12,26 @@
 //  Callable functions to automatically get context:
 //      https://firebase.google.com/docs/functions/callable
 
-const admin = require("firebase-admin");
-const _ = require("lodash");
+import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
+import * as _ from "lodash";
+
+interface CustomClaims { // Record type instead?
+  [claim: string]: boolean;
+}
+
+// User-defined Type Guard
+function isCustomClaims(data: any): data is CustomClaims {
+  for (const key in data) {
+    if (typeof key !== "string" || typeof data[key] !== "boolean") {
+      return false
+    }
+  }
+  return true;
+}
 
 // Create the corresponding Profile document when an auth user is created
-exports.createProfile = async (user) => {
+export async function createProfile(user: admin.auth.UserRecord) {
   const db = admin.firestore();
   const customClaims = { time: true };
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
@@ -35,7 +50,7 @@ exports.createProfile = async (user) => {
 };
 
 // Delete the corresponding Profile document when an auth user is deleted
-exports.deleteProfile = async (user) => {
+export async function deleteProfile(user: admin.auth.UserRecord) {
   const db = admin.firestore();
   try {
     await db.collection("Profiles").doc(user.uid).delete();
@@ -48,22 +63,24 @@ exports.deleteProfile = async (user) => {
 // can be displayed in the UI
 // TODO: rename this function because it also updates managerName in Profile
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
-exports.updateAuth = async (change, context) => {
+export async function updateAuth(change: functions.ChangeJson, context: functions.EventContext) {
   if (change.after.exists) {
     const before = change.before.data();
     const after = change.after.data();
     const promises = [];
-    try {
-      const user = await admin.auth().getUser(change.after.id);
-    } catch (error) {
-      console.log(`Error fetching user ${change.after.id}.`, error.message);
-    }
     if (!_.isEqual(before.customClaims, after.customClaims)) {
       // customClaims were changed, update them
-      // TODO: !!Validate that the customClaims format is correct!!
-      promises.push(
-        admin.auth().setCustomUserClaims(change.after.id, after.customClaims)
-      );
+      // Validate the customClaims format with the type guard
+      const newClaims = after.customClaims
+      if (isCustomClaims(newClaims)) {
+        promises.push(
+          admin.auth().setCustomUserClaims(change.after.id, newClaims)
+        );            
+      } else {
+        throw new Error(
+          `The provided data isn't a valid custom claims object`
+        );
+      }
     }
     if (
       before.email !== after.email ||
