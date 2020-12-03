@@ -225,9 +225,9 @@ async function getUserRef(d, db) {
 // for each computerName. The deletion will be done on a batched
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
-exports.cleanup = async (data, context) => {
+exports.cleanup = async (snapshot, context) => {
+  const data = snapshot.data();
   const db = admin.firestore();
-
   console.log(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
   const latest_item_snapshot = await db
