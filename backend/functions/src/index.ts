@@ -7,7 +7,7 @@ admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins.js";
-import * as computersModule from "./computers.js";
+import { assignComputerToUser } from "./computers";
 import * as timesheetsModule from "./timesheets.js";
 import * as profilesModule from "./profiles.js";
 
@@ -16,9 +16,7 @@ import * as profilesModule from "./profiles.js";
 exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
 
 // assign a user to a computer
-exports.assignComputerToUser = functions.https.onCall(async (data, context) => {
-  return computersModule.assignComputerToUser(data, context, admin.firestore());
-});
+exports.assignComputerToUser = functions.https.onCall(assignComputerToUser);
 
 // bundle a timesheet
 exports.bundleTimesheet = functions.https.onCall(

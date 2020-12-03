@@ -142,13 +142,14 @@ export default mixins.extend({
     });
   },
   methods: {
-    assign(computerId: string, userId: string) {
+    assign(computerId: string, userSourceAnchor: string) {
       const assignComputerToUser = firebase
         .functions()
         .httpsCallable("assignComputerToUser");
-      return assignComputerToUser({ computerId, userId }).catch(error => {
-        alert(`Computer assignment failed: ${error}`);
-      });
+      return assignComputerToUser({ computerId, userSourceAnchor }).catch(
+        error => {
+          alert(`Computer assignment failed: ${error}`);
+        });
     }
   }
 });
