@@ -1,10 +1,10 @@
 // import data from node CLI
 
-const admin = require("firebase-admin");
-const serviceAccount = require("../../../../Downloads/serviceAccountKey.json");
+import * as admin from "firebase-admin";
+const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
-async function writeJobs(filename, jobtype, collection) {
+async function writeJobs(filename: string, jobtype: string, collection: string) {
   console.log("Writing jobs to firestore...");
   // load the file and parse it
   const fs = require("fs");
