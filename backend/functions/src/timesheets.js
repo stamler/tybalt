@@ -32,6 +32,8 @@ const os = require("os");
 // into a timesheet for a given user and week
 // time is ignored in weekEnding property of data arg
 exports.bundleTimesheet = async (data, context) => {
+
+  // TODO: validate that the user has the "time" claim
   const db = admin.firestore();
 
   // NB: Dates are not supported in Firebase Functions yet so
@@ -285,6 +287,7 @@ exports.unbundleTimesheet = async (data, context) => {
   const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
   if (timeSheet.exists) {
     // Ensure the caller is authorized
+    // TODO: validate that the user has the "time" claim
     if (timeSheet.data().uid !== context.auth.uid) {
       throw new functions.https.HttpsError(
         "permission-denied",

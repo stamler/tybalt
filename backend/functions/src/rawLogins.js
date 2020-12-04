@@ -1,7 +1,6 @@
 const serverTimestamp = require("firebase-admin").firestore.FieldValue
   .serverTimestamp;
 const makeSlug = require("./utilities.js").makeSlug;
-const callableIsAuthorized = require("./utilities.js").callableIsAuthorized;
 const Ajv = require("ajv");
 const schema = require("./RawLogins.schema.json");
 const functions = require("firebase-functions");
