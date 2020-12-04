@@ -1,10 +1,10 @@
 // import data from node CLI
 
-const admin = require("firebase-admin");
-const serviceAccount = require("../../../../Downloads/serviceAccountKey.json");
+import * as admin from "firebase-admin";
+const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
-async function deleteFieldInCollection(fieldname, collection) {
+async function deleteFieldInCollection(fieldname: string, collection: string) {
   console.log(`Deleting field ${fieldname} from collection ${collection} ...`);
   const batches = [];
   let moreRemaining = true;
