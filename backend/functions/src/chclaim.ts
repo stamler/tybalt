@@ -1,7 +1,7 @@
 // add or remove custom claims to user from node CLI
 // npx ts-node chclaim.ts <action> <email> [<claim>]
 
-const admin = require("firebase-admin");
+import * as admin from "firebase-admin";
 const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -58,7 +58,7 @@ const emailArg = process.argv[3];
 
 chclaim(actionArg, emailArg, claimArg)
   .then((result) => {
-    if (actionArg === "view") {
+    if (result !== undefined && actionArg === "view") {
       for (const key in result) {
         console.log(`${key}: ${result[key]}`);
       }
