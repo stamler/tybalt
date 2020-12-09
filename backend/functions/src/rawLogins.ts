@@ -1,32 +1,15 @@
-const serverTimestamp = require("firebase-admin").firestore.FieldValue
-  .serverTimestamp;
-const makeSlug = require("./utilities.js").makeSlug;
-const Ajv = require("ajv");
-const schema = require("./RawLogins.schema.json");
-const functions = require("firebase-functions");
-const _ = require("lodash");
-const admin = require("firebase-admin");
+import { makeSlug } from "./utilities";
+import * as schema from "./RawLogins.schema.json";
+import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
+import * as _ from "lodash";
+import * as Ajv from "ajv";
 
+const serverTimestamp = admin.firestore.FieldValue.serverTimestamp;
 const ajv = new Ajv({
   removeAdditional: true,
   coerceTypes: true,
   allErrors: true, // required for 'removeIfFails' keyword
-});
-
-const ajv_vanilla = new Ajv();
-const validateCleanup = ajv_vanilla.compile({
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    computerName: {
-      $id: "#/properties/computerName",
-      type: "string",
-      title: "Computer name",
-      examples: ["MHE-41KE281PH"],
-      minLength: 1,
-      maxLength: 48,
-    },
-  },
 });
 
 // The 'removeIfFails' keyword deletes a property if it is invalid. Created to
@@ -62,7 +45,61 @@ ajv.addKeyword("removeIfFails", {
 
 const validate = ajv.compile(schema);
 
-exports.handler = async (req, res) => {
+interface User {
+  upn: string;
+  givenName: string;
+  surname: string;
+  lastComputer: string;
+  userSourceAnchor: string;
+  created?: admin.firestore.Timestamp;
+  updated?: admin.firestore.Timestamp | admin.firestore.FieldValue;
+  email?: string;
+}
+
+interface ValidLogin {
+  serial: string;
+  upn: string;
+  networkConfig: { [key: string]: any };
+  userSourceAnchor: string;
+  radiatorVersion: number;
+  mfg: string;
+  userSurname: string;
+  userGivenName: string;
+  
+  bootDriveFS?: string;
+  computerName?: string;
+  model?: string;
+  systemType?: number;
+  osSku?: number;
+  bootDriveFree?: number;
+  osArch?: string;
+  bootDrive?: string;
+  osVersion?: string;
+  email?: string;
+  ram?: number;
+  bootDriveCap?: number;
+}
+
+// User-defined Type Guard
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
+function isValidLogin(data: any): data is ValidLogin {
+  // TODO: CUSTOM processing should be done here such as:
+  /* 
+    if (mfg === 'Red Hat' && model === 'KVM') {
+      set serial to dnsHostname
+    }
+    const valid = validate(d);
+  */
+
+  // validate function can return a promise if validate.$async is true
+  const result = validate(data);
+  if (typeof result === "boolean") {
+    return result;
+  }
+  return false;
+}
+
+export async function handler(req: functions.https.Request, res: functions.Response<any>): Promise<any> {
   const db = admin.firestore();
   // Validate the secret sent in the header from the client.
   const appSecret = functions.config().tybalt.radiator.secret;
@@ -93,18 +130,8 @@ exports.handler = async (req, res) => {
 
   const d = req.body;
 
-  // Validate the submission
-  const valid = validate(d);
-  // TODO: CUSTOM processing should be done here such as:
-  /* 
-    if (mfg === 'Red Hat' && model === 'KVM') {
-      set serial to dnsHostname
-    }
-    const valid = validate(d);
-  */
-
   try {
-    if (!valid) {
+    if (!isValidLogin(d)) {
       // Invalid submission, store RawLogin for later processing
       console.log("rawLogins: submission doesn't validate");
       console.log(validate.errors);
@@ -116,7 +143,7 @@ exports.handler = async (req, res) => {
       }
     } else {
       // write valid object to database
-      await storeValidLogin(d, db);
+      await storeValidLogin(d);
     }
     return res.status(202).send();
   } catch (error) {
@@ -126,17 +153,17 @@ exports.handler = async (req, res) => {
 };
 
 // Creates or updates Computers and Users document, creates Logins document
-async function storeValidLogin(d, db) {
+async function storeValidLogin(d: ValidLogin) {
+  const db = admin.firestore()
   const slug = makeSlug(d.serial, d.mfg); // key for Computers collection
   const computerRef = db.collection("Computers").doc(slug);
   let userRef;
   try {
     // try to match existing user, otherwise make a new one. If database
     // inconsistencies are found (i.e. multiple matches) store RawLogin
-    userRef = await getUserRef(d, db);
+    userRef = await getUserRef(d);
   } catch (error) {
-    d.error = error.message;
-    return db.collection("RawLogins").doc().set(d);
+    return db.collection("RawLogins").doc().set({...d, error: error.message});
   }
 
   // TODO: delete all RawLogins where the serial matches this one since
@@ -145,18 +172,17 @@ async function storeValidLogin(d, db) {
   // Start a write batch
   const batch = db.batch();
 
-  d.updated = serverTimestamp();
-  batch.set(computerRef, d, {
+  batch.set(computerRef, {...d, updated: serverTimestamp() }, {
     merge: true,
   });
 
-  const userObject = {
+  const userObject: User = {
     upn: d.upn.toLowerCase(),
     givenName: d.userGivenName,
     surname: d.userSurname,
     lastComputer: slug,
     updated: serverTimestamp(),
-    userSourceAnchor: d.userSourceAnchor.toLowerCase(),
+    userSourceAnchor: d.userSourceAnchor.toLowerCase()
   };
 
   // Confirm optional email prop exists before calling .toLowerCase()
@@ -183,40 +209,27 @@ async function storeValidLogin(d, db) {
   return batch.commit();
 }
 
-async function getUserRef(d, db) {
-  // If I user was deleted from the directory then recreated we don't want to
-  // represent them twice in the database. We reuse the same user entry and
-  // keep the previous ID/Document.
-  // NB THIS REQUIRES THAT WE STORE d.userSourceAnchor in Users documents
-  // The situation where a document exists with a key that matches another
-  // document's userSourceAnchor property is problematic and needs to be
-  // handled in this code. Essentially the key should only coincidentally match
-  // a userSourceAnchor
-
+async function getUserRef(d: ValidLogin) {
+  // If a user was deleted from the directory then recreated then the user
+  // will be represented twice in the database. This state of multiple user
+  // entries who are in fact one user is beyond the scope of this function.
+  
+  const db = admin.firestore()
   const usersRef = db.collection("Users");
-  for (const prop of ["userSourceAnchor", "upn", "email"]) {
-    // skip a property if it doesn't exist in d
-    if (d[prop] === null || d[prop] === undefined) {
-      continue;
-    }
 
-    // query for a user with matching prop
-    // eslint-disable-next-line no-await-in-loop
-    const result = await usersRef.where(prop, "==", d[prop].toLowerCase()).get();
+  const result = await usersRef.where("userSourceAnchor", "==", d.userSourceAnchor).get();
 
-    // throw if >1 result is returned, caller will set RawLogin
-    if (result.size > 1) {
-      throw new Error(`Multiple users have ${prop}:${d[prop].toLowerCase()}`);
-    }
+  // throw if >1 result is returned, caller will set RawLogin
+  if (result.size > 1) {
+    throw new Error(`Multiple users have userSourceAnchor: ${d.userSourceAnchor}`);
+  }
 
-    // if exactly one result is returned, return its DocumentReference
-    else if (result.size === 1) {
-      return result.docs[0].ref;
-    }
+  // if exactly one result is returned, return its DocumentReference
+  if (result.size === 1) {
+    return result.docs[0].ref;
   }
 
   // if zero results are returned, return a ref to a new document
-  // otherwise we'll overwrite an existing user.
   return db.collection("Users").doc();
 }
 
@@ -224,9 +237,17 @@ async function getUserRef(d, db) {
 // for each computerName. The deletion will be done on a batched
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
-exports.cleanup = async (snapshot, context) => {
+export async function cleanup(
+  snapshot: admin.firestore.DocumentSnapshot, 
+  context: functions.EventContext
+) {
   const data = snapshot.data();
   const db = admin.firestore();
+
+  if (data === undefined) {
+    throw new Error("cleanup() failed because the DocumentSnapshot is undefined");
+  }
+
   console.log(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
   const latest_item_snapshot = await db

@@ -1,5 +1,5 @@
 // make a string with serial & manufacturer that uniquely identifies a computer
-exports.makeSlug = function (serial: string, mfg: string) {
+export function makeSlug(serial: string, mfg: string) {
   const sc = serial.replace(/\s|\/|,/g, "");
   const mc = mfg
     .toLowerCase()

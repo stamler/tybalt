@@ -11,7 +11,9 @@
     "networkConfig",
     "userSourceAnchor",
     "radiatorVersion",
-    "mfg"
+    "mfg",
+    "userGivenName",
+    "userSurname"
   ],
   "properties": {
     "bootDriveFS": {
