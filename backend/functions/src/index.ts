@@ -6,9 +6,10 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
-import * as rawLoginsModule from "./rawLogins.js";
+import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import * as timesheetsModule from "./timesheets.js";
+import { bundleTimesheet, unbundleTimesheet, lockTimesheets } from "./timesheets";
+export {writeWeekEnding, writeFileLinks, updateTimeTracking} from "./timesheets";
 import { updateAuth, createProfile, deleteProfile } from "./profiles";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
@@ -19,23 +20,14 @@ exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
 exports.assignComputerToUser = functions.https.onCall(assignComputerToUser);
 
 // bundle a timesheet
-exports.bundleTimesheet = functions.https.onCall(
-  timesheetsModule.bundleTimesheet
-);
+exports.bundleTimesheet = functions.https.onCall(bundleTimesheet);
 
 // unbundle a timesheet
-exports.unbundleTimesheet = functions.https.onCall(
-  timesheetsModule.unbundleTimesheet
-);
+exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 
 // lock approved timesheets
-exports.lockTimesheets = functions.https.onCall(
-  timesheetsModule.lockTimesheets
-);
+exports.lockTimesheets = functions.https.onCall(lockTimesheets);
 
-// each time a cloud storage object's metadata changes, write its
-// download link to the corresponding TimeTracking document.
-exports.writeFileLinks = timesheetsModule.writeFileLinks;
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
@@ -65,12 +57,6 @@ exports.usersCreatedDate = functions.firestore
 exports.rawLoginsCleanup = functions.firestore
   .document("RawLogins/{loginId}")
   .onCreate(rawLoginsModule.cleanup);
-
-// add weekEnding property to TimeEntries on create or update
-exports.writeWeekEnding = timesheetsModule.writeWeekEnding;
-
-// update the corresponding TimeTracking document on TimeSheet write
-exports.updateTimeTracking = timesheetsModule.updateTimeTracking;
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
 exports.updateAuth = functions.firestore

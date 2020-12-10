@@ -5,7 +5,7 @@
   },
   "description": "Cloud Functions for Firebase",
   "scripts": {
-    "lint": "eslint \"src/\"",
+    "lint": "eslint --ext .ts \"src/\"",
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
@@ -17,6 +17,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@types/uuid": "^8.3.0",
     "ajv": "^6.12.6",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^1.0.12",
@@ -34,7 +35,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "decache": "^4.6.0",
-    "eslint": "^7.14.0",
+    "eslint": "^7.15.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.2.0",

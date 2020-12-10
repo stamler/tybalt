@@ -33,6 +33,8 @@ export async function assignComputerToUser(
     context: functions.https.CallableContext
   ) {
     const db = admin.firestore();
+
+    // TODO: replace lines 38 to 61 with utilities.getAuthObject()
     if (!context.auth) {
       // Throw an HttpsError so that the client gets the error details
       throw new functions.https.HttpsError(

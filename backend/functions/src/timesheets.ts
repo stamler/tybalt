@@ -19,26 +19,86 @@ tadm: true
 Holders of this claim can export a time-tracking files for distribution to 
 accounting for payroll and to admin for invoicing
 */
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const { zonedTimeToUtc, utcToZonedTime } = require("date-fns-tz");
-const { format } = require("date-fns");
-const { v4: uuidv4 } = require("uuid");
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { format } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import { getAuthObject } from "./utilities";
+
+// these fields need to match the validTimeEntry() function in firestore rules
+interface TimeEntry {
+  // required properties always
+  date: admin.firestore.Timestamp;
+  timetype: string;
+  timetypeName: string;
+  uid: string;
+
+  // required properties for TimeEntries pulled from collection
+  weekEnding: admin.firestore.Timestamp;
+
+  // properties which are never required, but may require eachother
+  division?: string;
+  divisionName?: string;
+  notes?: string;
+  hours?: number;
+  mealsHours?: number;
+  client?: string;
+  job?: string;
+  jobDescription?: string;
+  workrecord?: string;
+  jobHours?: number;
+}
+
+// Dates are not supported in Firebase Functions yet so
+// data.weekEnding is the valueOf() a Date object
+// https://github.com/firebase/firebase-functions/issues/316
+interface WeekReference {
+  // milliseconds since the epoch
+  weekEnding: number;
+}
+
+// User-defined Type Guard
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
+function isWeekReference(data: any): data is WeekReference {
+  if (data.weekEnding) {
+    return typeof data.weekEnding === "number";
+  }
+  return false;
+}
+
+interface DocIdObject {
+  // the id of a document
+  id: string;
+}
+function isDocIdObject(data: any): data is DocIdObject {
+  return typeof data.id === "string";
+}
 
 // The bundleTimesheet groups TimeEntries together
 // into a timesheet for a given user and week
 // time is ignored in weekEnding property of data arg
-exports.bundleTimesheet = async (data, context) => {
+export async function bundleTimesheet(
+    data: unknown, 
+    context: functions.https.CallableContext
+  ) {
 
-  // TODO: validate that the user has the "time" claim
   const db = admin.firestore();
 
-  // NB: Dates are not supported in Firebase Functions yet so
-  // data.weekEnding is the valueOf() a Date object
-  // https://github.com/firebase/firebase-functions/issues/316
+  // throw if the caller isn't authorized
+  const auth = getAuthObject(context, ["time"]);
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isWeekReference(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid week reference"
+    );
+  }
 
   // Firestore timestamps and JS Date objects represent a point in time and
   // have no associated time zone info. To determine time zone dependent
@@ -68,7 +128,7 @@ exports.bundleTimesheet = async (data, context) => {
   // Throw if a timesheet already exists for this week
   const timeSheets = await db
     .collection("TimeSheets")
-    .where("uid", "==", context.auth.uid)
+    .where("uid", "==", auth.uid)
     .where("weekEnding", "==", week)
     .get();
   if (!timeSheets.empty) {
@@ -81,7 +141,7 @@ exports.bundleTimesheet = async (data, context) => {
   // Look for TimeEntries to bundle
   const timeEntries = await db
     .collection("TimeEntries")
-    .where("uid", "==", context.auth.uid)
+    .where("uid", "==", auth.uid)
     .where("weekEnding", "==", week)
     .orderBy("date", "asc")
     .get();
@@ -90,16 +150,21 @@ exports.bundleTimesheet = async (data, context) => {
     const batch = db.batch();
 
     // Put the existing timeEntries into an array then delete from Collection
-    const entries = [];
-    const bankEntries = [];
-    const offRotationDates = [];
-    const nonWorkHoursTally = {}; // key is timetype, value is total
+    const entries: TimeEntry[] = [];
+    const bankEntries: TimeEntry[] = [];
+    const offRotationDates: number[] = [];
+    const nonWorkHoursTally: { [timetype: string]: number } = {}; // value is total
     let mealsHoursTally = 0;
     const workHoursTally = { hours: 0, jobHours: 0, noJobNumber: 0 };
-    const divisionsTally = {}; // key is division, value is divisionName
-    const jobsTally = {}; // key is job, value is object of name and totals
+    const divisionsTally: { [division: string]: string } = {}; // value is divisionName
+    const jobsTally: { [job: string]: { description: string, client: string, hours: number, jobHours: number } } = {};
     timeEntries.forEach((timeEntry) => {
-      const item = timeEntry.data();
+      const item = timeEntry.data() as TimeEntry;
+      // TODO: validate timeEntry.data() against TimeEntry type with type guard
+      // TODO: build a tree of types and operate on them based on type. This would
+      // simplify below code. For example RegularTimeEntry, BankTimeEntry,
+      // NonWorkTimeEntry, OffRotationTimeEntry with corresponding type guards
+
       if (item.timetype === "OR") {
         // Count the off rotation dates and ensure that there are not two
         // off rotation entries for a given date.
@@ -118,15 +183,15 @@ exports.bundleTimesheet = async (data, context) => {
         // This is an overtime bank entry, store it in the bankEntries
         // array for processing after completing the tallies.
         bankEntries.push(item);
-      } else if (item.timetype === "R") {
+      } else if (item.timetype === "R" && item.division && item.divisionName && (item.hours || item.jobHours)) {
         // Tally the regular work hours
-        if ("hours" in item) {
+        if (item.hours) {
           workHoursTally["hours"] += item.hours;
         }
-        if ("jobHours" in item) {
+        if (item.jobHours) {
           workHoursTally["jobHours"] += item.jobHours;
         }
-        if ("mealsHours" in item) {
+        if (item.mealsHours) {
           mealsHoursTally += item.mealsHours;
         }
 
@@ -134,15 +199,15 @@ exports.bundleTimesheet = async (data, context) => {
         divisionsTally[item.division] = item.divisionName;
 
         // Tally the jobs (may not be present)
-        if ("job" in item) {
+        if (item.job && item.jobDescription && item.client) {
           if (item.job in jobsTally) {
             // a previous entry already tracked this job, add to totals
-            const hours = isNaN(item.hours)
-              ? jobsTally[item.job].hours
-              : jobsTally[item.job].hours + item.hours;
-            const jobHours = isNaN(item.jobHours)
-              ? jobsTally[item.job].jobHours
-              : jobsTally[item.job].jobHours + item.jobHours;
+            const hours = item.hours
+              ? jobsTally[item.job].hours + item.hours
+              : jobsTally[item.job].hours;
+            const jobHours = item.jobHours
+              ? jobsTally[item.job].jobHours + item.jobHours
+              : jobsTally[item.job].jobHours;
             jobsTally[item.job] = {
               description: item.jobDescription,
               client: item.client,
@@ -158,12 +223,17 @@ exports.bundleTimesheet = async (data, context) => {
               jobHours: item.jobHours || 0,
             };
           }
-        } else {
+        } else if (item.hours) {
           // keep track of the number of hours not associated with a job
           // (as opposed to job hours not billable to the client)
           workHoursTally["noJobNumber"] += item.hours;
+        } else {
+          throw new Error("The TimeEntry is of type Regular hours but no job or hours are present")
         }
       } else {
+        if (!item.hours) {
+          throw new Error("The TimeEntry is of type nonWorkHours but no hours are present");
+        }
         // Tally the non-work hours
         if (item.timetype in nonWorkHoursTally) {
           nonWorkHoursTally[item.timetype] += item.hours;
@@ -185,7 +255,8 @@ exports.bundleTimesheet = async (data, context) => {
         "failed-precondition",
         "Only one overtime banking entry can exist on a timesheet."
       );
-    } else if (bankEntries.length === 1) {
+    } 
+    if (bankEntries.length === 1 && bankEntries[0].hours) {
       bankedHours = bankEntries[0].hours;
 
       // The sum of all hours worked minus the banked hours mustn't be under 44
@@ -218,7 +289,7 @@ exports.bundleTimesheet = async (data, context) => {
       }
     }
     // Load the profile for the user to get manager information
-    const profile = await db.collection("Profiles").doc(context.auth.uid).get();
+    const profile = await db.collection("Profiles").doc(auth.uid).get();
     if (profile.exists) {
       const managerUid = profile.get("managerUid");
       if (managerUid !== undefined) {
@@ -236,7 +307,7 @@ exports.bundleTimesheet = async (data, context) => {
           // The profile contains a valid manager, build the TimeSheet document
           const timesheet = db.collection("TimeSheets").doc();
           batch.set(timesheet, {
-            uid: context.auth.uid,
+            uid: auth.uid,
             displayName: profile.get("displayName"),
             managerName: profile.get("managerName"),
             weekEnding: week,
@@ -282,68 +353,96 @@ exports.bundleTimesheet = async (data, context) => {
   }
 };
 
-exports.unbundleTimesheet = async (data, context) => {
+export async function unbundleTimesheet(
+  data: unknown, 
+  context: functions.https.CallableContext
+) {
   const db = admin.firestore();
-  const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
-  if (timeSheet.exists) {
-    // Ensure the caller is authorized
-    // TODO: validate that the user has the "time" claim
-    if (timeSheet.data().uid !== context.auth.uid) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "A timesheet can only be unbundled by its owner"
-      );
-    }
 
-    if (timeSheet.data().submitted === true) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "A submitted timesheet cannot be unbundled"
-      );
-    }
-    if (timeSheet.data().approved === true) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "An approved timesheet cannot be unbundled"
-      );
-    }
-    if (timeSheet.data().locked === true) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "A locked timesheet cannot be unbundled"
-      );
-    }
+  // throws if the caller isn't authorized
+  const auth = getAuthObject(context, ["time"]);
 
-    console.log("TimeSheet found, creating a batch");
-    // Start a write batch
-    const batch = db.batch();
-
-    // Create new TimeEntres for each entries item in the TimeSheet
-    timeSheet.data().entries.forEach((timeEntry) => {
-      // timeEntry is of type "QueryDocumentSnapshot"
-      // TODO: Possibly must add back redundant data removed in bundle
-      const entry = db.collection("TimeEntries").doc();
-      batch.set(entry, timeEntry);
-    });
-
-    // Delete the TimeSheet
-    batch.delete(timeSheet.ref);
-    return batch.commit();
-  } else {
-    console.log("no TimeSheet found, returning null");
-    return null;
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
   }
+
+  const timeSheet = await db.collection("TimeSheets").doc(data.id).get()
+
+  const tsData = timeSheet.data()
+  if (tsData === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `There is no matching TimeSheet document for id ${data.id}`
+    )
+  }
+
+  if (tsData.uid !== auth.uid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "A timesheet can only be unbundled by its owner"
+    );
+  }
+
+  if (tsData.submitted === true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "A submitted timesheet cannot be unbundled"
+    );
+  }
+
+  if (tsData.approved === true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "An approved timesheet cannot be unbundled"
+    );
+  }
+
+  if (tsData.locked === true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "A locked timesheet cannot be unbundled"
+    );
+  }
+
+  console.log("TimeSheet found, creating a batch");
+  // Start a write batch
+  const batch = db.batch();
+
+  // Create new TimeEntres for each entries item in the TimeSheet
+  tsData.entries.forEach((timeEntry: TimeEntry) => {
+    // timeEntry is of type "QueryDocumentSnapshot"
+    // TODO: Possibly must add back redundant data removed in bundle
+    const entry = db.collection("TimeEntries").doc();
+    batch.set(entry, timeEntry);
+  });
+
+  // Delete the TimeSheet
+  batch.delete(timeSheet.ref);
+  return batch.commit();
 };
 
-exports.writeWeekEnding = functions.firestore
+// add weekEnding property to TimeEntries on create or update
+export const writeWeekEnding = functions.firestore
   .document("TimeEntries/{entryId}")
   .onWrite(async (change, context) => {
     if (change.after.exists) {
       // The TimeEntry was not deleted
+      const afterData = change.after.data();
+      if (afterData === undefined) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot read TimeEntry with id ${change.after.id} during writeWeekEnding`
+        )
+      }
       let date;
       try {
         // get the date from the TimeEntry
-        date = change.after.data().date.toDate();
+        date = afterData.date.toDate();
       } catch (error) {
         console.log(
           `unable to read date for TimeEntry with id ${change.after.id}`
@@ -352,10 +451,10 @@ exports.writeWeekEnding = functions.firestore
       }
       // If weekEnding is defined on the TimeEntry, get it, otherwise set null
       const weekEnding = Object.prototype.hasOwnProperty.call(
-        change.after.data(),
+        afterData,
         "weekEnding"
       )
-        ? change.after.data().weekEnding.toDate()
+        ? afterData.weekEnding.toDate()
         : null;
 
       // Calculate the correct saturday of the weekEnding
@@ -419,17 +518,34 @@ exports.writeWeekEnding = functions.firestore
   If a timesheet is approved, make sure that it is included in the pending
   property of the TimeTracking document for the corresponding weekEnding.
  */
-exports.updateTimeTracking = functions.firestore
+export const updateTimeTracking = functions.firestore
   .document("TimeSheets/{timesheetId}")
   .onWrite(async (change, context) => {
     const db = admin.firestore();
-    const after = change.after.data();
-    const beforeApproved = change.before.exists
-      ? change.before.data().approved
-      : false;
-    const weekEnding = change.before.exists
-      ? change.before.data().weekEnding.toDate()
-      : after.weekEnding.toDate();
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    let beforeApproved: boolean;
+    let weekEnding: Date;
+    if (beforeData) {
+      // the TimeSheet was updated
+      beforeApproved = beforeData.approved
+      weekEnding = beforeData.weekEnding.toDate();
+    }
+    else if (afterData) {
+      // the TimeSheet was just created
+      beforeApproved = false;
+      weekEnding = afterData.weekEnding.toDate();
+    }
+    else {
+      // This should never happen because either a before or after document
+      // must exist, but it is here because the if/else branch
+      // above will not assign a value to beforeApproved or weekEnding in 
+      // this case and TypeScript notices that
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Both the before and after DocumentSnapshots contain no data"
+      );
+    }
 
     // Get the TimeTracking doc if it exists, otherwise create it.
     const querySnap = await db
@@ -443,33 +559,37 @@ exports.updateTimeTracking = functions.firestore
         `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
+      // retrieve existing TimeTracking document
       timeTrackingDocRef = querySnap.docs[0].ref;
     } else {
+      // create new TimeTracking document
       timeTrackingDocRef = db.collection("TimeTracking").doc();
       await timeTrackingDocRef.set({ weekEnding });
     }
 
     if (
-      change.after.exists &&
-      after.approved !== beforeApproved &&
-      after.approved === true &&
-      after.locked === false
+      afterData &&
+      afterData.approved !== beforeApproved &&
+      afterData.approved === true &&
+      afterData.locked === false
     ) {
-      timeTrackingDocRef.set(
+      // add the newly approved TimeSheet to pending
+      return timeTrackingDocRef.set(
         {
           pending: admin.firestore.FieldValue.arrayUnion(change.after.ref.path),
         },
         { merge: true }
-      ).catch((err) => reject(err));
+      );
     } else {
-      timeTrackingDocRef.set(
+      // add the TimeSheet from pending
+      return timeTrackingDocRef.set(
         {
           pending: admin.firestore.FieldValue.arrayRemove(
             change.after.ref.path
           ),
         },
         { merge: true }
-      ).catch((err) => reject(err));
+      );
     }
   });
 
@@ -486,11 +606,20 @@ exports.updateTimeTracking = functions.firestore
   contains all of the exports together as well as the individual exports. In
   this way users can see what they've already done.
  */
-exports.lockTimesheets = async (data, context) => {
+export async function lockTimesheets(data: unknown, context: functions.https.CallableContext) {
   if (!hasPermission(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
       "Call to lockTimesheets() failed"
+    );
+  }
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isWeekReference(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid week reference"
     );
   }
 
@@ -540,7 +669,7 @@ exports.lockTimesheets = async (data, context) => {
       .where("weekEnding", "==", weekEnding)
       .get();
 
-    let timeTrackingDocRef;
+    let timeTrackingDocRef: admin.firestore.DocumentReference;
     if (querySnap.size > 1) {
       throw new Error(
         `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
@@ -553,14 +682,18 @@ exports.lockTimesheets = async (data, context) => {
       );
     }
 
-    const transactions = [];
+    const transactions: Promise<admin.firestore.Transaction>[] = [];
     timeSheets.forEach((timeSheet) => {
       const trans = db.runTransaction(async (transaction) => {
         return transaction.get(timeSheet.ref).then(async (tsSnap) => {
+          const snapData = tsSnap.data();
+          if (!snapData) {
+            throw new Error("A DocumentSnapshot was empty during the locking transaction")
+          }
           if (
-            tsSnap.data().submitted === true &&
-            tsSnap.data().approved === true &&
-            tsSnap.data().locked === false
+            snapData.submitted === true &&
+            snapData.approved === true &&
+            snapData.locked === false
           ) {
             // timesheet is lockable, lock it then add it to the export
             return transaction
@@ -580,7 +713,7 @@ exports.lockTimesheets = async (data, context) => {
     });
     return Promise.all(transactions).then(() => {
       return exportJson(
-        { timeTrackingId: timeTrackingDocRef.id },
+        { id: timeTrackingDocRef.id },
         context
       );
     });
@@ -597,13 +730,23 @@ exports.lockTimesheets = async (data, context) => {
 
 // Given a TimeTracking id, create or update a file on Google storage
 // with the locked timeSheets
-exports.exportJson = async (data, context) => {
+export async function exportJson(data: unknown, context: functions.https.CallableContext) {
   if (hasPermission(context)) {
     // Get locked TimeSheets
     const db = admin.firestore();
+
+    // Validate the data or throw
+    // use a User Defined Type Guard
+    if (!isDocIdObject(data)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "The provided data doesn't contain a document id"
+      );
+    }
+
     const trackingSnapshot = await db
       .collection("TimeTracking")
-      .doc(data.timeTrackingId)
+      .doc(data.id)
       .get();
     const timeSheetsSnapshot = await db
       .collection("TimeSheets")
@@ -621,10 +764,11 @@ exports.exportJson = async (data, context) => {
       delete docData.rejected;
       delete docData.rejectionReason;
       docData.weekEnding = docData.weekEnding.toDate();
-      docData.entries.map((entry) => {
-        delete entry.weekEnding;
-        entry.date = entry.date.toDate();
-        return entry;
+      docData.entries.map((entry: TimeEntry) => {
+        const cleaned: any = entry;
+        delete cleaned.weekEnding;
+        cleaned.date = entry.date.toDate();
+        return cleaned;
       });
       return docData;
     });
@@ -639,7 +783,7 @@ exports.exportJson = async (data, context) => {
       .getTime()}.json`;
     const tempLocalFileName = path.join(os.tmpdir(), filename);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       //write contents of json into the temp file
       fs.writeFile(tempLocalFileName, output, (error) => {
         if (error) {
@@ -687,7 +831,7 @@ exports.exportJson = async (data, context) => {
 };
 
 // Confirm the context has "tadm" claim and throw userful errors as necessary
-function hasPermission(context) {
+function hasPermission(context: functions.https.CallableContext) {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
@@ -718,17 +862,20 @@ function hasPermission(context) {
 // downloads continue to work. This allows us to update the token in
 // the firebase console for security reasons without breaking the app
 // https://www.sentinelstand.com/article/guide-to-firebase-storage-download-urls-tokens
-exports.writeFileLinks = functions.storage
+export const writeFileLinks = functions.storage
   .object()
-  .onMetadataUpdate(async (object) => {
+  .onMetadataUpdate(async (objMeta: functions.storage.ObjectMetadata) => {
     const db = admin.firestore();
 
     // The object name is milliseconds since epoch UTC of weekEnding
     // derrive the weekEnding from it.
-    const parsed = path.parse(object.name);
+    if (typeof objMeta.name !== "string" || objMeta.metadata === undefined) {
+      throw new Error("The object metadata is missing information");
+    }
+    const parsed = path.parse(objMeta.name);
     const weekEnding = new Date(Number(parsed.name));
 
-    if (isNaN(weekEnding)) {
+    if (isNaN(weekEnding.getTime())) {
       throw new Error(
         `filename ${parsed.name} cannot be converted to a date object`
       );
@@ -756,13 +903,13 @@ exports.writeFileLinks = functions.storage
     return timeTrackingDocRef.update({
       [parsed.ext.substring(1)]: createPersistentDownloadUrl(
         admin.storage().bucket().name,
-        object.name,
-        object.metadata.firebaseStorageDownloadTokens
+        objMeta.name,
+        objMeta.metadata.firebaseStorageDownloadTokens
       ),
     });
   });
 
-const createPersistentDownloadUrl = (bucket, pathToFile, downloadToken) => {
+const createPersistentDownloadUrl = (bucket: string, pathToFile: string, downloadToken: string) => {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
     pathToFile
   )}?alt=media&token=${downloadToken}`;

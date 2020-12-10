@@ -40,15 +40,17 @@ service cloud.firestore {
         isInCollection("timetype","TimeTypes") &&
 
         // required fields
-        newDoc().keys().hasAll(["date", "timetype", "uid"]) &&
+        newDoc().keys().hasAll(["date", "timetype", "timetypeName", "uid"]) &&
 
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'] &&
 
-        // when job provided, job & division exist in db, timetype is 'R'
+        // when job provided, job & division exist in db,
+        // jobDescription and client are present, timetype is 'R'
         (
           ( isInCollection("job","Jobs") && 
             isInCollection("division","Divisions") &&
+            newDoc().keys().hasAll(["jobDescription", "client"]) &&
             newDoc().timetype == "R" ) || 
           isMissing("job")
         ) &&

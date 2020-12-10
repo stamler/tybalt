@@ -182,7 +182,7 @@ async function storeValidLogin(d: ValidLogin) {
     surname: d.userSurname,
     lastComputer: slug,
     updated: serverTimestamp(),
-    userSourceAnchor: d.userSourceAnchor.toLowerCase()
+    userSourceAnchor: d.userSourceAnchor.toLowerCase(),
   };
 
   // Confirm optional email prop exists before calling .toLowerCase()
