@@ -211,7 +211,8 @@ export default Vue.extend({
             meals: entry.mealsHours || 0,
             ref: entry.workrecord || "",
             project: "",
-            notes: entry.notes, // consolidate comments and description
+            description: entry.notes, // consolidate comments and description
+            comments: "",
             employee: item.displayName
           };
           if (entry.job !== undefined) {
