@@ -9,7 +9,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
 import { bundleTimesheet, unbundleTimesheet, lockTimesheets } from "./timesheets";
-export {writeWeekEnding, writeFileLinks, updateTimeTracking} from "./timesheets";
+export { writeWeekEnding, writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile } from "./profiles";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
