@@ -337,4 +337,11 @@ button {
 .overflow-hidden {
   overflow: hidden;
 }
+#rejectionInput {
+  height: 20vh;
+  font-family: inherit;
+  font-size: inherit;
+  resize: none;
+  padding: 0.2em;
+}
 </style>

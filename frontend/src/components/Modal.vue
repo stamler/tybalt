@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div class="modal" v-if="show">
-      <div class="modal__backdrop" @click="closeModal()" />
+      <div class="modal__backdrop" />
       <div class="modal__dialog">
         <div class="modal__header">
           <slot name="header" />
@@ -41,6 +41,7 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .modal {
+  color: orange;
   overflow-x: hidden;
   overflow-y: auto;
   position: fixed;
@@ -59,10 +60,10 @@ export default Vue.extend({
     z-index: 1;
   }
   &__dialog {
-    background-color: #ffffff;
+    //background-color: #ffffff;
     position: relative;
     width: 600px;
-    margin: 50px auto;
+    margin: 20vh auto;
     display: flex;
     flex-direction: column;
     border-radius: 5px;

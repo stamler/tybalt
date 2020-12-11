@@ -2,12 +2,12 @@
   <div id="list">
     <modal ref="rejectModal">
       <template v-slot:header>
-        <h1>Reject Timesheet</h1>
+        <h1>Reject</h1>
       </template>
 
       <template v-slot:body>
-        <p>Why are you rejecting?</p>
-        <input type="textarea" v-model="rejectionReason" />
+        <p>What's wrong with this time sheet?</p>
+        <textarea id="rejectionInput" v-model="rejectionReason"></textarea>
       </template>
 
       <template v-slot:footer>
