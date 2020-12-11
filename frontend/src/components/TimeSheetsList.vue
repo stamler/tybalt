@@ -45,9 +45,9 @@
         <div class="firstline">{{ jobs(item) }}</div>
         <div class="secondline">{{ divisions(item) }}</div>
         <div class="thirdline">
-          <span v-if="item.rejected" style="color:red;"
-            >Rejected: {{ item.rejectionReason }}</span
-          >
+          <span v-if="item.rejected" style="color:red;">
+            Rejected: {{ item.rejectionReason }}
+          </span>
         </div>
       </div>
       <div class="rowactionsbox">
@@ -103,6 +103,7 @@
           </template>
         </template>
 
+        <!-- The template for "approved" -->
         <template v-if="approved === true">
           <template v-if="!item.locked">
             <router-link
