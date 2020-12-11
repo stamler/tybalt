@@ -62,6 +62,10 @@
       Sunday {{ weekStart | shortDate }} to Saturday
       {{ item.weekEnding.toDate() | shortDate }}
     </div>
+    <!-- rejection reason -->
+    <span v-if="item.rejected" style="color:red;">
+      Rejected: {{ item.rejectionReason }}
+    </span>
     <table>
       <thead>
         <tr>
@@ -103,10 +107,6 @@
         </tr>
       </tfoot>
     </table>
-    <!-- rejection reason -->
-    <span v-if="item.rejected" style="color:red;">
-      Rejected: {{ item.rejectionReason }}
-    </span>
   </div>
 </template>
 
