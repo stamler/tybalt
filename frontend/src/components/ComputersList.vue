@@ -149,7 +149,8 @@ export default mixins.extend({
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
         error => {
           alert(`Computer assignment failed: ${error}`);
-        });
+        }
+      );
     }
   }
 });

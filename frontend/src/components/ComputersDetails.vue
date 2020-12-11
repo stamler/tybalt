@@ -156,7 +156,8 @@ export default Vue.extend({
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
         error => {
           alert(`Computer assignment failed: ${error}`);
-        });
+        }
+      );
     }
   }
 });

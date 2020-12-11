@@ -8,8 +8,8 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import SideNav from "@/components/SideNav.vue";
-import Header from "@/components/Header.vue";
+import SideNav from "./components/SideNav.vue";
+import Header from "./components/Header.vue";
 import { mapState } from "vuex";
 
 export default {
