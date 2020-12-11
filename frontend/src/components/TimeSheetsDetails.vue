@@ -1,16 +1,42 @@
 <template>
   <div>
+    <modal ref="rejectModal">
+      <template v-slot:header>
+        <h1>Reject Timesheet</h1>
+      </template>
+
+      <template v-slot:body>
+        <p>Why are you rejecting?</p>
+        <input type="textarea" v-model="rejectionReason" />
+      </template>
+
+      <template v-slot:footer>
+        <div>
+          <button v-on:click="$refs.rejectModal.closeModal()">
+            Cancel
+          </button>
+          <button v-on:click="rejectThenRedirect()">
+            Reject
+          </button>
+        </div>
+      </template>
+    </modal>
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
+      <!-- approve button -->
       <router-link
         v-if="
-          canApprove() && item.submitted === true && item.approved === false
+          canApprove() &&
+            item.submitted === true &&
+            item.approved === false &&
+            item.rejected === false
         "
         v-bind:to="{ name: 'Time Sheets' }"
         v-on:click.native="approveTs(id)"
       >
         <check-circle-icon></check-circle-icon>
       </router-link>
+      <!-- submit button -->
       <router-link
         v-if="!item.rejected && belongsToMe(item) && item.submitted === false"
         v-bind:to="{ name: 'Time Sheets' }"
@@ -18,10 +44,16 @@
       >
         <send-icon></send-icon>
       </router-link>
+      <!-- reject button -->
       <router-link
-        v-if="canApprove() && item.submitted === true && item.locked === false"
-        v-bind:to="{ name: 'Time Sheets' }"
-        v-on:click.native="rejectTs(id)"
+        v-if="
+          canApprove() &&
+            item.submitted === true &&
+            item.locked === false &&
+            item.rejected === false
+        "
+        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        v-on:click.native="$refs.rejectModal.openModal()"
       >
         <x-circle-icon></x-circle-icon>
       </router-link>
@@ -71,11 +103,15 @@
         </tr>
       </tfoot>
     </table>
+    <!-- rejection reason -->
+    <span v-if="item.rejected" style="color:red;">
+      Rejected: {{ item.rejectionReason }}
+    </span>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Modal from "./Modal.vue";
 import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
@@ -88,9 +124,9 @@ import {
 } from "vue-feather-icons";
 const db = firebase.firestore();
 
-export default Vue.extend({
-  mixins: [mixins],
+export default mixins.extend({
   components: {
+    Modal,
     SendIcon,
     CheckCircleIcon,
     XCircleIcon
@@ -117,6 +153,7 @@ export default Vue.extend({
   },
   data() {
     return {
+      rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData | undefined
@@ -139,6 +176,12 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    async rejectThenRedirect() {
+      await this.rejectTs(this.id, this.rejectionReason);
+      // TODO: remove any on next line
+      (this.$refs.rejectModal as any).closeModal();
+      this.$router.push(this.parentPath);
+    },
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
