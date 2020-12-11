@@ -1,5 +1,28 @@
 <template>
   <div id="list">
+    <modal ref="rejectModal">
+      <template v-slot:header>
+        <h1>Reject Timesheet</h1>
+      </template>
+
+      <template v-slot:body>
+        <p>Why are you rejecting?</p>
+        <input type="textarea" v-model="rejectionReason" />
+      </template>
+
+      <template v-slot:footer>
+        <div>
+          <button v-on:click="closeRejectModal()">Cancel</button>
+          <button
+            v-on:click="
+              rejectTs(rejectionId, rejectionReason).then(closeRejectModal())
+            "
+          >
+            Reject
+          </button>
+        </div>
+      </template>
+    </modal>
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
@@ -58,9 +81,9 @@
             <span class="label">approved</span>
           </template>
         </template>
-
+        <!-- The template for "pending" -->
         <template v-if="approved === false">
-          <template v-if="!item.approved">
+          <template v-if="!item.approved && !item.rejected">
             <router-link
               v-if="!item.rejected"
               v-bind:to="{ name: 'Time Sheets Pending' }"
@@ -70,13 +93,13 @@
             </router-link>
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="rejectTs(item.id)"
+              v-on:click.native="openRejectModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
           </template>
-          <template v-else>
-            <span class="label">approved</span>
+          <template v-if="item.rejected">
+            <span class="label">rejected</span>
           </template>
         </template>
 
@@ -84,7 +107,7 @@
           <template v-if="!item.locked">
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="rejectTs(item.id)"
+              v-on:click.native="openRejectModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -99,6 +122,7 @@
 </template>
 
 <script lang="ts">
+import Modal from "./Modal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
@@ -117,6 +141,7 @@ export default Vue.extend({
   mixins: [mixins],
   props: ["approved", "collection"],
   components: {
+    Modal,
     EditIcon,
     SendIcon,
     RewindIcon,
@@ -130,6 +155,8 @@ export default Vue.extend({
   },
   data() {
     return {
+      rejectionId: "",
+      rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: []
@@ -178,6 +205,17 @@ export default Vue.extend({
     );
   },
   methods: {
+    openRejectModal(id: string) {
+      this.rejectionId = id;
+      // TODO: remove any on next line
+      (this.$refs.rejectModal as any).openModal();
+    },
+    closeRejectModal() {
+      this.rejectionId = "";
+      this.rejectionReason = "";
+      // TODO: remove any on next line
+      (this.$refs.rejectModal as any).closeModal();
+    },
     hoursWorked(item: firebase.firestore.DocumentData) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;

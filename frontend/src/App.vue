@@ -333,4 +333,8 @@ button {
     transform: translate(10em);
   }
 }
+/* for the Modal component to prevent scrolling? */
+.overflow-hidden {
+  overflow: hidden;
+}
 </style>

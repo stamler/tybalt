@@ -84,7 +84,7 @@ export default Vue.extend({
           alert(`Approval failed: ${error}`);
         });
     },
-    rejectTs(timesheetId: string) {
+    rejectTs(timesheetId: string, reason: string) {
       store.commit("startTask", {
         id: `reject${timesheetId}`,
         message: "rejecting"
@@ -108,7 +108,7 @@ export default Vue.extend({
                 transaction.update(timesheet, {
                   approved: false,
                   rejected: true,
-                  rejectionReason: "no reason provided"
+                  rejectionReason: reason
                 });
               } else {
                 throw "The timesheet has not been submitted or is locked";
