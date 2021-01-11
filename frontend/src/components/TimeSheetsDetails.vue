@@ -44,6 +44,18 @@
       >
         <send-icon></send-icon>
       </router-link>
+      <!-- recall button -->
+      <router-link
+        v-if="
+          belongsToMe(item) &&
+            item.submitted === true &&
+            item.approved === false
+        "
+        v-bind:to="{ name: 'Time Sheets' }"
+        v-on:click.native="recallTs(id)"
+      >
+        <rewind-icon></rewind-icon>
+      </router-link>
       <!-- reject button -->
       <router-link
         v-if="
@@ -128,6 +140,7 @@ export default mixins.extend({
   components: {
     Modal,
     SendIcon,
+    RewindIcon,
     CheckCircleIcon,
     XCircleIcon
   },
