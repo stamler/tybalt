@@ -99,7 +99,7 @@
       />
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.timetype !== 'OR'">
       <input
         type="text"
         name="workDescription"
