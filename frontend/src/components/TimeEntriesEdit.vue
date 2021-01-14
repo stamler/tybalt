@@ -329,6 +329,9 @@ export default Vue.extend({
           .set(this.item)
           .then(() => {
             this.$router.push(this.parentPath);
+          })
+          .catch(error => {
+            alert(`Failed to edit Time Entry: ${error.message}`);
           });
       } else {
         // Creating a new item
@@ -337,6 +340,9 @@ export default Vue.extend({
           .set(this.item)
           .then(() => {
             this.$router.push(this.parentPath);
+          })
+          .catch(error => {
+            alert(`Failed to create Time Entry: ${error.message}`);
           });
       }
     }
