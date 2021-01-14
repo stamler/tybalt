@@ -88,6 +88,9 @@ export default Vue.extend({
           .set(this.item)
           .then(() => {
             this.$router.push(this.parentPath);
+          })
+          .catch(error => {
+            alert(`Save failed: ${error.message}`);
           });
       } else {
         // Creating a new item
@@ -100,6 +103,9 @@ export default Vue.extend({
           .then(() => {
             this.clearEditor();
             // notify user save is done
+          })
+          .catch(error => {
+            alert(`Save failed: ${error.message}`);
           });
       }
     },
