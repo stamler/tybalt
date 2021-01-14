@@ -53,11 +53,17 @@ export default mixins.extend({
       items: []
     };
   },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject);
+  watch: {
+    collection: {
+      immediate: true,
+      handler(collection) {
+        this.parentPath =
+          this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
+          "";
+        this.collectionObject = db.collection(collection);
+        this.$bind("items", this.collectionObject);
+      }
+    }
   }
 });
 </script>
