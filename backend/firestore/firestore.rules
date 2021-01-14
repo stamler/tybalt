@@ -107,7 +107,7 @@ service cloud.firestore {
           "managerUid", "managerName","displayName","email","customClaims", "defaultDivision"
         ]) &&
         newDoc().keys().hasAll(["displayName", "email"]) &&
-        isInCollection("managerUid","Profiles") && 
+        isInCollection("managerUid","Profiles") && // this restricts any updates that don't have a manager UID
         (isMissing("defaultDivision") || isInCollection("defaultDivision", "Divisions"))
     }
     match /Jobs/{jobId} {
