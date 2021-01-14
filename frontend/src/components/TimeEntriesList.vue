@@ -26,8 +26,8 @@
           <div class="secondline">
             {{ item | hoursString }}
           </div>
-          <div v-if="item.notes" class="thirdline">
-            {{ item.notes }}
+          <div v-if="item.workDescription" class="thirdline">
+            {{ item.workDescription }}
           </div>
         </div>
         <div class="rowactionsbox">

@@ -87,7 +87,7 @@
           <th colspan="3">hours</th>
           <th rowspan="2">work record</th>
           <th rowspan="2">job</th>
-          <th rowspan="2">notes</th>
+          <th rowspan="2">work description</th>
         </tr>
         <tr>
           <th>job</th>
@@ -107,7 +107,7 @@
           <td>{{ entry.mealsHours }}</td>
           <td>{{ entry.workrecord }}</td>
           <td>{{ entry.client }}:{{ entry.jobDescription }}</td>
-          <td>{{ entry.notes }}</td>
+          <td>{{ entry.workDescription }}</td>
         </tr>
       </tbody>
       <tfoot v-if="item.workHoursTally !== undefined">

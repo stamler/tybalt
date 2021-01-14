@@ -43,7 +43,7 @@ interface TimeEntry {
   // properties which are never required, but may require eachother
   division?: string;
   divisionName?: string;
-  notes?: string;
+  workDescription?: string;
   hours?: number;
   mealsHours?: number;
   client?: string;

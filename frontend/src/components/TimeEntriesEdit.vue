@@ -102,9 +102,9 @@
     <span class="field">
       <input
         type="text"
-        name="notes"
-        placeholder="Notes"
-        v-model.trim="item.notes"
+        name="workDescription"
+        placeholder="Work Description"
+        v-model.trim="item.workDescription"
       />
     </span>
 
