@@ -31,9 +31,19 @@
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
-          <div class="headline">{{ hoursWorked(item) }}</div>
+          <div class="headline">
+            <template v-if="approved === undefined">
+              {{ hoursWorked(item) }}
+            </template>
+            <template v-else>
+              {{ item.displayName }}
+            </template>
+          </div>
           <div class="byline">
-            {{ hoursOff(item) }}
+            <template v-if="approved !== undefined">
+              {{ hoursWorked(item) }}
+            </template>
+            / {{ hoursOff(item) }} /
             <span v-if="item.offRotationDaysTally > 0">
               {{ item.offRotationDaysTally }} day(s) off rotation
             </span>
