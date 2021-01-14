@@ -1,9 +1,10 @@
 <template>
   <div id="list">
     <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
-      <span class="listheader"
-        >Week ending {{ tallies[week].weekEnding | shortDate }}</span
-      >
+      <span class="listheader">
+        {{ tallies[week].weekEnding | shortDateWeekDayStart }} &mdash;
+        {{ tallies[week].weekEnding | shortDateWeekDay }}
+      </span>
       <div
         class="listentry"
         v-for="item in itemsByWeekEnding(week)"
@@ -92,7 +93,7 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
@@ -109,6 +110,13 @@ export default mixins.extend({
   filters: {
     shortDate(date: Date) {
       return format(date, "MMM dd");
+    },
+    shortDateWeekDay(date: Date) {
+      return format(date, "EEE MMM dd");
+    },
+    shortDateWeekDayStart(date: Date) {
+      const startDate = subDays(date, 6);
+      return format(startDate, "EEE MMM dd");
     },
     hoursString(item: firebase.firestore.DocumentData) {
       const hoursArray = [];
