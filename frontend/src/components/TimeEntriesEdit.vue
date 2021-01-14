@@ -22,6 +22,7 @@
 
     <span class="field" v-if="item.timetype === 'R'">
       <select name="division" v-model="item.division">
+        <option disabled selected value=""> -- choose division -- </option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
           {{ d.name }}
         </option>
@@ -214,11 +215,9 @@ export default Vue.extend({
         const defaultDivision = profile.get("defaultDivision");
         this.item = {
           date: new Date(),
-          timetype: "R"
+          timetype: "R",
+          division: defaultDivision ?? ""
         };
-        if (defaultDivision !== undefined) {
-          this.item.division = defaultDivision;
-        }
       }
     },
     setJob(id: string) {
@@ -264,7 +263,7 @@ export default Vue.extend({
         this.jobCandidates = [];
         delete this.item.job;
       }
-    }, 400),
+    }, 500),
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
