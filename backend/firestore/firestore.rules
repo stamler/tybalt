@@ -91,7 +91,7 @@ service cloud.firestore {
         );
     }
     match /Computers/{computer} {
-      allow read: if isSignedIn();
+      allow read: if hasClaim("admin");
     }
     match /Divisions/{division} {
       allow read: if isSignedIn();
