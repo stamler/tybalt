@@ -101,7 +101,7 @@ service cloud.firestore {
       allow read: if hasClaim("admin");
     }
     match /Profiles/{profile} {
-      allow read: if hasClaim("admin");
+      allow read: if hasClaim("admin") || request.auth.uid == resource.id; // read your own profile
       allow update: if hasClaim("admin") && 
         newDoc().keys().hasOnly([
           "managerUid", "managerName","displayName","email","customClaims", "defaultDivision"
