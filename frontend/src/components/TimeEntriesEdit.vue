@@ -174,7 +174,16 @@ export default Vue.extend({
   watch: {
     id: function(id) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
+    "item.timetype": function(newVal, oldVal) {
+      if (
+        newVal === "R" &&
+        oldVal !== "R" &&
+        this.item.division === undefined
+      ) {
+        this.item.division = "";
+      }
+    }
   },
   created() {
     this.parentPath =
@@ -292,6 +301,10 @@ export default Vue.extend({
         } else {
           throw "Division Missing";
         }
+
+        // TODO: catch the above throw and notify the user.
+        // TODO: build more validation here to notify the user of errors
+        // before hitting the backend.
 
         // Clear the Job if it's empty or too short
         // The back end will actually validate that it exists
