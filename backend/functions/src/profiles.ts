@@ -68,6 +68,7 @@ export async function updateAuth(change: functions.ChangeJson, context: function
     const before = change.before.data();
     const after = change.after.data();
     const promises = [];
+    // TODO: handle before.customClaims or after.customClaims when undefined
     if (!_.isEqual(before.customClaims, after.customClaims)) {
       // customClaims were changed, update them
       // Validate the customClaims format with the type guard
