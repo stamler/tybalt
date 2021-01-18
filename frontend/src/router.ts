@@ -9,6 +9,7 @@ import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
+import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
@@ -131,6 +132,14 @@ const router = new Router({
               name: "Time Tracking List",
               props: { collection: "TimeTracking" },
               component: TimeTrackingList
+            },
+            {
+              path: ":id/details",
+              props: route => {
+                return { id: route.params.id, collection: "TimeTracking" };
+              },
+              name: "Time Tracking Details",
+              component: TimeTrackingDetails
             }
           ]
         }

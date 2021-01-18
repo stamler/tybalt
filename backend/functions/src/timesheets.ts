@@ -574,21 +574,17 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === false
     ) {
       // add the newly approved TimeSheet to pending
-      return timeTrackingDocRef.set(
+      return timeTrackingDocRef.update(
         {
-          pending: admin.firestore.FieldValue.arrayUnion(change.after.ref.path),
-        },
-        { merge: true }
+          [`pending.${change.after.ref.id}`]: afterData.displayName,
+        }
       );
     } else {
-      // add the TimeSheet from pending
-      return timeTrackingDocRef.set(
+      // remove the TimeSheet from pending
+      return timeTrackingDocRef.update(
         {
-          pending: admin.firestore.FieldValue.arrayRemove(
-            change.after.ref.path
-          ),
+          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         },
-        { merge: true }
       );
     }
   });
@@ -699,7 +695,7 @@ export async function lockTimesheets(data: unknown, context: functions.https.Cal
             return transaction
               .update(timeSheet.ref, { locked: true })
               .update(timeTrackingDocRef, {
-                timeSheets: admin.firestore.FieldValue.arrayUnion(tsSnap.id),
+                [`timeSheets.${tsSnap.id}`]: snapData.displayName,
               });
           } else {
             throw new Error(

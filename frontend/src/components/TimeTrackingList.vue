@@ -12,10 +12,10 @@
           <div class="byline"></div>
         </div>
         <div class="firstline" v-if="hasPending(item)">
-          {{ item.pending.length }} time sheet(s) pending
+          {{ Object.keys(item.pending).length }} time sheet(s) pending
         </div>
         <div class="secondline" v-if="hasLocked(item)">
-          {{ item.timeSheets.length }} locked time sheet(s)
+          {{ Object.keys(item.timeSheets).length }} locked time sheet(s)
         </div>
         <div class="thirdline"></div>
       </div>
@@ -100,13 +100,13 @@ export default Vue.extend({
     hasPending(item: firebase.firestore.DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "pending") &&
-        item.pending.length > 0
+        Object.keys(item.pending).length > 0
       );
     },
     hasLocked(item: firebase.firestore.DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
-        item.timeSheets.length > 0
+        Object.keys(item.timeSheets).length > 0
       );
     },
     lockTimesheets(weekEnding: firebase.firestore.Timestamp) {
