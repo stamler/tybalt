@@ -134,8 +134,8 @@ service cloud.firestore {
       allow read: if (
         hasClaim("time") && uidMatches() || 
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
-        hasClaim("tadm") ||
-        hasClaim("admin")
+        hasClaim("tadm") && resource.data.approved == true ||
+        hasClaim("admin") && resource.data.submitted == true
       );
       // Allow submission by directly editing the 'submitted' field
       // Prevent settings 'submitted' to false if already 'approved'
