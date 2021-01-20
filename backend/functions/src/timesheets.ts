@@ -576,7 +576,7 @@ export const updateTimeTracking = functions.firestore
       // add the newly approved TimeSheet to pending
       return timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: afterData.displayName,
+          [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
         }
       );
     } else {
@@ -695,7 +695,7 @@ export async function lockTimesheets(data: unknown, context: functions.https.Cal
             return transaction
               .update(timeSheet.ref, { locked: true })
               .update(timeTrackingDocRef, {
-                [`timeSheets.${tsSnap.id}`]: snapData.displayName,
+                [`timeSheets.${tsSnap.id}`]: { displayName: snapData.displayName, uid: snapData.uid },
               });
           } else {
             throw new Error(

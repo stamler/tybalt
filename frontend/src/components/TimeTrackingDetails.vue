@@ -4,22 +4,38 @@
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
     <div>
-      <h5>Approved</h5>
-      <router-link
-        v-for="(displayName, tsId) in item.pending"
-        v-bind:key="tsId"
-        v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
+      <div
+        v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
       >
-        {{ displayName }}
-      </router-link>
-      <h5>Locked</h5>
-      <router-link
-        v-for="(displayName, tsId) in item.timeSheets"
-        v-bind:key="tsId"
-        v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
+        <h5>Approved</h5>
+        <router-link
+          v-for="(obj, tsId) in item.pending"
+          v-bind:key="tsId"
+          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
+        >
+          {{ obj.displayName }}<br />
+        </router-link>
+        <br />
+      </div>
+      <div
+        v-if="
+          this.item.timeSheets && Object.keys(this.item.timeSheets).length > 0
+        "
       >
-        {{ displayName }}
-      </router-link>
+        <h5>Locked</h5>
+        <router-link
+          v-for="(obj, tsId) in item.timeSheets"
+          v-bind:key="tsId"
+          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
+        >
+          {{ obj.displayName }}<br />
+        </router-link>
+        <br />
+      </div>
+      <div v-if="missing.length > 0">
+        <h5>Missing</h5>
+        <p v-for="m in missing" v-bind:key="m.id">{{ m.displayName }}<br /></p>
+      </div>
     </div>
   </div>
 </template>
@@ -30,6 +46,11 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 const db = firebase.firestore();
+
+interface TimeSheetTrackingPayload {
+  displayName: string;
+  uid: string;
+}
 
 export default mixins.extend({
   props: ["id", "collection"],
@@ -44,6 +65,29 @@ export default mixins.extend({
       }
       return total;
     },
+    missing(): firebase.firestore.DocumentData[] {
+      if (this && this.item) {
+        let pendingUserKeys = [] as string[];
+        if (this.item.pending && Object.keys(this.item.pending).length > 0) {
+          pendingUserKeys = (Object.values(
+            this.item.pending
+          ) as TimeSheetTrackingPayload[]).map(p => p.uid);
+        }
+        let lockedUserKeys = [] as string[];
+        if (
+          this.item.timeSheets &&
+          Object.keys(this.item.timeSheets).length > 0
+        ) {
+          lockedUserKeys = (Object.values(
+            this.item.timeSheets
+          ) as TimeSheetTrackingPayload[]).map(p => p.uid);
+        }
+        return this.profiles
+          .filter(p => !pendingUserKeys.includes(p.id))
+          .filter(l => !lockedUserKeys.includes(l.id));
+      }
+      return [];
+    },
     weekStart(): Date {
       if (this.item?.weekEnding !== undefined) {
         return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
@@ -57,7 +101,8 @@ export default mixins.extend({
       rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined
+      item: {} as firebase.firestore.DocumentData | undefined,
+      profiles: [] as firebase.firestore.DocumentData[]
     };
   },
   filters: {
@@ -75,6 +120,9 @@ export default mixins.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
+    this.$bind("profiles", db.collection("Profiles")).catch(error => {
+      alert(`Can't load Profiles: ${error.message}`);
+    });
   },
   methods: {
     setItem(id: string) {
