@@ -69,7 +69,10 @@
       <input type="number" name="jobHours" v-model.number="item.jobHours" />
     </span>
 
-    <span class="field" v-if="item.timetype !== 'OR'">
+    <span
+      class="field"
+      v-if="item.timetype !== 'OR' && item.timetype !== 'OTO'"
+    >
       <label for="hours">Non-Job Hours</label>
       <input type="number" name="hours" v-model.number="item.hours" />
     </span>
@@ -99,12 +102,23 @@
       />
     </span>
 
-    <span class="field" v-if="item.timetype !== 'OR'">
+    <span
+      class="field"
+      v-if="item.timetype !== 'OR' && item.timetype !== 'OTO'"
+    >
       <input
         type="text"
         name="workDescription"
         placeholder="Work Description"
         v-model.trim="item.workDescription"
+      />
+    </span>
+    <span class="field" v-if="item.timetype === 'OTO'">
+      $<input
+        type="number"
+        name="payoutRequestAmount"
+        placeholder="Amount"
+        v-model.number="item.payoutRequestAmount"
       />
     </span>
 

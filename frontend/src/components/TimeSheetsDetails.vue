@@ -85,6 +85,7 @@
           <th rowspan="2">time type</th>
           <th rowspan="2">date</th>
           <th colspan="3">hours</th>
+          <th rowspan="2">request $</th>
           <th rowspan="2">work record</th>
           <th rowspan="2">job</th>
           <th rowspan="2">work description</th>
@@ -105,6 +106,7 @@
           <td>{{ entry.jobHours }}</td>
           <td>{{ entry.hours }}</td>
           <td>{{ entry.mealsHours }}</td>
+          <td>{{ entry.payoutRequestAmount }}</td>
           <td>{{ entry.workrecord }}</td>
           <td>{{ entry.client }}:{{ entry.jobDescription }}</td>
           <td>{{ entry.workDescription }}</td>
@@ -116,6 +118,7 @@
           <td>{{ item.workHoursTally.jobHours }}</td>
           <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
           <td>{{ item.mealsHoursTally }}</td>
+          <td>{{ item.payoutRequest }}</td>
         </tr>
       </tfoot>
     </table>

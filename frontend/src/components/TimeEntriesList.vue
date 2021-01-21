@@ -18,7 +18,9 @@
                 item.timetype === "R" ? item.divisionName : item.timetypeName
               }}
             </div>
-            <div class="byline"></div>
+            <div class="byline" v-if="item.timetype === 'OTO'">
+              ${{ item.payoutRequestAmount }}
+            </div>
           </div>
           <div v-if="item.timetype === 'R' && item.job" class="firstline">
             {{ item.job }} {{ item.client }}: {{ item.jobDescription }}
@@ -75,6 +77,16 @@
               class="attention"
             >
               More than one banked time entry exists.
+            </span>
+            <span v-if="tallies[week].payoutRequests.length === 1">
+              ${{ tallies[week].payoutRequests[0].payoutRequestAmount }} payout
+              requested
+            </span>
+            <span
+              v-else-if="tallies[week].payoutRequests.length > 1"
+              class="attention"
+            >
+              More than one payout request entry exists.
             </span>
           </div>
         </div>
@@ -172,6 +184,7 @@ export default mixins.extend({
       interface WeekTally {
         weekEnding: Date;
         bankEntries: firebase.firestore.DocumentData[];
+        payoutRequests: firebase.firestore.DocumentData[];
         offRotationDates: number[];
         nonWorkHoursTally: { [timetype: string]: number; total: number };
         mealsHoursTally: number;
@@ -192,6 +205,7 @@ export default mixins.extend({
             tallyObject[key] = {
               weekEnding: new Date(key),
               bankEntries: [],
+              payoutRequests: [],
               offRotationDates: [],
               nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
               mealsHoursTally: 0,
@@ -213,6 +227,10 @@ export default mixins.extend({
             } else {
               tallyObject[key].offRotationDates.push(orDate.getTime());
             }
+          } else if (item.timetype === "OTO") {
+            // This is an request payout entry, store it in the payoutRequests
+            // array for processing after completing the tallies.
+            tallyObject[key].payoutRequests.push(item);
           } else if (item.timetype === "RB") {
             // This is an overtime bank entry, store it in the bankEntries
             // array for processing after completing the tallies.

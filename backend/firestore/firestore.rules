@@ -32,7 +32,7 @@ service cloud.firestore {
       // TODO: Boolean Simplification
       return
         // allowed fields
-        newDoc().keys().hasOnly([ "date", "timetype", "division", "job",
+        newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
           "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
           "timetypeName", "divisionName", "jobDescription", "client", "weekEnding" ]) &&
 
@@ -64,12 +64,19 @@ service cloud.firestore {
             newDoc().timetype != "R" )
         ) &&
 
-        // at least one hours type is provided OR the timetype is "OR"
+        // at least one hours type is provided OR the timetype is "OR" or "OTO"
         (
-          (isPositiveNumberUnderEighteen("jobHours") && !(newDoc().timetype == "OR")) ||
-          (isPositiveNumberUnderEighteen("hours") && !(newDoc().timetype == "OR")) ||
-          (isPositiveNumberUnderEighteen("mealsHours") && !(newDoc().timetype == "OR")) ||
-          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"]))
+          ( 
+            newDoc().timetype != "OR" && 
+            newDoc().timetype != "OTO" && 
+            (
+              (isPositiveNumberUnderEighteen("jobHours") && !(newDoc().timetype == "OR")) ||
+              (isPositiveNumberUnderEighteen("hours") && !(newDoc().timetype == "OR")) ||
+              (isPositiveNumberUnderEighteen("mealsHours") && !(newDoc().timetype == "OR")) 
+            ) 
+          ) ||
+          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
+          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number && newDoc().payoutRequestAmount > 0)
         ) &&
 
         // if timetype is "RB", only hours is provided and is a positive number

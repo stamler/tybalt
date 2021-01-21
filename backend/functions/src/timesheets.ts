@@ -51,6 +51,7 @@ interface TimeEntry {
   jobDescription?: string;
   workrecord?: string;
   jobHours?: number;
+  payoutRequestAmount?: number;
 }
 
 // Dates are not supported in Firebase Functions yet so
@@ -152,6 +153,7 @@ export async function bundleTimesheet(
     // Put the existing timeEntries into an array then delete from Collection
     const entries: TimeEntry[] = [];
     const bankEntries: TimeEntry[] = [];
+    const payoutRequests: TimeEntry[] = [];
     const offRotationDates: number[] = [];
     const nonWorkHoursTally: { [timetype: string]: number } = {}; // value is total
     let mealsHoursTally = 0;
@@ -179,6 +181,10 @@ export async function bundleTimesheet(
           offRotationDates.push(orDate.getTime());
         }
         console.log(offRotationDates.toString());
+      } else if (item.timetype === "OTO") {
+        // This is an overtime payout request entry, store it in payoutRequests
+        // array for processing after completing the tallies.
+        payoutRequests.push(item);
       } else if (item.timetype === "RB") {
         // This is an overtime bank entry, store it in the bankEntries
         // array for processing after completing the tallies.
@@ -249,6 +255,8 @@ export async function bundleTimesheet(
 
     // TimeEntries are done being enumerated, now work on summaries
     // and validation of the TimeSheet as a whole
+
+    // validate and tally bankedHours
     let bankedHours = 0;
     if (bankEntries.length > 1) {
       throw new functions.https.HttpsError(
@@ -267,6 +275,19 @@ export async function bundleTimesheet(
         );
       }
     }
+
+    // validate and tally payoutRequest
+    let payoutRequest = 0;
+    if (payoutRequests.length > 1) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Only one payout request entry can exist on a timesheet."
+      );
+    } 
+    if (payoutRequests.length === 1 && payoutRequests[0].payoutRequestAmount) {
+      payoutRequest = payoutRequests[0].payoutRequestAmount;
+    }
+
     if (offRotationDates.length > 0) {
       // TODO: check sum of two previous timesheets to ensure that the
       // total isn't greater than 14 days in a two week period
@@ -325,6 +346,7 @@ export async function bundleTimesheet(
             divisionsTally,
             jobsTally,
             bankedHours,
+            payoutRequest,
           });
           return batch.commit();
         } else {
