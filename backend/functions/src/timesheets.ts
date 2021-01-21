@@ -547,15 +547,18 @@ export const updateTimeTracking = functions.firestore
     const beforeData = change.before.data();
     const afterData = change.after.data();
     let beforeApproved: boolean;
+    let beforeLocked: boolean;
     let weekEnding: Date;
     if (beforeData) {
       // the TimeSheet was updated
       beforeApproved = beforeData.approved
+      beforeLocked = beforeData.locked
       weekEnding = beforeData.weekEnding.toDate();
     }
     else if (afterData) {
       // the TimeSheet was just created
       beforeApproved = false;
+      beforeLocked = false;
       weekEnding = afterData.weekEnding.toDate();
     }
     else {
@@ -599,6 +602,21 @@ export const updateTimeTracking = functions.firestore
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+        }
+      );
+    } else if (
+      afterData &&
+      afterData.locked !== beforeLocked &&
+      afterData.locked === false &&
+      afterData.approved === true
+    ) {
+      // remove the *manually* unlocked Time Sheet from timeSheets 
+      // and add it to pending
+      console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked. The export JSON will not be updated again until lockTimesheets() is called`);
+      return timeTrackingDocRef.update(
+        {
+          [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+          [`timeSheets.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else {
