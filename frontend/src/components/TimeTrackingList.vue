@@ -51,7 +51,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import store from "../store";
@@ -72,7 +72,7 @@ export default Vue.extend({
   },
   filters: {
     exportDate(date: Date) {
-      return format(date, "EEE MMM dd");
+      return format(date, "yyyy MMM dd");
     }
   },
   data() {
@@ -91,6 +91,13 @@ export default Vue.extend({
     });
   },
   methods: {
+    exportDate(date: Date) {
+      return format(date, "yyyy MMM dd");
+    },
+    exportDateWeekStart(date: Date) {
+      const startDate = subDays(date, 6);
+      return format(startDate, "yyyy MMM dd");
+    },
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
@@ -135,6 +142,8 @@ export default Vue.extend({
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
       const items = await response.json();
+      // since all entries have the same week ending, pull from the first entry
+      const weekEnding = new Date(items[0].weekEnding);
       const fields = [
         "weekEnding",
         {
@@ -186,11 +195,18 @@ export default Vue.extend({
       }
       const csv = parse(items, opts);
       const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(blob, "payroll.csv");
+      this.downloadBlob(
+        blob,
+        `payroll_${this.exportDateWeekStart(weekEnding)} -
+        ${this.exportDate(weekEnding)}.csv`
+      );
     },
     async generateInvoicingCSV(url: string) {
       const response = await fetch(url);
       const items = await response.json();
+      // since all entries have the same week ending, pull from the first entry
+      const weekEnding = new Date(items[0].weekEnding);
+
       const output = [];
 
       for (const item of items) {
@@ -226,7 +242,11 @@ export default Vue.extend({
       }
       const csv = parse(output);
       const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(blob, "invoicing.csv");
+      this.downloadBlob(
+        blob,
+        `invoicing_${this.exportDateWeekStart(weekEnding)} -
+        ${this.exportDate(weekEnding)}.csv`
+      );
     },
     // Force the download of a blob to a file by creating an
     // anchor and programmatically clicking it.
