@@ -563,6 +563,10 @@ export const writeWeekEnding = functions.firestore
 /*
   If a timesheet is approved, make sure that it is included in the pending
   property of the TimeTracking document for the corresponding weekEnding.
+
+  If a timesheet is manually unlocked, make sure that it is removed from the
+  timeSheets property and added back to the pending property of the TimeTracking
+  document for the corresponding weekEnding.
  */
 export const updateTimeTracking = functions.firestore
   .document("TimeSheets/{timesheetId}")
