@@ -22,7 +22,7 @@ accounting for payroll and to admin for invoicing
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format } from "date-fns";
+import { format, subWeeks } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -288,10 +288,34 @@ export async function bundleTimesheet(
       payoutRequest = payoutRequests[0].payoutRequestAmount;
     }
 
+    /*
+    // Prevent users from entering more than 14 consecutive off-rotation days
+
     if (offRotationDates.length > 0) {
-      // TODO: check sum of two previous timesheets to ensure that the
-      // total isn't greater than 14 days in a two week period
+      // Check off roation tally of previous two weeks and reject if
+      // this timesheet pushes cumulative total over 14
+      const previousTimeSheets = await db
+        .collection("TimeSheets")
+        .where("uid", "==", auth.uid)
+        .where("weekEnding", ">=", subWeeks(week, 2))
+        .where("weekEnding", "<", week)
+        .get();
+      if (!previousTimeSheets.empty) {
+        // There are 1 or more timesheets in the previous 2 weeks.
+        // Check them for off rotation totals
+        let cumulativeOffRotationTally = 0;
+        previousTimeSheets.forEach(timeSheet => {
+          cumulativeOffRotationTally += timeSheet.get("offRotationDaysTally");
+        });
+        if (cumulativeOffRotationTally + offRotationDates.length > 14) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            "There can not be more than consecutive 14 off-rotation days"
+          );
+        }
+      }
     }
+    */
 
     // get the entire job document for each key in the jobsTally
     // and store it in the tally so the info is available for reports
