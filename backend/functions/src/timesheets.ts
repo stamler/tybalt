@@ -780,10 +780,7 @@ export async function lockTimesheets(data: unknown, context: functions.https.Cal
       transactions.push(trans);
     });
     return Promise.all(transactions).then(() => {
-      return exportJson(
-        { id: timeTrackingDocRef.id },
-        context
-      );
+      return exportJson({ id: timeTrackingDocRef.id });
     });
   } else {
     throw new functions.https.HttpsError(
@@ -797,9 +794,9 @@ export async function lockTimesheets(data: unknown, context: functions.https.Cal
 };
 
 // Given a TimeTracking id, create or update a file on Google storage
-// with the locked timeSheets
-export async function exportJson(data: unknown, context: functions.https.CallableContext) {
-  if (hasPermission(context)) {
+// with the locked timeSheets and amendments. Must be called by another
+// authenticated function.
+export async function exportJson(data: unknown) {
     // Get locked TimeSheets
     const db = admin.firestore();
 
@@ -841,8 +838,26 @@ export async function exportJson(data: unknown, context: functions.https.Callabl
       return docData;
     });
 
+    // Get any outstanding amendments to include in the export.
+    const amendmentsSnapshot = await db
+    .collection("TimeAmendments")
+    .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
+    .get();
+  
+    // prep internal properties for export
+    const amendments = amendmentsSnapshot.docs.map((doc) => {
+      const docData = doc.data();
+      docData.created = docData.created.toDate();
+      docData.committed = docData.committed.toDate();
+      docData.committedWeekEnding = docData.committedWeekEnding.toDate();
+      docData.weekEnding = docData.weekEnding.toDate();
+      docData.date = docData.date.toDate();
+      docData.amendment = true;
+      return docData;
+    });
+  
     // generate JSON output
-    const output = JSON.stringify(timeSheets);
+    const output = JSON.stringify(timeSheets.concat(amendments));
 
     // make the filename based on milliseconds since UTC epoch
     const filename = `${trackingSnapshot
@@ -890,13 +905,36 @@ export async function exportJson(data: unknown, context: functions.https.Callabl
           .catch((err) => reject(err));
       });
     });
-  } else {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "call to exportJson() failed"
-    );
-  }
 };
+
+export async function exportOnAmendmentCommit(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+) {
+    const db = admin.firestore();
+    const committedWeekEnding = change.after.data().committedWeekEnding;
+    if (committedWeekEnding !== undefined) {
+      // Get the TimeTracking doc or throw
+      const querySnap = await db
+        .collection("TimeTracking")
+        .where("weekEnding", "==", committedWeekEnding)
+        .get();
+
+      let timeTrackingDocRef;
+      if (querySnap.size > 1) {
+        throw new Error(
+          `There is more than one document in TimeTracking for weekEnding ${committedWeekEnding}`
+        );
+      } else if (querySnap.size === 1) {
+        timeTrackingDocRef = querySnap.docs[0].ref;
+      } else {
+        // create new TimeTracking document
+        timeTrackingDocRef = db.collection("TimeTracking").doc();
+        await timeTrackingDocRef.set({ weekEnding: committedWeekEnding });
+      }
+      return exportJson({ id: timeTrackingDocRef.id });
+    }
+  };
 
 // Confirm the context has "tadm" claim and throw userful errors as necessary
 function hasPermission(context: functions.https.CallableContext) {

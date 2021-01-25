@@ -8,7 +8,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding } from "./timesheets";
+import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile } from "./profiles";
 
@@ -50,6 +50,11 @@ exports.timeAmendmentsWeekEnding = functions.firestore
 exports.timeAmendmentsCommittedWeekEnding = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "committed", "committedWeekEnding") });
+
+// exportJson when a timeAmendment is committed
+exports.exportOnAmendmentCommit = functions.firestore
+  .document("TimeAmendments/{amendmentId}")
+  .onUpdate(exportOnAmendmentCommit);
 
 // Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore
