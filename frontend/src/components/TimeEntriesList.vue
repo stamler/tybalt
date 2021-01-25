@@ -23,6 +23,22 @@
               {{
                 item.timetype === "R" ? item.divisionName : item.timetypeName
               }}
+              <template
+                v-if="
+                  collection === 'TimeAmendments' &&
+                  item.committed &&
+                  item.committedWeekEnding
+                "
+              >
+                <span class="label">
+                  committed
+                  {{ item.committed.toDate() | shortDate }}
+                </span>
+                <span class="label">
+                  posted
+                  {{ item.committedWeekEnding.toDate() | shortDate }}
+                </span>
+              </template>
             </div>
             <div class="byline" v-if="item.timetype === 'OTO'">
               ${{ item.payoutRequestAmount }}
