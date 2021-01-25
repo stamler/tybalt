@@ -403,7 +403,7 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch(error => {
-            console.log(this.item);
+            //console.log(this.item);
             alert(`Failed to edit Time Entry: ${error.message}`);
           });
       } else {
@@ -415,7 +415,7 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch(error => {
-            console.log(this.item);
+            //console.log(this.item);
             alert(`Failed to create Time Entry: ${error.message}`);
           });
       }
