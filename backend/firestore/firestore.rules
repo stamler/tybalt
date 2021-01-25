@@ -28,6 +28,74 @@ service cloud.firestore {
     function hasValidWorkrecord() {
       return "workrecord" in newDoc() && newDoc().workrecord.matches('[FKQ][0-9]{2}-[0-9]{3,}(-[0-9]+)?');
     }
+    function validAmendmentEntry() {
+      return
+        // allowed fields
+        newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
+          "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
+          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding",
+          "creator", "creatorName", "displayName", "created", "committed" ]) &&
+        
+        // timetype exists in db
+        isInCollection("timetype","TimeTypes") &&
+
+        // required fields
+        newDoc().keys().hasAll(["date", "timetype", "timetypeName", "uid",
+        "creator", "creatorName", "displayName", "created" ]) &&
+
+        // when job provided, job & division exist in db,
+        // jobDescription and client are present, timetype is 'R'
+        (
+          ( isInCollection("job","Jobs") && 
+            isInCollection("division","Divisions") &&
+            newDoc().keys().hasAll(["jobDescription", "client"]) &&
+            newDoc().timetype == "R" ) || 
+          isMissing("job")
+        ) &&
+
+        // when provided, division exists in db, Time Type is 'R'
+        // when division is missing, Time Type is not 'R'
+        (
+          ( isInCollection("division","Divisions") && 
+            newDoc().timetype == "R" ) ||
+          (isMissing("division") && 
+            newDoc().timetype != "R" )
+        ) &&
+
+        // at least one hours type is provided OR the timetype is "OR" or "OTO"
+        (
+          ( 
+            newDoc().timetype != "OR" && 
+            newDoc().timetype != "OTO" && 
+            !(newDoc().keys().hasAll(["payoutRequestAmount"])) && // payoutRequestAmount is not defined
+            (
+              (newDoc().jobHours is number && !(newDoc().timetype == "OR")) ||
+              (newDoc().hours is number && !(newDoc().timetype == "OR")) ||
+              (newDoc().mealsHours is number && !(newDoc().timetype == "OR")) 
+            ) 
+          ) ||
+          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
+          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "displayName", "weekEnding", "payoutRequestAmount", "committed", "created", "creator", "creatorName"]) && newDoc().payoutRequestAmount is number)
+        ) &&
+
+        // if timetype is "RB", only hours is provided and is a number
+        (
+          (newDoc().hours is number && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
+          newDoc().timetype != "RB"
+        ) &&
+
+        // when provided, jobHours require an existing job
+        (
+          (newDoc().jobHours is number && isInCollection("job", "Jobs") ) ||
+          isMissing("jobHours") 
+        ) &&
+
+        // when provided workrecord requires an existing job
+        (
+          ( hasValidWorkrecord() && isInCollection("job", "Jobs") ) ||
+          isMissing("workrecord")
+        );
+    }
     function validTimeEntry() {
       // TODO: Boolean Simplification
       return
@@ -69,6 +137,7 @@ service cloud.firestore {
           ( 
             newDoc().timetype != "OR" && 
             newDoc().timetype != "OTO" && 
+            !(newDoc().keys().hasAll(["payoutRequestAmount"])) && // payoutRequestAmount is not defined
             (
               (isPositiveNumberUnderEighteen("jobHours") && !(newDoc().timetype == "OR")) ||
               (isPositiveNumberUnderEighteen("hours") && !(newDoc().timetype == "OR")) ||
@@ -139,6 +208,12 @@ service cloud.firestore {
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");
+    }
+    match /TimeAmendments/{entry} {
+      allow read: if hasClaim("tadm");
+      allow delete: if hasClaim("tadm") && !resource.data.keys().hasAll(["committed"]);
+      allow update: if hasClaim("tadm") && validAmendmentEntry() && !resource.data.keys().hasAll(["committed"]);
+      allow create: if hasClaim("tadm") && validAmendmentEntry();
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();

@@ -13,7 +13,13 @@
         <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline">
+            <div class="headline" v-if="collection === 'TimeEntries'">
+              {{
+                item.timetype === "R" ? item.divisionName : item.timetypeName
+              }}
+            </div>
+            <div class="headline" v-if="collection === 'TimeAmendments'">
+              {{ item.displayName }} -
               {{
                 item.timetype === "R" ? item.divisionName : item.timetypeName
               }}
@@ -33,15 +39,31 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+          <router-link
+            v-if="
+              collection === 'TimeAmendments' && item.committed === undefined
+            "
+            to="#"
+            v-on:click.native="commit(item, collectionObject)"
+          >
+            <check-circle-icon></check-circle-icon>
+          </router-link>
+          <router-link
+            v-if="item.committed === undefined"
+            :to="[parentPath, item.id, 'edit'].join('/')"
+          >
             <edit-icon></edit-icon>
           </router-link>
-          <router-link to="#" v-on:click.native="del(item, collectionObject)">
+          <router-link
+            v-if="item.committed === undefined"
+            to="#"
+            v-on:click.native="del(item, collectionObject)"
+          >
             <x-circle-icon></x-circle-icon>
           </router-link>
         </div>
       </div>
-      <div class="listsummary">
+      <div class="listsummary" v-if="collection === 'TimeEntries'">
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
@@ -106,7 +128,12 @@
 <script lang="ts">
 import mixins from "./mixins";
 import { format, subDays } from "date-fns";
-import { EditIcon, XCircleIcon, PackageIcon } from "vue-feather-icons";
+import {
+  EditIcon,
+  XCircleIcon,
+  PackageIcon,
+  CheckCircleIcon,
+} from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -117,7 +144,8 @@ export default mixins.extend({
   components: {
     EditIcon,
     XCircleIcon,
-    PackageIcon
+    PackageIcon,
+    CheckCircleIcon,
   },
   filters: {
     shortDate(date: Date) {
@@ -145,22 +173,55 @@ export default mixins.extend({
       items: [] as firebase.firestore.DocumentData[]
     };
   },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    const uid = store.state.user?.uid;
-    if (uid === undefined) {
-      throw "There is no valid uid";
+  watch: {
+    collection: {
+      immediate: true,
+      handler(collection) {
+        this.parentPath =
+          this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
+          "";
+        this.collectionObject = db.collection(collection);
+        this.$bind("items", this.collectionObject);
+        const uid = store.state.user?.uid;
+        if (uid === undefined) {
+          throw "There is no valid uid";
+        }
+        if (this.collection === "TimeEntries") {
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("uid", "==", uid)
+              .orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Time Entries: ${error.message}`);
+          });
+        }
+        if (this.collection === "TimeAmendments") {
+          this.$bind(
+            "items",
+            this.collectionObject.orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Time Amendments: ${error.message}`);
+          });
+        }
+      }
     }
-    this.$bind(
-      "items",
-      this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
-    ).catch(error => {
-      alert(`Can't load Time Entries: ${error.message}`);
-    });
   },
   methods: {
+    commit(
+      item: firebase.firestore.DocumentData,
+      collection: firebase.firestore.CollectionReference
+    ) {
+      if (collection === null) {
+        throw "There is no valid collection object";
+      }
+      collection
+        .doc(item.id)
+        .update({ committed: firebase.firestore.FieldValue.serverTimestamp() })
+        .catch(err => {
+          alert(`Error committing item: ${err}`);
+        });
+    },
     totalHours(week: number): number {
       return (
         this.tallies[week].nonWorkHoursTally.total +

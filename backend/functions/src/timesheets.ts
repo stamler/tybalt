@@ -22,7 +22,7 @@ accounting for payroll and to admin for invoicing
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format, subWeeks } from "date-fns";
+import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -472,35 +472,39 @@ export async function unbundleTimesheet(
   return batch.commit();
 };
 
-// add weekEnding property to TimeEntries on create or update
-export const writeWeekEnding = functions.firestore
-  .document("TimeEntries/{entryId}")
-  .onWrite(async (change, context) => {
+// add timestamp of 23:59:59 EST next saturday to weekEndingProperty of Document
+// based on dateProperty
+export async function writeWeekEnding(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+  dateProperty: string,
+  weekEndingProperty: string
+) {
     if (change.after.exists) {
-      // The TimeEntry was not deleted
+      // The Document was not deleted
       const afterData = change.after.data();
       if (afterData === undefined) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          `Cannot read TimeEntry with id ${change.after.id} during writeWeekEnding`
+          `Cannot read Document with id ${change.after.id} during writeWeekEnding`
         )
       }
       let date;
       try {
-        // get the date from the TimeEntry
-        date = afterData.date.toDate();
+        // get the date from the Document
+        date = afterData[dateProperty].toDate();
       } catch (error) {
         console.log(
-          `unable to read date for TimeEntry with id ${change.after.id}`
+          `unable to read property ${dateProperty} for Document with id ${change.after.id}`
         );
-        throw error;
+        return null;
       }
-      // If weekEnding is defined on the TimeEntry, get it, otherwise set null
+      // If weekEnding is defined on the Document, get it, otherwise set null
       const weekEnding = Object.prototype.hasOwnProperty.call(
         afterData,
-        "weekEnding"
+        weekEndingProperty
       )
-        ? afterData.weekEnding.toDate()
+        ? afterData[weekEndingProperty].toDate()
         : null;
 
       // Calculate the correct saturday of the weekEnding
@@ -508,7 +512,7 @@ export const writeWeekEnding = functions.firestore
       let calculatedSaturday;
       if (date.getDay() === 6) {
         // assume the date is already in America/Thunder_Bay Time Zone
-        console.log("writeWeekEnding() date is already a saturday");
+        console.log(`writeWeekEnding() ${dateProperty} is already a saturday`);
         calculatedSaturday = zonedTimeToUtc(
           new Date(
             date.getFullYear(),
@@ -540,13 +544,13 @@ export const writeWeekEnding = functions.firestore
         );
       }
 
-      // update the TimeEntry only if required
+      // update the Document only if required
       if (
         weekEnding === null ||
         weekEnding.toDateString() !== calculatedSaturday.toDateString
       ) {
         return change.after.ref.set(
-          { weekEnding: calculatedSaturday },
+          { [weekEndingProperty]: calculatedSaturday },
           { merge: true }
         );
       }
@@ -554,11 +558,11 @@ export const writeWeekEnding = functions.firestore
       // no changes to be made
       return null;
     } else {
-      // The TimeEntry was deleted, do nothing
-      console.log("writeWeekEnding() called but time entry was deleted");
+      // The Document was deleted, do nothing
+      console.log("writeWeekEnding() called but Document was deleted");
       return null;
     }
-  });
+  };
 
 /*
   If a timesheet is approved, make sure that it is included in the pending

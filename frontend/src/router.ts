@@ -142,8 +142,38 @@ const router = new Router({
               component: TimeTrackingDetails
             }
           ]
-        }
-      ]
+        },
+        {
+          path: "amendments",
+          name: "Time Amendments",
+          redirect: "/time/amendments/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Time Amendments List",
+              props: { collection: "TimeAmendments" },
+              component: TimeEntriesList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add Time Amendment",
+              props: { collection: "TimeAmendments" },
+              component: TimeEntriesEdit,
+            },
+            {
+              path: ":id/edit",
+              props: (route) => {
+                return { id: route.params.id, collection: "TimeAmendments" };
+              },
+              name: "Edit Time Amendments",
+              component: TimeEntriesEdit,
+            },
+          ],
+        },
+      ],
     },
     {
       path: "/admin",

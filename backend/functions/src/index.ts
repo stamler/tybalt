@@ -8,8 +8,8 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import { bundleTimesheet, unbundleTimesheet, lockTimesheets } from "./timesheets";
-export { writeWeekEnding, writeFileLinks, updateTimeTracking } from "./timesheets";
+import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding } from "./timesheets";
+export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile } from "./profiles";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
@@ -38,6 +38,18 @@ const writeCreated = function (
       { merge: true }
     );
 };
+// Write the weekEnding on TimeEntries and TimeAmendments
+exports.timeEntriesWeekEnding = functions.firestore
+  .document("TimeEntries/{entryId}")
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "date", "weekEnding") });
+exports.timeAmendmentsWeekEnding = functions.firestore
+  .document("TimeAmendments/{amendmentId}")
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "date", "weekEnding") });
+
+// Write the committedWeekEnding on TimeAmendments
+exports.timeAmendmentsCommittedWeekEnding = functions.firestore
+  .document("TimeAmendments/{amendmentId}")
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "committed", "committedWeekEnding") });
 
 // Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore

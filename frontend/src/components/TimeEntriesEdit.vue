@@ -1,5 +1,13 @@
 <template>
   <form id="editor">
+    <span class="field" v-if="collection === 'TimeAmendments'">
+      <select name="uid" v-model="item.uid">
+        <option disabled selected value=""> -- choose an employee -- </option>
+        <option v-for="p in profiles" :value="p.id" v-bind:key="p.id">
+          {{ p.displayName }}
+        </option>
+      </select>
+    </span>
     <span class="field">
       <datepicker
         name="datepicker"
@@ -176,6 +184,7 @@ export default Vue.extend({
       collectionObject: null as firebase.firestore.CollectionReference | null,
       divisions: [] as firebase.firestore.DocumentData[],
       timetypes: [] as firebase.firestore.DocumentData[],
+      profiles: [] as firebase.firestore.DocumentData[],
       showSuggestions: false,
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
@@ -205,6 +214,7 @@ export default Vue.extend({
     this.collectionObject = db.collection(this.collection);
     this.$bind("divisions", db.collection("Divisions"));
     this.$bind("timetypes", db.collection("TimeTypes"));
+    this.$bind("profiles", db.collection("Profiles"));
     this.setItem(this.id);
   },
   methods: {
@@ -241,6 +251,10 @@ export default Vue.extend({
           timetype: "R",
           division: defaultDivision ?? ""
         };
+        if (this.collection === "TimeAmendments") {
+          // setting the uid blank surfaces the choose option in the UI
+          this.item.uid = "";
+        }
       }
     },
     setJob(id: string) {
@@ -320,6 +334,8 @@ export default Vue.extend({
         // TODO: build more validation here to notify the user of errors
         // before hitting the backend.
 
+        delete this.item.payoutRequestAmount;
+
         // Clear the Job if it's empty or too short
         // The back end will actually validate that it exists
         if (!this.item.job || this.item.job.length < 6) {
@@ -331,24 +347,55 @@ export default Vue.extend({
         }
       }
 
-      // if timetype is OR, delete hours too (other properties already
-      // deleted in previous if/else statement )
-      if (this.item.timetype === "OR") {
-        delete this.item["hours"];
+      // if timetype is OR or OTO, delete hours and workDescription
+      // (other properties already deleted in previous if/else statement)
+      if (this.item.timetype === "OR" || this.item.timetype === "OTO") {
+        delete this.item.hours;
+        delete this.item.workDescription;
+      }
+
+      // delete payoutRequestAmount if it's not a payout request
+      if (this.item.timetype !== "OTO") {
+        delete this.item.payoutRequestAmount;
       }
 
       this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
 
-      this.item.uid = this.user.uid; // include uid of the creating user
+      if (this.collection === "TimeEntries") {
+        // include uid of the creating user
+        this.item.uid = this.user.uid;
+      }
+
       if (!Object.prototype.hasOwnProperty.call(this.item, "date")) {
         // make the date today if not provided by user
         this.item.date = new Date();
+      }
+
+      // If we're creating an Amendment rather than a TimeEntry, add a creator
+      // and creator name, set the displayName from the uid given in the UI,
+      // and add a sentinel for the server timestamp
+      if (this.collection === "TimeAmendments") {
+        try {
+          // Populate the displayName
+          this.item.displayName = this.profiles.filter(
+            i => i.id === this.item.uid
+          )[0].displayName;
+        } catch {
+          alert("Specify an employee");
+        }
+
+        this.item.creator = this.user.uid;
+        this.item.creatorName = this.user.displayName;
+        this.item.created = firebase.firestore.FieldValue.serverTimestamp();
       }
 
       // Write to database
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
+
+      console.log(this.item);
+      
       if (this.id) {
         // Editing an existing item
         this.collectionObject
