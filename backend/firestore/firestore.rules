@@ -74,8 +74,8 @@ service cloud.firestore {
               (newDoc().mealsHours is number && !(newDoc().timetype == "OR")) 
             ) 
           ) ||
-          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
-          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "displayName", "weekEnding", "payoutRequestAmount", "committed", "created", "creator", "creatorName"]) && newDoc().payoutRequestAmount is number)
+          (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "displayName", "weekEnding", "committed", "created", "creator", "creatorName"])) ||
+          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "displayName", "weekEnding", "committed", "created", "creator", "creatorName", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number)
         ) &&
 
         // if timetype is "RB", only hours is provided and is a number
