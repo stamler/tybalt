@@ -32,7 +32,8 @@
               >
                 <span class="label">
                   committed
-                  {{ item.committed.toDate() | shortDate }}
+                  {{ item.committed.toDate() | shortDate }} by
+                  {{ item.creatorName }}
                 </span>
                 <span class="label">
                   posted
