@@ -222,6 +222,8 @@ export async function bundleTimesheet(
             };
           } else {
             // first instance of this job in the timesheet, set totals to zero
+            // TODO: client and description get added in "assign" operation
+            // later so perhaps can be removed here and lines 218-219??
             jobsTally[item.job] = {
               description: item.jobDescription,
               client: item.client,
