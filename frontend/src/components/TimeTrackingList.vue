@@ -59,6 +59,24 @@ import { parse } from "json2csv";
 import _ from "lodash";
 const db = firebase.firestore();
 
+interface PayrollReportRecord {
+  weekEnding: string;
+  displayName: string;
+  managerName: string;
+  mealsHoursTally?: number;
+  offRotationDaysTally?: number;
+  R?: number;
+  OB?: number;
+  OH?: number;
+  OO?: number;
+  OP?: number;
+  OS?: number;
+  OV?: number;
+  RB?: number;
+  payoutRequest?: number;
+  hasAmendmentsForWeeksEnding?: string[];
+}
+
 interface Amendment {
   // required properties always
   date: string;
@@ -91,6 +109,7 @@ interface TimeSheet {
   // required properties always
   uid: string;
   displayName: string;
+  managerUid: string;
   bankedHours: number;
   mealsHoursTally: number;
   divisionsTally: { [x: string]: string };
@@ -110,6 +129,35 @@ interface TimeSheet {
 
   // others to be filled in later
   [x: string]: any;
+}
+
+// Type Guard
+function isTimeSheet(data: any): data is TimeSheet {
+  // check string properties exist and have correct type
+  const stringVals = ["uid", "displayName", "managerUid"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "string")
+    .every((x) => x === true);
+  // check number properties exist and have correct type
+  const numVals = ["bankedHours", "mealsHoursTally"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "number")
+    .every((x) => x === true);
+  // check the divisions tally, return false on first type mismatch
+  for (const key in data.divisionsTally) {
+    if (typeof key !== "string") {
+      return false;
+    }
+    if (typeof data.divisionsTally[key] !== "string") {
+      return false;
+    }
+  }
+  // check the jobs tally, return false on first type mismatch of key
+  // TODO: implement checking value
+  for (const key in data.jobsTally) {
+    if (typeof key !== "string") {
+      return false;
+    }
+  }
+  return stringVals && numVals;
 }
 
 export default Vue.extend({
@@ -198,9 +246,16 @@ export default Vue.extend({
     },
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
-      const items = await response.json();
+      const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
+      const { timesheets: items, amendments } = this.foldAmendments(inputObject);
+
       // since all entries have the same week ending, pull from the first entry
-      const weekEnding = new Date(items[0].weekEnding);
+      let weekEnding;
+      if (items.length > 0) {
+        weekEnding = new Date(items[0].weekEnding);
+      } else {
+        weekEnding = new Date(amendments[0].committedWeekEnding);
+      }
       const fields = [
         "weekEnding",
         {
@@ -232,25 +287,55 @@ export default Vue.extend({
         {
           label: "overtime hours to bank",
           value: "RB"
-        }
+        },
+        {
+          label: "Overtime Payout Requested",
+          value: "payoutRequest",
+        },
+        "hasAmendmentsForWeeksEnding"
       ];
       const opts = { fields };
-      for (const item of items) {
-        delete item.uid;
-        delete item.managerUid;
-        delete item.jobsTally;
-        delete item.divisionsTally;
-        delete item.entries;
-        item["R"] = item.workHoursTally.jobHours + item.workHoursTally.hours;
-        delete item.workHoursTally;
-        for (const key in item.nonWorkHoursTally) {
-          item[key] = item.nonWorkHoursTally[key];
+      const timesheetRecords = items.map((x) => {
+        if (!isTimeSheet(x)) {
+          throw new Error("There was an error validating the timesheet");
         }
-        delete item.nonWorkHoursTally;
-        item["RB"] = item.bankedHours;
-        delete item.bankedHours;
-      }
-      const csv = parse(items, opts);
+        const item = _.pick(x, [
+          "weekEnding",
+          "displayName",
+          "managerName",
+          "mealsHoursTally",
+          "offRotationDaysTally",
+          "payoutRequest",
+        ]) as any;
+        item["R"] = x.workHoursTally.jobHours + x.workHoursTally.hours;
+        item["RB"] = x.bankedHours;
+        for (const key in x.nonWorkHoursTally) {
+          item[key] = x.nonWorkHoursTally[key];
+        }
+        return item;
+      });
+      const amendmentRecords = amendments.map((x) => {
+        const item: PayrollReportRecord = {
+          hasAmendmentsForWeeksEnding: [x.weekEnding],
+          weekEnding: x.committedWeekEnding,
+          displayName: x.displayName,
+          managerName: x.creatorName,
+          mealsHoursTally: x.mealsHours || 0,
+        };
+        if (x.timetype === "R") {
+          item["R"] = (x.hours || 0) + (x.jobHours || 0);
+        } else {
+          if (!x.hours) {
+            throw new Error(
+              "The Amendment is of type nonWorkHours but no hours are present"
+            );
+          }
+          item[x.timetype as "OB" | "OH" | "OO" | "OP" | "OS" | "OV"] = x.hours;
+        }
+
+        return item;
+      });
+      const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
@@ -348,11 +433,13 @@ export default Vue.extend({
       const groupedAmendments = _.groupBy(amendments, "uid") as {
         [x: string]: Amendment[];
       };
-      const timesheetsOutput = [] as TimeSheet[];
       const unfoldedAmendmentsOutput = [] as Amendment[];
       for (const uid in groupedAmendments) {
         const destination = timesheets.find((a) => a.uid === uid) as TimeSheet;
         if (destination !== undefined) {
+          // record each amendment's week in the timesheet
+          destination.hasAmendmentsForWeeksEnding = [];
+
           // There is a destination timesheet to fold amendments into.
           // Load the existing tallies
           const workHoursTally = destination["workHoursTally"];
@@ -365,6 +452,8 @@ export default Vue.extend({
           // destination and update tallies
           // tally the amendments
           for (const item of groupedAmendments[uid]) {
+            // record the week ending of this amendment
+            destination.hasAmendmentsForWeeksEnding.push(item.weekEnding);
             if (
               item.timetype === "R" &&
               item.division &&
@@ -445,7 +534,7 @@ export default Vue.extend({
         }
       }
       return {
-        timesheets: timesheetsOutput,
+        timesheets,
         amendments: unfoldedAmendmentsOutput,
       }
     }
