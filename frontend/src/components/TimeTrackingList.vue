@@ -306,6 +306,7 @@ export default Vue.extend({
           "mealsHoursTally",
           "offRotationDaysTally",
           "payoutRequest",
+          "hasAmendmentsForWeeksEnding",
         ]) as any;
         item["R"] = x.workHoursTally.jobHours + x.workHoursTally.hours;
         item["RB"] = x.bankedHours;
@@ -345,13 +346,41 @@ export default Vue.extend({
     },
     async generateInvoicingCSV(url: string) {
       const response = await fetch(url);
-      const items = await response.json();
+      const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
+      const { timesheets: items, amendments } = this.foldAmendments(inputObject);
+
       // since all entries have the same week ending, pull from the first entry
-      const weekEnding = new Date(items[0].weekEnding);
+      let weekEnding;
+      if (items.length > 0) {
+        weekEnding = new Date(items[0].weekEnding);
+      } else {
+        weekEnding = new Date(amendments[0].committedWeekEnding);
+      }
+      const fields = [
+        "client",
+        "job",
+        "code",
+        "date",
+        "month",
+        "year",
+        "qty",
+        "unit",
+        "nc",
+        "meals",
+        "ref",
+        "project",
+        "description",
+        "comments",
+        "employee",
+        "amended",
+      ];
+      const opts = { fields };
 
-      const output = [];
-
+      const timesheetRecords = [];
       for (const item of items) {
+        if (!isTimeSheet(item)) {
+          throw new Error("There was an error validating the timesheet");
+        }
         for (const entry of item.entries) {
           if (entry.timetype !== "R") continue;
           // TODO: verify that time zone conversion isn't needed here
@@ -371,7 +400,8 @@ export default Vue.extend({
             project: "",
             description: entry.workDescription, // consolidate comments and description
             comments: "",
-            employee: item.displayName
+            employee: item.displayName,
+            amended: entry.amendment
           };
           if (entry.job !== undefined) {
             // There is a job number, populate client, job, description
@@ -379,10 +409,43 @@ export default Vue.extend({
             line.job = entry.job;
             line.project = item.jobsTally[entry.job].description;
           }
-          output.push(line);
+          timesheetRecords.push(line);
         }
       }
-      const csv = parse(output);
+
+      const amendmentRecords = [];
+      for (const entry of amendments) {
+        if (entry.timetype !== "R") continue;
+        // TODO: verify that time zone conversion isn't needed here
+        const date = new Date(entry.date);
+        const line = {
+          client: "TBTE",
+          job: "", // the job number
+          code: entry.division,
+          date: date.getDate(),
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+          qty: entry.jobHours || 0,
+          unit: "hours",
+          nc: entry.hours || 0,
+          meals: entry.mealsHours || 0,
+          ref: entry.workrecord || "",
+          project: "",
+          description: entry.workDescription, // consolidate comments and description
+          comments: "",
+          employee: entry.displayName,
+          amended: true
+        };
+        if (entry.job !== undefined) {
+          // There is a job number, populate client, job, description
+          line.client = entry.client || "";
+          line.job = entry.job;
+          line.project = entry.jobDescription || "";
+        }
+        amendmentRecords.push(line);
+      }
+
+      const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
@@ -519,6 +582,9 @@ export default Vue.extend({
                 nonWorkHoursTally[item.timetype] = item.hours;
               }
             }
+
+            // mark this entry as an amendment
+            item.amendment = true;
 
             // add the amendment to timesheet entries
             destination["entries"].push(item);
