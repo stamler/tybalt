@@ -343,6 +343,7 @@ export default Vue.extend({
           delete this.item.client;
           delete this.item.jobDescription;
           delete this.item.jobHours;
+          delete this.item.mealsHours;
           delete this.item.workorder;
         }
       }

@@ -151,6 +151,12 @@ service cloud.firestore {
           isMissing("jobHours") 
         ) &&
 
+        // when provided, mealsHours requires an existing job
+        (
+          ( isPositiveNumberUnderEighteen("mealsHours") && isInCollection("job", "Jobs") ) ||
+          isMissing("mealsHours") 
+        ) &&
+
         // when provided workrecord requires an existing job
         (
           ( hasValidWorkrecord() && isInCollection("job", "Jobs") ) ||
