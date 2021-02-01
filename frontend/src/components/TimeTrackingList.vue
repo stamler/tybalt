@@ -340,8 +340,9 @@ export default Vue.extend({
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
-        `payroll_${this.exportDateWeekStart(weekEnding)} -
-        ${this.exportDate(weekEnding)}.csv`
+        `payroll_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+          weekEnding
+        )}.csv`
       );
     },
     async generateInvoicingCSV(url: string) {
@@ -449,8 +450,9 @@ export default Vue.extend({
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
-        `invoicing_${this.exportDateWeekStart(weekEnding)} -
-        ${this.exportDate(weekEnding)}.csv`
+        `invoicing_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+          weekEnding
+        )}.csv`
       );
     },
     // Force the download of a blob to a file by creating an
