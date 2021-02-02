@@ -87,6 +87,27 @@ service cloud.firestore {
           isMissing("workrecord")
         );
     }
+    function validExpenseEntry() {
+      return
+        // allowed fields
+        newDoc().keys().hasOnly([ "date", "job", "po", "description", "uid",
+          "jobDescription", "client", "weekEnding", "attachment", "total" ]) &&
+        
+        // required fields
+        newDoc().keys().hasAll(["date", "description", "uid", "attachment", "total"]) &&
+
+        // prevent user from submitting an entry with an unauthorized uid
+        request.auth.uid == request.resource.data['uid'] &&
+
+        // when job provided, job exists in db,
+        // jobDescription and client are present
+        (
+          ( isInCollection("job","Jobs") && 
+            newDoc().keys().hasAll(["jobDescription", "client"])
+          ) || 
+          isMissing("job")
+        )
+    }
     function validTimeEntry() {
       // TODO: Boolean Simplification
       return
@@ -216,6 +237,11 @@ service cloud.firestore {
       allow read, delete: if hasClaim("time") && uidMatches();
       allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
       allow create: if hasClaim("time") && validTimeEntry();
+    }
+    match /Expenses/{entry} {
+      allow read, delete: if hasClaim("time") && uidMatches();
+      allow update: if hasClaim("time") && validExpenseEntry() && uidMatches();
+      allow create: if hasClaim("time") && validExpenseEntry();
     }
     match /TimeTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");

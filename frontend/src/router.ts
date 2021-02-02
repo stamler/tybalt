@@ -4,6 +4,8 @@ import Router from "vue-router";
 // Components
 import Main from "@/views/Main.vue";
 import Me from "@/components/Me.vue";
+import ExpensesEdit from "@/components/ExpensesEdit.vue";
+import ExpensesList from "@/components/ExpensesList.vue";
 import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
@@ -37,6 +39,46 @@ const router = new Router({
     {
       path: "/me",
       component: Me
+    },
+    {
+      path: "/expense",
+      name: "Expense",
+      meta: { claims: ["time"] },
+      redirect: "/expense/entries",
+      component: Main,
+      children: [
+        {
+          path: "entries",
+          name: "Expense Entries",
+          redirect: "/expense/entries/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Expenses List",
+              props: { collection: "Expenses" },
+              component: ExpensesList
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add Expense",
+              props: { collection: "Expenses" },
+              component: ExpensesEdit,
+            },
+            {
+              path: ":id/edit",
+              props: route => {
+                return { id: route.params.id, collection: "TimeEntries" };
+              },
+              name: "Edit Time Entry",
+              component: TimeEntriesEdit
+            }
+
+          ]
+        }
+      ],
     },
     {
       path: "/time",
