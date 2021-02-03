@@ -173,19 +173,26 @@ export default Vue.extend({
               this.user.uid,
               [checksum, extension].join("."),
             ].join("/");
-            this.item.ref = pathReference;
-            this.validAttachment = true;
-            console.log(pathReference);
+
+            // Notify if the file already exist in storage,
+            // otherwise set a flag and save the ref to item
+            const storage = firebase.storage();
+            const attachmentRef = storage.ref(`Expenses/${pathReference}`);
+            attachmentRef
+              .getDownloadURL()
+              .then((url: URL) => {
+                alert(`${url} was previously uploaded`);
+              })
+              .catch((error) => {
+                if (error.code === "storage/object-not-found") {
+                  this.item.ref = pathReference;
+                  this.validAttachment = true;
+                }
+              });
           } else {
             delete this.item.ref;
             this.validAttachment = false;
           }
-
-          // TODO: if the file doesn't already exist in storage
-          // set a flag to allow saving of this item
-          const storage = firebase.storage();
-          const pathReference = storage.ref(this.user.uid + checksum);
-
         };
         return reader.readAsArrayBuffer(file);
       }
