@@ -13,7 +13,7 @@
       />
     </span>
     <span class="field">
-      <label for="total">Total</label>
+      <label for="total">Total $</label>
       <input type="number" name="total" v-model.number="item.total" />
     </span>
 
@@ -119,9 +119,14 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["user"]),
-    validItem() {
+    validItem(): boolean {
       // TODO: build out client-side validation
-      return this.validAttachment;
+      const validDescription =
+        typeof this.item.description === "string" &&
+        this.item.description.length > 4;
+      const validTotal =
+        typeof this.item.total === "number" && this.item.total > 0;
+      return validTotal && validDescription && this.validAttachment;
     },
   },
   watch: {
