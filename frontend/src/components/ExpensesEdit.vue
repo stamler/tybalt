@@ -164,7 +164,7 @@ export default Vue.extend({
       if (files && files[0]) {
         const file = files[0];
         const reader = new FileReader();
-        reader.onload = (event: ProgressEvent) => {
+        reader.onload = async (event: ProgressEvent) => {
           const checksum = sha256(reader.result as ArrayBuffer);
           const subtype = file.type.replace(/.+\//g, "");
           if (subtype in allowedTypes) {
@@ -178,19 +178,20 @@ export default Vue.extend({
             // otherwise set a flag and save the ref to item
             const storage = firebase.storage();
             const attachmentRef = storage.ref(`Expenses/${pathReference}`);
-            attachmentRef
-              .getDownloadURL()
-              .then((url: URL) => {
-                alert(`${url} was previously uploaded`);
-              })
-              .catch((error) => {
-                if (error.code === "storage/object-not-found") {
-                  this.item.ref = pathReference;
-                  this.validAttachment = true;
-                }
-              });
+            let url;
+            try {
+              url = await attachmentRef.getDownloadURL();
+              delete this.item.attachment;
+              this.validAttachment = false;
+              alert(`${url} was previously uploaded`);
+            } catch (error) {
+              if (error.code === "storage/object-not-found") {
+                this.item.attachment = pathReference;
+                this.validAttachment = true;
+              }
+            }
           } else {
-            delete this.item.ref;
+            delete this.item.attachment;
             this.validAttachment = false;
           }
         };
@@ -281,92 +282,15 @@ export default Vue.extend({
       }
     }, 500),
     save() {
-      // Populate the Time Type Name
-      this.item.timetypeName = this.timetypes.filter(
-        i => i.id === this.item.timetype
-      )[0].name;
+      // include uid of the creating user
+      this.item.uid = this.user.uid;
+      this.item.displayName = this.user.displayName;
 
-      // if timetype isn't R, delete disallowed properties
-      if (this.item.timetype !== "R") {
-        [
-          "division",
-          "divisionName",
-          "job",
-          "jobDescription",
-          "client",
-          "jobHours",
-          "mealsHours",
-          "workrecord"
-        ].forEach(x => delete this.item[x]);
-      } else {
-        // timetype is R, division must be present
-        if (this.item.division && this.item.division.length > 0) {
-          // write divisionName
-          this.item.divisionName = this.divisions.filter(
-            i => i.id === this.item.division
-          )[0].name;
-        } else {
-          throw "Division Missing";
-        }
+      this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
-        // TODO: catch the above throw and notify the user.
-        // TODO: build more validation here to notify the user of errors
-        // before hitting the backend.
-
-        delete this.item.payoutRequestAmount;
-
-        // Clear the Job if it's empty or too short
-        // The back end will actually validate that it exists
-        if (!this.item.job || this.item.job.length < 6) {
-          // Clear
-          delete this.item.client;
-          delete this.item.jobDescription;
-          delete this.item.jobHours;
-          delete this.item.mealsHours;
-          delete this.item.workorder;
-        }
-      }
-
-      // if timetype is OR or OTO, delete hours and workDescription
-      // (other properties already deleted in previous if/else statement)
-      if (this.item.timetype === "OR" || this.item.timetype === "OTO") {
-        delete this.item.hours;
-        delete this.item.workDescription;
-      }
-
-      // delete payoutRequestAmount if it's not a payout request
-      if (this.item.timetype !== "OTO") {
-        delete this.item.payoutRequestAmount;
-      }
-
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
-
-      if (this.collection === "TimeEntries") {
-        // include uid of the creating user
-        this.item.uid = this.user.uid;
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(this.item, "date")) {
-        // make the date today if not provided by user
-        this.item.date = new Date();
-      }
-
-      // If we're creating an Amendment rather than a TimeEntry, add a creator
-      // and creator name, set the displayName from the uid given in the UI,
-      // and add a sentinel for the server timestamp
-      if (this.collection === "TimeAmendments") {
-        try {
-          // Populate the displayName
-          this.item.displayName = this.profiles.filter(
-            i => i.id === this.item.uid
-          )[0].displayName;
-        } catch {
-          alert("Specify an employee");
-        }
-
-        this.item.creator = this.user.uid;
-        this.item.creatorName = this.user.displayName;
-        this.item.created = firebase.firestore.FieldValue.serverTimestamp();
+      if (this.item.job.length < 6) {
+        delete this.item.client;
+        delete this.item.jobDescription;
       }
 
       // Write to database
