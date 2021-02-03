@@ -58,7 +58,7 @@ const router = new Router({
               path: "list",
               name: "Expenses List",
               props: { collection: "Expenses" },
-              component: ExpensesList
+              component: ExpensesList,
             },
             {
               meta: { showInUi: true, uiName: "Add" },
@@ -72,8 +72,8 @@ const router = new Router({
               props: route => {
                 return { id: route.params.id, collection: "TimeEntries" };
               },
-              name: "Edit Time Entry",
-              component: TimeEntriesEdit
+              name: "Edit Expense Entry",
+              component: ExpensesEdit,
             }
 
           ]

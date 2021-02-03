@@ -64,11 +64,11 @@
 
     <span class="field">
       <label for="attachment">Attachment</label>
-      <input type="file" name="attachment" />
+      <input type="file" name="attachment" v-on:change="validateFile" />
     </span>
 
     <span class="field">
-      <button type="button" v-on:click="save()">Save</button>
+      <button type="button" v-if="validItem" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
         Cancel
       </button>
@@ -84,6 +84,11 @@ import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
+import { sha256 } from "js-sha256";
+
+interface HTMLInputEvent extends Event {
+  target: HTMLInputElement & EventTarget;
+}
 
 export default Vue.extend({
   components: { Datepicker },
@@ -108,11 +113,16 @@ export default Vue.extend({
       showSuggestions: false,
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
-      item: {} as firebase.firestore.DocumentData
+      item: {} as firebase.firestore.DocumentData,
+      validAttachment: true,
     };
   },
   computed: {
-    ...mapState(["user"])
+    ...mapState(["user"]),
+    validItem() {
+      // TODO: build out client-side validation
+      return this.validAttachment;
+    },
   },
   watch: {
     id: function(id) {
@@ -138,6 +148,43 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    async validateFile(event: HTMLInputEvent) {
+      this.validAttachment = false;
+      const allowedTypes: { [subtype: string]: string } = {
+        pdf: "pdf",
+        jpeg: "jpeg",
+        png: "png",
+      };
+      const files = event.target.files;
+      if (files && files[0]) {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = (event: ProgressEvent) => {
+          const checksum = sha256(reader.result as ArrayBuffer);
+          const subtype = file.type.replace(/.+\//g, "");
+          if (subtype in allowedTypes) {
+            const extension = allowedTypes[subtype];
+            const pathReference = [
+              this.user.uid,
+              [checksum, extension].join("."),
+            ].join("/");
+            this.item.ref = pathReference;
+            this.validAttachment = true;
+            console.log(pathReference);
+          } else {
+            delete this.item.ref;
+            this.validAttachment = false;
+          }
+
+          // TODO: if the file doesn't already exist in storage
+          // set a flag to allow saving of this item
+          const storage = firebase.storage();
+          const pathReference = storage.ref(this.user.uid + checksum);
+
+        };
+        return reader.readAsArrayBuffer(file);
+      }
+    },
     async setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
