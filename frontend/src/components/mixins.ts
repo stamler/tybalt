@@ -37,6 +37,22 @@ export default Vue.extend({
           alert(`Error unbundling timesheet: ${error.message}`);
         });
     },
+    submitExpense(expenseId: string) {
+      store.commit("startTask", {
+        id: `submit${expenseId}`,
+        message: "submitting"
+      });
+      db.collection("Expenses")
+        .doc(expenseId)
+        .set({ submitted: true, approved: false }, { merge: true })
+        .then(() => {
+          store.commit("endTask", { id: `submit${expenseId}` });
+        })
+        .catch(error => {
+          store.commit("endTask", { id: `submit${expenseId}` });
+          alert(`Error submitting expense: ${error}`);
+        });
+    },
     submitTs(timesheetId: string) {
       store.commit("startTask", {
         id: `submit${timesheetId}`,

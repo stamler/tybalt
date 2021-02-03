@@ -27,13 +27,17 @@
           <router-link :to="[parentPath, item.id, 'edit'].join('/')">
             <edit-icon></edit-icon>
           </router-link>
-          <router-link to="#">
+          <router-link
+            v-bind:to="{ name: 'Expense Entries' }"
+            v-on:click.native="submitExpense(item.id)"
+          >
             <send-icon></send-icon>
           </router-link>
         </template>
-
-        <template v-if="item.approved === true">
-          <span class="label">approved</span>
+        <template v-else>
+          <!-- submitted -->
+          <span v-if="item.approved === false" class="label">submitted</span>
+          <span v-else class="label">approved</span>
         </template>
       </div>
     </div>
