@@ -107,9 +107,6 @@ export default Vue.extend({
       },
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      divisions: [] as firebase.firestore.DocumentData[],
-      timetypes: [] as firebase.firestore.DocumentData[],
-      profiles: [] as firebase.firestore.DocumentData[],
       showSuggestions: false,
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
@@ -130,26 +127,14 @@ export default Vue.extend({
     },
   },
   watch: {
-    id: function(id) {
+    id: function (id) {
       this.setItem(id);
-    }, // first arg is newVal, second is oldVal
-    "item.timetype": function(newVal, oldVal) {
-      if (
-        newVal === "R" &&
-        oldVal !== "R" &&
-        this.item.division === undefined
-      ) {
-        this.item.division = "";
-      }
-    }
+    },
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("divisions", db.collection("Divisions"));
-    this.$bind("timetypes", db.collection("TimeTypes"));
-    this.$bind("profiles", db.collection("Profiles"));
     this.setItem(this.id);
   },
   methods: {
@@ -221,20 +206,9 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           });
       } else {
-        const profile = await db
-          .collection("Profiles")
-          .doc(this.user.uid)
-          .get();
-        const defaultDivision = profile.get("defaultDivision");
         this.item = {
           date: new Date(),
-          timetype: "R",
-          division: defaultDivision ?? ""
         };
-        if (this.collection === "TimeAmendments") {
-          // setting the uid blank surfaces the choose option in the UI
-          this.item.uid = "";
-        }
       }
     },
     setJob(id: string) {
@@ -285,12 +259,13 @@ export default Vue.extend({
       // include uid of the creating user
       this.item.uid = this.user.uid;
       this.item.displayName = this.user.displayName;
-
+      this.item.submitted = false;
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
-      if (this.item.job.length < 6) {
-        delete this.item.client;
+      if (this.item.job && this.item.job.length < 6) {
+        delete this.item.job;
         delete this.item.jobDescription;
+        delete this.item.client;
       }
 
       // Write to database
@@ -319,7 +294,7 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch(error => {
-            //console.log(this.item);
+            console.log(this.item);
             alert(`Failed to create Time Entry: ${error.message}`);
           });
       }

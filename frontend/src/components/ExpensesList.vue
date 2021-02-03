@@ -20,71 +20,20 @@
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
-        <template v-if="approved === undefined">
-          <template v-if="!item.submitted">
-            <router-link
-              v-bind:to="{ name: 'Time Entries' }"
-              v-on:click.native="unbundle(item.id)"
-            >
-              <edit-icon></edit-icon>
-            </router-link>
-            <router-link
-              v-if="!item.rejected"
-              v-bind:to="{ name: 'Time Sheets' }"
-              v-on:click.native="submitTs(item.id)"
-            >
-              <send-icon></send-icon>
-            </router-link>
-          </template>
-          <template v-else-if="!item.approved">
-            <router-link
-              v-if="!item.approved"
-              v-bind:to="{ name: 'Time Sheets' }"
-              v-on:click.native="recallTs(item.id)"
-            >
-              <rewind-icon></rewind-icon>
-            </router-link>
-            <span class="label">submitted</span>
-          </template>
-          <template v-else>
-            <span class="label">approved</span>
-          </template>
-        </template>
-        <!-- The template for "pending" -->
-        <template v-if="approved === false">
-          <template v-if="!item.approved && !item.rejected">
-            <router-link
-              v-if="!item.rejected"
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="approveTs(item.id)"
-            >
-              <check-circle-icon></check-circle-icon>
-            </router-link>
-            <router-link
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="openRejectModal(item.id)"
-            >
-              <x-circle-icon></x-circle-icon>
-            </router-link>
-          </template>
-          <template v-if="item.rejected">
-            <span class="label">rejected</span>
-          </template>
+        <template v-if="item.submitted === false">
+          <router-link to="#" v-on:click.native="del(item, collectionObject)">
+            <x-circle-icon></x-circle-icon>
+          </router-link>
+          <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+            <edit-icon></edit-icon>
+          </router-link>
+          <router-link to="#">
+            <send-icon></send-icon>
+          </router-link>
         </template>
 
-        <!-- The template for "approved" -->
-        <template v-if="approved === true">
-          <template v-if="!item.locked">
-            <router-link
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="openRejectModal(item.id)"
-            >
-              <x-circle-icon></x-circle-icon>
-            </router-link>
-          </template>
-        </template>
-        <template v-if="item.locked === true">
-          <span class="label">locked</span>
+        <template v-if="item.approved === true">
+          <span class="label">approved</span>
         </template>
       </div>
     </div>
@@ -99,8 +48,6 @@ import { format } from "date-fns";
 import {
   EditIcon,
   SendIcon,
-  RewindIcon,
-  CheckCircleIcon,
   XCircleIcon
 } from "vue-feather-icons";
 import store from "../store";
@@ -112,8 +59,6 @@ export default Vue.extend({
   components: {
     EditIcon,
     SendIcon,
-    RewindIcon,
-    CheckCircleIcon,
     XCircleIcon
   },
   filters: {
