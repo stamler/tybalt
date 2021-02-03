@@ -52,6 +52,8 @@
 <script lang="ts">
 import Vue from "vue";
 import { format, subDays } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
+
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import store from "../store";
@@ -260,39 +262,53 @@ export default Vue.extend({
         "weekEnding",
         {
           label: "name",
-          value: "displayName"
+          value: "displayName",
         },
         {
           label: "manager",
-          value: "managerName"
+          value: "managerName",
         },
         {
           label: "meals",
-          value: "mealsHoursTally"
+          value: "mealsHoursTally",
         },
         {
           label: "days off rotation",
-          value: "offRotationDaysTally"
+          value: "offRotationDaysTally",
         },
         {
           label: "hours worked",
-          value: "R"
+          value: "R",
         },
-        "OB",
-        "OH",
-        "OO",
-        "OP",
-        "OS",
-        "OV",
+        {
+          label: "Bereavement",
+          value: "OB",
+        },
+        {
+          label: "Stat Holiday",
+          value: "OH",
+        },
+        {
+          label: "PPTO",
+          value: "OP",
+        },
+        {
+          label: "Sick",
+          value: "OS",
+        },
+        {
+          label: "Vacation",
+          value: "OV",
+        },
         {
           label: "overtime hours to bank",
-          value: "RB"
+          value: "RB",
         },
         {
           label: "Overtime Payout Requested",
           value: "payoutRequest",
         },
-        "hasAmendmentsForWeeksEnding"
+        "hasAmendmentsForWeeksEnding",
       ];
       const opts = { fields };
       const timesheetRecords = items.map((x) => {
@@ -308,6 +324,10 @@ export default Vue.extend({
           "payoutRequest",
           "hasAmendmentsForWeeksEnding",
         ]) as any;
+        item["weekEnding"] = format(
+          utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
+          "yyyy MMM dd"
+        );
         item["R"] = x.workHoursTally.jobHours + x.workHoursTally.hours;
         item["RB"] = x.bankedHours;
         for (const key in x.nonWorkHoursTally) {
