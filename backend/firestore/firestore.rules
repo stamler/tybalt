@@ -91,10 +91,12 @@ service cloud.firestore {
       return
         // allowed fields
         newDoc().keys().hasOnly([ "date", "job", "po", "description", "uid",
-          "jobDescription", "client", "weekEnding", "attachment", "total" ]) &&
+          "jobDescription", "client", "weekEnding", "attachment", "total",
+          "displayName", "jobDescription", "client" ]) &&
         
         // required fields
-        newDoc().keys().hasAll(["date", "description", "uid", "attachment", "total"]) &&
+        newDoc().keys().hasAll(["date", "description", "uid", "displayName",
+          "total"]) &&
 
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'] &&
