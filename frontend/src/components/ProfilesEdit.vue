@@ -125,17 +125,24 @@ export default Vue.extend({
       this.newClaim = "";
     },
     save() {
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       if (this.id) {
         if (this.collectionObject === null) {
           throw "There is no valid collection object";
         }
 
         // Editing an existing item
-        // Since the UI binds existing id to the key field, no need to delete
+        // use update() instead of set({ merge: true }) because we want to
+        // overwrite the entire customClaims section rather than keeping any
+        // deleted claims
         this.collectionObject
           .doc(this.id)
-          .set(this.item)
+          .update({
+            displayName: this.item.displayName,
+            managerUid: this.item.managerUid,
+            email: this.item.email,
+            customClaims: this.item.customClaims,
+            defaultDivision: this.item.defaultDivision,
+          })
           .then(() => {
             this.$router.push(this.parentPath);
           });

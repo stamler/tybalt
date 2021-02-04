@@ -10,7 +10,7 @@ import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
 import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
-import { updateAuth, createProfile, deleteProfile } from "./profiles";
+import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
@@ -83,3 +83,6 @@ exports.updateAuth = functions.firestore
 // create and delete profiles
 exports.createProfile = functions.auth.user().onCreate(createProfile);
 exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);
+
+// update a profile from the MS Graph
+exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);

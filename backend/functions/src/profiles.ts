@@ -15,6 +15,25 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as _ from "lodash";
+import axios from "axios";
+import jwtDecode, { JwtPayload } from "jwt-decode";
+
+interface MSJwtPayload extends JwtPayload {
+  oid: string;
+}
+
+interface AccessTokenPayload {
+  accessToken: string;
+}
+
+// User-defined Type Guard
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
+function isAccessTokenPayload(data: any): data is AccessTokenPayload {
+  if (data.accessToken) {
+    return typeof data.accessToken === "string";
+  }
+  return false;
+}
 
 interface CustomClaims { // Record type instead?
   [claim: string]: boolean;
@@ -31,6 +50,7 @@ function isCustomClaims(data: any): data is CustomClaims {
 }
 
 // Create the corresponding Profile document when an auth user is created
+// Use merge in case the document already exists.
 export async function createProfile(user: admin.auth.UserRecord) {
   const db = admin.firestore();
   const customClaims = { time: true };
@@ -42,7 +62,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
       email: user.email,
       customClaims,
       managerUid: null,
-    });
+    }, { merge: true });
   } catch (error) {
     console.log(error);
     return null;
@@ -123,3 +143,56 @@ export async function updateAuth(change: functions.ChangeJson, context: function
     return null;
   }
 };
+
+export async function updateProfileFromMSGraph(data: unknown, context: functions.https.CallableContext) {
+  const db = admin.firestore();
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  const auth = context.auth;
+  console.log(`Received a call from ${auth.token.uid} to query the MS Graph`);
+  
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isAccessTokenPayload(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid access token payload"
+    )
+  }
+
+  // Get the Azure ID to make specific queries
+  const decoded = jwtDecode<MSJwtPayload>(data.accessToken);
+  const query = "$select=givenName,surname,onPremisesImmutableId,id,jobTitle,mobilePhone"
+  // OAuth access and id tokens can also be retrieved:
+  const bearer = "Bearer " + data.accessToken;
+  //const idToken = credential.idToken;
+  const response = await axios.get(`https://graph.microsoft.com/v1.0/users/${decoded.oid}?${query}`, {
+    headers: {
+      Authorization: bearer,
+      "Content-Type": "application/json",
+    },
+  })
+  
+  return db.collection("Profiles").doc(auth.token.uid).set(
+    {
+      givenName: response.data.givenName,
+      surname: response.data.surname,
+      azureId: response.data.id,
+      userSourceAnchor64: response.data.onPremisesImmutableId,
+      userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, 'base64').toString("hex"),
+      jobTitle: response.data.jobTitle,
+      mobilePhone: response.data.mobilePhone,
+      msGraphDataUpdated: admin.firestore.FieldValue.serverTimestamp(), 
+      // TODO: include immutableId, possibly with a query
+      // https://stackoverflow.com/questions/48866220/using-microsoft-graph-how-do-i-get-azure-ad-user-fields-that-were-synced-from-on?rq=1
+    },
+    { merge: true }
+  );
+}
