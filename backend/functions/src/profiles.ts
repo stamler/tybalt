@@ -16,6 +16,11 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as _ from "lodash";
 import axios from "axios";
+import jwtDecode, { JwtPayload } from "jwt-decode";
+
+interface MSJwtPayload extends JwtPayload {
+  oid: string;
+}
 
 interface AccessTokenPayload {
   accessToken: string;
@@ -140,7 +145,7 @@ export async function updateAuth(change: functions.ChangeJson, context: function
 };
 
 export async function updateProfileFromMSGraph(data: unknown, context: functions.https.CallableContext) {
-  //const db = admin.firestore();
+  const db = admin.firestore();
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
@@ -162,14 +167,32 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
     )
   }
 
+  // Get the Azure ID to make specific queries
+  const decoded = jwtDecode<MSJwtPayload>(data.accessToken);
+  const query = "$select=givenName,surname,onPremisesImmutableId,id,jobTitle,mobilePhone"
   // OAuth access and id tokens can also be retrieved:
   const bearer = "Bearer " + data.accessToken;
   //const idToken = credential.idToken;
-  const response = await axios.get("https://graph.microsoft.com/v1.0/me", {
+  const response = await axios.get(`https://graph.microsoft.com/v1.0/users/${decoded.oid}?${query}`, {
     headers: {
       Authorization: bearer,
       "Content-Type": "application/json",
     },
   })
-  return response.data;
+  
+  return db.collection("Profiles").doc(auth.token.uid).set(
+    {
+      givenName: response.data.givenName,
+      surname: response.data.surname,
+      azureId: response.data.id,
+      userSourceAnchor64: response.data.onPremisesImmutableId,
+      userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, 'base64').toString("hex"),
+      jobTitle: response.data.jobTitle,
+      mobilePhone: response.data.mobilePhone,
+      mSGraphDataUpdated: admin.firestore.FieldValue.serverTimestamp(), 
+      // TODO: include immutableId, possibly with a query
+      // https://stackoverflow.com/questions/48866220/using-microsoft-graph-how-do-i-get-azure-ad-user-fields-that-were-synced-from-on?rq=1
+    },
+    { merge: true }
+  );
 }

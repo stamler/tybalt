@@ -27,40 +27,18 @@ firebase
   .auth()
   .getRedirectResult()
   .then(async (result) => {
-    // TODO: get necessary token and call graph to view first name, last name
+    // get token and call graph to load first name, last name
     // and other important data, then save it to the profile
     // https://firebase.google.com/docs/auth/web/microsoft-oauth
+    const updateProfileFromMSGraph = firebase
+      .functions()
+      .httpsCallable("updateProfileFromMSGraph");
 
-    // IdP data available in result.additionalUserInfo.profile
-    // NB: This only works once the user has authenticated
-    // See here: https://stackoverflow.com/questions/57031125/firebase-auth-with-microsoft-graph-accesstoken
-    if (result.additionalUserInfo) {
-      const msProfile = result.additionalUserInfo.profile as MicrosoftProfile;
-      const uid = firebase.auth().currentUser?.uid ?? null;
-      if (uid) {
-        db.collection("Profiles").doc(uid).set(
-          {
-            givenName: msProfile.givenName,
-            surname: msProfile.surname,
-            azureId: msProfile.id,
-            jobTitle: msProfile.jobTitle,
-            mobilePhone: msProfile.mobilePhone,
-          },
-          { merge: true }
-        );
+    const credential = result.credential as firebase.auth.OAuthCredential;
 
-        // The part we'll likely keep
-        const credential = result.credential as firebase.auth.OAuthCredential;
-
-        const updateProfileFromMSGraph = firebase
-          .functions()
-          .httpsCallable("updateProfileFromMSGraph");
-
-        updateProfileFromMSGraph({ accessToken: credential.accessToken })
-          .then((result) => console.log(result))
-          .catch((error) => alert(`Update from MS Graph failed: ${error}`));
-      }
-    }
+    updateProfileFromMSGraph({
+      accessToken: credential.accessToken,
+    }).catch((error) => alert(`Update from MS Graph failed: ${error}`));
   })
   .catch(function (error) {
     if (error.code === "auth/account-exists-with-different-credential") {
