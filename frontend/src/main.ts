@@ -8,6 +8,16 @@ import firebase from "./firebase";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
+const db = firebase.firestore();
+
+interface MicrosoftProfile {
+  givenName: string;
+  surname: string;
+  id: string;
+  jobTitle: string;
+  mobilePhone: string;
+  [key: string]: string;
+}
 
 let app: Vue | null = null;
 
@@ -16,7 +26,40 @@ let app: Vue | null = null;
 firebase
   .auth()
   .getRedirectResult()
-  .catch(function(error) {
+  .then((result) => {
+    // TODO: get necessary token and call graph to view first name, last name
+    // and other important data, then save it to the profile
+    // https://firebase.google.com/docs/auth/web/microsoft-oauth
+
+    // IdP data available in result.additionalUserInfo.profile
+    // NB: This only works once the user has authenticated
+    // See here: https://stackoverflow.com/questions/57031125/firebase-auth-with-microsoft-graph-accesstoken
+    if (result.additionalUserInfo) {
+      const msProfile = result.additionalUserInfo.profile as MicrosoftProfile;
+      const uid = firebase.auth().currentUser?.uid ?? null;
+      if (uid) {
+        db.collection("Profiles").doc(uid).set(
+          {
+            givenName: msProfile.givenName,
+            surname: msProfile.surname,
+            azureId: msProfile.id,
+            jobTitle: msProfile.jobTitle,
+            mobilePhone: msProfile.mobilePhone,
+          },
+          { merge: true }
+        );
+        //const credential = result.credential as firebase.auth.OAuthCredential;
+
+        // OAuth access and id tokens can also be retrieved:
+        // const accessToken = credential.accessToken;
+        //const idToken = credential.idToken;
+
+        //console.log(accessToken);
+        //console.log(idToken);
+      }
+    }
+  })
+  .catch(function (error) {
     if (error.code === "auth/account-exists-with-different-credential") {
       alert(
         `You have already signed up with a different auth provider for email ${error.email}.`
@@ -31,7 +74,7 @@ firebase
     }
   });
 
-const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
+const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
   if (user) {
     // console.log(`${user.displayName} is logged in`);
     // set state and user in Vuex
@@ -45,14 +88,14 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function(user) {
     tasks.push(
       user
         .getIdTokenResult()
-        .then(token => store.commit("setClaims", token.claims))
+        .then((token) => store.commit("setClaims", token.claims))
     );
     Promise.all(tasks).then(() => {
       if (!app) {
         app = new Vue({
           router,
           store,
-          render: h => h(App) // h is an alias for createElement
+          render: (h) => h(App), // h is an alias for createElement
         }).$mount("#app");
       }
     });

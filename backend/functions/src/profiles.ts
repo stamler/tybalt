@@ -31,6 +31,7 @@ function isCustomClaims(data: any): data is CustomClaims {
 }
 
 // Create the corresponding Profile document when an auth user is created
+// Use merge in case the document already exists.
 export async function createProfile(user: admin.auth.UserRecord) {
   const db = admin.firestore();
   const customClaims = { time: true };
@@ -42,7 +43,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
       email: user.email,
       customClaims,
       managerUid: null,
-    });
+    }, { merge: true });
   } catch (error) {
     console.log(error);
     return null;
