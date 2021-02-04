@@ -36,9 +36,11 @@ firebase
 
     const credential = result.credential as firebase.auth.OAuthCredential;
 
-    updateProfileFromMSGraph({
-      accessToken: credential.accessToken,
-    }).catch((error) => alert(`Update from MS Graph failed: ${error}`));
+    if (credential) {
+      updateProfileFromMSGraph({
+        accessToken: credential.accessToken,
+      }).catch((error) => alert(`Update from MS Graph failed: ${error}`));
+    }
   })
   .catch(function (error) {
     if (error.code === "auth/account-exists-with-different-credential") {

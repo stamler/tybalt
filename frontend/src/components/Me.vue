@@ -88,15 +88,20 @@ export default Vue.extend({
       }
     },
     save() {
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       // Editing an existing item
       // Since the UI binds existing id to the key field, no need to delete
       db.collection("Profiles")
         .doc(this.user.uid)
-        .set(this.item)
+        .set(
+          {
+            defaultDivision: this.item.defaultDivision,
+            managerUid: this.item.managerUid,
+          },
+          { merge: true }
+        )
         .then(signOut);
-    }
-  }
+    },
+  },
 });
 </script>
 <style>

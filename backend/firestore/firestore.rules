@@ -179,18 +179,17 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
-        newDoc().keys().hasOnly([
-          "managerUid", "managerName","displayName","email","customClaims", "defaultDivision", "surname", "givenName", "azureId", "jobTitle", "mobilePhone"
+        newDoc().diff(resource.data).affectedKeys().hasOnly([
+          "managerUid","displayName","email","customClaims", "defaultDivision"
         ]) &&
-        newDoc().keys().hasAll(["displayName", "email"]) &&
-        ( isInCollection("managerUid","Profiles") || isMissing("managerUid") ) && 
+        isInCollection("managerUid","Profiles") && 
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager
         // The bundling function handles this by validating that the manager has tapr permissions
-        (isMissing("defaultDivision") || isInCollection("defaultDivision", "Divisions"))
+        isInCollection("defaultDivision", "Divisions")
         ) || (
           request.auth.uid == resource.id &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision", "surname", "givenName", "azureId", "jobTitle", "mobilePhone"]) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision"]) &&
           isInCollection("managerUid","Profiles") && // tapr validated in buildTimesheets function
           isInCollection("defaultDivision", "Divisions")
         )
