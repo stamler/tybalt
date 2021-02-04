@@ -8,16 +8,6 @@ import firebase from "./firebase";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
-const db = firebase.firestore();
-
-interface MicrosoftProfile {
-  givenName: string;
-  surname: string;
-  id: string;
-  jobTitle: string;
-  mobilePhone: string;
-  [key: string]: string;
-}
 
 let app: Vue | null = null;
 
