@@ -15,6 +15,20 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as _ from "lodash";
+import axios from "axios";
+
+interface AccessTokenPayload {
+  accessToken: string;
+}
+
+// User-defined Type Guard
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
+function isAccessTokenPayload(data: any): data is AccessTokenPayload {
+  if (data.accessToken) {
+    return typeof data.accessToken === "string";
+  }
+  return false;
+}
 
 interface CustomClaims { // Record type instead?
   [claim: string]: boolean;
@@ -124,3 +138,38 @@ export async function updateAuth(change: functions.ChangeJson, context: function
     return null;
   }
 };
+
+export async function updateProfileFromMSGraph(data: unknown, context: functions.https.CallableContext) {
+  //const db = admin.firestore();
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  const auth = context.auth;
+  console.log(`Received a call from ${auth.token.uid} to query the MS Graph`);
+  
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isAccessTokenPayload(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid access token payload"
+    )
+  }
+
+  // OAuth access and id tokens can also be retrieved:
+  const bearer = "Bearer " + data.accessToken;
+  //const idToken = credential.idToken;
+  const response = await axios.get("https://graph.microsoft.com/v1.0/me", {
+    headers: {
+      Authorization: bearer,
+      "Content-Type": "application/json",
+    },
+  })
+  return response.data;
+}

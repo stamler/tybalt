@@ -26,7 +26,7 @@ let app: Vue | null = null;
 firebase
   .auth()
   .getRedirectResult()
-  .then((result) => {
+  .then(async (result) => {
     // TODO: get necessary token and call graph to view first name, last name
     // and other important data, then save it to the profile
     // https://firebase.google.com/docs/auth/web/microsoft-oauth
@@ -48,14 +48,17 @@ firebase
           },
           { merge: true }
         );
-        //const credential = result.credential as firebase.auth.OAuthCredential;
 
-        // OAuth access and id tokens can also be retrieved:
-        // const accessToken = credential.accessToken;
-        //const idToken = credential.idToken;
+        // The part we'll likely keep
+        const credential = result.credential as firebase.auth.OAuthCredential;
 
-        //console.log(accessToken);
-        //console.log(idToken);
+        const updateProfileFromMSGraph = firebase
+          .functions()
+          .httpsCallable("updateProfileFromMSGraph");
+
+        updateProfileFromMSGraph({ accessToken: credential.accessToken })
+          .then((result) => console.log(result))
+          .catch((error) => alert(`Update from MS Graph failed: ${error}`));
       }
     }
   })

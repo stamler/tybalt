@@ -19,6 +19,7 @@
   "dependencies": {
     "@types/uuid": "^8.3.0",
     "ajv": "^6.12.6",
+    "axios": "^0.21.1",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^1.0.12",
     "firebase-admin": "^9.4.2",
