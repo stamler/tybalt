@@ -43,8 +43,8 @@ import Vue from "vue";
 import { signOut } from "../main";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+
 const db = firebase.firestore();
-import _ from "lodash";
 
 export default Vue.extend({
   data() {

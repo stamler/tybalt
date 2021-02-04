@@ -189,7 +189,7 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
       userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, 'base64').toString("hex"),
       jobTitle: response.data.jobTitle,
       mobilePhone: response.data.mobilePhone,
-      mSGraphDataUpdated: admin.firestore.FieldValue.serverTimestamp(), 
+      msGraphDataUpdated: admin.firestore.FieldValue.serverTimestamp(), 
       // TODO: include immutableId, possibly with a query
       // https://stackoverflow.com/questions/48866220/using-microsoft-graph-how-do-i-get-azure-ad-user-fields-that-were-synced-from-on?rq=1
     },
