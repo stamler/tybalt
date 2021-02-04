@@ -34,14 +34,13 @@ firebase
     } else {
       const currentUser = firebase.auth().currentUser;
       if (currentUser !== null) {
-        console.log("validating age");
         // Validate the age of the profile
+        // sign out if the profile is missing msGraphDataUpdated
+        // or it was updated more than 7 days ago
         const db = firebase.firestore();
         const snap = await db.collection("Profiles").doc(currentUser.uid).get();
         const profile = snap.data();
 
-        // sign out if the profile is missing msGraphDataUpdated
-        // or it was updated more than 7 days ago
         if (
           profile !== undefined &&
           (profile.msGraphDataUpdated === undefined ||
