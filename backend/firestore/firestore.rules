@@ -34,14 +34,14 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
           "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
           "timetypeName", "divisionName", "jobDescription", "client", "weekEnding",
-          "creator", "creatorName", "displayName", "created", "committed" ]) &&
+          "creator", "creatorName", "displayName", "created", "committed", "surname", "givenName" ]) &&
         
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
 
         // required fields
         newDoc().keys().hasAll(["date", "timetype", "timetypeName", "uid",
-        "creator", "creatorName", "displayName", "created" ]) &&
+        "creator", "creatorName", "displayName", "created", "surname", "givenName" ]) &&
 
         // when job provided, job & division exist in db,
         // jobDescription and client are present, timetype is 'R'
@@ -202,14 +202,14 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
-        newDoc().keys().hasOnly([
-          "managerUid", "managerName","displayName","email","customClaims", "defaultDivision"
+        newDoc().diff(resource.data).affectedKeys().hasOnly([
+          "managerUid","displayName","email","customClaims", "defaultDivision"
         ]) &&
-        newDoc().keys().hasAll(["displayName", "email"]) &&
-        isInCollection("managerUid","Profiles") && // this restricts any updates that don't have a manager UID
+        isInCollection("managerUid","Profiles") && 
+        // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager
         // The bundling function handles this by validating that the manager has tapr permissions
-        (isMissing("defaultDivision") || isInCollection("defaultDivision", "Divisions"))
+        isInCollection("defaultDivision", "Divisions")
         ) || (
           request.auth.uid == resource.id &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision"]) &&

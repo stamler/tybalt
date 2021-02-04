@@ -377,10 +377,13 @@ export default Vue.extend({
       // and add a sentinel for the server timestamp
       if (this.collection === "TimeAmendments") {
         try {
-          // Populate the displayName
-          this.item.displayName = this.profiles.filter(
-            i => i.id === this.item.uid
-          )[0].displayName;
+          // Populate the displayName, surname & givenName
+          const profile = this.profiles.filter(
+            (i) => i.id === this.item.uid
+          )[0];
+          this.item.displayName = profile.displayName;
+          this.item.surname = profile.surname;
+          this.item.givenName = profile.givenName;
         } catch {
           alert("Specify an employee");
         }

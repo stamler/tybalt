@@ -43,8 +43,8 @@ import Vue from "vue";
 import { signOut } from "../main";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+
 const db = firebase.firestore();
-import _ from "lodash";
 
 export default Vue.extend({
   data() {
@@ -88,15 +88,20 @@ export default Vue.extend({
       }
     },
     save() {
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
       // Editing an existing item
       // Since the UI binds existing id to the key field, no need to delete
       db.collection("Profiles")
         .doc(this.user.uid)
-        .set(this.item)
+        .set(
+          {
+            defaultDivision: this.item.defaultDivision,
+            managerUid: this.item.managerUid,
+          },
+          { merge: true }
+        )
         .then(signOut);
-    }
-  }
+    },
+  },
 });
 </script>
 <style>

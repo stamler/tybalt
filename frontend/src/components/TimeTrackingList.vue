@@ -52,6 +52,8 @@
 <script lang="ts">
 import Vue from "vue";
 import { format, subDays } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
+
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import store from "../store";
@@ -62,6 +64,8 @@ const db = firebase.firestore();
 interface PayrollReportRecord {
   weekEnding: string;
   displayName: string;
+  surname: string;
+  givenName: string;
   managerName: string;
   mealsHoursTally?: number;
   offRotationDaysTally?: number;
@@ -87,6 +91,8 @@ interface Amendment {
   creator: string;
   creatorName: string;
   displayName: string;
+  surname: string;
+  givenName: string;
   timetype: string;
   timetypeName: string;
   amendment: true;
@@ -109,6 +115,8 @@ interface TimeSheet {
   // required properties always
   uid: string;
   displayName: string;
+  surname: string;
+  givenName: string;
   managerUid: string;
   bankedHours: number;
   mealsHoursTally: number;
@@ -133,6 +141,10 @@ interface TimeSheet {
 
 // Type Guard
 function isTimeSheet(data: any): data is TimeSheet {
+  // check optional string properties have correct type
+  const optionalStringVals = ["surname", "givenName"]
+    .map((x) => data[x] === undefined || typeof data[x] === "string")
+    .every((x) => x === true);
   // check string properties exist and have correct type
   const stringVals = ["uid", "displayName", "managerUid"]
     .map((x) => data[x] !== undefined && typeof data[x] === "string")
@@ -157,7 +169,7 @@ function isTimeSheet(data: any): data is TimeSheet {
       return false;
     }
   }
-  return stringVals && numVals;
+  return optionalStringVals && stringVals && numVals;
 }
 
 export default Vue.extend({
@@ -259,40 +271,62 @@ export default Vue.extend({
       const fields = [
         "weekEnding",
         {
+          label: "surname",
+          value: "surname",
+        },
+        {
+          label: "givenName",
+          value: "givenName",
+        },
+        {
           label: "name",
-          value: "displayName"
+          value: "displayName",
         },
         {
           label: "manager",
-          value: "managerName"
+          value: "managerName",
         },
         {
           label: "meals",
-          value: "mealsHoursTally"
+          value: "mealsHoursTally",
         },
         {
           label: "days off rotation",
-          value: "offRotationDaysTally"
+          value: "offRotationDaysTally",
         },
         {
           label: "hours worked",
-          value: "R"
+          value: "R",
         },
-        "OB",
-        "OH",
-        "OO",
-        "OP",
-        "OS",
-        "OV",
+        {
+          label: "Bereavement",
+          value: "OB",
+        },
+        {
+          label: "Stat Holiday",
+          value: "OH",
+        },
+        {
+          label: "PPTO",
+          value: "OP",
+        },
+        {
+          label: "Sick",
+          value: "OS",
+        },
+        {
+          label: "Vacation",
+          value: "OV",
+        },
         {
           label: "overtime hours to bank",
-          value: "RB"
+          value: "RB",
         },
         {
           label: "Overtime Payout Requested",
           value: "payoutRequest",
         },
-        "hasAmendmentsForWeeksEnding"
+        "hasAmendmentsForWeeksEnding",
       ];
       const opts = { fields };
       const timesheetRecords = items.map((x) => {
@@ -301,6 +335,8 @@ export default Vue.extend({
         }
         const item = _.pick(x, [
           "weekEnding",
+          "surname",
+          "givenName",
           "displayName",
           "managerName",
           "mealsHoursTally",
@@ -308,6 +344,10 @@ export default Vue.extend({
           "payoutRequest",
           "hasAmendmentsForWeeksEnding",
         ]) as any;
+        item["weekEnding"] = format(
+          utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
+          "yyyy MMM dd"
+        );
         item["R"] = x.workHoursTally.jobHours + x.workHoursTally.hours;
         item["RB"] = x.bankedHours;
         for (const key in x.nonWorkHoursTally) {
@@ -320,6 +360,8 @@ export default Vue.extend({
           hasAmendmentsForWeeksEnding: [x.weekEnding],
           weekEnding: x.committedWeekEnding,
           displayName: x.displayName,
+          surname: x.surname,
+          givenName: x.givenName,
           managerName: x.creatorName,
           mealsHoursTally: x.mealsHours || 0,
         };
@@ -373,6 +415,8 @@ export default Vue.extend({
         "description",
         "comments",
         "employee",
+        "surname",
+        "givenName",
         "amended",
       ];
       const opts = { fields };
@@ -402,6 +446,8 @@ export default Vue.extend({
             description: entry.workDescription, // consolidate comments and description
             comments: "",
             employee: item.displayName,
+            surname: item.surname,
+            givenName: item.givenName,
             amended: entry.amendment
           };
           if (entry.job !== undefined) {
@@ -435,6 +481,8 @@ export default Vue.extend({
           description: entry.workDescription, // consolidate comments and description
           comments: "",
           employee: entry.displayName,
+          surname: entry.surname,
+          givenName: entry.givenName,
           amended: true
         };
         if (entry.job !== undefined) {
