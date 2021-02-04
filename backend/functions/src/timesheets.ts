@@ -355,6 +355,8 @@ export async function bundleTimesheet(
           const timesheet = db.collection("TimeSheets").doc();
           batch.set(timesheet, {
             uid: auth.uid,
+            surname: profile.get("surname"),
+            givenName: profile.get("givenName"),
             displayName: profile.get("displayName"),
             managerName: profile.get("managerName"),
             weekEnding: week,
@@ -909,6 +911,7 @@ export async function exportJson(data: unknown) {
     });
 };
 
+// call exportJson as soon as a TimeAmnendment is committed
 export async function exportOnAmendmentCommit(
   change: functions.ChangeJson,
   context: functions.EventContext,
