@@ -90,14 +90,14 @@ service cloud.firestore {
     function validExpenseEntry() {
       return
         // allowed fields
-        newDoc().keys().hasOnly([ "date", "job", "po", "description", "uid",
-          "jobDescription", "client", "weekEnding", "attachment", "total",
-          "displayName", "surname", "givenName", "jobDescription", "client",
-          "submitted", "approved", "committed", "managerUid", "managerName" ]) &&
+        newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
+          "surname", "givenName", "total", "submitted", "approved", "committed",
+          "managerUid", "managerName", 
+          "job", "jobDescription", "client", "po", "weekEnding", "attachment" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
-          "surname,", "givenName", "total", "submitted", "approved", "committed",
+          "surname", "givenName", "total", "submitted", "approved", "committed",
           "managerUid", "managerName"]) &&
 
         // when job provided, job exists in db,

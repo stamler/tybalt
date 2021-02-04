@@ -206,8 +206,22 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           });
       } else {
+        const profile = await db
+          .collection("Profiles")
+          .doc(this.user.uid)
+          .get();
+
         this.item = {
           date: new Date(),
+          uid: this.user.uid,
+          displayName: profile.get("displayName"),
+          givenName: profile.get("givenName"),
+          surname: profile.get("surname"),
+          managerName: profile.get("managerName"),
+          managerUid: profile.get("managerUid"),
+          submitted: false,
+          approved: false,
+          committed: false,
         };
       }
     },
@@ -256,10 +270,6 @@ export default Vue.extend({
       }
     }, 500),
     save() {
-      // include uid of the creating user
-      this.item.uid = this.user.uid;
-      this.item.displayName = this.user.displayName;
-      this.item.submitted = false;
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
       if (this.item.job && this.item.job.length < 6) {
@@ -282,8 +292,8 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch(error => {
-            //console.log(this.item);
-            alert(`Failed to edit Time Entry: ${error.message}`);
+            console.log(this.item);
+            alert(`Failed to edit Expense Entry: ${error.message}`);
           });
       } else {
         // Creating a new item
@@ -295,7 +305,7 @@ export default Vue.extend({
           })
           .catch(error => {
             console.log(this.item);
-            alert(`Failed to create Time Entry: ${error.message}`);
+            alert(`Failed to create Expense Entry: ${error.message}`);
           });
       }
     }
