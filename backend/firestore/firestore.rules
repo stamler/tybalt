@@ -92,14 +92,13 @@ service cloud.firestore {
         // allowed fields
         newDoc().keys().hasOnly([ "date", "job", "po", "description", "uid",
           "jobDescription", "client", "weekEnding", "attachment", "total",
-          "displayName", "jobDescription", "client", "submitted" ]) &&
+          "displayName", "surname", "givenName", "jobDescription", "client",
+          "submitted", "approved", "committed", "managerUid", "managerName" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
-          "total", "submitted"]) &&
-
-        // prevent user from submitting an entry with an unauthorized uid
-        request.auth.uid == request.resource.data['uid'] &&
+          "surname,", "givenName", "total", "submitted", "approved", "committed",
+          "managerUid", "managerName"]) &&
 
         // when job provided, job exists in db,
         // jobDescription and client are present
@@ -241,9 +240,19 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /Expenses/{entry} {
-      allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && validExpenseEntry() && uidMatches();
-      allow create: if hasClaim("time") && validExpenseEntry();
+      allow read: if (hasClaim("time") && uidMatches()) || hasClaim("tapr") || hasClaim("eapr");
+      allow create: if 
+        hasClaim("time") && validExpenseEntry() &&
+        // prevent user from submitting an entry with an unauthorized uid
+        request.auth.uid == request.resource.data['uid'];
+      allow delete: if uidMatches() && resource.data.approved == false && resource.data.committed == false;
+      allow update: if 
+        // owner can edit
+        (hasClaim("time") && validExpenseEntry() && uidMatches()) ||
+        // tapr can only approve or reject uncommitted expenses
+        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected"]) && !resource.data.keys().hasAll(["committed"])) ||
+        // eapr can only commit or reject uncommitted expenses
+        (hasClaim("eapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "rejected"]) && !resource.data.keys().hasAll(["committed"]));
     }
     match /TimeTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");
