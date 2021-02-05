@@ -9,15 +9,33 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
-            {{ item.description }}
+            <template v-if="approved === undefined">
+              {{ item.description }}
+            </template>
+            <template v-else>
+              {{ item.displayName }}
+            </template>
           </div>
           <div class="byline">
-            {{ item.total }}
+            ${{ item.total }}
+            <span v-if="item.po"> PO#{{ item.po }}</span>
           </div>
         </div>
-        <div class="firstline"></div>
-        <div class="secondline"></div>
-        <div class="thirdline"></div>
+        <div class="firstline">
+          <template v-if="approved !== undefined">
+            {{ item.description }}
+          </template>
+        </div>
+        <div class="secondline">
+          <template v-if="item.job !== undefined">
+            {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
+          </template>
+        </div>
+        <div class="thirdline">
+          <span v-if="item.rejected" style="color: red">
+            Rejected: {{ item.rejectionReason }}
+          </span>
+        </div>
       </div>
       <div class="rowactionsbox">
         <!-- The template for users -->
