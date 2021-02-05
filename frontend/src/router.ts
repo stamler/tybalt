@@ -49,14 +49,14 @@ const router = new Router({
       children: [
         {
           path: "entries",
-          name: "Expense Entries",
+          name: "Expenses",
           redirect: "/expense/entries/list",
           component: ContentShell,
           children: [
             {
               meta: { showInUi: true, uiName: "List" },
               path: "list",
-              name: "Expenses",
+              name: "Expenses List",
               props: { collection: "Expenses" },
               component: ExpensesList,
             },
@@ -74,10 +74,31 @@ const router = new Router({
               },
               name: "Edit Expense Entry",
               component: ExpensesEdit,
-            }
-
-          ]
-        }
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Pending",
+                requiredClaims: ["tapr"],
+              },
+              path: "pending",
+              name: "Expenses Pending",
+              props: { approved: false, collection: "Expenses" },
+              component: ExpensesList,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Approved",
+                requiredClaims: ["tapr"],
+              },
+              path: "approved",
+              name: "Expenses Approved",
+              props: { approved: true, collection: "Expenses" },
+              component: ExpensesList,
+            },
+          ],
+        },
       ],
     },
     {

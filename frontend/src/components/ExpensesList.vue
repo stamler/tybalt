@@ -28,7 +28,7 @@
             <edit-icon></edit-icon>
           </router-link>
           <router-link
-            v-bind:to="{ name: 'Expense Entries' }"
+            v-bind:to="{ name: 'Expenses' }"
             v-on:click.native="submitExpense(item.id)"
           >
             <send-icon></send-icon>
@@ -84,26 +84,47 @@ export default Vue.extend({
       items: [],
     };
   },
-  watch: {
-    collection: {
-      immediate: true,
-      handler(collection) {
-        this.parentPath =
-          this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
-          "";
-        this.collectionObject = db.collection(collection);
+  created() {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.$watch(
+      "approved",
+      () => {
+        if (this.collectionObject === null) {
+          throw "There is no valid collection object";
+        }
         const uid = store.state.user?.uid;
         if (uid === undefined) {
           throw "There is no valid uid";
         }
-        this.$bind(
-          "items",
-          this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
-        ).catch((error) => {
-          alert(`Can't load Expense Entries: ${error.message}`);
-        });
+        if (typeof this.approved === "boolean") {
+          // approved prop is defined, show pending or approved TimeSheets
+          // belonging to users that this user manages
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("managerUid", "==", uid)
+              .where("approved", "==", this.approved)
+              .where("submitted", "==", true)
+              .orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Expenses: ${error.message}`);
+          });
+        } else {
+          // approved prop is not defined, show this user's own timesheets
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("uid", "==", uid)
+              .orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Expenses: ${error.message}`);
+          });
+        }
       },
-    },
+      { immediate: true }
+    );
   },
 });
 </script>
