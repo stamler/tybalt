@@ -6,7 +6,7 @@ const db = firebase.firestore();
 
 export default Vue.extend({
   computed: {
-    ...mapState(["claims"])
+    ...mapState(["claims"]),
   },
   methods: {
     bundle(week: Date) {
@@ -18,7 +18,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: "bundle" });
         })
-        .catch(error => {
+        .catch((error) => {
           store.commit("endTask", { id: "bundle" });
           alert(`Error bundling timesheet: ${error.message}`);
         });
@@ -32,7 +32,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: "unbundle" });
         })
-        .catch(error => {
+        .catch((error) => {
           store.commit("endTask", { id: "unbundle" });
           alert(`Error unbundling timesheet: ${error.message}`);
         });
@@ -40,7 +40,7 @@ export default Vue.extend({
     submitExpense(expenseId: string) {
       store.commit("startTask", {
         id: `submit${expenseId}`,
-        message: "submitting"
+        message: "submitting",
       });
       db.collection("Expenses")
         .doc(expenseId)
@@ -48,7 +48,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `submit${expenseId}` });
         })
-        .catch(error => {
+        .catch((error) => {
           store.commit("endTask", { id: `submit${expenseId}` });
           alert(`Error submitting expense: ${error}`);
         });
@@ -56,7 +56,7 @@ export default Vue.extend({
     submitTs(timesheetId: string) {
       store.commit("startTask", {
         id: `submit${timesheetId}`,
-        message: "submitting"
+        message: "submitting",
       });
       db.collection("TimeSheets")
         .doc(timesheetId)
@@ -64,7 +64,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `submit${timesheetId}` });
         })
-        .catch(error => {
+        .catch((error) => {
           store.commit("endTask", { id: `submit${timesheetId}` });
           alert(`Error submitting timesheet: ${error}`);
         });
@@ -72,11 +72,11 @@ export default Vue.extend({
     approveTs(timesheetId: string) {
       store.commit("startTask", {
         id: `approve${timesheetId}`,
-        message: "approving"
+        message: "approving",
       });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
-        .runTransaction(function(transaction) {
+        .runTransaction(function (transaction) {
           return transaction
             .get(timesheet)
             .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
@@ -95,7 +95,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `approve${timesheetId}` });
         })
-        .catch(function(error) {
+        .catch(function (error) {
           store.commit("endTask", { id: `approve${timesheetId}` });
           alert(`Approval failed: ${error}`);
         });
@@ -103,11 +103,11 @@ export default Vue.extend({
     rejectTs(timesheetId: string, reason: string) {
       store.commit("startTask", {
         id: `reject${timesheetId}`,
-        message: "rejecting"
+        message: "rejecting",
       });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
       return db
-        .runTransaction(function(transaction) {
+        .runTransaction(function (transaction) {
           return transaction
             .get(timesheet)
             .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
@@ -124,7 +124,7 @@ export default Vue.extend({
                 transaction.update(timesheet, {
                   approved: false,
                   rejected: true,
-                  rejectionReason: reason
+                  rejectionReason: reason,
                 });
               } else {
                 throw "The timesheet has not been submitted or is locked";
@@ -134,7 +134,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `reject${timesheetId}` });
         })
-        .catch(function(error) {
+        .catch(function (error) {
           store.commit("endTask", { id: `reject${timesheetId}` });
           alert(`Approval failed: ${error}`);
         });
@@ -146,12 +146,12 @@ export default Vue.extend({
       // verify that the timesheet is submitted before marking it approved
       store.commit("startTask", {
         id: `recall${timesheetId}`,
-        message: "recalling"
+        message: "recalling",
       });
       const timesheet = db.collection("TimeSheets").doc(timesheetId);
 
       return db
-        .runTransaction(function(transaction) {
+        .runTransaction(function (transaction) {
           return transaction
             .get(timesheet)
             .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
@@ -170,7 +170,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `recall${timesheetId}` });
         })
-        .catch(function(error) {
+        .catch(function (error) {
           store.commit("endTask", { id: `recall${timesheetId}` });
           alert(`Recall failed: ${error}`);
         });
@@ -196,9 +196,9 @@ export default Vue.extend({
       collection
         .doc(item.id)
         .delete()
-        .catch(err => {
+        .catch((err) => {
           alert(`Error deleting item: ${err}`);
         });
-    }
-  }
+    },
+  },
 });
