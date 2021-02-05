@@ -53,6 +53,42 @@ export default Vue.extend({
           alert(`Error submitting expense: ${error}`);
         });
     },
+    recallExpense(expenseId: string) {
+      // A transaction is used to update the submitted field by
+      // first verifying that approved is false. Similarly an approve
+      // function for the approving manager must use a transaction and
+      // verify that the timesheet is submitted before marking it approved
+      store.commit("startTask", {
+        id: `recall${expenseId}`,
+        message: "recalling",
+      });
+      const expense = db.collection("Expenses").doc(expenseId);
+
+      return db
+        .runTransaction(function (transaction) {
+          return transaction
+            .get(expense)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `An expense with id ${expenseId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (data !== undefined && data.approved === false) {
+                // timesheet is recallable because it hasn't yet been approved
+                transaction.update(expense, { submitted: false });
+              } else {
+                throw "The expense was already approved by a manager";
+              }
+            });
+        })
+        .then(() => {
+          store.commit("endTask", { id: `recall${expenseId}` });
+        })
+        .catch(function (error) {
+          store.commit("endTask", { id: `recall${expenseId}` });
+          alert(`Recall failed: ${error}`);
+        });
+    },
     submitTs(timesheetId: string) {
       store.commit("startTask", {
         id: `submit${timesheetId}`,
