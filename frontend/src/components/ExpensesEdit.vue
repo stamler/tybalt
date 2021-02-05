@@ -292,8 +292,7 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch(error => {
-            console.log(this.item);
+          .catch((error) => {
             alert(`Failed to edit Expense Entry: ${error.message}`);
           });
       } else {
@@ -304,8 +303,7 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch(error => {
-            console.log(this.item);
+          .catch((error) => {
             alert(`Failed to create Expense Entry: ${error.message}`);
           });
       }
