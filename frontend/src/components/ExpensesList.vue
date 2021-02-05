@@ -39,7 +39,7 @@
           <template v-if="item.approved === false">
             <router-link
               v-bind:to="{ name: 'Expenses' }"
-              v-on:click.native="recallTs(item.id)"
+              v-on:click.native="recallExpense(item.id)"
             >
               <rewind-icon></rewind-icon>
             </router-link>
