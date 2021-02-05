@@ -221,7 +221,6 @@ export default Vue.extend({
           managerUid: profile.get("managerUid"),
           submitted: false,
           approved: false,
-          committed: false,
         };
       }
     },
@@ -271,6 +270,8 @@ export default Vue.extend({
     }, 500),
     save() {
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
+      delete this.item.rejected;
+      delete this.item.rejectionReason;
 
       if (this.item.job && this.item.job.length < 6) {
         delete this.item.job;

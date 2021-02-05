@@ -91,13 +91,14 @@ service cloud.firestore {
       return
         // allowed fields
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
-          "surname", "givenName", "total", "submitted", "approved", "committed",
-          "managerUid", "managerName", 
-          "job", "jobDescription", "client", "po", "weekEnding", "attachment" ]) &&
+          "surname", "givenName", "total", "submitted", "approved",
+          "managerUid", "managerName",
+          "job", "jobDescription", "client", "po", "weekEnding", "attachment",
+          "rejected", "rejectionReason" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
-          "surname", "givenName", "total", "submitted", "approved", "committed",
+          "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName"]) &&
 
         // when job provided, job exists in db,
@@ -245,14 +246,20 @@ service cloud.firestore {
         hasClaim("time") && validExpenseEntry() &&
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'];
-      allow delete: if uidMatches() && resource.data.approved == false && resource.data.committed == false;
+      allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false && !resource.data.keys().hasAll(["committed"]);
       allow update: if 
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches()) ||
         // tapr can only approve or reject uncommitted expenses
-        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected"]) && !resource.data.keys().hasAll(["committed"])) ||
+        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && !resource.data.keys().hasAll(["committed"])) ||
         // eapr can only commit or reject uncommitted expenses
-        (hasClaim("eapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "rejected"]) && !resource.data.keys().hasAll(["committed"]));
+        (
+          hasClaim("eapr") && 
+          (
+            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().rejected == true && newDoc().approved == false ) ||
+            newDoc().diff(resource.data).affectedKeys().hasOnly(["committed"])
+          )
+        );
     }
     match /TimeTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");

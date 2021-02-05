@@ -48,10 +48,10 @@
           </template>
 
           <template v-if="item.submitted === true && item.approved === true">
-            <span v-if="item.committed === false" class="label">
+            <span v-if="item.committed === undefined" class="label">
               approved
             </span>
-            <span v-else>committed</span>
+            <span v-else class="label">committed</span>
           </template>
         </template>
 
@@ -79,14 +79,21 @@
 
         <!-- The template for "approved" -->
         <template v-if="approved === true">
-          <router-link
-            v-if="!item.approved && !item.rejected"
-            v-bind:to="{ name: 'Expenses Pending' }"
-            v-on:click.native="rejectExpense(item.id, 'no reason given')"
-          >
-            <x-circle-icon></x-circle-icon>
-          </router-link>
-          <template v-if="item.committed === true">
+          <template v-if="!item.committed">
+            <router-link
+              v-bind:to="{ name: 'Expenses Pending' }"
+              v-on:click.native="rejectExpense(item.id, 'no reason given')"
+            >
+              <x-circle-icon></x-circle-icon>
+            </router-link>
+            <router-link
+              v-bind:to="{ name: 'Expenses Approved' }"
+              v-on:click.native="commit(item, collectionObject)"
+            >
+              <lock-icon></lock-icon>
+            </router-link>
+          </template>
+          <template v-if="item.committed">
             <span class="label">committed</span>
           </template>
         </template>
@@ -102,6 +109,7 @@ import mixins from "./mixins";
 import { format } from "date-fns";
 import {
   EditIcon,
+  LockIcon,
   SendIcon,
   RewindIcon,
   CheckCircleIcon,
@@ -115,6 +123,7 @@ export default Vue.extend({
   props: ["approved", "collection"],
   components: {
     EditIcon,
+    LockIcon,
     SendIcon,
     RewindIcon,
     CheckCircleIcon,
@@ -133,6 +142,22 @@ export default Vue.extend({
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: [],
     };
+  },
+  methods: {
+    commit(
+      item: firebase.firestore.DocumentData,
+      collection: firebase.firestore.CollectionReference
+    ) {
+      if (collection === null) {
+        throw "There is no valid collection object";
+      }
+      collection
+        .doc(item.id)
+        .update({ committed: firebase.firestore.FieldValue.serverTimestamp() })
+        .catch(err => {
+          alert(`Error committing item: ${err}`);
+        });
+    },
   },
   created() {
     this.parentPath =

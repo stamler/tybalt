@@ -102,7 +102,7 @@ export default Vue.extend({
               if (
                 data !== undefined &&
                 data.submitted === true &&
-                data.committed === false
+                data.committed === undefined
               ) {
                 // timesheet is rejectable because it is submitted and not locked
                 transaction.update(item, {
