@@ -64,7 +64,7 @@
 
     <span class="field">
       <label for="attachment">Attachment</label>
-      <input type="file" name="attachment" v-on:change="validateFile" />
+      <input type="file" name="attachment" v-on:change="updateAttachment" />
     </span>
 
     <span class="field">
@@ -80,6 +80,8 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
+const storage = firebase.storage();
+import store from "../store";
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
@@ -111,7 +113,8 @@ export default Vue.extend({
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
-      validAttachment: true,
+      attachmentPreviouslyUploaded: false,
+      localFile: {} as File,
     };
   },
   computed: {
@@ -123,7 +126,9 @@ export default Vue.extend({
         this.item.description.length > 4;
       const validTotal =
         typeof this.item.total === "number" && this.item.total > 0;
-      return validTotal && validDescription && this.validAttachment;
+      return (
+        validTotal && validDescription && !this.attachmentPreviouslyUploaded
+      );
     },
   },
   watch: {
@@ -138,8 +143,8 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
-    async validateFile(event: HTMLInputEvent) {
-      this.validAttachment = false;
+    async updateAttachment(event: HTMLInputEvent) {
+      this.attachmentPreviouslyUploaded = false;
       const allowedTypes: { [subtype: string]: string } = {
         pdf: "pdf",
         jpeg: "jpeg",
@@ -147,40 +152,39 @@ export default Vue.extend({
       };
       const files = event.target.files;
       if (files && files[0]) {
-        const file = files[0];
+        this.localFile = files[0];
         const reader = new FileReader();
         reader.onload = async (event: ProgressEvent) => {
           const checksum = sha256(reader.result as ArrayBuffer);
-          const subtype = file.type.replace(/.+\//g, "");
+          const subtype = this.localFile.type.replace(/.+\//g, "");
           if (subtype in allowedTypes) {
             const extension = allowedTypes[subtype];
             const pathReference = [
+              "Expenses",
               this.user.uid,
               [checksum, extension].join("."),
             ].join("/");
 
             // Notify if the file already exist in storage,
             // otherwise set a flag and save the ref to item
-            const storage = firebase.storage();
-            const attachmentRef = storage.ref(`Expenses/${pathReference}`);
             let url;
             try {
-              url = await attachmentRef.getDownloadURL();
+              url = await storage.ref(pathReference).getDownloadURL();
+              this.attachmentPreviouslyUploaded = true;
               delete this.item.attachment;
-              this.validAttachment = false;
-              alert(`${url} was previously uploaded`);
+              alert(`This file was previously uploaded`);
             } catch (error) {
               if (error.code === "storage/object-not-found") {
                 this.item.attachment = pathReference;
-                this.validAttachment = true;
+                this.attachmentPreviouslyUploaded = false;
               }
             }
           } else {
             delete this.item.attachment;
-            this.validAttachment = false;
+            this.attachmentPreviouslyUploaded = false;
           }
         };
-        return reader.readAsArrayBuffer(file);
+        return reader.readAsArrayBuffer(this.localFile);
       }
     },
     async setItem(id: string) {
@@ -269,6 +273,15 @@ export default Vue.extend({
       }
     }, 500),
     save() {
+      // Write to database
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+
+      if (this.attachmentPreviouslyUploaded === true) {
+        throw "You cannot upload a proof of expense twice";
+      }
+
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
       delete this.item.rejected;
       delete this.item.rejectionReason;
@@ -279,13 +292,29 @@ export default Vue.extend({
         delete this.item.client;
       }
 
-      // Write to database
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
+      // If there's an attachment, upload it. If successful
+      // complete the rest. Otherwise cleanup and abort.
+      if (this.item.attachment !== undefined) {
+        store.commit("startTask", {
+          id: `upload${this.item.attachment}`,
+          message: "uploading",
+        });
+        storage
+          .ref(this.item.attachment)
+          .put(this.localFile)
+          .then(() => {
+            store.commit("endTask", { id: `upload${this.item.attachment}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `upload${this.item.attachment}` });
+            alert(`Upload failed: ${error}`);
+            return;
+          });
       }
 
       if (this.id) {
         // Editing an existing item
+
         this.collectionObject
           .doc(this.id)
           .set(this.item)
@@ -297,6 +326,10 @@ export default Vue.extend({
           });
       } else {
         // Creating a new item
+
+        // TODO: upload the file to this.item.attachment path here. If successful
+        // complete the rest. Otherwise cleanup and abort.
+
         this.collectionObject
           .doc()
           .set(this.item)

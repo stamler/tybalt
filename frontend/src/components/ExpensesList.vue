@@ -30,6 +30,11 @@
           <template v-if="item.job !== undefined">
             {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
           </template>
+          <template v-if="item.attachment">
+            <router-link to="#" v-on:click.native="downloadAttachment(item)">
+              <download-icon></download-icon>
+            </router-link>
+          </template>
         </div>
         <div class="thirdline">
           <span v-if="item.rejected" style="color: red">
@@ -128,6 +133,7 @@ import { format } from "date-fns";
 import {
   EditIcon,
   LockIcon,
+  DownloadIcon,
   SendIcon,
   RewindIcon,
   CheckCircleIcon,
@@ -135,6 +141,7 @@ import {
 } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 export default Vue.extend({
   mixins: [mixins],
@@ -143,6 +150,7 @@ export default Vue.extend({
     EditIcon,
     LockIcon,
     SendIcon,
+    DownloadIcon,
     RewindIcon,
     CheckCircleIcon,
     XCircleIcon,
@@ -162,6 +170,15 @@ export default Vue.extend({
     };
   },
   methods: {
+    async downloadAttachment(item: firebase.firestore.DocumentData) {
+      const url = await storage.ref(item.attachment).getDownloadURL();
+      console.log(`Do download for ${url}`);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "download";
+      a.click();
+      return a;
+    },
     commit(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference
