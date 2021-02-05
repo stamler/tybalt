@@ -56,7 +56,7 @@ const router = new Router({
             {
               meta: { showInUi: true, uiName: "List" },
               path: "list",
-              name: "Expenses List",
+              name: "Expenses",
               props: { collection: "Expenses" },
               component: ExpensesList,
             },

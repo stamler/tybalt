@@ -36,7 +36,15 @@
         </template>
         <template v-else>
           <!-- submitted -->
-          <span v-if="item.approved === false" class="label">submitted</span>
+          <template v-if="item.approved === false">
+            <router-link
+              v-bind:to="{ name: 'Expenses' }"
+              v-on:click.native="recallTs(item.id)"
+            >
+              <rewind-icon></rewind-icon>
+            </router-link>
+            <span class="label">submitted</span>
+          </template>
           <span v-else class="label">approved</span>
         </template>
       </div>
@@ -49,11 +57,7 @@ import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
-import {
-  EditIcon,
-  SendIcon,
-  XCircleIcon
-} from "vue-feather-icons";
+import { EditIcon, SendIcon, RewindIcon, XCircleIcon } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
 
@@ -63,12 +67,13 @@ export default Vue.extend({
   components: {
     EditIcon,
     SendIcon,
-    XCircleIcon
+    RewindIcon,
+    XCircleIcon,
   },
   filters: {
     shortDate(date: Date) {
       return format(date, "MMM dd");
-    }
+    },
   },
   data() {
     return {
@@ -76,7 +81,7 @@ export default Vue.extend({
       rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: []
+      items: [],
     };
   },
   watch: {
@@ -97,8 +102,8 @@ export default Vue.extend({
         ).catch((error) => {
           alert(`Can't load Expense Entries: ${error.message}`);
         });
-      }
-    }
+      },
+    },
   },
 });
 </script>
