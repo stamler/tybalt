@@ -20,23 +20,24 @@
         <div class="thirdline"></div>
       </div>
       <div class="rowactionsbox">
-        <template v-if="item.submitted === false">
-          <router-link to="#" v-on:click.native="del(item, collectionObject)">
-            <x-circle-icon></x-circle-icon>
-          </router-link>
-          <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-            <edit-icon></edit-icon>
-          </router-link>
-          <router-link
-            v-bind:to="{ name: 'Expenses' }"
-            v-on:click.native="submitExpense(item.id)"
-          >
-            <send-icon></send-icon>
-          </router-link>
-        </template>
-        <template v-else>
-          <!-- submitted -->
-          <template v-if="item.approved === false">
+        <!-- The template for users -->
+        <template v-if="approved === undefined">
+          <template v-if="item.submitted === false">
+            <router-link to="#" v-on:click.native="del(item, collectionObject)">
+              <x-circle-icon></x-circle-icon>
+            </router-link>
+            <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+              <edit-icon></edit-icon>
+            </router-link>
+            <router-link
+              v-bind:to="{ name: 'Expenses' }"
+              v-on:click.native="submitExpense(item.id)"
+            >
+              <send-icon></send-icon>
+            </router-link>
+          </template>
+
+          <template v-if="item.submitted === true && item.approved === false">
             <router-link
               v-bind:to="{ name: 'Expenses' }"
               v-on:click.native="recallExpense(item.id)"
@@ -45,7 +46,49 @@
             </router-link>
             <span class="label">submitted</span>
           </template>
-          <span v-else class="label">approved</span>
+
+          <template v-if="item.submitted === true && item.approved === true">
+            <span v-if="item.committed === false" class="label">
+              approved
+            </span>
+            <span v-else>committed</span>
+          </template>
+        </template>
+
+        <!-- The template for "pending" -->
+        <template v-if="approved === false">
+          <template v-if="!item.approved && !item.rejected">
+            <router-link
+              v-bind:to="{ name: 'Expenses Pending' }"
+              v-on:click.native="approveExpense(item.id)"
+            >
+              <check-circle-icon></check-circle-icon>
+            </router-link>
+            <router-link
+              v-if="!item.approved && !item.rejected"
+              v-bind:to="{ name: 'Expenses Pending' }"
+              v-on:click.native="rejectExpense(item.id, 'no reason given')"
+            >
+              <x-circle-icon></x-circle-icon>
+            </router-link>
+          </template>
+          <template v-if="item.rejected">
+            <span class="label">rejected</span>
+          </template>
+        </template>
+
+        <!-- The template for "approved" -->
+        <template v-if="approved === true">
+          <router-link
+            v-if="!item.approved && !item.rejected"
+            v-bind:to="{ name: 'Expenses Pending' }"
+            v-on:click.native="rejectExpense(item.id, 'no reason given')"
+          >
+            <x-circle-icon></x-circle-icon>
+          </router-link>
+          <template v-if="item.committed === true">
+            <span class="label">committed</span>
+          </template>
         </template>
       </div>
     </div>
@@ -57,7 +100,13 @@ import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
-import { EditIcon, SendIcon, RewindIcon, XCircleIcon } from "vue-feather-icons";
+import {
+  EditIcon,
+  SendIcon,
+  RewindIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
 
@@ -68,6 +117,7 @@ export default Vue.extend({
     EditIcon,
     SendIcon,
     RewindIcon,
+    CheckCircleIcon,
     XCircleIcon,
   },
   filters: {
