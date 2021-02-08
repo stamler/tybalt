@@ -11,6 +11,13 @@ import { assignComputerToUser } from "./computers";
 import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
+import { cleanUpOrphanedAttachment } from "./expenses";
+
+// clean up expense attachments that are orphaned by deletion or update of 
+// corresponding expense document
+exports.cleanUpOrphanedAttachment = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onWrite(cleanUpOrphanedAttachment);
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
