@@ -65,6 +65,12 @@
     <span class="field">
       <label for="attachment">Attachment</label>
       <input type="file" name="attachment" v-on:change="updateAttachment" />
+      <span v-if="attachmentPreviouslyUploaded" class="attention">
+        Previously uploaded
+      </span>
+      <span v-if="!validAttachmentType" class="attention">
+        only png, jpeg & pdf accepted
+      </span>
     </span>
 
     <span class="field">
@@ -114,6 +120,7 @@ export default Vue.extend({
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
       attachmentPreviouslyUploaded: false,
+      validAttachmentType: false,
       localFile: {} as File,
     };
   },
@@ -127,7 +134,10 @@ export default Vue.extend({
       const validTotal =
         typeof this.item.total === "number" && this.item.total > 0;
       return (
-        validTotal && validDescription && !this.attachmentPreviouslyUploaded
+        validTotal &&
+        validDescription &&
+        !this.attachmentPreviouslyUploaded &&
+        this.validAttachmentType
       );
     },
   },
@@ -158,6 +168,7 @@ export default Vue.extend({
           const checksum = sha256(reader.result as ArrayBuffer);
           const subtype = this.localFile.type.replace(/.+\//g, "");
           if (subtype in allowedTypes) {
+            this.validAttachmentType = true;
             const extension = allowedTypes[subtype];
             const pathReference = [
               "Expenses",
@@ -172,7 +183,6 @@ export default Vue.extend({
               url = await storage.ref(pathReference).getDownloadURL();
               this.attachmentPreviouslyUploaded = true;
               delete this.item.attachment;
-              alert(`This file was previously uploaded`);
             } catch (error) {
               if (error.code === "storage/object-not-found") {
                 this.item.attachment = pathReference;
@@ -180,8 +190,8 @@ export default Vue.extend({
               }
             }
           } else {
+            this.validAttachmentType = false;
             delete this.item.attachment;
-            this.attachmentPreviouslyUploaded = false;
           }
         };
         return reader.readAsArrayBuffer(this.localFile);
