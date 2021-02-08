@@ -107,11 +107,11 @@ export default Vue.extend({
         // date picker state
         disabled: {
           to: subWeeks(new Date(), 4),
-          from: addWeeks(new Date(), 4)
+          from: addWeeks(new Date(), 4),
         },
         highlighted: {
-          dates: [new Date()]
-        }
+          dates: [new Date()],
+        },
       },
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
@@ -120,7 +120,7 @@ export default Vue.extend({
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
       attachmentPreviouslyUploaded: false,
-      validAttachmentType: false,
+      validAttachmentType: true,
       localFile: {} as File,
     };
   },
@@ -241,7 +241,7 @@ export default Vue.extend({
     setJob(id: string) {
       this.item.job = id;
       this.showSuggestions = false;
-      const job = this.jobCandidates.filter(i => i.id === id)[0];
+      const job = this.jobCandidates.filter((i) => i.id === id)[0];
       this.item.jobDescription = job.description;
       this.item.client = job.client;
     },
@@ -282,7 +282,7 @@ export default Vue.extend({
         delete this.item.job;
       }
     }, 500),
-    save() {
+    async save() {
       // Write to database
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
@@ -304,54 +304,39 @@ export default Vue.extend({
 
       // If there's an attachment, upload it. If successful
       // complete the rest. Otherwise cleanup and abort.
+      let uploadFailed = false;
       if (this.item.attachment !== undefined) {
         store.commit("startTask", {
           id: `upload${this.item.attachment}`,
           message: "uploading",
         });
-        storage
-          .ref(this.item.attachment)
-          .put(this.localFile)
-          .then(() => {
-            store.commit("endTask", { id: `upload${this.item.attachment}` });
-          })
-          .catch((error) => {
-            store.commit("endTask", { id: `upload${this.item.attachment}` });
-            alert(`Upload failed: ${error}`);
-            return;
-          });
+        try {
+          await storage.ref(this.item.attachment).put(this.localFile);
+          uploadFailed = false;
+          store.commit("endTask", { id: `upload${this.item.attachment}` });
+        } catch (error) {
+          store.commit("endTask", { id: `upload${this.item.attachment}` });
+          alert(`Attachment Upload failed: ${error}`);
+          uploadFailed = true;
+        }
       }
 
-      if (this.id) {
-        // Editing an existing item
+      // Create or edit the document
+      if (!uploadFailed) {
+        console.log("saving the corresponding document");
+        const doc = this.id
+          ? this.collectionObject.doc(this.id)
+          : this.collectionObject.doc();
 
-        this.collectionObject
-          .doc(this.id)
-          .set(this.item)
-          .then(() => {
-            this.$router.push(this.parentPath);
-          })
-          .catch((error) => {
-            alert(`Failed to edit Expense Entry: ${error.message}`);
-          });
-      } else {
-        // Creating a new item
-
-        // TODO: upload the file to this.item.attachment path here. If successful
-        // complete the rest. Otherwise cleanup and abort.
-
-        this.collectionObject
-          .doc()
-          .set(this.item)
-          .then(() => {
-            this.$router.push(this.parentPath);
-          })
-          .catch((error) => {
-            alert(`Failed to create Expense Entry: ${error.message}`);
-          });
+        try {
+          await doc.set(this.item)
+          this.$router.push(this.parentPath);
+        } catch (error) {
+          alert(`Failed to edit Expense Entry: ${error.message}`);
+        }
       }
-    }
-  }
+    },
+  },
 });
 </script>
 <style>
