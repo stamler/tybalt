@@ -134,7 +134,7 @@
             v-bind:to="{ name: 'Time Sheets' }"
             v-on:click.native="bundle(new Date(Number(week)))"
           >
-            <package-icon></package-icon>
+            <send-icon></send-icon>
           </router-link>
         </div>
       </div>
@@ -148,7 +148,7 @@ import { format, subDays } from "date-fns";
 import {
   EditIcon,
   XCircleIcon,
-  PackageIcon,
+  SendIcon,
   CheckCircleIcon,
 } from "vue-feather-icons";
 import store from "../store";
@@ -161,7 +161,7 @@ export default mixins.extend({
   components: {
     EditIcon,
     XCircleIcon,
-    PackageIcon,
+    SendIcon,
     CheckCircleIcon,
   },
   filters: {

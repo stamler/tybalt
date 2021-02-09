@@ -290,7 +290,7 @@ if (!timeEntries.empty) {
           approved: false,
           rejected: false,
           rejectionReason: "",
-          submitted: false,
+          submitted: true,
           entries,
           nonWorkHoursTally,
           offRotationDaysTally: offRotationDates.length,
