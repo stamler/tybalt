@@ -10,7 +10,10 @@ export default Vue.extend({
   },
   methods: {
     bundle(week: Date) {
-      store.commit("startTask", { id: "bundle", message: "bundling" });
+      store.commit("startTask", {
+        id: "bundle",
+        message: "verifying...",
+      });
       const bundleTimesheet = firebase
         .functions()
         .httpsCallable("bundleTimesheet");
