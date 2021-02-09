@@ -71,7 +71,6 @@
         <router-link to="#" v-on:click.native="$delete(item, 'attachment')">
           <file-minus-icon></file-minus-icon>
         </router-link>
-        <edit-icon></edit-icon>
       </span>
       <span v-else>
         <input type="file" name="attachment" v-on:change="updateAttachment" />
@@ -104,18 +103,14 @@ import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import { sha256 } from "js-sha256";
-import {
-  EditIcon,
-  DownloadIcon,
-  FileMinusIcon
-} from "vue-feather-icons";
+import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
 export default mixins.extend({
-  components: { Datepicker, EditIcon, DownloadIcon, FileMinusIcon },
+  components: { Datepicker, DownloadIcon, FileMinusIcon },
   props: ["id", "collection"],
   data() {
     return {
@@ -339,13 +334,15 @@ export default mixins.extend({
 
       // Create or edit the document
       if (!uploadFailed) {
-        console.log("saving the corresponding document");
         const doc = this.id
           ? this.collectionObject.doc(this.id)
           : this.collectionObject.doc();
 
         try {
-          this.item.attachment = this.newAttachment;
+          if (this.newAttachment !== null) {
+            // a new attachment was successfully uploaded, save in document
+            this.item.attachment = this.newAttachment;
+          }
           await doc.set(this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
