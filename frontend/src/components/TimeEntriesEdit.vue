@@ -300,7 +300,7 @@ export default Vue.extend({
         this.jobCandidates = [];
         delete this.item.job;
       }
-    }, 250),
+    }, 650),
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
