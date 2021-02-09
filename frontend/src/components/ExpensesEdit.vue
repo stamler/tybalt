@@ -137,6 +137,7 @@ export default mixins.extend({
       item: {} as firebase.firestore.DocumentData,
       attachmentPreviouslyUploaded: false,
       validAttachmentType: true,
+      newAttachment: null as string | null,
       localFile: {} as File,
     };
   },
@@ -198,16 +199,14 @@ export default mixins.extend({
             try {
               url = await storage.ref(pathReference).getDownloadURL();
               this.attachmentPreviouslyUploaded = true;
-              this.$delete(this.item, "attachment");
             } catch (error) {
               if (error.code === "storage/object-not-found") {
-                this.$set(this.item, "attachment", pathReference);
+                this.newAttachment = pathReference;
                 this.attachmentPreviouslyUploaded = false;
               }
             }
           } else {
             this.validAttachmentType = false;
-            this.$delete(this.item, "attachment");
           }
         };
         return reader.readAsArrayBuffer(this.localFile);
@@ -307,6 +306,7 @@ export default mixins.extend({
       if (this.attachmentPreviouslyUploaded === true) {
         throw "You cannot upload a proof of expense twice";
       }
+      // TODO: restrict uploading twice in the backend
 
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
       delete this.item.rejected;
@@ -321,17 +321,17 @@ export default mixins.extend({
       // If there's an attachment, upload it. If successful
       // complete the rest. Otherwise cleanup and abort.
       let uploadFailed = false;
-      if (this.item.attachment !== undefined) {
+      if (this.newAttachment !== null) {
         store.commit("startTask", {
-          id: `upload${this.item.attachment}`,
+          id: `upload${this.newAttachment}`,
           message: "uploading",
         });
         try {
-          await storage.ref(this.item.attachment).put(this.localFile);
+          await storage.ref(this.newAttachment).put(this.localFile);
           uploadFailed = false;
-          store.commit("endTask", { id: `upload${this.item.attachment}` });
+          store.commit("endTask", { id: `upload${this.newAttachment}` });
         } catch (error) {
-          store.commit("endTask", { id: `upload${this.item.attachment}` });
+          store.commit("endTask", { id: `upload${this.newAttachment}` });
           alert(`Attachment Upload failed: ${error}`);
           uploadFailed = true;
         }
@@ -345,11 +345,14 @@ export default mixins.extend({
           : this.collectionObject.doc();
 
         try {
-          await doc.set(this.item)
+          this.item.attachment = this.newAttachment;
+          await doc.set(this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
           alert(`Failed to edit Expense Entry: ${error.message}`);
         }
+      } else {
+        alert("Uploading the attachment failed");
       }
     },
   },
