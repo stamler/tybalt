@@ -64,12 +64,23 @@
 
     <span class="field">
       <label for="attachment">Attachment</label>
-      <input type="file" name="attachment" v-on:change="updateAttachment" />
-      <span v-if="attachmentPreviouslyUploaded" class="attention">
-        Previously uploaded
+      <span v-if="item.attachment">
+        <router-link to="#" v-on:click.native="downloadAttachment(item)">
+          <download-icon></download-icon>
+        </router-link>
+        <router-link to="#" v-on:click.native="$delete(item, 'attachment')">
+          <file-minus-icon></file-minus-icon>
+        </router-link>
+        <edit-icon></edit-icon>
       </span>
-      <span v-if="!validAttachmentType" class="attention">
-        only png, jpeg & pdf accepted
+      <span v-else>
+        <input type="file" name="attachment" v-on:change="updateAttachment" />
+        <span v-if="attachmentPreviouslyUploaded" class="attention">
+          Previously uploaded
+        </span>
+        <span v-if="!validAttachmentType" class="attention">
+          only png, jpeg & pdf accepted
+        </span>
       </span>
     </span>
 
@@ -83,7 +94,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import mixins from "./mixins";
 import firebase from "../firebase";
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -93,13 +104,18 @@ import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import { sha256 } from "js-sha256";
+import {
+  EditIcon,
+  DownloadIcon,
+  FileMinusIcon
+} from "vue-feather-icons";
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
-export default Vue.extend({
-  components: { Datepicker },
+export default mixins.extend({
+  components: { Datepicker, EditIcon, DownloadIcon, FileMinusIcon },
   props: ["id", "collection"],
   data() {
     return {
@@ -182,16 +198,16 @@ export default Vue.extend({
             try {
               url = await storage.ref(pathReference).getDownloadURL();
               this.attachmentPreviouslyUploaded = true;
-              delete this.item.attachment;
+              this.$delete(this.item, "attachment");
             } catch (error) {
               if (error.code === "storage/object-not-found") {
-                this.item.attachment = pathReference;
+                this.$set(this.item, "attachment", pathReference);
                 this.attachmentPreviouslyUploaded = false;
               }
             }
           } else {
             this.validAttachmentType = false;
-            delete this.item.attachment;
+            this.$delete(this.item, "attachment");
           }
         };
         return reader.readAsArrayBuffer(this.localFile);
