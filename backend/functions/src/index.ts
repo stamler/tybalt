@@ -8,7 +8,8 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import { bundleTimesheet, unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
+import { unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
+import { bundleTimesheet } from "./bundleTimesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 
