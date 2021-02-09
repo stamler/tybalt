@@ -43,3 +43,53 @@ export function getAuthObject(context: functions.https.CallableContext, authoriz
   }
   return auth;
 }
+
+// Dates are not supported in Firebase Functions yet so
+// data.weekEnding is the valueOf() a Date object
+// https://github.com/firebase/firebase-functions/issues/316
+export interface WeekReference {
+  // milliseconds since the epoch
+  weekEnding: number;
+}
+
+// User-defined Type Guard
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
+export function isWeekReference(data: any): data is WeekReference {
+  if (data.weekEnding) {
+    return typeof data.weekEnding === "number";
+  }
+  return false;
+}
+
+// these fields need to match the validTimeEntry() function in firestore rules
+export interface TimeEntry {
+  // required properties always
+  date: admin.firestore.Timestamp;
+  timetype: string;
+  timetypeName: string;
+  uid: string;
+
+  // required properties for TimeEntries pulled from collection
+  weekEnding: admin.firestore.Timestamp;
+
+  // properties which are never required, but may require eachother
+  division?: string;
+  divisionName?: string;
+  workDescription?: string;
+  hours?: number;
+  mealsHours?: number;
+  client?: string;
+  job?: string;
+  jobDescription?: string;
+  workrecord?: string;
+  jobHours?: number;
+  payoutRequestAmount?: number;
+}
+
+interface DocIdObject {
+  // the id of a document
+  id: string;
+}
+export function isDocIdObject(data: any): data is DocIdObject {
+  return typeof data.id === "string";
+}
