@@ -312,7 +312,6 @@ export default Vue.extend({
     },
     async downloadAttachment(item: firebase.firestore.DocumentData) {
       const url = await storage.ref(item.attachment).getDownloadURL();
-      console.log(`Do download for ${url}`);
       const a = document.createElement("a");
       a.href = url;
       a.download = "download";
