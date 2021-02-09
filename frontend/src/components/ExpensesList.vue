@@ -141,7 +141,6 @@ import {
 } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 export default Vue.extend({
   mixins: [mixins],
@@ -170,15 +169,6 @@ export default Vue.extend({
     };
   },
   methods: {
-    async downloadAttachment(item: firebase.firestore.DocumentData) {
-      const url = await storage.ref(item.attachment).getDownloadURL();
-      console.log(`Do download for ${url}`);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "download";
-      a.click();
-      return a;
-    },
     commit(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference

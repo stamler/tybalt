@@ -3,6 +3,7 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 export default Vue.extend({
   computed: {
@@ -308,6 +309,15 @@ export default Vue.extend({
         .catch((err) => {
           alert(`Error deleting item: ${err}`);
         });
+    },
+    async downloadAttachment(item: firebase.firestore.DocumentData) {
+      const url = await storage.ref(item.attachment).getDownloadURL();
+      console.log(`Do download for ${url}`);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "download";
+      a.click();
+      return a;
     },
   },
 });
