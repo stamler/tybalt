@@ -2,9 +2,7 @@
   <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
-        <router-link :to="[parentPath, item.id, 'details'].join('/')">
-          {{ item.date.toDate() | shortDate }}
-        </router-link>
+        {{ item.date.toDate() | shortDate }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
