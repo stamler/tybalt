@@ -56,7 +56,34 @@ function denyAuthenticatedRead(collection: string) {
     await firebase.assertFails(doc.get());
   });
 }
-  
+
+function allowAdminRead(collection: string) {
+  return it(`${collection} allows admin-claim users to read`, async () => {
+    const auth = { uid: "alice", email: "alice@example.com" };
+    const db = firebase.initializeTestApp({ projectId, auth: {...auth, admin: true} }).firestore();
+    const doc = db.collection(collection).doc();
+    await firebase.assertSucceeds(doc.get());
+  });
+}
+
+function allowAdminWrite(collection: string) {
+  return it(`${collection} allows admin-claim users to write`, async () => {
+    const auth = { uid: "alice", email: "alice@example.com" };
+    const db = firebase.initializeTestApp({ projectId, auth: {...auth, admin: true} }).firestore();
+    const doc = db.collection(collection).doc();
+    await firebase.assertSucceeds(doc.set({ foo: "bar" }));
+  });
+}
+
+function denyAdminWrite(collection: string) {
+  return it(`${collection} denies admin-claim users writing`, async () => {
+    const auth = { uid: "alice", email: "alice@example.com" };
+    const db = firebase.initializeTestApp({ projectId, auth: {...auth, admin: true} }).firestore();
+    const doc = db.collection(collection).doc();
+    await firebase.assertFails(doc.set({ foo: "bar" }));
+  });
+}
+
 describe("Firestore Rules", () => {
   describe("Unauthenticated Reads and Writes", () => {
     collections.forEach((collection) => {
@@ -86,5 +113,42 @@ describe("Firestore Rules", () => {
     });
   });
 
+  describe("Admin Reads", () => {
+    ["Logins", "Profiles", "RawLogins", "Users"].forEach((collection) => {
+      allowAdminRead(collection);
+    });
+  });
+
+  describe("Admin Writes", () => {
+    ["Divisions", "TimeTypes"].forEach((collection) => {
+      allowAdminWrite(collection);
+    });
+    ["Computers", "Config", "RawLogins"].forEach((collection) => {
+      denyAdminWrite(collection);
+    });
+  });
+
+  describe("RawLogins", () => {
+    it("Allows admins to delete stuff", async () => {
+      const auth = { uid: "alice", email: "alice@example.com" };
+      const db = firebase.initializeTestApp({ projectId, auth: {...auth, admin: true} }).firestore();
+      const doc = db.collection("RawLogins").doc();  
+      await firebase.assertSucceeds(doc.delete());
+    });
+    it("Prevents anybody else from deleting stuff", async () => {
+      const auth = { uid: "alice", email: "alice@example.com" };
+      const db = firebase.initializeTestApp({ projectId, auth }).firestore();
+      const doc = db.collection("RawLogins").doc();  
+      await firebase.assertFails(doc.delete());
+    });
+  });
+
+  describe("Jobs", () => {
+    it("requires the job claim to create or update");
+    it("requires the proposal to reference a valid job if present");
+    it("requires the proposal to be in the valid format if present");
+    it("requires the job id to be in the correct format");
+    it("requires the job name field to be at least 5 characters long");
+  });
   //wtf.dump()
 });

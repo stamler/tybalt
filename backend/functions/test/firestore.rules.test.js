@@ -5,9 +5,6 @@ const MY_PROJECT_ID = "charade-ca63f";
 
 const auth = { uid: "alice", email: "alice@example.com" };
 const authBob = { uid: "bob", email: "bob@example.com" };
-const dbLoggedInNoClaims = firebase
-  .initializeTestApp({ projectId: MY_PROJECT_ID, auth })
-  .firestore();
 const dbLoggedInTimeClaim = firebase
   .initializeTestApp({
     projectId: MY_PROJECT_ID,
@@ -32,58 +29,8 @@ const dbLoggedInAdminClaim = firebase
     auth: { ...auth, admin: true },
   })
   .firestore();
-const dbAdmin = firebase
-  .initializeAdminApp({ projectId: MY_PROJECT_ID })
-  .firestore();
-
-function allowAdminWrite(collection) {
-  return it(`${collection} allows admin-claim users to write`, async () => {
-    const doc = dbLoggedInAdminClaim.collection(collection).doc();
-    await firebase.assertSucceeds(doc.set({ foo: "bar" }));
-  });
-}
-
-function denyAdminWrite(collection) {
-  return it(`${collection} denies admin-claim users writing`, async () => {
-    const doc = dbLoggedInAdminClaim.collection(collection).doc();
-    await firebase.assertFails(doc.set({ foo: "bar" }));
-  });
-}
-
-function allowAdminRead(collection) {
-  return it(`${collection} allows admin-claim users to read`, async () => {
-    const doc = dbLoggedInAdminClaim.collection(collection).doc();
-    await firebase.assertSucceeds(doc.get());
-  });
-}
 
 describe("Firestore Rules", () => {
-
-  describe("Admin Writes", () => {
-    ["Divisions", "TimeTypes"].forEach((collection) => {
-      allowAdminWrite(collection);
-    });
-    ["Computers", "Config", "RawLogins"].forEach((collection) => {
-      denyAdminWrite(collection);
-    });
-  });
-
-  describe("Admin Reads", () => {
-    ["Logins", "Profiles", "RawLogins", "Users"].forEach((collection) => {
-      allowAdminRead(collection);
-    });
-  });
-
-  describe("RawLogins", () => {
-    it("Allows admins to delete stuff", async () => {
-      const doc = dbLoggedInAdminClaim.collection("RawLogins").doc();
-      await firebase.assertSucceeds(doc.delete());
-    });
-    it("Prevents anybody else from deleting stuff", async () => {
-      const doc = dbLoggedInNoClaims.collection("RawLogins").doc();
-      await firebase.assertFails(doc.delete());
-    });
-  });
 
   describe("TimeEntries", () => {
     it("requires jobHours not be present if there is no job");
@@ -509,11 +456,4 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe("Jobs", () => {
-    it("requires the job claim to create or update");
-    it("requires the proposal to reference a valid job if present");
-    it("requires the proposal to be in the valid format if present");
-    it("requires the job id to be in the correct format");
-    it("requires the job name field to be at least 5 characters long");
-  });
 });
