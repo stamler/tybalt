@@ -97,6 +97,17 @@ const router = new Router({
               props: { approved: true, collection: "Expenses" },
               component: ExpensesList,
             },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Commit Queue",
+                requiredClaims: ["eapr"],
+              },
+              path: "commit",
+              name: "Expenses Commit Queue",
+              props: { commitqueue: true, collection: "Expenses" },
+              component: ExpensesList,
+            },
           ],
         },
       ],

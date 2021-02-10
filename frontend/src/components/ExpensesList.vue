@@ -42,7 +42,7 @@
       </div>
       <div class="rowactionsbox">
         <!-- The template for users -->
-        <template v-if="approved === undefined">
+        <template v-if="approved === undefined && commitqueue === undefined">
           <template v-if="item.submitted === false">
             <router-link to="#" v-on:click.native="del(item, collectionObject)">
               <x-circle-icon></x-circle-icon>
@@ -69,7 +69,7 @@
           </template>
 
           <template v-if="item.submitted === true && item.approved === true">
-            <span v-if="item.committed === undefined" class="label">
+            <span v-if="item.committed === false" class="label">
               approved
             </span>
             <span v-else class="label">committed</span>
@@ -77,7 +77,7 @@
         </template>
 
         <!-- The template for "pending" -->
-        <template v-if="approved === false">
+        <template v-if="approved === false && commitqueue === undefined">
           <template v-if="!item.approved && !item.rejected">
             <router-link
               v-bind:to="{ name: 'Expenses Pending' }"
@@ -99,7 +99,7 @@
         </template>
 
         <!-- The template for "approved" -->
-        <template v-if="approved === true">
+        <template v-if="approved === true && commitqueue === undefined">
           <template v-if="!item.committed">
             <router-link
               v-bind:to="{ name: 'Expenses Pending' }"
@@ -107,16 +107,25 @@
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
-            <router-link
-              v-bind:to="{ name: 'Expenses Approved' }"
-              v-on:click.native="commit(item, collectionObject)"
-            >
-              <lock-icon></lock-icon>
-            </router-link>
           </template>
           <template v-if="item.committed">
             <span class="label">committed</span>
           </template>
+        </template>
+        <!-- The template for commit queue -->
+        <template v-if="commitqueue === true">
+          <router-link
+            v-bind:to="{ name: 'Expenses Pending' }"
+            v-on:click.native="rejectExpense(item.id, 'no reason given')"
+          >
+            <x-circle-icon></x-circle-icon>
+          </router-link>
+          <router-link
+            v-bind:to="{ name: 'Expenses Approved' }"
+            v-on:click.native="commitItem(item, collectionObject)"
+          >
+            <lock-icon></lock-icon>
+          </router-link>
         </template>
       </div>
     </div>
@@ -142,7 +151,7 @@ const db = firebase.firestore();
 
 export default Vue.extend({
   mixins: [mixins],
-  props: ["approved", "collection"],
+  props: ["approved", "commitqueue", "collection"],
   components: {
     EditIcon,
     LockIcon,
@@ -167,7 +176,7 @@ export default Vue.extend({
     };
   },
   methods: {
-    commit(
+    commitItem(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference
     ) {
@@ -176,8 +185,13 @@ export default Vue.extend({
       }
       collection
         .doc(item.id)
-        .update({ committed: firebase.firestore.FieldValue.serverTimestamp() })
-        .catch(err => {
+        .update({
+          committed: true,
+          commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+          commitUid: store.state.user?.uid,
+          commitName: store.state.user?.displayName,
+        })
+        .catch((err) => {
           alert(`Error committing item: ${err}`);
         });
     },
@@ -210,15 +224,30 @@ export default Vue.extend({
             alert(`Can't load Expenses: ${error.message}`);
           });
         } else {
-          // approved prop is not defined, show this user's own timesheets
-          this.$bind(
-            "items",
-            this.collectionObject
-              .where("uid", "==", uid)
-              .orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Expenses: ${error.message}`);
-          });
+          // approved prop not defined, get user's own expenses
+          // or commit queue
+          if (typeof this.commitqueue !== "boolean") {
+            // populate with the user's own expenses
+            this.$bind(
+              "items",
+              this.collectionObject
+                .where("uid", "==", uid)
+                .orderBy("date", "desc")
+            ).catch((error) => {
+              alert(`Can't load Expenses: ${error.message}`);
+            });
+          } else if (this.commitqueue === true) {
+            // populate with the commit queue
+            this.$bind(
+              "items",
+              this.collectionObject
+                .where("approved", "==", true)
+                .where("committed", "==", false)
+                .orderBy("date", "desc")
+            ).catch((error) => {
+              alert(`Can't load Expenses: ${error.message}`);
+            });
+          }
         }
       },
       { immediate: true }

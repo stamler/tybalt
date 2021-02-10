@@ -74,7 +74,7 @@ export default Vue.extend({
               const data = tsDoc?.data() ?? undefined;
               if (data !== undefined && data.submitted === true) {
                 // timesheet is approvable because it has been submitted
-                transaction.update(item, { approved: true });
+                transaction.update(item, { approved: true, committed: false });
               } else {
                 throw "The expense has not been submitted";
               }
@@ -106,9 +106,9 @@ export default Vue.extend({
               if (
                 data !== undefined &&
                 data.submitted === true &&
-                data.committed === undefined
+                data.committed === false
               ) {
-                // timesheet is rejectable because it is submitted and not locked
+                // timesheet is rejectable because it is submitted and not committed
                 transaction.update(item, {
                   approved: false,
                   rejected: true,

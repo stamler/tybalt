@@ -94,7 +94,7 @@ service cloud.firestore {
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
-          "rejected", "rejectionReason" ]) &&
+          "rejected", "rejectionReason", "committed" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
@@ -251,13 +251,13 @@ service cloud.firestore {
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches()) ||
         // tapr can only approve or reject uncommitted expenses
-        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && !resource.data.keys().hasAll(["committed"])) ||
+        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason", "committed"]) && newDoc().committed == false) ||
         // eapr can only commit or reject uncommitted expenses
         (
           hasClaim("eapr") && 
           (
             ( newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().rejected == true && newDoc().approved == false ) ||
-            newDoc().diff(resource.data).affectedKeys().hasOnly(["committed"])
+            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid )
           )
         );
     }
