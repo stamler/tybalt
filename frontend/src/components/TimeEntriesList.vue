@@ -32,7 +32,7 @@
               >
                 <span class="label">
                   committed
-                  {{ item.committed.toDate() | shortDate }} by
+                  {{ item.commitTime.toDate() | shortDate }} by
                   {{ item.creatorName }}
                 </span>
                 <span class="label">
@@ -56,28 +56,33 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <router-link
-            v-if="
-              collection === 'TimeAmendments' && item.committed === undefined
-            "
-            to="#"
-            v-on:click.native="commit(item, collectionObject)"
-          >
-            <check-circle-icon></check-circle-icon>
-          </router-link>
-          <router-link
-            v-if="item.committed === undefined"
-            :to="[parentPath, item.id, 'edit'].join('/')"
-          >
-            <edit-icon></edit-icon>
-          </router-link>
-          <router-link
-            v-if="item.committed === undefined"
-            to="#"
-            v-on:click.native="del(item, collectionObject)"
-          >
-            <x-circle-icon></x-circle-icon>
-          </router-link>
+          <template v-if="collection === 'TimeAmendments'">
+            <template v-if="item.committed === false">
+              <router-link
+                to="#"
+                v-on:click.native="commit(item, collectionObject)"
+              >
+                <check-circle-icon></check-circle-icon>
+              </router-link>
+              <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+                <edit-icon></edit-icon>
+              </router-link>
+              <router-link
+                to="#"
+                v-on:click.native="del(item, collectionObject)"
+              >
+                <x-circle-icon></x-circle-icon>
+              </router-link>
+            </template>
+          </template>
+          <template v-else>
+            <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+              <edit-icon></edit-icon>
+            </router-link>
+            <router-link to="#" v-on:click.native="del(item, collectionObject)">
+              <x-circle-icon></x-circle-icon>
+            </router-link>
+          </template>
         </div>
       </div>
       <div class="listsummary" v-if="collection === 'TimeEntries'">
@@ -234,8 +239,13 @@ export default mixins.extend({
       }
       collection
         .doc(item.id)
-        .update({ committed: firebase.firestore.FieldValue.serverTimestamp() })
-        .catch(err => {
+        .update({
+          committed: true,
+          commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+          commitUid: store.state.user?.uid,
+          commitName: store.state.user?.displayName,
+        })
+        .catch((err) => {
           alert(`Error committing item: ${err}`);
         });
     },
@@ -247,7 +257,7 @@ export default mixins.extend({
     },
     itemsByWeekEnding(weekEnding: number) {
       return this.items.filter(
-        x =>
+        (x) =>
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().valueOf() === Number(weekEnding)
       );
