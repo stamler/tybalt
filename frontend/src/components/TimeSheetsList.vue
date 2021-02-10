@@ -55,7 +55,7 @@
         <div class="firstline">{{ jobs(item) }}</div>
         <div class="secondline">{{ divisions(item) }}</div>
         <div class="thirdline">
-          <span v-if="item.rejected" style="color:red;">
+          <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
           </span>
         </div>
@@ -143,7 +143,7 @@ import {
   SendIcon,
   RewindIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
 } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
@@ -157,12 +157,12 @@ export default Vue.extend({
     SendIcon,
     RewindIcon,
     CheckCircleIcon,
-    XCircleIcon
+    XCircleIcon,
   },
   filters: {
     shortDate(date: Date) {
       return format(date, "MMM dd");
-    }
+    },
   },
   data() {
     return {
@@ -170,7 +170,7 @@ export default Vue.extend({
       rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: []
+      items: [],
     };
   },
   created() {
@@ -197,7 +197,7 @@ export default Vue.extend({
               .where("approved", "==", this.approved)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
-          ).catch(error => {
+          ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
         } else {
@@ -207,7 +207,7 @@ export default Vue.extend({
             this.collectionObject
               .where("uid", "==", uid)
               .orderBy("weekEnding", "desc")
-          ).catch(error => {
+          ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
         }
@@ -249,9 +249,7 @@ export default Vue.extend({
       }
     },
     jobs(item: firebase.firestore.DocumentData) {
-      const jobs = Object.keys(item.jobsTally)
-        .sort()
-        .join(", ");
+      const jobs = Object.keys(item.jobsTally).sort().join(", ");
       if (jobs.length > 0) {
         return `jobs: ${jobs}`;
       } else {
@@ -259,15 +257,13 @@ export default Vue.extend({
       }
     },
     divisions(item: firebase.firestore.DocumentData) {
-      const divisions = Object.keys(item.divisionsTally)
-        .sort()
-        .join(", ");
+      const divisions = Object.keys(item.divisionsTally).sort().join(", ");
       if (divisions.length > 0) {
         return `divisions: ${divisions}`;
       } else {
         return;
       }
-    }
-  }
+    },
+  },
 });
 </script>

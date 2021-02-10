@@ -54,7 +54,7 @@ export default mixins.extend({
       search: "",
       parentPath: "",
       collectionObject: db.collection("Users"),
-      items: []
+      items: [],
     };
   },
   computed: {
@@ -66,7 +66,7 @@ export default mixins.extend({
           (p: firebase.firestore.DocumentData) =>
             this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    }
+    },
   },
   filters: {
     dateFormat(date: Date) {
@@ -74,15 +74,15 @@ export default mixins.extend({
     },
     relativeTime(date: Date) {
       return formatDistanceToNow(date, { addSuffix: true });
-    }
+    },
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.$bind("items", this.collectionObject).catch(error => {
+    this.$bind("items", this.collectionObject).catch((error) => {
       alert(`Can't load Users: ${error.message}`);
     });
-  }
+  },
 });
 </script>
 <style scoped>

@@ -31,21 +31,21 @@ export default mixins.extend({
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    }
+    },
   },
   filters: {
     relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
-    }
+    },
   },
   data() {
     return {
       search: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[]
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   created() {
@@ -55,10 +55,10 @@ export default mixins.extend({
     this.$bind(
       "items",
       this.collectionObject.orderBy("created", "desc").limit(101)
-    ).catch(error => {
+    ).catch((error) => {
       alert(`Can't load Logins: ${error.message}`);
     });
-  }
+  },
 });
 </script>
 <style scoped>

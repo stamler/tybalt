@@ -12,12 +12,8 @@
 
       <template v-slot:footer>
         <div>
-          <button v-on:click="$refs.rejectModal.closeModal()">
-            Cancel
-          </button>
-          <button v-on:click="rejectThenRedirect()">
-            Reject
-          </button>
+          <button v-on:click="$refs.rejectModal.closeModal()">Cancel</button>
+          <button v-on:click="rejectThenRedirect()">Reject</button>
         </div>
       </template>
     </modal>
@@ -27,9 +23,9 @@
       <router-link
         v-if="
           canApprove() &&
-            item.submitted === true &&
-            item.approved === false &&
-            item.rejected === false
+          item.submitted === true &&
+          item.approved === false &&
+          item.rejected === false
         "
         v-bind:to="{ name: 'Time Sheets' }"
         v-on:click.native="approveTs(id)"
@@ -48,8 +44,8 @@
       <router-link
         v-if="
           belongsToMe(item) &&
-            item.submitted === true &&
-            item.approved === false
+          item.submitted === true &&
+          item.approved === false
         "
         v-bind:to="{ name: 'Time Sheets' }"
         v-on:click.native="recallTs(id)"
@@ -60,9 +56,9 @@
       <router-link
         v-if="
           canApprove() &&
-            item.submitted === true &&
-            item.locked === false &&
-            item.rejected === false
+          item.submitted === true &&
+          item.locked === false &&
+          item.rejected === false
         "
         v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
         v-on:click.native="$refs.rejectModal.openModal()"
@@ -75,7 +71,7 @@
       {{ item.weekEnding.toDate() | shortDate }}
     </div>
     <!-- rejection reason -->
-    <span v-if="item.rejected" style="color:red;">
+    <span v-if="item.rejected" style="color: red">
       Rejected: {{ item.rejectionReason }}
     </span>
     <table>
@@ -135,7 +131,7 @@ import {
   SendIcon,
   RewindIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
 } from "vue-feather-icons";
 const db = firebase.firestore();
 
@@ -145,7 +141,7 @@ export default mixins.extend({
     SendIcon,
     RewindIcon,
     CheckCircleIcon,
-    XCircleIcon
+    XCircleIcon,
   },
   props: ["id", "collection"],
   computed: {
@@ -165,25 +161,25 @@ export default mixins.extend({
       } else {
         return new Date();
       }
-    }
+    },
   },
   data() {
     return {
       rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined
+      item: {} as firebase.firestore.DocumentData | undefined,
     };
   },
   filters: {
     shortDate(date: Date) {
       return format(date, "MMM dd");
-    }
+    },
   },
   watch: {
-    id: function(id: string) {
+    id: function (id: string) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
   },
   created() {
     this.parentPath =
@@ -206,7 +202,7 @@ export default mixins.extend({
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
+          .then((snap) => {
             if (snap.exists) {
               this.item = snap.data();
             } else {
@@ -227,8 +223,8 @@ export default mixins.extend({
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true
       );
-    }
-  }
+    },
+  },
 });
 </script>
 <style scoped>

@@ -2,7 +2,7 @@
   <form id="editor">
     <span class="field" v-if="collection === 'TimeAmendments'">
       <select name="uid" v-model="item.uid">
-        <option disabled selected value=""> -- choose an employee -- </option>
+        <option disabled selected value="">-- choose an employee --</option>
         <option v-for="p in profiles" :value="p.id" v-bind:key="p.id">
           {{ p.displayName }}
         </option>
@@ -30,7 +30,7 @@
 
     <span class="field" v-if="item.timetype === 'R'">
       <select name="division" v-model="item.division">
-        <option disabled selected value=""> -- choose division -- </option>
+        <option disabled selected value="">-- choose division --</option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
           {{ d.name }}
         </option>
@@ -174,11 +174,11 @@ export default Vue.extend({
         // date picker state
         disabled: {
           to: subWeeks(new Date(), 4),
-          from: addWeeks(new Date(), 4)
+          from: addWeeks(new Date(), 4),
         },
         highlighted: {
-          dates: [new Date()]
-        }
+          dates: [new Date()],
+        },
       },
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
@@ -188,17 +188,17 @@ export default Vue.extend({
       showSuggestions: false,
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
-      item: {} as firebase.firestore.DocumentData
+      item: {} as firebase.firestore.DocumentData,
     };
   },
   computed: {
-    ...mapState(["user"])
+    ...mapState(["user"]),
   },
   watch: {
-    id: function(id) {
+    id: function (id) {
       this.setItem(id);
     }, // first arg is newVal, second is oldVal
-    "item.timetype": function(newVal, oldVal) {
+    "item.timetype": function (newVal, oldVal) {
       if (
         newVal === "R" &&
         oldVal !== "R" &&
@@ -206,7 +206,7 @@ export default Vue.extend({
       ) {
         this.item.division = "";
       }
-    }
+    },
   },
   created() {
     this.parentPath =
@@ -249,7 +249,7 @@ export default Vue.extend({
         this.item = {
           date: new Date(),
           timetype: "R",
-          division: defaultDivision ?? ""
+          division: defaultDivision ?? "",
         };
         if (this.collection === "TimeAmendments") {
           // setting the uid blank surfaces the choose option in the UI
@@ -260,7 +260,7 @@ export default Vue.extend({
     setJob(id: string) {
       this.item.job = id;
       this.showSuggestions = false;
-      const job = this.jobCandidates.filter(i => i.id === id)[0];
+      const job = this.jobCandidates.filter((i) => i.id === id)[0];
       this.item.jobDescription = job.description;
       this.item.client = job.client;
     },
@@ -280,7 +280,7 @@ export default Vue.extend({
     },
     // any annotation in next line due to the following:
     // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
-    updateJobCandidates: _.debounce(function(this: any, e: Event) {
+    updateJobCandidates: _.debounce(function (this: any, e: Event) {
       // TODO: possibly use full text search like
       // https://www.npmjs.com/package/adv-firestore-functions
       this.showSuggestions = true;
@@ -304,7 +304,7 @@ export default Vue.extend({
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
-        i => i.id === this.item.timetype
+        (i) => i.id === this.item.timetype
       )[0].name;
 
       // if timetype isn't R, delete disallowed properties
@@ -317,14 +317,14 @@ export default Vue.extend({
           "client",
           "jobHours",
           "mealsHours",
-          "workrecord"
-        ].forEach(x => delete this.item[x]);
+          "workrecord",
+        ].forEach((x) => delete this.item[x]);
       } else {
         // timetype is R, division must be present
         if (this.item.division && this.item.division.length > 0) {
           // write divisionName
           this.item.divisionName = this.divisions.filter(
-            i => i.id === this.item.division
+            (i) => i.id === this.item.division
           )[0].name;
         } else {
           throw "Division Missing";
@@ -360,7 +360,7 @@ export default Vue.extend({
         delete this.item.payoutRequestAmount;
       }
 
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
+      this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
       if (this.collection === "TimeEntries") {
         // include uid of the creating user
@@ -407,7 +407,7 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch(error => {
+          .catch((error) => {
             //console.log(this.item);
             alert(`Failed to edit Time Entry: ${error.message}`);
           });
@@ -419,13 +419,13 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch(error => {
+          .catch((error) => {
             //console.log(this.item);
             alert(`Failed to create Time Entry: ${error.message}`);
           });
       }
-    }
-  }
+    },
+  },
 });
 </script>
 <style>

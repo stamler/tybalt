@@ -71,7 +71,7 @@ export default mixins.extend({
         if (this.item.pending && Object.keys(this.item.pending).length > 0) {
           pendingUserKeys = (Object.values(
             this.item.pending
-          ) as TimeSheetTrackingPayload[]).map(p => p.uid);
+          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
         }
         let lockedUserKeys = [] as string[];
         if (
@@ -80,11 +80,11 @@ export default mixins.extend({
         ) {
           lockedUserKeys = (Object.values(
             this.item.timeSheets
-          ) as TimeSheetTrackingPayload[]).map(p => p.uid);
+          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
         }
         return this.profiles
-          .filter(p => !pendingUserKeys.includes(p.id))
-          .filter(l => !lockedUserKeys.includes(l.id));
+          .filter((p) => !pendingUserKeys.includes(p.id))
+          .filter((l) => !lockedUserKeys.includes(l.id));
       }
       return [];
     },
@@ -94,7 +94,7 @@ export default mixins.extend({
       } else {
         return new Date();
       }
-    }
+    },
   },
   data() {
     return {
@@ -102,25 +102,25 @@ export default mixins.extend({
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData | undefined,
-      profiles: [] as firebase.firestore.DocumentData[]
+      profiles: [] as firebase.firestore.DocumentData[],
     };
   },
   filters: {
     shortDate(date: Date) {
       return format(date, "MMM dd, yyyy");
-    }
+    },
   },
   watch: {
-    id: function(id: string) {
+    id: function (id: string) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
-    this.$bind("profiles", db.collection("Profiles")).catch(error => {
+    this.$bind("profiles", db.collection("Profiles")).catch((error) => {
       alert(`Can't load Profiles: ${error.message}`);
     });
   },
@@ -133,7 +133,7 @@ export default mixins.extend({
         this.collectionObject
           .doc(id)
           .get()
-          .then(snap => {
+          .then((snap) => {
             if (snap.exists) {
               this.item = snap.data();
             } else {
@@ -154,8 +154,8 @@ export default mixins.extend({
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true
       );
-    }
-  }
+    },
+  },
 });
 </script>
 <style scoped>

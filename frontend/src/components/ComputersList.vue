@@ -100,19 +100,19 @@ export default mixins.extend({
       if (this.retired) {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter(p => Object.prototype.hasOwnProperty.call(p, "retired"))
+          .filter((p) => Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
-            p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       } else {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter(p => !Object.prototype.hasOwnProperty.call(p, "retired"))
+          .filter((p) => !Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
-            p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       }
-    }
+    },
   },
   filters: {
     dateFormat(date: Date): string {
@@ -123,21 +123,21 @@ export default mixins.extend({
     },
     shortDate(date: Date): string {
       return format(date, "MMM dd");
-    }
+    },
   },
   data() {
     return {
       search: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[]
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).catch(error => {
+    this.$bind("items", this.collectionObject).catch((error) => {
       alert(`Can't load computers: ${error.message}`);
     });
   },
@@ -147,12 +147,12 @@ export default mixins.extend({
         .functions()
         .httpsCallable("assignComputerToUser");
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
-        error => {
+        (error) => {
           alert(`Computer assignment failed: ${error}`);
         }
       );
-    }
-  }
+    },
+  },
 });
 </script>
 <style scoped>

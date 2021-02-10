@@ -24,7 +24,7 @@ export default mixins.extend({
   filters: {
     uiLinkTitle(item: RouteConfig): string {
       return item.meta?.uiName ?? item.name;
-    }
+    },
   },
   components: { WaitMessages },
   computed: {
@@ -37,7 +37,7 @@ export default mixins.extend({
         this.$router.options.routes
       );
       return currentRoute?.children?.filter(this.filterUIRoutes) ?? [];
-    }
+    },
   },
   methods: {
     // return true if the item has a showInUi property with a value
@@ -99,7 +99,7 @@ export default mixins.extend({
         }
       }
       return null;
-    }
-  }
+    },
+  },
 });
 </script>

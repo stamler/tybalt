@@ -51,7 +51,7 @@ export default Vue.extend({
     return {
       item: {} as firebase.firestore.DocumentData,
       managers: [] as firebase.firestore.DocumentData[],
-      divisions: [] as firebase.firestore.DocumentData[]
+      divisions: [] as firebase.firestore.DocumentData[],
     };
   },
   computed: mapState(["user"]),

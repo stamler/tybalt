@@ -16,7 +16,7 @@
               <router-link
                 v-bind:to="{
                   name: 'Computer Details',
-                  params: { id: makeSlug(item) }
+                  params: { id: makeSlug(item) },
                 }"
               >
                 {{ item.serial }}
@@ -61,7 +61,7 @@ import { XCircleIcon } from "vue-feather-icons";
 export default mixins.extend({
   props: ["collection"],
   components: {
-    XCircleIcon
+    XCircleIcon,
   },
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
@@ -71,19 +71,19 @@ export default mixins.extend({
           (p: firebase.firestore.DocumentData) =>
             this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    }
+    },
   },
   filters: {
     relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
-    }
+    },
   },
   data() {
     return {
       search: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[]
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   created() {
@@ -91,7 +91,7 @@ export default mixins.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject.orderBy("created", "desc")).catch(
-      error => {
+      (error) => {
         alert(`Can't load Raw Logins: ${error.message}`);
       }
     );
@@ -120,8 +120,8 @@ export default mixins.extend({
       } else {
         throw new Error(`serial ${sc} or manufacturer ${mc} too short`);
       }
-    }
-  }
+    },
+  },
 });
 </script>
 <style scoped>

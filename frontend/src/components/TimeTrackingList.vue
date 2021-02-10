@@ -176,24 +176,24 @@ export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
     LockIcon,
-    DownloadIcon
+    DownloadIcon,
   },
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
       // Show only items with pending or locked TimeSheets
-      return this.items.filter(x => this.hasPending(x) || this.hasLocked(x));
-    }
+      return this.items.filter((x) => this.hasPending(x) || this.hasLocked(x));
+    },
   },
   filters: {
     exportDate(date: Date) {
       return format(date, "yyyy MMM dd");
-    }
+    },
   },
   data() {
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: []
+      items: [],
     };
   },
   created() {
@@ -244,13 +244,13 @@ export default Vue.extend({
       ) {
         store.commit("startTask", {
           id: `lock${week}`,
-          message: "locking + exporting"
+          message: "locking + exporting",
         });
         return lockTimesheets({ weekEnding: week })
           .then(() => {
             store.commit("endTask", { id: `lock${week}` });
           })
-          .catch(error => {
+          .catch((error) => {
             store.commit("endTask", { id: `lock${week}` });
             alert(`Error exporting timesheets: ${error.message}`);
           });
@@ -259,7 +259,9 @@ export default Vue.extend({
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
       const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
-      const { timesheets: items, amendments } = this.foldAmendments(inputObject);
+      const { timesheets: items, amendments } = this.foldAmendments(
+        inputObject
+      );
 
       // since all entries have the same week ending, pull from the first entry
       let weekEnding;
@@ -390,7 +392,9 @@ export default Vue.extend({
     async generateInvoicingCSV(url: string) {
       const response = await fetch(url);
       const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
-      const { timesheets: items, amendments } = this.foldAmendments(inputObject);
+      const { timesheets: items, amendments } = this.foldAmendments(
+        inputObject
+      );
 
       // since all entries have the same week ending, pull from the first entry
       let weekEnding;
@@ -448,7 +452,7 @@ export default Vue.extend({
             employee: item.displayName,
             surname: item.surname,
             givenName: item.givenName,
-            amended: entry.amendment
+            amended: entry.amendment,
           };
           if (entry.job !== undefined) {
             // There is a job number, populate client, job, description
@@ -483,7 +487,7 @@ export default Vue.extend({
           employee: entry.displayName,
           surname: entry.surname,
           givenName: entry.givenName,
-          amended: true
+          amended: true,
         };
         if (entry.job !== undefined) {
           // There is a job number, populate client, job, description
@@ -617,7 +621,9 @@ export default Vue.extend({
                 // (as opposed to job hours not billable to the client)
                 workHoursTally["noJobNumber"] += item.hours;
               } else {
-                throw new Error("The TimeEntry is of type Regular hours but no job or hours are present")
+                throw new Error(
+                  "The TimeEntry is of type Regular hours but no job or hours are present"
+                );
               }
             } else {
               if (!item.hours) {
@@ -652,8 +658,8 @@ export default Vue.extend({
       return {
         timesheets,
         amendments: unfoldedAmendmentsOutput,
-      }
-    }
-  }
+      };
+    },
+  },
 });
 </script>

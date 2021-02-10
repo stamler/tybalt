@@ -34,7 +34,7 @@ export default Vue.extend({
     return {
       collection: db.collection("Users"),
       item: {} as firebase.firestore.DocumentData | undefined,
-      logins: []
+      logins: [],
     };
   },
   filters: {
@@ -43,7 +43,7 @@ export default Vue.extend({
     },
     relativeTime(date: Date) {
       return formatDistanceToNow(date, { addSuffix: true });
-    }
+    },
   },
   watch: {
     id: {
@@ -53,7 +53,7 @@ export default Vue.extend({
           this.collection
             .doc(id)
             .get()
-            .then(snap => {
+            .then((snap) => {
               if (snap.exists) {
                 this.item = snap.data();
                 const usa = this?.item?.userSourceAnchor ?? false;
@@ -73,7 +73,7 @@ export default Vue.extend({
                 this.collection
                   .where("userSourceAnchor", "==", id)
                   .get()
-                  .then(snap => {
+                  .then((snap) => {
                     if (snap.size !== 1) {
                       // Either doesn't exist or multiple exist,
                       if (snap.size > 1) {
@@ -107,9 +107,9 @@ export default Vue.extend({
         } else {
           this.item = {};
         }
-      }
-    }
-  }
+      },
+    },
+  },
 });
 </script>
 <style scoped>

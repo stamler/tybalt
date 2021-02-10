@@ -21,7 +21,7 @@
       class="field"
       v-if="
         (item.id && !item.id.startsWith('P')) ||
-          (editing && !id.startsWith('P'))
+        (editing && !id.startsWith('P'))
       "
     >
       <!-- Hide if id is proposal (starts with 'P') -->
@@ -59,18 +59,18 @@ export default Vue.extend({
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData
+      item: {} as firebase.firestore.DocumentData,
     };
   },
   computed: {
-    editing: function(): boolean {
+    editing: function (): boolean {
       return this.id !== undefined;
-    }
+    },
   },
   watch: {
-    id: function(id) {
+    id: function (id) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
   },
   created() {
     this.parentPath =
@@ -102,7 +102,7 @@ export default Vue.extend({
       }
     },
     save() {
-      this.item = _.pickBy(this.item, i => i !== ""); // strip blank fields
+      this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
@@ -115,7 +115,7 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch(error => {
+          .catch((error) => {
             alert(`Editing failed: ${error.message}`);
           });
       } else {
@@ -130,14 +130,14 @@ export default Vue.extend({
             this.clearEditor();
             // notify user save is done
           })
-          .catch(error => {
+          .catch((error) => {
             alert(`Creating failed: ${error.message}`);
           });
       }
     },
     clearEditor() {
       this.item = {} as firebase.firestore.DocumentData;
-    }
-  }
+    },
+  },
 });
 </script>
