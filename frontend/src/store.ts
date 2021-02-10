@@ -17,18 +17,18 @@ export default new Vuex.Store({
     showTasks: false, // whether to display the progress UI element
 
     // state of the notification system
-    notifications: {} // notifications to display in UI
+    notifications: {}, // notifications to display in UI
   },
   getters: {
     // getters for the waiting message system
     // get the first message from the activeTasks object
-    oneMessage: state => {
+    oneMessage: (state) => {
       if (state.showTasks) {
         return state.activeTasks[Object.keys(state.activeTasks)[0]].message;
       } else {
         return "";
       }
-    }
+    },
   },
   mutations: {
     toggleMenu(state) {
@@ -48,7 +48,7 @@ export default new Vuex.Store({
     },
     setClaims(state, claims: { [claim: string]: boolean }) {
       state.claims = claims;
-    }
+    },
   },
-  actions: {}
+  actions: {},
 });

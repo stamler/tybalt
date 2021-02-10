@@ -15,9 +15,9 @@ import { mapState } from "vuex";
 export default {
   components: {
     SideNav,
-    Header
+    Header,
   },
-  computed: mapState(["sidenav"])
+  computed: mapState(["sidenav"]),
 };
 </script>
 

@@ -44,7 +44,7 @@
       <router-link
         v-bind:to="{
           name: 'User Details',
-          params: { id: login.userSourceAnchor }
+          params: { id: login.userSourceAnchor },
         }"
       >
         {{ login.givenName }}
@@ -67,7 +67,7 @@ export default Vue.extend({
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData,
-      logins: []
+      logins: [],
     };
   },
   filters: {
@@ -86,7 +86,7 @@ export default Vue.extend({
         "SOHO Server",
         "Appliance PC",
         "Performance Server",
-        Maximum
+        Maximum,
       }
       return SystemTypes[type];
     },
@@ -104,12 +104,12 @@ export default Vue.extend({
         ++u;
       } while (Math.abs(bytes) >= thresh && u < units.length - 1);
       return bytes.toFixed(1) + " " + units[u];
-    }
+    },
   },
   watch: {
-    id: function(id) {
+    id: function (id) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
   },
   created() {
     this.parentPath =
@@ -140,7 +140,7 @@ export default Vue.extend({
                   .collection("Logins")
                   .where("computer", "==", id)
                   .orderBy("created", "desc")
-              ).catch(error => {
+              ).catch((error) => {
                 alert(`Can't load logins: ${error.message}`);
               });
             }
@@ -154,12 +154,12 @@ export default Vue.extend({
         .functions()
         .httpsCallable("assignComputerToUser");
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
-        error => {
+        (error) => {
           alert(`Computer assignment failed: ${error}`);
         }
       );
-    }
-  }
+    },
+  },
 });
 </script>
 <style scoped>

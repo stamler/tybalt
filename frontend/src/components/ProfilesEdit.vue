@@ -32,7 +32,7 @@
           <x-circle-icon></x-circle-icon>
         </span>
       </span>
-      <span><input type="text" name="newClaim" v-model="newClaim"/></span>
+      <span><input type="text" name="newClaim" v-model="newClaim" /></span>
       <span v-on:click="addClaim(newClaim)">
         <plus-circle-icon></plus-circle-icon>
       </span>
@@ -59,13 +59,12 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import _ from "lodash";
 import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
 
 export default Vue.extend({
   components: {
     PlusCircleIcon,
-    XCircleIcon
+    XCircleIcon,
   },
   props: ["id", "collection"],
   data() {
@@ -75,13 +74,13 @@ export default Vue.extend({
       item: {} as firebase.firestore.DocumentData,
       newClaim: "",
       managers: [] as firebase.firestore.DocumentData[],
-      divisions: [] as firebase.firestore.DocumentData[]
+      divisions: [] as firebase.firestore.DocumentData[],
     };
   },
   watch: {
-    id: function(id) {
+    id: function (id) {
       this.setItem(id);
-    } // first arg is newVal, second is oldVal
+    }, // first arg is newVal, second is oldVal
   },
   created() {
     this.parentPath =
@@ -149,7 +148,7 @@ export default Vue.extend({
       } else {
         alert("New profiles can only be created by the authentication system");
       }
-    }
-  }
+    },
+  },
 });
 </script>

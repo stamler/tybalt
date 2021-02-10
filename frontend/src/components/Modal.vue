@@ -23,7 +23,7 @@ export default Vue.extend({
   name: "Modal",
   data() {
     return {
-      show: false
+      show: false,
     };
   },
   methods: {
@@ -34,8 +34,8 @@ export default Vue.extend({
     openModal() {
       this.show = true;
       document.querySelector("body").classList.add("overflow-hidden");
-    }
-  }
+    },
+  },
 });
 </script>
 

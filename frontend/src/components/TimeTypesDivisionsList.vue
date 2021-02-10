@@ -33,7 +33,7 @@ const db = firebase.firestore();
 export default mixins.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
-    EditIcon
+    EditIcon,
   },
   computed: {
     ...mapState(["claims"]),
@@ -41,16 +41,16 @@ export default mixins.extend({
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          p => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+          (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    }
+    },
   },
   data() {
     return {
       search: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: []
+      items: [],
     };
   },
   watch: {
@@ -62,8 +62,8 @@ export default mixins.extend({
           "";
         this.collectionObject = db.collection(collection);
         this.$bind("items", this.collectionObject);
-      }
-    }
-  }
+      },
+    },
+  },
 });
 </script>

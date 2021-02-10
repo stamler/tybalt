@@ -20,12 +20,12 @@ import store from "../store";
 
 export default {
   methods: {
-    toggleMenu() {
+    toggleMenu(): void {
       store.commit("toggleMenu");
-    }
+    },
   },
   computed: {
-    ...mapState(["user"])
-  }
+    ...mapState(["user"]),
+  },
 };
 </script>

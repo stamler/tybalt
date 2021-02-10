@@ -15,12 +15,12 @@ import Vue from "vue";
 
 export default Vue.extend({
   components: {
-    HalfCircleSpinner
+    HalfCircleSpinner,
   },
   computed: {
     ...mapState(["showTasks"]),
-    ...mapGetters(["oneMessage"])
-  }
+    ...mapGetters(["oneMessage"]),
+  },
 });
 </script>
 

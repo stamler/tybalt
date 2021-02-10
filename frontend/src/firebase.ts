@@ -11,7 +11,7 @@ firebase.initializeApp({
   databaseURL: "https://charade-ca63f.firebaseio.com",
   projectId: "charade-ca63f",
   storageBucket: "charade-ca63f.appspot.com",
-  messagingSenderId: "1033101603088"
+  messagingSenderId: "1033101603088",
 });
 
 const USE_EMULATORS = true;
@@ -19,7 +19,7 @@ const db = firebase.firestore();
 if (location.hostname === "localhost" && USE_EMULATORS) {
   db.settings({
     host: "localhost:8080",
-    ssl: false
+    ssl: false,
   });
   firebase.functions().useFunctionsEmulator("http://localhost:5001");
 }

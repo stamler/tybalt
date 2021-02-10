@@ -26,7 +26,7 @@ export default Vue.extend({
     // top level router entries that have a name property and are allowed
     links(): RouteConfig[] {
       return (
-        this?.$router?.options?.routes?.filter(x => {
+        this?.$router?.options?.routes?.filter((x) => {
           if (x.name) {
             // filter out entries we don't have claims for if
             // next line is false to enable UI filtering by claims
@@ -53,7 +53,7 @@ export default Vue.extend({
           }
         }) ?? []
       );
-    }
-  }
+    },
+  },
 });
 </script>

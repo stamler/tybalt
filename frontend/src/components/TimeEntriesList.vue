@@ -186,13 +186,13 @@ export default mixins.extend({
       if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
       if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
       return hoursArray.join(" + ");
-    }
+    },
   },
   data() {
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[]
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   watch: {
@@ -226,8 +226,8 @@ export default mixins.extend({
             alert(`Can't load Time Amendments: ${error.message}`);
           });
         }
-      }
-    }
+      },
+    },
   },
   methods: {
     commit(
@@ -261,7 +261,7 @@ export default mixins.extend({
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().valueOf() === Number(weekEnding)
       );
-    }
+    },
   },
   computed: {
     ...mapState(["activeTasks", "showTasks"]),
@@ -299,7 +299,7 @@ export default mixins.extend({
               mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0, total: 0 },
               divisionsTally: {}, // key is division, value is divisionName
-              jobsTally: {} // key is job, value is object with client and description
+              jobsTally: {}, // key is job, value is object with client and description
             };
           }
 
@@ -344,7 +344,7 @@ export default mixins.extend({
             if ("job" in item) {
               tallyObject[key].jobsTally[item.job] = {
                 client: item.client,
-                description: item.jobDescription
+                description: item.jobDescription,
               };
             }
           } else {
@@ -359,7 +359,7 @@ export default mixins.extend({
         }
       }
       return tallyObject;
-    }
-  }
+    },
+  },
 });
 </script>

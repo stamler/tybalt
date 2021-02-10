@@ -32,11 +32,11 @@ const router = new Router({
   routes: [
     {
       path: "/",
-      redirect: "/me"
+      redirect: "/me",
     },
     {
       path: "/me",
-      component: Me
+      component: Me,
     },
     {
       path: "/time",
@@ -56,24 +56,24 @@ const router = new Router({
               path: "list",
               name: "Time Entries List",
               props: { collection: "TimeEntries" },
-              component: TimeEntriesList
+              component: TimeEntriesList,
             },
             {
               meta: { showInUi: true, uiName: "Add" },
               path: "add",
               name: "Add Time Entry",
               props: { collection: "TimeEntries" },
-              component: TimeEntriesEdit
+              component: TimeEntriesEdit,
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "TimeEntries" };
               },
               name: "Edit Time Entry",
-              component: TimeEntriesEdit
-            }
-          ]
+              component: TimeEntriesEdit,
+            },
+          ],
         },
         {
           path: "sheets",
@@ -86,39 +86,39 @@ const router = new Router({
               path: "list",
               name: "Time Sheets List",
               props: { collection: "TimeSheets" },
-              component: TimeSheetsList
+              component: TimeSheetsList,
             },
             {
               meta: {
                 showInUi: true,
                 uiName: "Pending",
-                requiredClaims: ["tapr"]
+                requiredClaims: ["tapr"],
               },
               path: "pending",
               name: "Time Sheets Pending",
               props: { approved: false, collection: "TimeSheets" },
-              component: TimeSheetsList
+              component: TimeSheetsList,
             },
             {
               meta: {
                 showInUi: true,
                 uiName: "Approved",
-                requiredClaims: ["tapr"]
+                requiredClaims: ["tapr"],
               },
               path: "approved",
               name: "Time Sheets Approved",
               props: { approved: true, collection: "TimeSheets" },
-              component: TimeSheetsList
+              component: TimeSheetsList,
             },
             {
               path: ":id/details",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "TimeSheets" };
               },
               name: "Time Sheet Details",
-              component: TimeSheetsDetails
-            }
-          ]
+              component: TimeSheetsDetails,
+            },
+          ],
         },
         {
           path: "tracking",
@@ -131,17 +131,17 @@ const router = new Router({
               path: "list",
               name: "Time Tracking List",
               props: { collection: "TimeTracking" },
-              component: TimeTrackingList
+              component: TimeTrackingList,
             },
             {
               path: ":id/details",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "TimeTracking" };
               },
               name: "Time Tracking Details",
-              component: TimeTrackingDetails
-            }
-          ]
+              component: TimeTrackingDetails,
+            },
+          ],
         },
         {
           path: "amendments",
@@ -193,9 +193,9 @@ const router = new Router({
               path: "list",
               name: "Logins List",
               props: { collection: "Logins" },
-              component: LoginsList
-            }
-          ]
+              component: LoginsList,
+            },
+          ],
         },
         {
           path: "rawlogins",
@@ -209,9 +209,9 @@ const router = new Router({
               path: "list",
               name: "Raw Logins List",
               props: { collection: "RawLogins" },
-              component: RawLoginsList
-            }
-          ]
+              component: RawLoginsList,
+            },
+          ],
         },
         {
           path: "computers",
@@ -225,24 +225,24 @@ const router = new Router({
               path: "list",
               name: "Computers List",
               props: { collection: "Computers" },
-              component: ComputersList
+              component: ComputersList,
             },
             {
               meta: { showInUi: true, uiName: "Retired" },
               path: "retired",
               name: "Retired Computers",
               props: { collection: "Computers", retired: true },
-              component: ComputersList
+              component: ComputersList,
             },
             {
               path: ":id/details",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "Computers" };
               },
               name: "Computer Details",
-              component: ComputersDetails
-            }
-          ]
+              component: ComputersDetails,
+            },
+          ],
         },
         {
           path: "users",
@@ -256,15 +256,15 @@ const router = new Router({
               path: "list",
               name: "Users List",
               props: { select: true, edit: true, del: true },
-              component: UsersList
+              component: UsersList,
             },
             {
               path: ":id/details",
               props: true,
               name: "User Details",
-              component: UsersDetails
-            }
-          ]
+              component: UsersDetails,
+            },
+          ],
         },
         {
           path: "profiles",
@@ -278,17 +278,17 @@ const router = new Router({
               path: "list",
               name: "Profiles List",
               props: { collection: "Profiles" },
-              component: ProfilesList
+              component: ProfilesList,
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "Profiles" };
               },
               name: "Edit Profile",
-              component: ProfilesEdit
-            }
-          ]
+              component: ProfilesEdit,
+            },
+          ],
         },
         {
           path: "jobs",
@@ -301,28 +301,28 @@ const router = new Router({
               path: "list",
               name: "Jobs List",
               props: { collection: "Jobs" },
-              component: JobsList
+              component: JobsList,
             },
             {
               meta: {
                 showInUi: true,
                 uiName: "Add",
-                requiredClaims: ["job"]
+                requiredClaims: ["job"],
               },
               path: "add",
               name: "Add Job",
               props: { collection: "Jobs" },
-              component: JobsEdit
+              component: JobsEdit,
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "Jobs" };
               },
               name: "Edit Job",
-              component: JobsEdit
-            }
-          ]
+              component: JobsEdit,
+            },
+          ],
         },
         {
           path: "divisions",
@@ -335,28 +335,28 @@ const router = new Router({
               path: "list",
               name: "Divisions List",
               props: { collection: "Divisions" },
-              component: TimeTypesDivisionsList
+              component: TimeTypesDivisionsList,
             },
             {
               meta: {
                 showInUi: true,
                 uiName: "Add",
-                requiredClaims: ["admin"]
+                requiredClaims: ["admin"],
               },
               path: "add",
               name: "Add Division",
               props: { collection: "Divisions" },
-              component: TimeTypesDivisionsEdit
+              component: TimeTypesDivisionsEdit,
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "Divisions" };
               },
               name: "Edit Division",
-              component: TimeTypesDivisionsEdit
-            }
-          ]
+              component: TimeTypesDivisionsEdit,
+            },
+          ],
         },
         {
           path: "timetypes",
@@ -369,36 +369,36 @@ const router = new Router({
               path: "list",
               name: "Time Types List",
               props: { collection: "TimeTypes" },
-              component: TimeTypesDivisionsList
+              component: TimeTypesDivisionsList,
             },
             {
               meta: {
                 showInUi: true,
                 uiName: "Add",
-                requiredClaims: ["admin"]
+                requiredClaims: ["admin"],
               },
               path: "add",
               name: "Add Time Type",
               props: { collection: "TimeTypes" },
-              component: TimeTypesDivisionsEdit
+              component: TimeTypesDivisionsEdit,
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "TimeTypes" };
               },
               name: "Edit Time Type",
-              component: TimeTypesDivisionsEdit
-            }
-          ]
-        }
-      ]
+              component: TimeTypesDivisionsEdit,
+            },
+          ],
+        },
+      ],
     },
     {
       path: "*",
-      component: { template: "<h1>404</h1>" }
-    }
-  ]
+      component: { template: "<h1>404</h1>" },
+    },
+  ],
 });
 
 /*

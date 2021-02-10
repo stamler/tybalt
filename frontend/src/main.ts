@@ -99,7 +99,7 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
   }
 });
 
-export function signOut() {
+export function signOut(): void {
   unsubscribe();
   firebase.auth().signOut();
   window.location.href = "https://login.windows.net/common/oauth2/logout";
