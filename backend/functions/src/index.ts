@@ -50,7 +50,7 @@ exports.timeAmendmentsWeekEnding = functions.firestore
 // Write the committedWeekEnding on TimeAmendments
 exports.timeAmendmentsCommittedWeekEnding = functions.firestore
   .document("TimeAmendments/{amendmentId}")
-  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "committed", "committedWeekEnding") });
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
 
 // exportJson when a timeAmendment is committed
 exports.exportOnAmendmentCommit = functions.firestore

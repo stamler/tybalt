@@ -391,6 +391,7 @@ export default Vue.extend({
         this.item.creator = this.user.uid;
         this.item.creatorName = this.user.displayName;
         this.item.created = firebase.firestore.FieldValue.serverTimestamp();
+        this.item.committed = false;
       }
 
       // Write to database

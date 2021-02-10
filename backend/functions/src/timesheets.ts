@@ -478,7 +478,7 @@ export async function exportJson(data: unknown) {
     const amendments = amendmentsSnapshot.docs.map((doc) => {
       const docData = doc.data();
       docData.created = docData.created.toDate();
-      docData.committed = docData.committed.toDate();
+      docData.commitTime = docData.commitTime.toDate();
       docData.committedWeekEnding = docData.committedWeekEnding.toDate();
       docData.weekEnding = docData.weekEnding.toDate();
       docData.date = docData.date.toDate();

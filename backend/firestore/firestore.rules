@@ -208,8 +208,13 @@ service cloud.firestore {
     }
     match /TimeAmendments/{entry} {
       allow read: if hasClaim("tadm");
-      allow delete: if hasClaim("tadm") && !resource.data.keys().hasAll(["committed"]);
-      allow update: if hasClaim("tadm") && validAmendmentEntry() && !resource.data.keys().hasAll(["committed"]);
+      allow delete: if hasClaim("tadm") && resource.data.committed == false;
+      allow update: if 
+        hasClaim("tadm") && 
+        (
+          (validAmendmentEntry() && resource.data.committed == false) ||
+          (newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid )
+        );
       allow create: if hasClaim("tadm") && validAmendmentEntry();
     }
     match /TimeEntries/{entry} {
