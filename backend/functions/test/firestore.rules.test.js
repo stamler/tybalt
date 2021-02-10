@@ -5,9 +5,6 @@ const MY_PROJECT_ID = "charade-ca63f";
 
 const auth = { uid: "alice", email: "alice@example.com" };
 const authBob = { uid: "bob", email: "bob@example.com" };
-const dbNotLoggedIn = firebase
-  .initializeTestApp({ projectId: MY_PROJECT_ID })
-  .firestore();
 const dbLoggedInNoClaims = firebase
   .initializeTestApp({ projectId: MY_PROJECT_ID, auth })
   .firestore();
@@ -39,28 +36,6 @@ const dbAdmin = firebase
   .initializeAdminApp({ projectId: MY_PROJECT_ID })
   .firestore();
 
-function denyUnauthenticatedReadWrite(collection) {
-  return it(`${collection} denies unauthenticated reads and writes`, async () => {
-    const doc = dbNotLoggedIn.collection(collection).doc();
-    await firebase.assertFails(doc.get());
-    await firebase.assertFails(doc.set({ foo: "bar" }));
-  });
-}
-
-function allowAuthenticatedRead(collection) {
-  return it(`${collection} allows all authenticated users to read`, async () => {
-    const doc = dbLoggedInNoClaims.collection(collection).doc();
-    await firebase.assertSucceeds(doc.get());
-  });
-}
-
-function denyAuthenticatedRead(collection) {
-  return it(`${collection} denies authenticated users reading`, async () => {
-    const doc = dbLoggedInNoClaims.collection(collection).doc();
-    await firebase.assertFails(doc.get());
-  });
-}
-
 function allowAdminWrite(collection) {
   return it(`${collection} allows admin-claim users to write`, async () => {
     const doc = dbLoggedInAdminClaim.collection(collection).doc();
@@ -82,53 +57,7 @@ function allowAdminRead(collection) {
   });
 }
 
-function denyAuthenticatedWrite(collection) {
-  return it(`${collection} denies signed-in users writing`, async () => {
-    const doc = dbLoggedInNoClaims.collection(collection).doc();
-    await firebase.assertFails(doc.set({ foo: "bar" }));
-  });
-}
-
 describe("Firestore Rules", () => {
-  describe("Unauthenticated Reads and Writes", () => {
-    [
-      "Computers",
-      "Config",
-      "Divisions",
-      "Logins",
-      "Profiles",
-      "Jobs",
-      "RawLogins",
-      "TimeEntries",
-      "TimeSheets",
-      "TimeTypes",
-      "Users",
-    ].forEach((collection) => {
-      denyUnauthenticatedReadWrite(collection);
-    });
-  });
-
-  describe("Authenticated Reads", () => {
-    ["Computers", "Divisions", "Jobs", "TimeTypes"].forEach((collection) => {
-      allowAuthenticatedRead(collection);
-    });
-    ["Config", "RawLogins"].forEach((collection) => {
-      denyAuthenticatedRead(collection);
-    });
-  });
-
-  describe("Authenticated Writes", () => {
-    [
-      "Computers",
-      "Config",
-      "Divisions",
-      "Jobs",
-      "RawLogins",
-      "TimeTypes",
-    ].forEach((collection) => {
-      denyAuthenticatedWrite(collection);
-    });
-  });
 
   describe("Admin Writes", () => {
     ["Divisions", "TimeTypes"].forEach((collection) => {
