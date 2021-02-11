@@ -372,7 +372,7 @@ describe("Firestore Rules", () => {
     it("requires the job id to be in the correct format");
     it("requires the job name field to be at least 5 characters long");
   });
-  describe.only("TimeEntries", () => {
+  describe("TimeEntries", () => {
     const division = { name: "Playtime" };
     const job = { description: "Big job for a client" };
     const timetypeR = { name: "Hours Worked" };
