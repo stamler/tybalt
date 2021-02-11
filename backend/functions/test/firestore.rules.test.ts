@@ -508,6 +508,7 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout" }));
     });
   });
+  
   describe("Jobs", () => {
     const job = { description: "A basic job", client: "A special client", manager: "A company employee" };
     const jobs = adminDb.collection("Jobs");
