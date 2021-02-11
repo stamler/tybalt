@@ -391,11 +391,6 @@ describe("Firestore Rules", () => {
       await jobs.doc("19-333").set(job);
     });
 
-    it("requires jobHours not be present if there is no job");
-    it("requires Banking (RB) entries to have only a uid, date, and timetype, and hours");
-    it("allows owners to read their own Time Entries if they have time claim");
-    it("prevents reading without a time claim");
-    it("prevents reading with a time claim if the owner doesn't match");
     it("requires submitted uid to match the authenticated user id", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
       const doc = db.collection("TimeEntries").doc();
@@ -517,6 +512,11 @@ describe("Firestore Rules", () => {
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "F18-33-1" }) );
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "asdf" }) );
     });
+    it("requires jobHours not be present if there is no job");
+    it("requires Banking (RB) entries to have only a uid, date, and timetype, and hours");
+    it("allows owners to read their own Time Entries if they have time claim");
+    it("prevents reading without a time claim");
+    it("prevents reading with a time claim if the owner doesn't match");
   });
 
   //wtf.dump()
