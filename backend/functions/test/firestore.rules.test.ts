@@ -365,13 +365,6 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe("Jobs", () => {
-    it("requires the job claim to create or update");
-    it("requires the proposal to reference a valid job if present");
-    it("requires the proposal to be in the valid format if present");
-    it("requires the job id to be in the correct format");
-    it("requires the job name field to be at least 5 characters long");
-  });
   describe("TimeEntries", () => {
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
@@ -513,6 +506,48 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 254.4 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout" }));
+    });
+  });
+  describe("Jobs", () => {
+    const job = { description: "A basic job", client: "A special client", manager: "A company employee" };
+    const jobs = adminDb.collection("Jobs");
+
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await jobs.doc("19-444").set(job);
+      await jobs.doc("P19-444").set(job);
+    });
+
+    it("allows job claim holders to create or update", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await firebase.assertSucceeds(doc.set(job));
+      const { manager, ...noManager } = job;
+      await firebase.assertSucceeds(doc.update({ ...noManager, manager: "A different employee" }));
+    });
+    it("prevents job claim holders from creating jobs with invalid ID format", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("invalidIdFormat");
+      await firebase.assertFails(doc.set(job));
+    });
+    it("prevents users without job claim from creating or updating", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await firebase.assertFails(doc.set(job));
+    });
+    it("prevents the description from being less than 4 characters long", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await firebase.assertSucceeds(doc.set(job));
+      const { description, ...noDescription } = job;
+      await firebase.assertFails(doc.update({ ...noDescription, description: "not" }));
+    });
+    it("requires the proposal to reference a valid job if present", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await firebase.assertSucceeds(doc.set({ ...job, proposal: "P19-444"}));
+      await firebase.assertSucceeds(doc.set({ ...job }));
+      await firebase.assertFails(doc.set({ ...job, proposal: "P19-555"}));
     });
   });
 
