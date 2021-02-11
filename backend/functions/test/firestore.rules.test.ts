@@ -373,22 +373,21 @@ describe("Firestore Rules", () => {
     it("requires the job name field to be at least 5 characters long");
   });
   describe("TimeEntries", () => {
-    const division = { name: "Playtime" };
-    const job = { description: "Big job for a client" };
-    const timetypeR = { name: "Hours Worked" };
-    const timetypeOR = { name: "Off Rotation" };
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
+    const timeentries = adminDb.collection("TimeEntries");
     const jobs = adminDb.collection("Jobs");
     const baseline = { uid: "alice", date: new Date(), timetype: "R", timetypeName: "Hours Worked", division: "ABC", hours: 5, };
     const entryJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
-      await divisions.doc("ABC").set(division);
-      await timetypes.doc("R").set(timetypeR);
-      await timetypes.doc("OR").set(timetypeOR);
-      await jobs.doc("19-333").set(job);
+      await divisions.doc("ABC").set({ name: "Playtime" });
+      await timetypes.doc("R").set({ name: "Hours Worked" });
+      await timetypes.doc("OR").set({ name: "Off Rotation" });
+      await timetypes.doc("RB").set({ name: "Add Overtime to Bank" });
+      await jobs.doc("19-333").set({ description: "Big job for a client" });
+      await timeentries.doc("EF312A64Lein7bRiC5HG").set(baseline);
     });
 
     it("requires submitted uid to match the authenticated user id", async () => {
@@ -512,11 +511,33 @@ describe("Firestore Rules", () => {
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "F18-33-1" }) );
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "asdf" }) );
     });
-    it("requires jobHours not be present if there is no job");
-    it("requires Banking (RB) entries to have only a uid, date, and timetype, and hours");
-    it("allows owners to read their own Time Entries if they have time claim");
-    it("prevents reading without a time claim");
-    it("prevents reading with a time claim if the owner doesn't match");
+    it("requires jobHours not be present if there is no job", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
+      const doc = db.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({ ...baseline, ...entryJobProperties, jobHours: 5 }));
+      await firebase.assertFails(doc.set({ ...baseline, jobHours: 5 }));
+    });
+    it("allows owner to read their own Time Entries if they have time claim", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
+      const doc = db.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get())
+    });
+    it("prevents owner from reading their own Time Entries if they have no time claim", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get())
+    });
+    it("prevents time users from reading Time Entries that do not belong to them", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
+      const doc = db.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get())
+    });
+    it("requires banking entries (RB) to have only uid, date, timetype, timetypeName, hours", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
+      const doc = db.collection("TimeEntries").doc();
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, division: "ABC"}));
+    });
   });
 
   //wtf.dump()
