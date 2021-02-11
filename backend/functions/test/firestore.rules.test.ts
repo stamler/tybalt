@@ -118,7 +118,7 @@ describe("Firestore Rules", () => {
   });
 
   describe("Admin Reads", () => {
-    ["Logins", "Profiles", "RawLogins", "Users"].forEach((collection) => {
+    ["Logins", "Profiles", "RawLogins", "Computers", "Users", "TimeTracking"].forEach((collection) => {
       allowAdminRead(collection);
     });
   });
