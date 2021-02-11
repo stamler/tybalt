@@ -227,6 +227,146 @@ describe("Firestore Rules", () => {
     });
   });
 
+  describe("TimeSheets", () => {
+    const alice = { displayName: "Alice Example", email: "alice@example.com" };
+    const bob = { displayName: "Bob Example", email: "bob@example.com" };
+    const timesheet = { uid: "bob", managerUid: "alice", submitted: false, rejected: false, approved: false };
+    const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
+    const timesheets = adminDb.collection("TimeSheets");
+
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await timesheets.doc("IG022A64Lein7bRiC5HG").set(timesheet);
+    });
+
+    it("allows owner to submit timesheets", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ submitted: true }, { merge: true })
+      );
+    });
+    it("allows owner to recall unapproved timesheets", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ submitted: false }, { merge: true })
+      );
+    });
+    it("allows manager (tapr) to read submitted timesheets they manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("allows manager (tapr) to approve submitted timesheets they manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ approved: true }, { merge: true })
+      );
+    });
+    it("allows manager (tapr) to reject submitted timesheets they manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+      );
+    });
+    it("prevents rejected timesheets from being submitted", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ rejected: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: true }, { merge: true })
+      );
+    });
+    it("prevents submission of timesheets by non-owner", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: true }, { merge: true })
+      );
+    });
+    it("prevents recall of timesheets by the manager", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: false }, { merge: true })
+      );
+    });
+    it("prevents recall of approved timesheets by the owner", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ approved: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: false }, { merge: true })
+      );
+    });
+    it("prevents the manager from reading timesheets that aren't submitted", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get());
+    });
+    it("prevents rejected timesheets from being approved", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ rejected: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from approving timesheets they do not manage", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from approving unsubmitted timesheets", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from rejecting unsubmitted timesheets they manage", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from rejecting timesheets they do not manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+      );
+    });
+    it("prevents non-managers (no tapr) from approving timesheets even if they're listed as manager", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true }, { merge: true })
+      );
+    });
+    it("prevents non-managers (no tapr) from rejecting timesheets even if they're listed as manager", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+      );
+    });
+  });
+
   describe("Jobs", () => {
     it("requires the job claim to create or update");
     it("requires the proposal to reference a valid job if present");

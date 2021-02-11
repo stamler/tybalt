@@ -4,29 +4,10 @@ const firebase = require("@firebase/testing");
 const MY_PROJECT_ID = "charade-ca63f";
 
 const auth = { uid: "alice", email: "alice@example.com" };
-const authBob = { uid: "bob", email: "bob@example.com" };
 const dbLoggedInTimeClaim = firebase
   .initializeTestApp({
     projectId: MY_PROJECT_ID,
     auth: { ...auth, time: true },
-  })
-  .firestore();
-const dbLoggedInTaprClaim = firebase
-  .initializeTestApp({
-    projectId: MY_PROJECT_ID,
-    auth: { ...auth, tapr: true },
-  })
-  .firestore();
-const dbLoggedInTimeClaimBob = firebase
-  .initializeTestApp({
-    projectId: MY_PROJECT_ID,
-    auth: { ...authBob, time: true },
-  })
-  .firestore();
-const dbLoggedInAdminClaim = firebase
-  .initializeTestApp({
-    projectId: MY_PROJECT_ID,
-    auth: { ...auth, admin: true },
   })
   .firestore();
 
@@ -382,42 +363,6 @@ describe("Firestore Rules", () => {
         })
       );
     });
-  });
-
-  describe("TimeSheets", () => {
-    it("allows submission of timesheets by the owner", async () => {
-      const doc = dbLoggedInTimeClaimBob
-        .collection("TimeSheets")
-        .doc("IG022A64Lein7bRiC5HG");
-      await firebase.assertSucceeds(
-        doc.set({ submitted: true }, { merge: true })
-      );
-    });
-    it("allows the manager to read submitted timesheets they manage", async () => {
-      const doc = dbLoggedInTaprClaim
-        .collection("TimeSheets")
-        .doc("IG022A64Lein7bRiC5HG");
-      await firebase.assertSucceeds(doc.get());
-    });
-    it("allows recall of timesheets by the owner", async () => {
-      const doc = dbLoggedInTimeClaimBob
-        .collection("TimeSheets")
-        .doc("IG022A64Lein7bRiC5HG");
-      await firebase.assertSucceeds(
-        doc.set({ submitted: false }, { merge: true })
-      );
-    });
-    it("prevents the manager from reading timesheets that aren't submitted", async () => {
-      const doc = dbLoggedInTimeClaim
-        .collection("TimeSheets")
-        .doc("IG022A64Lein7bRiC5HG");
-      await firebase.assertFails(doc.get());
-    });
-    it("prevents the owner from recalling approved timesheets");
-    it("prevents submission of timesheets by the manager or anybody else");
-    it("prevents rejected timesheets from being submitted or approved");
-    it("prevents recall of timesheets by the manager or anybody else");
-    it("prevents recall of approved timesheets");
   });
 
 });
