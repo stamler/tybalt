@@ -92,7 +92,7 @@ describe("Firestore Rules", () => {
   });
 
   describe("Authenticated Reads", () => {
-    ["Divisions", "Jobs", "TimeTypes"].forEach((collection) => {
+    ["Divisions", "Jobs", "TimeTypes", "Profiles"].forEach((collection) => {
       allowAuthenticatedRead(collection);
     });
     ["Config", "RawLogins"].forEach((collection) => {
@@ -140,6 +140,90 @@ describe("Firestore Rules", () => {
       const db = firebase.initializeTestApp({ projectId, auth }).firestore();
       const doc = db.collection("RawLogins").doc();  
       await firebase.assertFails(doc.delete());
+    });
+  });
+
+  describe("Profiles", () => {
+    const alice = { displayName: "Alice Example", email: "alice@example.com" };
+    const bob = { displayName: "Bob Example", email: "bob@example.com" };
+    const division = { name: "Playtime" };
+    const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
+    const profiles = adminDb.collection("Profiles");
+    const divisions = adminDb.collection("Divisions");
+
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await profiles.doc("alice").set(alice);
+      await profiles.doc("bob").set(bob);
+      await divisions.doc("ABC").set(division);
+    });
+
+    it("requires a referenced manager to be valid", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");  
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "ronswanson",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          defaultDivision: "ABC",
+        })
+      );
+    });
+    it("requires a displayName and email", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice", ...alice, admin: true} }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.set({ 
+          email: "bob@example.com",
+          managerUid: "alice",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.set({ 
+          displayName: "Bob", 
+          managerUid: "alice",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.set({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          defaultDivision: "ABC",
+        })
+      );
+    });
+    it("requires a referenced division to be valid", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");  
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          defaultDivision: "DEF",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          defaultDivision: "ABC",
+        })
+      );
+
     });
   });
 

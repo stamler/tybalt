@@ -179,6 +179,7 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
+        newDoc().keys().hasAll(["email", "displayName"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
           "managerUid","displayName","email","customClaims", "defaultDivision"
         ]) &&
