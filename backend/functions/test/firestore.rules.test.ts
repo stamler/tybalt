@@ -551,6 +551,16 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({ ...job, proposal: "P19-555"}));
     });
   });
+  describe("TimeAmendments", () => {
+    it("allows time administrators (tadm) to read");
+    it("allows time administrators (tadm) to create valid amendments");
+    it("allows time administrators (tadm) to update valid uncommitted amendments");
+    it("allows time administrators (tadm) to commit amendments");
+    it("allows time administrators (tadm) to delete uncommitted amendments");
+    it("prevents time administrators (tadm) from creating invalid amendments");
+    it("prevents time administrators (tadm) from deleting committed amendments");
+    it("prevents admins from creating, reading, updating, or deleting amendments");
+  });
 
   //wtf.dump()
 });
