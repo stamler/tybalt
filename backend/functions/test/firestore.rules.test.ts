@@ -7,6 +7,7 @@ const projectId = "charade-ca63f";
 const alice = { displayName: "Alice Example", email: "alice@example.com" };
 const bob = { displayName: "Bob Example", email: "bob@example.com" };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
+const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
 
 const collections = [
   "Computers",
@@ -283,8 +284,7 @@ describe("Firestore Rules", () => {
       );
     });
     it("prevents submission of timesheets by non-owner", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      const doc = timeDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertFails(
         doc.set({ submitted: true }, { merge: true })
       );
@@ -386,8 +386,7 @@ describe("Firestore Rules", () => {
     });
 
     it("requires submitted uid to match the authenticated user id", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(
         doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation" })
       );
@@ -396,37 +395,32 @@ describe("Firestore Rules", () => {
       );
     });
     it("requires Hours-worked documents to have a valid division", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set(baseline));
       const { division, ...missingDivision } = baseline;
       await firebase.assertFails(doc.set(missingDivision));
       await firebase.assertFails(doc.set({ division: "NOTINDB", ...missingDivision }));
     });
     it("requires documents not have unspecified fields", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set(baseline));
       await firebase.assertFails(doc.set({ ...baseline, foo: "bar" }));
     });
     it("requires a document's timetype value to reference a valid timetype", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set(baseline));
       const { timetype, ...missingTimetype } = baseline;
       await firebase.assertFails(doc.set({ ...missingTimetype, timetype: "NONVALIDTIMETYPE" }));
     });
     it("requires documents with workrecord key to reference a valid job", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "K20-420" }) );
       const { job, ...missingJob } = entryJobProperties;
       await firebase.assertFails( doc.set({ ...baseline, ...missingJob, job: "notjob", workrecord: "K20-420" }) );
       await firebase.assertFails( doc.set({ ...baseline, ...missingJob, workrecord: "K20-420" }) );
     });
     it("requires documents with jobHours key to reference a valid job", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       const { job, ...missingJob } = entryJobProperties;
       const { hours, ...missingHours } = baseline;
       await firebase.assertSucceeds( doc.set({ ...missingHours, ...entryJobProperties, jobHours: 5 }) );
@@ -434,8 +428,7 @@ describe("Firestore Rules", () => {
       await firebase.assertFails( doc.set({ ...missingHours, ...missingJob, jobHours: 5 }) );
     });
     it("requires hours, jobHours, and mealsHours to be positive real numbers under 18", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       const { hours, ...missingHours } = baseline;
       await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 5}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 19}));
@@ -451,29 +444,25 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: "duck"}));
     });
     it("requires a referenced job to be valid", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       const { job, ...missingJob } = entryJobProperties;
       await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
     });
     it("requires workrecords to match the correct format", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "Q20-423" }) );
       await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "K20-423-1" }) );
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "F18-33-1" }) );
       await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "asdf" }) );
     });
     it("requires jobHours not be present if there is no job", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ ...baseline, ...entryJobProperties, jobHours: 5 }));
       await firebase.assertFails(doc.set({ ...baseline, jobHours: 5 }));
     });
     it("allows owner to read their own Time Entries if they have time claim", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
+      const doc = timeDb.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get())
     });
     it("prevents owner from reading their own Time Entries if they have no time claim", async () => {
@@ -487,22 +476,19 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.get())
     });
     it("requires banking entries (RB) to have only uid, date, timetype, timetypeName, hours", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, division: "ABC"}));
     });
     it("requires off-rotation entries (OR) to have only uid, date, timetype, timetypeName", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank" }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", jobHours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", mealsHours: 5 }));
     });
     it("requires overtime payout entries (OTO) to have only uid, date, timetype, timetypeName, payoutRequestAmount", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
-      const doc = db.collection("TimeEntries").doc();
+      const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 254.4 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout" }));
