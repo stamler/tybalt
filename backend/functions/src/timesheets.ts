@@ -16,8 +16,8 @@ Holders of this claim can approve submitted timesheets whose
 managerUid field matches their uid.
 
 tadm: true
-Holders of this claim can export a time-tracking files for distribution to 
-accounting for payroll and to admin for invoicing
+Holders of this claim can create time amendments and also export reports 
+for distribution to accounting for payroll and to admin for invoicing
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
