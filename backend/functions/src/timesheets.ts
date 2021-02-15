@@ -16,8 +16,8 @@ Holders of this claim can approve submitted timesheets whose
 managerUid field matches their uid.
 
 tadm: true
-Holders of this claim can export a time-tracking files for distribution to 
-accounting for payroll and to admin for invoicing
+Holders of this claim can create time amendments and also export reports 
+for distribution to accounting for payroll and to admin for invoicing
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -305,7 +305,7 @@ export const updateTimeTracking = functions.firestore
   this way users can see what they've already done.
  */
 export async function lockTimesheets(data: unknown, context: functions.https.CallableContext) {
-  if (!hasPermission(context)) {
+  if (!contextHasClaim(context, "tslock")) {
     throw new functions.https.HttpsError(
       "permission-denied",
       "Call to lockTimesheets() failed"
@@ -567,8 +567,8 @@ export async function exportOnAmendmentCommit(
     }
   };
 
-// Confirm the context has "tadm" claim and throw userful errors as necessary
-function hasPermission(context: functions.https.CallableContext) {
+// Confirm the context has specified claim and throw userful errors as necessary
+function contextHasClaim(context: functions.https.CallableContext, claim: string) {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
@@ -577,17 +577,17 @@ function hasPermission(context: functions.https.CallableContext) {
     );
   }
 
-  // caller must have the "tadm" claim
+  // caller must have the claim
   if (
     !(
-      Object.prototype.hasOwnProperty.call(context.auth.token, "tadm") &&
-      context.auth.token["tadm"] === true
+      Object.prototype.hasOwnProperty.call(context.auth.token, claim) &&
+      context.auth.token[claim] === true
     )
   ) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
       "permission-denied",
-      `Caller must have the time administration permission`
+      `Caller must have the ${claim} claim`
     );
   } else {
     return true;

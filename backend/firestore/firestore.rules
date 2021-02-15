@@ -202,6 +202,7 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
+        newDoc().keys().hasAll(["email", "displayName"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
           "managerUid","displayName","email","customClaims", "defaultDivision"
         ]) &&
@@ -294,13 +295,17 @@ service cloud.firestore {
         hasClaim("tapr") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved"]) &&
         request.resource.data.approved == true &&
-        resource.data.rejected == false
+        resource.data.rejected == false &&
+        resource.data.submitted == true &&
+        managerUidMatches()
       ) || (
         hasClaim("tapr") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) &&
         request.resource.data.rejected == true &&
         request.resource.data.approved == false &&
-        request.resource.data.rejectionReason.size() > 5
+        request.resource.data.rejectionReason.size() > 5 &&
+        resource.data.submitted == true &&
+        managerUidMatches()
       );
     }
     match /TimeTypes/{timetype} {
