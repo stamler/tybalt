@@ -271,7 +271,7 @@ export default mixins.extend({
     },
     // any annotation in next line due to the following:
     // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
-    updateJobCandidates: _.debounce(function(this: any, e: Event) {
+    updateJobCandidates: _.debounce(function (this: any, e: Event) {
       // TODO: possibly use full text search like
       // https://www.npmjs.com/package/adv-firestore-functions
       this.showSuggestions = true;

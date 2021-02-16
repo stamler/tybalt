@@ -70,7 +70,7 @@ const router = new Router({
             },
             {
               path: ":id/edit",
-              props: route => {
+              props: (route) => {
                 return { id: route.params.id, collection: "Expenses" };
               },
               name: "Edit Expense Entry",
