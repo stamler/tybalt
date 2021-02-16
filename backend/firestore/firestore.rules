@@ -10,6 +10,9 @@ service cloud.firestore {
     function uidMatches() { // requester uid matches field in existing doc
       return request.auth.uid == resource.data.uid;
     }
+    function uidUnchanged() { // uid field in existing doc matches request uid field
+      return request.resource.data.uid == resource.data.uid;
+    }
     function managerUidMatches() {
       return request.auth.uid == resource.data.managerUid;
     }
@@ -243,7 +246,7 @@ service cloud.firestore {
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
+      allow update: if hasClaim("time") && validTimeEntry() && uidMatches() && uidUnchanged();
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /Expenses/{entry} {
@@ -254,12 +257,12 @@ service cloud.firestore {
       )      
       allow create: if 
         hasClaim("time") && validExpenseEntry() &&
-        // prevent user from submitting an entry with an unauthorized uid
+        // prevent user from creating an entry for somebody else
         request.auth.uid == request.resource.data['uid'];
       allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
         // owner can edit
-        (hasClaim("time") && validExpenseEntry() && uidMatches()) ||
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged()) ||
         // tapr can only approve or reject uncommitted expenses
         (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason", "committed"]) && newDoc().committed == false) ||
         // eapr can only commit or reject uncommitted expenses

@@ -571,9 +571,9 @@ describe("Firestore Rules", () => {
     it("prevents time administrators (tadm) from deleting committed amendments");
     it("prevents admins from creating, reading, updating, or deleting amendments");
   });
-  describe.only("Expenses", () => {
+  describe("Expenses", () => {
     const expenses = adminDb.collection("Expenses");
-    const baseline = { uid: "alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob" };
+    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example" };
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
@@ -643,6 +643,12 @@ describe("Firestore Rules", () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.get());
+    });
+    it("requires submitted uid to match the authenticated user id", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      await firebase.assertSucceeds(doc.set({ ...baseline }));
+      const { uid, ...missingUid } = baseline;
+      await firebase.assertFails(doc.set({ uid: "bob", ...missingUid }));
     });
 
   });
