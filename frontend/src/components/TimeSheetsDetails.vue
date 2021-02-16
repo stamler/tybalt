@@ -55,7 +55,7 @@
       <!-- reject button -->
       <router-link
         v-if="
-          canApprove() &&
+          canReject() &&
           item.submitted === true &&
           item.locked === false &&
           item.rejected === false
@@ -222,6 +222,13 @@ export default mixins.extend({
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true
+      );
+    },
+    canReject(): boolean {
+      return (
+        this.canApprove() ||
+        (Object.prototype.hasOwnProperty.call(this.claims, "tsrej") &&
+          this.claims["tsrej"] === true)
       );
     },
   },
