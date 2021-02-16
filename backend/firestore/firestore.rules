@@ -254,8 +254,8 @@ service cloud.firestore {
         hasClaim("time") && uidMatches() ||
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
         hasClaim("erej") && resource.data.approved == true ||
-        hasClaim("eapr") && resource.data.submitted == true
-      )      
+        hasClaim("eapr") && resource.data.approved == true
+      )
       allow create: if 
         hasClaim("time") && validExpenseEntry() &&
         // prevent user from creating an entry for somebody else
@@ -268,7 +268,7 @@ service cloud.firestore {
         (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
         // tapr or erej can reject uncommitted expenses
         ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().committed == false && newDoc().approved == false) ||
-        // eapr can only commit or reject uncommitted expenses
+        // eapr can only commit or reject approved expenses
         (
           hasClaim("eapr") && 
           (

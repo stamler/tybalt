@@ -597,8 +597,8 @@ describe("Firestore Rules", () => {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
     });
-    it("allows manager (eapr) to read any submitted Expenses", async () => {
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, managerUid: "alice" });
+    it("allows manager (eapr) to read any approved Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
@@ -655,8 +655,8 @@ describe("Firestore Rules", () => {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.get());
     });
-    it("prevents manager (eapr) from reading unsubmitted Expenses", async () => {
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ managerUid: "alice" });
+    it("prevents manager (eapr) from reading unapproved Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, managerUid: "alice" });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.get());
