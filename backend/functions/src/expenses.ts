@@ -20,10 +20,12 @@ export async function cleanUpOrphanedAttachment(
       afterAttachment = afterData?.attachment ?? null;
       if (beforeAttachment !== afterAttachment) {
         // the attachment was changed so
-        // delete the old attachment. 
+        // delete the old attachment if it existed
         const bucket = admin.storage().bucket();
-        const file = bucket.file(beforeAttachment);
-        return file.delete();
+        if (beforeAttachment !== undefined) {
+          const file = bucket.file(beforeAttachment);
+          return file.delete();
+        }
       }
       // No change was made to the attachment, do nothing
       return;
