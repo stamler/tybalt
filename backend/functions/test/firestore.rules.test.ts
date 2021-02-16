@@ -573,10 +573,13 @@ describe("Firestore Rules", () => {
   });
   describe("Expenses", () => {
     const expenses = adminDb.collection("Expenses");
+    const jobs = adminDb.collection("Jobs");
     const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example" };
+    const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
+      await jobs.doc("19-333").set({ description: "Big job for a client" });
       await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
     });
 
@@ -646,11 +649,21 @@ describe("Firestore Rules", () => {
     });
     it("requires submitted uid to match the authenticated user id", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      await firebase.assertSucceeds(doc.set({ ...baseline }));
+      await firebase.assertSucceeds(doc.set(baseline));
       const { uid, ...missingUid } = baseline;
       await firebase.assertFails(doc.set({ uid: "bob", ...missingUid }));
     });
-
+    it("requires documents not have unspecified fields", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      await firebase.assertSucceeds(doc.set(baseline));
+      await firebase.assertFails(doc.set({ ...baseline, foo: "bar" }));
+    });
+    it("requires any referenced job to be valid", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { job, ...missingJob } = expenseJobProperties;
+      await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
+      await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
+    });
   });
   //wtf.dump()
 });
