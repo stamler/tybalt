@@ -234,7 +234,9 @@ service cloud.firestore {
         hasClaim("admin") && resource.data.submitted == true
       );
       // Allow submission by directly editing the 'submitted' field
-      // Prevent settings 'submitted' to false if already 'approved'
+      // Prevent setting 'submitted' to false if already 'approved'
+      // Allow rejection of unlocked timesheets
+      // prevent rejection of locked timesheets
       allow update: if (
         hasClaim("time") && 
         uidMatches() && 
@@ -261,6 +263,7 @@ service cloud.firestore {
         request.resource.data.approved == false &&
         request.resource.data.rejectionReason.size() > 5 &&
         resource.data.submitted == true &&
+        resource.data.locked == false &&
         managerUidMatches()
       );
     }
