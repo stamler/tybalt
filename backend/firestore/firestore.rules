@@ -256,7 +256,7 @@ service cloud.firestore {
         hasClaim("time") && validExpenseEntry() &&
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'];
-      allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false && !resource.data.keys().hasAll(["committed"]);
+      allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches()) ||

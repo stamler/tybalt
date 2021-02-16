@@ -584,6 +584,10 @@ describe("Firestore Rules", () => {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get())
     });
+    it("allows owner to delete their own Expenses if they have time claim", async () => {
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.delete())
+    });
     it("allows manager (tapr) to read submitted Expenses they manage", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
@@ -595,6 +599,22 @@ describe("Firestore Rules", () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
+    });
+    it("prevents owner from deleting their own Expenses if they are submitted", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.delete())
+    });
+    it("prevents owner from deleting their own Expenses if they are approved", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true });
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.delete())
+    });
+    it("prevents manager from deleting Expenses they manage", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.delete())
     });
     it("prevents owner from reading their own Expenses if they have no time claim", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
