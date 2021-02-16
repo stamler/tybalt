@@ -603,6 +603,20 @@ describe("Firestore Rules", () => {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
     });
+    it("allows expense rejector (erej) to read any approved Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, erej: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("allows expense rejector (erej) to reject any approved Expense", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, erej: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+    });
     it("prevents owner from deleting their own Expenses if they are submitted", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");

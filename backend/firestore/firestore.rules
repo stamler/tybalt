@@ -251,8 +251,9 @@ service cloud.firestore {
     }
     match /Expenses/{entry} {
       allow read: if (
-        hasClaim("time") && uidMatches() || 
+        hasClaim("time") && uidMatches() ||
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("erej") && resource.data.approved == true ||
         hasClaim("eapr") && resource.data.submitted == true
       )      
       allow create: if 
@@ -263,8 +264,10 @@ service cloud.firestore {
       allow update: if 
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged()) ||
-        // tapr can only approve or reject uncommitted expenses
-        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason", "committed"]) && newDoc().committed == false) ||
+        // tapr can approve 
+        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
+        // tapr or erej can reject uncommitted expenses
+        ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().committed == false && newDoc().approved == false) ||
         // eapr can only commit or reject uncommitted expenses
         (
           hasClaim("eapr") && 
