@@ -230,7 +230,7 @@ describe("Firestore Rules", () => {
   });
 
   describe("TimeSheets", () => {
-    const timesheet = { uid: "bob", managerUid: "alice", submitted: false, rejected: false, approved: false };
+    const timesheet = { uid: "bob", managerUid: "alice", submitted: false, rejected: false, approved: false, locked: false };
     const timesheets = adminDb.collection("TimeSheets");
 
     beforeEach("reset data", async () => {
@@ -272,7 +272,31 @@ describe("Firestore Rules", () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+    });
+    it("allows manager (tapr) to reject approved timesheets they manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true, approved: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+    });
+    it("allows time sheet rejector (tsrej) to reject any approved timesheet", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true, approved: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, tsrej: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from rejecting locked timesheets they manage", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true, approved:true, locked: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );
     });
     it("prevents rejected timesheets from being submitted", async () => {
