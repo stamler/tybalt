@@ -247,7 +247,11 @@ service cloud.firestore {
       allow create: if hasClaim("time") && validTimeEntry();
     }
     match /Expenses/{entry} {
-      allow read: if (hasClaim("time") && uidMatches()) || hasClaim("tapr") || hasClaim("eapr");
+      allow read: if (
+        hasClaim("time") && uidMatches() || 
+        hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("eapr") && resource.data.submitted == true
+      )      
       allow create: if 
         hasClaim("time") && validExpenseEntry() &&
         // prevent user from submitting an entry with an unauthorized uid

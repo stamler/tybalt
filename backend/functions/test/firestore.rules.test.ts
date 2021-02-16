@@ -571,6 +571,60 @@ describe("Firestore Rules", () => {
     it("prevents time administrators (tadm) from deleting committed amendments");
     it("prevents admins from creating, reading, updating, or deleting amendments");
   });
+  describe.only("Expenses", () => {
+    const expenses = adminDb.collection("Expenses");
+    const baseline = { uid: "alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob" };
 
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
+    });
+
+    it("allows owner to read their own Expenses if they have time claim", async () => {
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get())
+    });
+    it("allows manager (tapr) to read submitted Expenses they manage", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("allows manager (eapr) to read any submitted Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("prevents owner from reading their own Expenses if they have no time claim", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get())
+    });
+    it("prevents manager (tapr) from reading submitted Expenses they do not manage", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get());
+    });
+    it("prevents user with managerUid from reading submitted Expenses if they are missing tapr claim", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get());
+    });
+    it("prevents manager (tapr) from reading unsubmitted Expenses they manage", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get());
+    });
+    it("prevents manager (eapr) from reading unsubmitted Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.get());
+    });
+
+  });
   //wtf.dump()
 });
