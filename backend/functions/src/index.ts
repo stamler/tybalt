@@ -46,7 +46,7 @@ const writeCreated = function (
       { merge: true }
     );
 };
-// Write the weekEnding on TimeEntries and TimeAmendments
+// Write the weekEnding on TimeEntries, TimeAmendments, and Expenses
 exports.timeEntriesWeekEnding = functions.firestore
   .document("TimeEntries/{entryId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "date", "weekEnding") });
@@ -58,6 +58,11 @@ exports.timeAmendmentsWeekEnding = functions.firestore
 exports.timeAmendmentsCommittedWeekEnding = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
+
+// Write the committedWeekEnding on Expenses
+exports.expensesCommittedWeekEnding = functions.firestore
+.document("Expenses/{expenseId}")
+.onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
 
 // exportJson when a timeAmendment is committed
 exports.exportOnAmendmentCommit = functions.firestore

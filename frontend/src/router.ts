@@ -12,6 +12,7 @@ import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
+import CommittedExpensesList from "@/components/CommittedExpensesList.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
@@ -195,29 +196,6 @@ const router = new Router({
           ],
         },
         {
-          path: "tracking",
-          name: "Time Tracking",
-          redirect: "/time/tracking/list",
-          component: ContentShell,
-          children: [
-            {
-              meta: { showInUi: true, uiName: "List" },
-              path: "list",
-              name: "Time Tracking List",
-              props: { collection: "TimeTracking" },
-              component: TimeTrackingList,
-            },
-            {
-              path: ":id/details",
-              props: (route) => {
-                return { id: route.params.id, collection: "TimeTracking" };
-              },
-              name: "Time Tracking Details",
-              component: TimeTrackingDetails,
-            },
-          ],
-        },
-        {
           path: "amendments",
           name: "Time Amendments",
           redirect: "/time/amendments/list",
@@ -244,6 +222,53 @@ const router = new Router({
               },
               name: "Edit Time Amendments",
               component: TimeEntriesEdit,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      path: "/reports",
+      name: "Reports",
+      meta: { claims: ["reports"] },
+      redirect: "/reports/time",
+      component: Main,
+      children: [
+        {
+          path: "time",
+          name: "Time Tracking",
+          redirect: "/reports/time/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Time Tracking List",
+              props: { collection: "TimeTracking" },
+              component: TimeTrackingList,
+            },
+            {
+              path: ":id/details",
+              props: (route) => {
+                return { id: route.params.id, collection: "TimeTracking" };
+              },
+              name: "Time Tracking Details",
+              component: TimeTrackingDetails,
+            },
+          ],
+        },
+        {
+          path: "expense",
+          name: "Expense Tracking",
+          redirect: "/reports/expense/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Expense List",
+              props: { collection: "Expenses" },
+              component: CommittedExpensesList,
             },
           ],
         },
