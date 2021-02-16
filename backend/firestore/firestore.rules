@@ -230,6 +230,7 @@ service cloud.firestore {
       allow read: if (
         hasClaim("time") && uidMatches() || 
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("tsrej") && resource.data.approved == true ||
         hasClaim("tadm") && resource.data.approved == true ||
         hasClaim("admin") && resource.data.submitted == true
       );
@@ -257,14 +258,13 @@ service cloud.firestore {
         resource.data.submitted == true &&
         managerUidMatches()
       ) || (
-        hasClaim("tapr") &&
+        ((hasClaim("tapr") && managerUidMatches()) || hasClaim("tsrej")) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) &&
         request.resource.data.rejected == true &&
         request.resource.data.approved == false &&
         request.resource.data.rejectionReason.size() > 5 &&
         resource.data.submitted == true &&
-        resource.data.locked == false &&
-        managerUidMatches()
+        resource.data.locked == false
       );
     }
     match /TimeTypes/{timetype} {

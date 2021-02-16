@@ -283,6 +283,14 @@ describe("Firestore Rules", () => {
         doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );
     });
+    it("allows time sheet rejector (tsrej) to reject any approved timesheet", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true, approved: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, tsrej: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+    });
     it("prevents manager (tapr) from rejecting locked timesheets they manage", async () => {
       await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true, approved:true, locked: true });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
