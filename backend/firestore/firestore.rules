@@ -235,8 +235,8 @@ service cloud.firestore {
       );
       // Allow submission by directly editing the 'submitted' field
       // Prevent setting 'submitted' to false if already 'approved'
-      // Allow rejection of unlocked timesheets
-      // prevent rejection of locked timesheets
+      // Allow rejection of submitted or approved timesheets by tapr
+      // prevent rejection of locked timesheets by anybody
       allow update: if (
         hasClaim("time") && 
         uidMatches() && 
