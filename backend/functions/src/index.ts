@@ -13,6 +13,7 @@ import { bundleTimesheet } from "./bundleTimesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment } from "./expenses";
+export { updateExpenseTracking } from "./expenses";
 
 // clean up expense attachments that are orphaned by deletion or update of 
 // corresponding expense document
