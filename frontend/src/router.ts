@@ -12,7 +12,7 @@ import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
-import CommittedExpensesList from "@/components/CommittedExpensesList.vue";
+import ExpenseTrackingList from "@/components/ExpenseTrackingList.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
@@ -267,8 +267,8 @@ const router = new Router({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Expense List",
-              props: { collection: "Expenses" },
-              component: CommittedExpensesList,
+              props: { collection: "ExpenseTracking" },
+              component: ExpenseTrackingList,
             },
           ],
         },

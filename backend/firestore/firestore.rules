@@ -280,6 +280,9 @@ service cloud.firestore {
     match /TimeTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");
     }
+    match /ExpenseTracking/{entry} {
+      allow read: if hasClaim("tadm") || hasClaim("admin");
+    }
     match /TimeSheets/{sheet} {
       allow read: if (
         hasClaim("time") && uidMatches() || 
