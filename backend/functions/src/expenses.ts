@@ -48,37 +48,11 @@ export const updateExpenseTracking = functions.firestore
     const db = admin.firestore();
     const beforeData = change.before.data();
     const afterData = change.after.data();
-    let beforeCommitted: boolean;
-    let weekEnding: Date;
-    if (beforeData) {
-      // the Expense was updated
-      beforeCommitted = beforeData.committed
-      try {
-        weekEnding = beforeData.committedWeekEnding.toDate();
-      } catch (error) {
-        console.log(`unable to determine weekEnding: ${error}`);
-        return;
-      }
-    }
-    else if (afterData) {
-      // the Expense was just created
-      beforeCommitted = false;
-      try {
-        weekEnding = afterData.committedWeekEnding.toDate();
-      } catch (error) {
-        console.log(`unable to determine weekEnding: ${error}`);
-        return;
-      }
-    }
-    else {
-      // This should never happen because either a before or after document
-      // must exist, but it is here because the if/else branch
-      // above will not assign a value to beforeApproved or weekEnding in 
-      // this case and TypeScript notices that
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Both the before and after DocumentSnapshots contain no data"
-      );
+    const beforeCommitted: boolean = beforeData?.committed ?? false;
+    const weekEnding: Date = beforeData?.committedWeekEnding?.toDate() ?? afterData?.committedWeekEnding?.toDate();
+    if ( weekEnding === undefined ) {
+      console.log(`failed to get weekEnding, terminating`);
+      return;      
     }
 
     // Get the ExpenseTracking doc if it exists, otherwise create it.
