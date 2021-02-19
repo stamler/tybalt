@@ -50,7 +50,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import mixins from "./mixins";
 import { format, subDays } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
@@ -172,7 +172,7 @@ function isTimeSheet(data: any): data is TimeSheet {
   return optionalStringVals && stringVals && numVals;
 }
 
-export default Vue.extend({
+export default mixins.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
     LockIcon,
@@ -208,13 +208,6 @@ export default Vue.extend({
     });
   },
   methods: {
-    exportDate(date: Date) {
-      return format(date, "yyyy MMM dd");
-    },
-    exportDateWeekStart(date: Date) {
-      const startDate = subDays(date, 6);
-      return format(startDate, "yyyy MMM dd");
-    },
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
@@ -506,38 +499,6 @@ export default Vue.extend({
           weekEnding
         )}.csv`
       );
-    },
-    // Force the download of a blob to a file by creating an
-    // anchor and programmatically clicking it.
-    downloadBlob(blob: Blob, filename: string) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename || "download";
-
-      // release object URL after element has been clicked
-      // required for one-off downloads of the blob content
-      const clickHandler = () => {
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          a.removeEventListener("click", clickHandler);
-        }, 150);
-      };
-
-      // Add the click event listener on the anchor element
-      // Comment out this line if you don't want a one-off download of the blob content
-      a.addEventListener("click", clickHandler, false);
-
-      // Programmatically trigger a click on the anchor element
-      // Useful if you want the download to happen automatically
-      // Without attaching the anchor element to the DOM
-      // Comment out this line if you don't want an automatic download of the blob content
-      a.click();
-
-      // Return the anchor element
-      // Useful if you want a reference to the element
-      // in order to attach it to the DOM or use it in some other way
-      return a;
     },
     // If an amendment has a corresponding timesheet, fold it into that
     // timesheet and update the tallies for that timesheet. Otherwise
