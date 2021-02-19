@@ -27,7 +27,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject } from "./utilities";
+import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl } from "./utilities";
 
 export async function unbundleTimesheet(
   data: unknown, 
@@ -595,7 +595,7 @@ function contextHasClaim(context: functions.https.CallableContext, claim: string
 }
 
 // If a file object's metadata changes, ensure that the links to it
-// inside the corresponding TimeTracking object are updated so that
+// inside corresponding TimeTracking or ExpenseTracking doc are updated so that
 // downloads continue to work. This allows us to update the token in
 // the firebase console for security reasons without breaking the app
 // https://www.sentinelstand.com/article/guide-to-firebase-storage-download-urls-tokens
@@ -612,32 +612,40 @@ export const writeFileLinks = functions.storage
     const parsed = path.parse(objMeta.name);
     const weekEnding = new Date(Number(parsed.name));
 
+    // set the collection based on the last prefix on the directory path,
+    // stripping out the "Exports" substring at the end. so for example
+    // /Dir/TimeTrackingExports -> TimeTracking
+    // /Dir/ExpenseTrackingExports -> ExpenseTracking
+    const dirPieces = parsed.dir.split("/");
+    const candidate = dirPieces[dirPieces.length - 1];
+    const collection = candidate.substring(0, candidate.indexOf("Exports"));
+
     if (isNaN(weekEnding.getTime())) {
       throw new Error(
         `filename ${parsed.name} cannot be converted to a date object`
       );
     }
 
-    // Get the TimeTracking doc or throw
+    // Get the <collection> doc or throw
     const querySnap = await db
-      .collection("TimeTracking")
+      .collection(collection)
       .where("weekEnding", "==", weekEnding)
       .get();
 
-    let timeTrackingDocRef;
+    let trackingDocRef;
     if (querySnap.size > 1) {
       throw new Error(
-        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
+        `There is more than one document in ${collection} for weekEnding ${weekEnding}`
       );
     } else if (querySnap.size === 1) {
-      timeTrackingDocRef = querySnap.docs[0].ref;
+      trackingDocRef = querySnap.docs[0].ref;
     } else {
       throw new Error(
-        `There are no documents in TimeTracking for weekEnding ${weekEnding}`
+        `There are no documents in ${collection} for weekEnding ${weekEnding}`
       );
     }
 
-    return timeTrackingDocRef.update({
+    return trackingDocRef.update({
       [parsed.ext.substring(1)]: createPersistentDownloadUrl(
         admin.storage().bucket().name,
         objMeta.name,
@@ -645,9 +653,3 @@ export const writeFileLinks = functions.storage
       ),
     });
   });
-
-const createPersistentDownloadUrl = (bucket: string, pathToFile: string, downloadToken: string) => {
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
-    pathToFile
-  )}?alt=media&token=${downloadToken}`;
-};
