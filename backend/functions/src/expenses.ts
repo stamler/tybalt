@@ -85,7 +85,7 @@ export const updateExpenseTracking = functions.firestore
       afterData.approved === true
     ) {
       // add the committed Expense to expenses
-      return expenseTrackingDocRef.update(
+      await expenseTrackingDocRef.update(
         {
           [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
         }
@@ -99,13 +99,13 @@ export const updateExpenseTracking = functions.firestore
     ) {
       // remove the *manually* uncommitted Expense from expenses
       console.log(`Expense ${change.after.ref.id} has been manually uncommitted. Export must be run to update the reports`);
-      return expenseTrackingDocRef.update(
+      await expenseTrackingDocRef.update(
         {
           [`expenses.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
     }
-    return;
+    return exportJson({ id: expenseTrackingDocRef.id });
   });
 
 // Given an ExpenseTracking id, create or update a file on Google storage
@@ -200,33 +200,3 @@ export async function exportJson(data: unknown) {
     });
   });
 };
-
-// call exportJson as soon as an Expense is committed
-export async function exportOnExpenseCommit(
-  change: functions.ChangeJson,
-  context: functions.EventContext,
-) {
-    const db = admin.firestore();
-    const committedWeekEnding = change.after.data().committedWeekEnding;
-    if (committedWeekEnding !== undefined) {
-      // Get the ExpenseTracking doc or throw
-      const querySnap = await db
-        .collection("ExpenseTracking")
-        .where("weekEnding", "==", committedWeekEnding)
-        .get();
-
-      let expenseTrackingDocRef;
-      if (querySnap.size > 1) {
-        throw new Error(
-          `There is more than one document in ExpenseTracking for weekEnding ${committedWeekEnding}`
-        );
-      } else if (querySnap.size === 1) {
-        expenseTrackingDocRef = querySnap.docs[0].ref;
-      } else {
-        // create new ExpenseTracking document
-        expenseTrackingDocRef = db.collection("ExpenseTracking").doc();
-        await expenseTrackingDocRef.set({ weekEnding: committedWeekEnding });
-      }
-      return exportJson({ id: expenseTrackingDocRef.id });
-    }
-  };

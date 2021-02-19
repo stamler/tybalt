@@ -11,7 +11,7 @@ import { assignComputerToUser } from "./computers";
 import { unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment, exportOnExpenseCommit } from "./expenses";
+import { cleanUpOrphanedAttachment } from "./expenses";
 export { updateTimeTracking } from "./timesheets";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
@@ -70,11 +70,6 @@ exports.expensesCommittedWeekEnding = functions.firestore
 exports.exportOnAmendmentCommit = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onUpdate(exportOnAmendmentCommit);
-
-// exportJson when an expense is committed
-exports.exportOnExpenseCommit = functions.firestore
-  .document("Expenses/{expenseId}")
-  .onUpdate(exportOnExpenseCommit);
 
   // Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore
