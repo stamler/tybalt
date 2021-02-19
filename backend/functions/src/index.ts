@@ -12,7 +12,7 @@ import { unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCo
 import { bundleTimesheet } from "./bundleTimesheets";
 export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment } from "./expenses";
+import { cleanUpOrphanedAttachment, exportOnExpenseCommit } from "./expenses";
 export { updateExpenseTracking } from "./expenses";
 
 // clean up expense attachments that are orphaned by deletion or update of 
@@ -70,7 +70,12 @@ exports.exportOnAmendmentCommit = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onUpdate(exportOnAmendmentCommit);
 
-// Write the created timestamp on created Documents
+// exportJson when an expense is committed
+exports.exportOnExpenseCommit = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onUpdate(exportOnExpenseCommit);
+
+  // Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore
   .document("Computers/{computerId}")
   .onCreate(writeCreated);

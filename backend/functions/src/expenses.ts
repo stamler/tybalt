@@ -1,5 +1,10 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { isDocIdObject, createPersistentDownloadUrl } from "./utilities";
+import { v4 as uuidv4 } from "uuid";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 // onWrite()
 // check if the filepath changed
@@ -102,3 +107,126 @@ export const updateExpenseTracking = functions.firestore
     }
     return;
   });
+
+// Given an ExpenseTracking id, create or update a file on Google storage
+// with the committed expenses. Must be called by another
+// authenticated function.
+export async function exportJson(data: unknown) {
+  // Get locked TimeSheets
+  const db = admin.firestore();
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
+
+  const trackingSnapshot = await db
+    .collection("ExpenseTracking")
+    .doc(data.id)
+    .get();
+
+  const expensesSnapshot = await db
+    .collection("Expenses")
+    .where("approved", "==", true)
+    .where("committed", "==", true)
+    .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
+    .get();
+
+  // delete internal properties for each expense
+  const expenses = expensesSnapshot.docs.map((doc) => {
+    const docData = doc.data();
+    delete docData.submitted;
+    delete docData.approved;
+    delete docData.committed;
+    delete docData.rejected;
+    delete docData.rejectionReason;
+    docData.date = docData.date.toDate();
+    docData.commitTime = docData.commitTime.toDate();
+    docData.committedWeekEnding = docData.committedWeekEnding.toDate();
+    return docData;
+  });
+  
+  // generate JSON output
+  const output = JSON.stringify(expenses);
+  
+  // make the filename based on milliseconds since UTC epoch
+  const filename = `${trackingSnapshot
+    .get("weekEnding")
+    .toDate()
+    .getTime()}.json`;
+  const tempLocalFileName = path.join(os.tmpdir(), filename);
+
+  return new Promise<void>((resolve, reject) => {
+    //write contents of json into the temp file
+    fs.writeFile(tempLocalFileName, output, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      const bucket = admin.storage().bucket();
+      const destination = "ExpenseTrackingExports/" + filename;
+      const newToken = uuidv4();
+
+      // upload the file into the current firebase project default bucket
+      bucket
+        .upload(tempLocalFileName, {
+          destination,
+          // Workaround: firebase console not generating token for files
+          // uploaded via Firebase Admin SDK
+          // https://github.com/firebase/firebase-admin-node/issues/694
+          metadata: {
+            metadata: {
+              firebaseStorageDownloadTokens: newToken,
+            },
+          },
+        })
+        .then(async (uploadResponse) => {
+          // put the path to the new file into the TimeTracking document
+          await trackingSnapshot.ref.update({
+            json: createPersistentDownloadUrl(
+              admin.storage().bucket().name,
+              destination,
+              newToken
+            ),
+          });
+          return resolve();
+        })
+        .catch((err) => reject(err));
+    });
+  });
+};
+
+// call exportJson as soon as an Expense is committed
+export async function exportOnExpenseCommit(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+) {
+    const db = admin.firestore();
+    const committedWeekEnding = change.after.data().committedWeekEnding;
+    if (committedWeekEnding !== undefined) {
+      // Get the ExpenseTracking doc or throw
+      const querySnap = await db
+        .collection("ExpenseTracking")
+        .where("weekEnding", "==", committedWeekEnding)
+        .get();
+
+      let expenseTrackingDocRef;
+      if (querySnap.size > 1) {
+        throw new Error(
+          `There is more than one document in ExpenseTracking for weekEnding ${committedWeekEnding}`
+        );
+      } else if (querySnap.size === 1) {
+        expenseTrackingDocRef = querySnap.docs[0].ref;
+      } else {
+        // create new ExpenseTracking document
+        expenseTrackingDocRef = db.collection("ExpenseTracking").doc();
+        await expenseTrackingDocRef.set({ weekEnding: committedWeekEnding });
+      }
+      return exportJson({ id: expenseTrackingDocRef.id });
+    }
+  };

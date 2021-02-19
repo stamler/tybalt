@@ -93,3 +93,9 @@ interface DocIdObject {
 export function isDocIdObject(data: any): data is DocIdObject {
   return typeof data.id === "string";
 }
+
+export function createPersistentDownloadUrl(bucket: string, pathToFile: string, downloadToken: string) {
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
+    pathToFile
+  )}?alt=media&token=${downloadToken}`;
+};
