@@ -10,10 +10,11 @@ import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
 import { unbundleTimesheet, lockTimesheets, writeWeekEnding, exportOnAmendmentCommit } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
-export { writeFileLinks, updateTimeTracking } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, exportOnExpenseCommit } from "./expenses";
+export { updateTimeTracking } from "./timesheets";
 export { updateExpenseTracking } from "./expenses";
+export { writeFileLinks } from "./utilities";
 
 // clean up expense attachments that are orphaned by deletion or update of 
 // corresponding expense document
