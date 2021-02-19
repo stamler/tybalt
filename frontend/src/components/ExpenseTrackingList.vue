@@ -31,8 +31,26 @@ import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import { DownloadIcon } from "vue-feather-icons";
-import store from "../store";
+
 const db = firebase.firestore();
+
+interface ExpenseReportRecord {
+  uid: string;
+  displayName: string;
+  surname: string;
+  givenName: string;
+  committedWeekEnding: string;
+  commitTime: string;
+  commitName: string;
+  commitUid: string;
+  managerName: string;
+  managerUid: string;
+  description: string;
+  date: string;
+  total: number;
+  attachment: string;
+  // missing job, job description, workrecord, client etc.
+}
 
 export default Vue.extend({
   mixins: [mixins],
