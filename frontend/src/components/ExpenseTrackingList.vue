@@ -20,21 +20,29 @@
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
+        <router-link
+          v-if="hasLink(item, 'json')"
+          v-bind:to="{ name: 'Expense Tracking' }"
+          v-on:click.native="generatePayablesCSV(item['json'])"
+        >
+          payables<download-icon></download-icon>
+        </router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { utcToZonedTime } from "date-fns-tz";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import { DownloadIcon } from "vue-feather-icons";
+import { parse } from "json2csv";
 
 const db = firebase.firestore();
 
-interface ExpenseReportRecord {
+interface Expense {
   uid: string;
   displayName: string;
   surname: string;
@@ -48,12 +56,50 @@ interface ExpenseReportRecord {
   description: string;
   date: string;
   total: number;
-  attachment: string;
-  // missing job, job description, workrecord, client etc.
+  attachment?: string;
+  client?: string;
+  job?: string;
+  jobDescription?: string;
+  po?: string;
 }
 
-export default Vue.extend({
-  mixins: [mixins],
+// Type Guard
+function isExpense(data: any): data is Expense {
+  // check optional string properties have correct type
+  const optionalStringVals = [
+    "attachment",
+    "client",
+    "job",
+    "jobDescription",
+    "po",
+  ]
+    .map((x) => data[x] === undefined || typeof data[x] === "string")
+    .every((x) => x === true);
+  // check string properties exist and have correct type
+  const stringVals = [
+    "uid",
+    "displayName",
+    "surname",
+    "givenName",
+    "committedWeekEnding",
+    "commitTime",
+    "commitName",
+    "commitUid",
+    "managerName",
+    "managerUid",
+    "description",
+    "date",
+  ]
+    .map((x) => data[x] !== undefined && typeof data[x] === "string")
+    .every((x) => x === true);
+  // check number properties exist and have correct type
+  const numVals = ["total"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "number")
+    .every((x) => x === true);
+  return optionalStringVals && stringVals && numVals;
+}
+
+export default mixins.extend({
   props: ["collection"],
   components: { DownloadIcon },
   filters: {
@@ -75,6 +121,45 @@ export default Vue.extend({
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
+      );
+    },
+    async generatePayablesCSV(url: string) {
+      const response = await fetch(url);
+      const items = (await response.json()) as Expense[];
+
+      // since all entries have the same week ending, pull from the first entry
+      const weekEnding = new Date(items[0].committedWeekEnding);
+      const fields = [
+        "committedWeekEnding",
+        "surname",
+        "givenName",
+        "displayName",
+        {
+          label: "manager",
+          value: "managerName",
+        },
+      ];
+      const opts = { fields };
+      const expenseRecords = items.map((x) => {
+        if (!isExpense(x)) {
+          throw new Error("There was an error validating the expense");
+        }
+        x["committedWeekEnding"] = format(
+          utcToZonedTime(
+            new Date(x.committedWeekEnding),
+            "America/Thunder_Bay"
+          ),
+          "yyyy MMM dd"
+        );
+        return x;
+      });
+      const csv = parse(expenseRecords, opts);
+      const blob = new Blob([csv], { type: "text/csv" });
+      this.downloadBlob(
+        blob,
+        `payroll_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+          weekEnding
+        )}.csv`
       );
     },
   },

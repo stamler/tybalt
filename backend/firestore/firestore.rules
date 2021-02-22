@@ -225,7 +225,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update: if hasClaim("job") && 
         ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
-        jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]+)?') &&
+        jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]{2})?') &&
         newDoc().keys().hasAll(["client", "description", "manager"]) &&
         newDoc().keys().hasOnly(["client", "description", "manager", "proposal", "status", "clientContact"]) &&
         newDoc().description.size() > 3;
