@@ -10,6 +10,9 @@ service cloud.firestore {
     function uidMatches() { // requester uid matches field in existing doc
       return request.auth.uid == resource.data.uid;
     }
+    function uidUnchanged() { // uid field in existing doc matches request uid field
+      return request.resource.data.uid == resource.data.uid;
+    }
     function managerUidMatches() {
       return request.auth.uid == resource.data.managerUid;
     }
@@ -86,6 +89,29 @@ service cloud.firestore {
           ( hasValidWorkrecord() && isInCollection("job", "Jobs") ) ||
           isMissing("workrecord")
         );
+    }
+    function validExpenseEntry() {
+      return
+        // allowed fields
+        newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
+          "surname", "givenName", "total", "submitted", "approved",
+          "managerUid", "managerName",
+          "job", "jobDescription", "client", "po", "weekEnding", "attachment",
+          "rejected", "rejectionReason", "committed" ]) &&
+        
+        // required fields
+        newDoc().keys().hasAll(["date", "description", "uid", "displayName",
+          "surname", "givenName", "total", "submitted", "approved",
+          "managerUid", "managerName"]) &&
+
+        // when job provided, job exists in db,
+        // jobDescription and client are present
+        (
+          ( isInCollection("job","Jobs") && 
+            newDoc().keys().hasAll(["jobDescription", "client"])
+          ) || 
+          isMissing("job")
+        )
     }
     function validTimeEntry() {
       // TODO: Boolean Simplification
@@ -199,7 +225,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update: if hasClaim("job") && 
         ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
-        jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]+)?') &&
+        jobId.matches('(P)?[0-9]{2}-[0-9]{3,}(-[0-9]{2})?') &&
         newDoc().keys().hasAll(["client", "description", "manager"]) &&
         newDoc().keys().hasOnly(["client", "description", "manager", "proposal", "status", "clientContact"]) &&
         newDoc().description.size() > 3;
@@ -220,10 +246,41 @@ service cloud.firestore {
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && validTimeEntry() && uidMatches();
+      allow update: if hasClaim("time") && validTimeEntry() && uidMatches() && uidUnchanged();
       allow create: if hasClaim("time") && validTimeEntry();
     }
+    match /Expenses/{entry} {
+      allow read: if (
+        hasClaim("time") && uidMatches() ||
+        hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("erej") && resource.data.approved == true ||
+        hasClaim("eapr") && (resource.data.approved == true || resource.data.committed == true)
+      )
+      allow create: if 
+        hasClaim("time") && validExpenseEntry() &&
+        // prevent user from creating an entry for somebody else
+        request.auth.uid == request.resource.data['uid'];
+      allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
+      allow update: if 
+        // owner can edit
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged()) ||
+        // tapr can approve 
+        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
+        // tapr or erej can reject uncommitted expenses
+        ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().committed == false && newDoc().approved == false) ||
+        // eapr can only commit or reject approved expenses
+        (
+          hasClaim("eapr") && 
+          (
+            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().rejected == true && newDoc().approved == false ) ||
+            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid )
+          )
+        );
+    }
     match /TimeTracking/{entry} {
+      allow read: if hasClaim("tadm") || hasClaim("admin");
+    }
+    match /ExpenseTracking/{entry} {
       allow read: if hasClaim("tadm") || hasClaim("admin");
     }
     match /TimeSheets/{sheet} {
