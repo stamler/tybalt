@@ -284,6 +284,8 @@ if (!timeEntries.empty) {
           givenName: profile.get("givenName"),
           displayName: profile.get("displayName"),
           managerName: profile.get("managerName"),
+          salary: profile.get("salary"),
+          tbtePayrollId: profile.get("tbtePayrollId"),
           weekEnding: week,
           managerUid: managerUid,
           locked: false,
