@@ -209,8 +209,12 @@ service cloud.firestore {
         newDoc().diff(resource.data).affectedKeys().hasOnly([
           "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId"
         ]) &&
-        newDoc().tbtePayrollId is int &&
-        newDoc().tbtePayrollId > 0 &&
+        (
+          (newDoc().tbtePayrollId is int &&
+          newDoc().tbtePayrollId > 0) ||
+          (newDoc().tbtePayrollId is string &&
+          newDoc().tbtePayrollId.matches('CMS[0-9]{1,2}'))
+        ) &&
         isInCollection("managerUid","Profiles") && 
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager

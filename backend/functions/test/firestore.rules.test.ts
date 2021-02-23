@@ -181,7 +181,7 @@ describe("Firestore Rules", () => {
         })
       );
     });
-    it("requires a tbtePayrollId to be a positive integer", async () => {
+    it("requires a tbtePayrollId to be a positive integer or CMS{1,2}", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
       await firebase.assertFails(
@@ -199,6 +199,51 @@ describe("Firestore Rules", () => {
           email: "bob@example.com",
           managerUid: "alice",
           tbtePayrollId: -4,
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS2",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS22",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS222",
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "BMS22",
           defaultDivision: "ABC",
         })
       );
