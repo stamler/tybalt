@@ -17,7 +17,7 @@
           {{ item.customClaims | keysString }}
         </div>
         <div class="secondline">Manager: {{ item.managerName }}</div>
-        <div class="thirdline"></div>
+        <div class="thirdline">Payroll ID: {{ item.tbtePayrollId }}</div>
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
