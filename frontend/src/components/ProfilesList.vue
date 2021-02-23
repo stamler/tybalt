@@ -17,7 +17,14 @@
           {{ item.customClaims | keysString }}
         </div>
         <div class="secondline">Manager: {{ item.managerName }}</div>
-        <div class="thirdline">Payroll ID: {{ item.tbtePayrollId }}</div>
+        <div class="thirdline">
+          Payroll ID: {{ item.tbtePayrollId }}
+          <span v-if="typeof item.salary === 'boolean'">
+            Wage:
+            <template v-if="item.salary">salary</template>
+            <template v-else>hourly</template>
+          </span>
+        </div>
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">

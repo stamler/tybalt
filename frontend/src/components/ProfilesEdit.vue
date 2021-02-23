@@ -13,6 +13,10 @@
       />
     </span>
     <span class="field">
+      <label for="salary">Salary</label>
+      <input type="checkbox" name="salary" v-model="item.salary" />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input type="text" name="displayName" v-model="item.displayName" />
     </span>
@@ -147,12 +151,14 @@ export default Vue.extend({
           email: string;
           customClaims: { [x: string]: boolean };
           defaultDivision: string;
+          salary: boolean;
           tbtePayrollId?: number;
         } = {
           displayName: this.item.displayName,
           managerUid: this.item.managerUid,
           email: this.item.email,
           customClaims: this.item.customClaims,
+          salary: this.item.salary ?? false,
           defaultDivision: this.item.defaultDivision,
         };
         if (this.item.tbtePayrollId) {
