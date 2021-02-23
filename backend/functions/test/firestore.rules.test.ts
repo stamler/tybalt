@@ -169,6 +169,7 @@ describe("Firestore Rules", () => {
           email: "bob@example.com",
           managerUid: "alice",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -178,6 +179,40 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+    });
+    it("requires salary to be present and boolean", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: "string",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -191,6 +226,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28.2,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
@@ -200,6 +236,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: -4,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
@@ -209,6 +246,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: "CMS",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -218,6 +256,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: "CMS2",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -227,6 +266,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: "CMS22",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
@@ -236,6 +276,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: "CMS222",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
@@ -245,6 +286,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: "BMS22",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -254,6 +296,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -267,6 +310,7 @@ describe("Firestore Rules", () => {
           managerUid: "ronswanson",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -276,6 +320,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -288,6 +333,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
@@ -296,6 +342,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -305,6 +352,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -318,6 +366,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "DEF",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -327,6 +376,7 @@ describe("Firestore Rules", () => {
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
 
