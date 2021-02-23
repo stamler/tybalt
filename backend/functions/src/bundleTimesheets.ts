@@ -264,6 +264,13 @@ if (!timeEntries.empty) {
   const profile = await db.collection("Profiles").doc(auth.uid).get();
   if (profile.exists) {
     const managerUid = profile.get("managerUid");
+    const tbtePayrollId = profile.get("tbtePayrollId");
+    if (tbtePayrollId === undefined) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "The Profile for this user doesn't contain a tbtePayrollId"
+      );
+    }
     if (managerUid !== undefined) {
       // Verify that the auth user with managerUid exists
       let manager;
@@ -285,9 +292,9 @@ if (!timeEntries.empty) {
           displayName: profile.get("displayName"),
           managerName: profile.get("managerName"),
           salary: profile.get("salary"),
-          tbtePayrollId: profile.get("tbtePayrollId"),
+          tbtePayrollId,
           weekEnding: week,
-          managerUid: managerUid,
+          managerUid,
           locked: false,
           approved: false,
           rejected: false,
