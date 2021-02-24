@@ -93,3 +93,95 @@ interface DocIdObject {
 export function isDocIdObject(data: any): data is DocIdObject {
   return typeof data.id === "string";
 }
+
+// add timestamp of 23:59:59 EST next saturday to weekEndingProperty of Document
+// based on dateProperty
+export async function writeWeekEnding(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+  dateProperty: string,
+  weekEndingProperty: string
+) {
+    if (change.after.exists) {
+      // The Document was not deleted
+      const afterData = change.after.data();
+      if (afterData === undefined) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot read Document with id ${change.after.id} during writeWeekEnding`
+        )
+      }
+      let date;
+      try {
+        // get the date from the Document
+        date = afterData[dateProperty].toDate();
+      } catch (error) {
+        console.log(
+          `unable to read property ${dateProperty} for Document with id ${change.after.id}`
+        );
+        return null;
+      }
+      // If weekEnding is defined on the Document, get it, otherwise set null
+      const weekEnding = Object.prototype.hasOwnProperty.call(
+        afterData,
+        weekEndingProperty
+      )
+        ? afterData[weekEndingProperty].toDate()
+        : null;
+
+      // Calculate the correct saturday of the weekEnding
+      // (in America/Thunder_Bay timezone)
+      let calculatedSaturday;
+      if (date.getDay() === 6) {
+        // assume the date is already in America/Thunder_Bay Time Zone
+        console.log(`writeWeekEnding() ${dateProperty} is already a saturday`);
+        calculatedSaturday = zonedTimeToUtc(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            23,
+            59,
+            59,
+            999
+          ),
+          "America/Thunder_Bay"
+        );
+      } else {
+        console.log("writeWeekEnding() calculating next saturday");
+        // assume the date is already in America/Thunder_Bay Time Zone
+        const nextsat = new Date(date.valueOf());
+        nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
+        calculatedSaturday = zonedTimeToUtc(
+          new Date(
+            nextsat.getFullYear(),
+            nextsat.getMonth(),
+            nextsat.getDate(),
+            23,
+            59,
+            59,
+            999
+          ),
+          "America/Thunder_Bay"
+        );
+      }
+
+      // update the Document only if required
+      if (
+        weekEnding === null ||
+        weekEnding.toDateString() !== calculatedSaturday.toDateString
+      ) {
+        return change.after.ref.set(
+          { [weekEndingProperty]: calculatedSaturday },
+          { merge: true }
+        );
+      }
+
+      // no changes to be made
+      return null;
+    } else {
+      // The Document was deleted, do nothing
+      console.log("writeWeekEnding() called but Document was deleted");
+      return null;
+    }
+  };
