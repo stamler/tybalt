@@ -651,3 +651,50 @@ const createPersistentDownloadUrl = (bucket: string, pathToFile: string, downloa
     pathToFile
   )}?alt=media&token=${downloadToken}`;
 };
+
+export async function commitTimeAmendment(data: unknown, context: functions.https.CallableContext) {
+  if (!contextHasClaim(context, "tadm")) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Call to commitTimeAmendment() failed"
+    );
+  }
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
+  const db = admin.firestore();
+  const commitUid = context.auth?.uid;
+  if (commitUid === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Unable to read User ID from callable context"
+    )
+  }
+  const commitName = await (await db.collection("Profiles").doc(commitUid).get()).get("displayName");
+  
+  const amendmentUid = await (await db.collection("TimeAmendments").doc(data.id).get()).get("uid");
+  const profile = (await db.collection("Profiles").doc(amendmentUid).get()).data();
+
+  if (profile === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Unable to read profile corresponding to this Time Amendment"
+    );
+  }
+  // This does not need to be a transaction because amendments are neither
+  // submitted nor approved.
+  return db.collection("TimeAmendments").doc(data.id).update({
+      committed: true,
+      commitTime: admin.firestore.FieldValue.serverTimestamp(),
+      commitUid,
+      commitName,
+      salary: profile.salary,
+      tbtePayrollId: profile.tbtePayrollId,
+    });
+};
