@@ -61,6 +61,7 @@ import { parse } from "json2csv";
 import _ from "lodash";
 const db = firebase.firestore();
 
+type TimeOffTypes = "OB" | "OH" | "OP" | "OS" | "OV";
 interface PayrollReportRecord {
   weekEnding: string;
   displayName: string;
@@ -72,13 +73,14 @@ interface PayrollReportRecord {
   R?: number;
   OB?: number;
   OH?: number;
-  OO?: number;
   OP?: number;
   OS?: number;
   OV?: number;
   RB?: number;
   payoutRequest?: number;
   hasAmendmentsForWeeksEnding?: string[];
+  salary?: boolean;
+  tbtePayrollId?: number | string;
 }
 
 interface Amendment {
@@ -109,6 +111,8 @@ interface Amendment {
   jobDescription?: string;
   workrecord?: string;
   jobHours?: number;
+  salary?: boolean;
+  tbtePayrollId?: number | string;
 }
 
 interface TimeSheet {
@@ -329,6 +333,8 @@ export default Vue.extend({
           value: "payoutRequest",
         },
         "hasAmendmentsForWeeksEnding",
+        "salary",
+        "tbtePayrollId",
       ];
       const opts = { fields };
       const timesheetRecords = items.map((x) => {
@@ -345,15 +351,17 @@ export default Vue.extend({
           "offRotationDaysTally",
           "payoutRequest",
           "hasAmendmentsForWeeksEnding",
-        ]) as any;
-        item["weekEnding"] = format(
+          "salary",
+          "tbtePayrollId",
+        ]) as PayrollReportRecord;
+        item.weekEnding = format(
           utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
           "yyyy MMM dd"
         );
-        item["R"] = x.workHoursTally.jobHours + x.workHoursTally.hours;
-        item["RB"] = x.bankedHours;
+        item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
+        item.RB = x.bankedHours;
         for (const key in x.nonWorkHoursTally) {
-          item[key] = x.nonWorkHoursTally[key];
+          item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
         }
         return item;
       });
@@ -366,6 +374,8 @@ export default Vue.extend({
           givenName: x.givenName,
           managerName: x.creatorName,
           mealsHoursTally: x.mealsHours || 0,
+          salary: x.salary,
+          tbtePayrollId: x.tbtePayrollId,
         };
         if (x.timetype === "R") {
           item["R"] = (x.hours || 0) + (x.jobHours || 0);
@@ -375,7 +385,7 @@ export default Vue.extend({
               "The Amendment is of type nonWorkHours but no hours are present"
             );
           }
-          item[x.timetype as "OB" | "OH" | "OO" | "OP" | "OS" | "OV"] = x.hours;
+          item[x.timetype as TimeOffTypes] = x.hours;
         }
 
         return item;
