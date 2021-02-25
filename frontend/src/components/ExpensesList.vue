@@ -195,63 +195,64 @@ export default Vue.extend({
           alert(`Error committing item: ${err}`);
         });
     },
+    updateItems() {
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      const uid = store.state.user?.uid;
+      if (uid === undefined) {
+        throw "There is no valid uid";
+      }
+      if (
+        typeof this.approved === "boolean" &&
+        this.commitqueue === undefined
+      ) {
+        // approved prop is defined, show pending or approved TimeSheets
+        // belonging to users that this user manages
+        this.$bind(
+          "items",
+          this.collectionObject
+            .where("managerUid", "==", uid)
+            .where("approved", "==", this.approved)
+            .where("submitted", "==", true)
+            .orderBy("date", "desc")
+        ).catch((error) => {
+          alert(`Can't load Expenses: ${error.message}`);
+        });
+      } else {
+        // approved prop not defined, get user's own expenses
+        // or commit queue
+        if (typeof this.commitqueue !== "boolean") {
+          // populate with the user's own expenses
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("uid", "==", uid)
+              .orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Expenses: ${error.message}`);
+          });
+        } else if (this.commitqueue === true) {
+          // populate with the commit queue
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("approved", "==", true)
+              .where("committed", "==", false)
+              .orderBy("date", "desc")
+          ).catch((error) => {
+            alert(`Can't load Expenses: ${error.message}`);
+          });
+        }
+      }
+    },
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$watch(
-      "approved",
-      () => {
-        if (this.collectionObject === null) {
-          throw "There is no valid collection object";
-        }
-        const uid = store.state.user?.uid;
-        if (uid === undefined) {
-          throw "There is no valid uid";
-        }
-        if (typeof this.approved === "boolean") {
-          // approved prop is defined, show pending or approved TimeSheets
-          // belonging to users that this user manages
-          this.$bind(
-            "items",
-            this.collectionObject
-              .where("managerUid", "==", uid)
-              .where("approved", "==", this.approved)
-              .where("submitted", "==", true)
-              .orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Expenses: ${error.message}`);
-          });
-        } else {
-          // approved prop not defined, get user's own expenses
-          // or commit queue
-          if (typeof this.commitqueue !== "boolean") {
-            // populate with the user's own expenses
-            this.$bind(
-              "items",
-              this.collectionObject
-                .where("uid", "==", uid)
-                .orderBy("date", "desc")
-            ).catch((error) => {
-              alert(`Can't load Expenses: ${error.message}`);
-            });
-          } else if (this.commitqueue === true) {
-            // populate with the commit queue
-            this.$bind(
-              "items",
-              this.collectionObject
-                .where("approved", "==", true)
-                .where("committed", "==", false)
-                .orderBy("date", "desc")
-            ).catch((error) => {
-              alert(`Can't load Expenses: ${error.message}`);
-            });
-          }
-        }
-      },
-      { immediate: true }
-    );
+    this.$watch("approved", this.updateItems, { immediate: true });
+    this.$watch("commitqueue", this.updateItems, { immediate: true });
   },
 });
 </script>
