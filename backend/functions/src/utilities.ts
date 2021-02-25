@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 // make a string with serial & manufacturer that uniquely identifies a computer
 export function makeSlug(serial: string, mfg: string) {
