@@ -112,6 +112,8 @@ service cloud.firestore {
           ) || 
           isMissing("job")
         )
+        // TODO: check length of description matches UI restriction and validate
+        // other properties
     }
     function validTimeEntry() {
       // TODO: Boolean Simplification

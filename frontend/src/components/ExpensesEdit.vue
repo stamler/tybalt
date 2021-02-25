@@ -142,7 +142,7 @@ export default mixins.extend({
       // TODO: build out client-side validation
       const validDescription =
         typeof this.item.description === "string" &&
-        this.item.description.length > 4;
+        this.item.description.length > 3;
       const validTotal =
         typeof this.item.total === "number" && this.item.total > 0;
       return (
