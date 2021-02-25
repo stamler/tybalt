@@ -51,7 +51,7 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
