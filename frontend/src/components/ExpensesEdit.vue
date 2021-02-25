@@ -12,6 +12,15 @@
         v-model="item.date"
       />
     </span>
+    <!--
+    <span class="field">
+      <select name="expensetype" v-model="item.expensetype">
+        <option v-for="e in expensetypes" :value="e.id" v-bind:key="e.id">
+          {{ e.name }}
+        </option>
+      </select>
+    </span>
+    -->
     <span class="field">
       <label for="total">Total $</label>
       <input type="number" name="total" v-model.number="item.total" />
@@ -130,6 +139,7 @@ export default mixins.extend({
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
+      //expensetypes: [] as firebase.firestore.DocumentData[],
       attachmentPreviouslyUploaded: false,
       validAttachmentType: true,
       newAttachment: null as string | null,
@@ -162,6 +172,7 @@ export default mixins.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
+    //this.$bind("expensetypes", db.collection("ExpenseTypes"));
     this.setItem(this.id);
   },
   methods: {
@@ -303,6 +314,12 @@ export default mixins.extend({
       }
       // TODO: restrict uploading twice in the backend
 
+      /*
+      // Populate the Expense Type Name
+      this.item.expensetypeName = this.expensetypes.filter(
+        (i) => i.id === this.item.expensetype
+      )[0].name;
+      */
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
       delete this.item.rejected;
       delete this.item.rejectionReason;
