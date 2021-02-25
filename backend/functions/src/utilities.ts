@@ -132,40 +132,7 @@ export async function writeWeekEnding(
 
       // Calculate the correct saturday of the weekEnding
       // (in America/Thunder_Bay timezone)
-      let calculatedSaturday;
-      if (date.getDay() === 6) {
-        // assume the date is already in America/Thunder_Bay Time Zone
-        console.log(`writeWeekEnding() ${dateProperty} is already a saturday`);
-        calculatedSaturday = zonedTimeToUtc(
-          new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            23,
-            59,
-            59,
-            999
-          ),
-          "America/Thunder_Bay"
-        );
-      } else {
-        console.log("writeWeekEnding() calculating next saturday");
-        // assume the date is already in America/Thunder_Bay Time Zone
-        const nextsat = new Date(date.valueOf());
-        nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
-        calculatedSaturday = zonedTimeToUtc(
-          new Date(
-            nextsat.getFullYear(),
-            nextsat.getMonth(),
-            nextsat.getDate(),
-            23,
-            59,
-            59,
-            999
-          ),
-          "America/Thunder_Bay"
-        );
-      }
+      const calculatedSaturday = nextSaturday(date);
 
       // update the Document only if required
       if (
@@ -186,3 +153,40 @@ export async function writeWeekEnding(
       return null;
     }
   };
+
+// Calculate the correct saturday of the weekEnding in America/Thunder_Bay 
+// assuming input is in America/Thunder_Bay timezone as well.
+export function nextSaturday(date: Date): Date {
+  let calculatedSaturday;
+    // assume the date argument is already in America/Thunder_Bay Time Zone
+    if (date.getDay() === 6) {
+    calculatedSaturday = zonedTimeToUtc(
+      new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        23,
+        59,
+        59,
+        999
+      ),
+      "America/Thunder_Bay"
+    );
+  } else {
+    const nextsat = new Date(date.valueOf());
+    nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
+    calculatedSaturday = zonedTimeToUtc(
+      new Date(
+        nextsat.getFullYear(),
+        nextsat.getMonth(),
+        nextsat.getDate(),
+        23,
+        59,
+        59,
+        999
+      ),
+      "America/Thunder_Bay"
+    );
+  }
+  return calculatedSaturday;
+}
