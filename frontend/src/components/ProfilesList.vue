@@ -16,9 +16,15 @@
         <div class="firstline">
           {{ item.customClaims | keysString }}
         </div>
-        <div class="secondline">Manager: {{ item.managerName }}</div>
+        <div class="secondline">
+          <span v-if="item.managerName">Manager: {{ item.managerName }}</span>
+          <span v-else class="attention">Missing Manager</span>
+        </div>
         <div class="thirdline">
-          Payroll ID: {{ item.tbtePayrollId }}
+          <span v-if="item.tbtePayrollId">
+            Payroll ID: {{ item.tbtePayrollId }}
+          </span>
+          <span v-else class="attention"> Missing Payroll ID </span>
           <span v-if="typeof item.salary === 'boolean'">
             Wage:
             <template v-if="item.salary">salary</template>
