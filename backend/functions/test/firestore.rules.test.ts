@@ -832,6 +832,15 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
     });
+    it("allows manager (tapr) to reject submitted expenses they manage", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+
+    });
   });
   //wtf.dump()
 });

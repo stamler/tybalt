@@ -271,7 +271,7 @@ service cloud.firestore {
         // tapr can approve 
         (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
         // tapr or erej can reject uncommitted expenses
-        ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().committed == false && newDoc().approved == false) ||
+        ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && (newDoc().committed == false || !('committed' in newDoc())) && newDoc().approved == false) ||
         // eapr can only commit or reject approved expenses
         (
           hasClaim("eapr") && 
