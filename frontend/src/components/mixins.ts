@@ -311,13 +311,20 @@ export default Vue.extend({
           alert(`Error deleting item: ${err}`);
         });
     },
-    async downloadAttachment(item: firebase.firestore.DocumentData) {
+    async downloadAttachment(
+      item: firebase.firestore.DocumentData,
+      sameTab?: boolean
+    ) {
       const url = await storage.ref(item.attachment).getDownloadURL();
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "download";
-      a.click();
-      return a;
+      if (sameTab === true) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "download";
+        a.click();
+        return a;
+      } else {
+        window.open(url, "_blank");
+      }
     },
     // Force the download of a blob to a file by creating an
     // anchor and programmatically clicking it.
