@@ -160,15 +160,16 @@ describe("Firestore Rules", () => {
       await divisions.doc("ABC").set(division);
     });
 
-    it("requires a referenced manager to be valid", async () => {
+    it("requires a tbtePayrollId to be present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
-      const doc = db.collection("Profiles").doc("bob");  
+      const doc = db.collection("Profiles").doc("bob");
       await firebase.assertFails(
         doc.update({
           displayName: "Bob",
           email: "bob@example.com",
-          managerUid: "ronswanson",
+          managerUid: "alice",
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -176,7 +177,150 @@ describe("Firestore Rules", () => {
           displayName: "Bob",
           email: "bob@example.com",
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+    });
+    it("requires salary to be present and boolean", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: "string",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+    });
+    it("requires a tbtePayrollId to be a positive integer or CMS{1,2}", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28.2,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: -4,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS",
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS2",
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS22",
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "CMS222",
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: "BMS22",
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+    });
+    it("requires a referenced manager to be valid", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "ronswanson",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -187,14 +331,18 @@ describe("Firestore Rules", () => {
         doc.set({ 
           email: "bob@example.com",
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertFails(
         doc.set({ 
           displayName: "Bob", 
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -202,7 +350,9 @@ describe("Firestore Rules", () => {
           displayName: "Bob",
           email: "bob@example.com",
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
     });
@@ -214,7 +364,9 @@ describe("Firestore Rules", () => {
           displayName: "Bob",
           email: "bob@example.com",
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "DEF",
+          salary: false,
         })
       );
       await firebase.assertSucceeds(
@@ -222,7 +374,9 @@ describe("Firestore Rules", () => {
           displayName: "Bob",
           email: "bob@example.com",
           managerUid: "alice",
+          tbtePayrollId: 28,
           defaultDivision: "ABC",
+          salary: false,
         })
       );
 

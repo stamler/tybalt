@@ -306,7 +306,13 @@ button {
   -moz-appearance: none;
   -webkit-appearance: none;
 }
-
+#editor .field input[type="checkbox"] {
+  -moz-appearance: auto;
+  -webkit-appearance: auto;
+  appearance: auto;
+  flex-grow: 0;
+  width: auto;
+}
 #content input:focus,
 #editor .field select:focus,
 #editor .field input:focus {

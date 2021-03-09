@@ -58,10 +58,7 @@
         <div class="rowactionsbox">
           <template v-if="collection === 'TimeAmendments'">
             <template v-if="item.committed === false">
-              <router-link
-                to="#"
-                v-on:click.native="commit(item, collectionObject)"
-              >
+              <router-link to="#" v-on:click.native="commit(item)">
                 <check-circle-icon></check-circle-icon>
               </router-link>
               <router-link :to="[parentPath, item.id, 'edit'].join('/')">
@@ -230,23 +227,22 @@ export default mixins.extend({
     },
   },
   methods: {
-    commit(
-      item: firebase.firestore.DocumentData,
-      collection: firebase.firestore.CollectionReference
-    ) {
-      if (collection === null) {
-        throw "There is no valid collection object";
-      }
-      collection
-        .doc(item.id)
-        .update({
-          committed: true,
-          commitTime: firebase.firestore.FieldValue.serverTimestamp(),
-          commitUid: store.state.user?.uid,
-          commitName: store.state.user?.displayName,
+    commit(item: firebase.firestore.DocumentData) {
+      const commitTimeAmendment = firebase
+        .functions()
+        .httpsCallable("commitTimeAmendment");
+      store.commit("startTask", {
+        id: `commitAmendment${item.id}`,
+        message: "committing",
+      });
+
+      return commitTimeAmendment({ id: item.id })
+        .then(() => {
+          store.commit("endTask", { id: `commitAmendment${item.id}` });
         })
-        .catch((err) => {
-          alert(`Error committing item: ${err}`);
+        .catch((error) => {
+          store.commit("endTask", { id: `commitAmendment${item.id}` });
+          alert(`Amendment commit failed: ${error}`);
         });
     },
     totalHours(week: number): number {

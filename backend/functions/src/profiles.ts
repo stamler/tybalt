@@ -62,6 +62,8 @@ export async function createProfile(user: admin.auth.UserRecord) {
       email: user.email,
       customClaims,
       managerUid: null,
+      tbtePayrollId: null,
+      salary: false,
     }, { merge: true });
   } catch (error) {
     console.log(error);

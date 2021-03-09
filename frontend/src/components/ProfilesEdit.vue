@@ -5,6 +5,18 @@
       <span>{{ id }}</span>
     </span>
     <span class="field">
+      <label for="tbtePayrollId">Payroll ID</label>
+      <input
+        type="number"
+        name="tbtePayrollId"
+        v-model.number="item.tbtePayrollId"
+      />
+    </span>
+    <span class="field">
+      <label for="salary">Salary</label>
+      <input type="checkbox" name="salary" v-model="item.salary" />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input type="text" name="displayName" v-model="item.displayName" />
     </span>
@@ -133,17 +145,33 @@ export default Vue.extend({
         // use update() instead of set({ merge: true }) because we want to
         // overwrite the entire customClaims section rather than keeping any
         // deleted claims
+        const obj: {
+          displayName: string;
+          managerUid: string;
+          email: string;
+          customClaims: { [x: string]: boolean };
+          defaultDivision: string;
+          salary: boolean;
+          tbtePayrollId?: number;
+        } = {
+          displayName: this.item.displayName,
+          managerUid: this.item.managerUid,
+          email: this.item.email,
+          customClaims: this.item.customClaims,
+          salary: this.item.salary ?? false,
+          defaultDivision: this.item.defaultDivision,
+        };
+        if (this.item.tbtePayrollId) {
+          obj.tbtePayrollId = this.item.tbtePayrollId;
+        }
         this.collectionObject
           .doc(this.id)
-          .update({
-            displayName: this.item.displayName,
-            managerUid: this.item.managerUid,
-            email: this.item.email,
-            customClaims: this.item.customClaims,
-            defaultDivision: this.item.defaultDivision,
-          })
+          .update(obj)
           .then(() => {
             this.$router.push(this.parentPath);
+          })
+          .catch((err) => {
+            alert(`Error saving item: ${err}`);
           });
       } else {
         alert("New profiles can only be created by the authentication system");

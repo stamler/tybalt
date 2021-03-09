@@ -207,10 +207,17 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
-        newDoc().keys().hasAll(["email", "displayName"]) &&
+        newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "defaultDivision"
+          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary"
         ]) &&
+        (
+          (newDoc().tbtePayrollId is int &&
+          newDoc().tbtePayrollId > 0) ||
+          (newDoc().tbtePayrollId is string &&
+          newDoc().tbtePayrollId.matches('CMS[0-9]{1,2}'))
+        ) && 
+        newDoc().salary is bool &&
         isInCollection("managerUid","Profiles") && 
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager
@@ -238,12 +245,7 @@ service cloud.firestore {
     match /TimeAmendments/{entry} {
       allow read: if hasClaim("tadm");
       allow delete: if hasClaim("tadm") && resource.data.committed == false;
-      allow update: if 
-        hasClaim("tadm") && 
-        (
-          (validAmendmentEntry() && resource.data.committed == false) ||
-          (newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid )
-        );
+      allow update: if hasClaim("tadm") && validAmendmentEntry() && resource.data.committed == false;
       allow create: if hasClaim("tadm") && validAmendmentEntry();
     }
     match /TimeEntries/{entry} {
