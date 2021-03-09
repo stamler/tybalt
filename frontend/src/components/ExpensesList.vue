@@ -7,7 +7,9 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
-            <template v-if="approved === undefined">
+            <template
+              v-if="approved === undefined && commitqueue === undefined"
+            >
               {{ item.description }}
             </template>
             <template v-else>
@@ -20,7 +22,7 @@
           </div>
         </div>
         <div class="firstline">
-          <template v-if="approved !== undefined">
+          <template v-if="approved !== undefined || commitqueue === true">
             {{ item.description }}
           </template>
         </div>
@@ -32,6 +34,9 @@
             <router-link to="#" v-on:click.native="downloadAttachment(item)">
               <download-icon></download-icon>
             </router-link>
+          </template>
+          <template v-if="approved === true || commitqueue === true">
+            approved by {{ item.managerName }}
           </template>
         </div>
         <div class="thirdline">
