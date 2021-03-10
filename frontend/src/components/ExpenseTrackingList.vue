@@ -141,16 +141,16 @@ export default mixins.extend({
         },
         {
           label: "Date",
-          value: (row) => new Date(row.date).getDate(),
+          value: (row: Expense) => new Date(row.date).getDate(),
         },
         {
           label: "Month",
-          value: (row) =>
+          value: (row: Expense) =>
             new Date(row.date).toLocaleString("en-US", { month: "short" }),
         },
         {
           label: "Year",
-          value: (row) => new Date(row.date).getFullYear(),
+          value: (row: Expense) => new Date(row.date).getFullYear(),
         },
         {
           label: "Total",

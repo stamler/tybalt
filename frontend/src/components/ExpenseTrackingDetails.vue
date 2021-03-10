@@ -58,7 +58,7 @@ export default mixins.extend({
         return new Date();
       }
     },
-    processedItems() {
+    processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
       return _.groupBy(this.expenses, "uid");
     },
   },
@@ -98,6 +98,12 @@ export default mixins.extend({
           .then((snap) => {
             if (snap.exists) {
               this.item = snap.data();
+              if (this.item === undefined) {
+                throw "The ExpenseTracking document is empty";
+              }
+              if (this.item.weekEnding === undefined) {
+                throw "The ExpenseTracking document is missing a week ending";
+              }
               this.$bind(
                 "expenses",
                 db
