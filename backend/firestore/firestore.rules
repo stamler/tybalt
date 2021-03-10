@@ -96,6 +96,7 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName",
+          "vendorName",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectionReason", "committed" ]) &&
         

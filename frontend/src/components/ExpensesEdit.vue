@@ -27,6 +27,16 @@
     </span>
 
     <span class="field">
+      <label for="vendorName">Vendor Name</label>
+      <input
+        type="text"
+        name="vendorName"
+        v-model.trim="item.vendorName"
+        placeholder="Acme Co."
+      />
+    </span>
+
+    <span class="field">
       <label for="job">Job</label>
       <!-- TODO: Show job description/client in uneditable part of field -->
       <input

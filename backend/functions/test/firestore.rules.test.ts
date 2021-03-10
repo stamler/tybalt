@@ -832,6 +832,11 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
     });
+    it("allows documents to have vendorName field", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      await firebase.assertSucceeds(doc.set(baseline));
+      await firebase.assertSucceeds(doc.set({ ...baseline, vendorName: "Foobar Company" }));
+    });
     it("allows manager (tapr) to reject submitted expenses they manage", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();

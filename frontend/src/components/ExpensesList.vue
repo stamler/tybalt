@@ -18,7 +18,8 @@
           </div>
           <div class="byline">
             ${{ item.total }}
-            <span v-if="item.po"> PO#{{ item.po }}</span>
+            <span v-if="item.po">/PO:{{ item.po }}</span>
+            <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
           </div>
         </div>
         <div class="firstline">
