@@ -56,6 +56,10 @@ interface Expense {
   description: string;
   date: string;
   total: number;
+  division: string;
+  divisionName: string;
+  visa: boolean;
+  vendorName?: string;
   attachment?: string;
   client?: string;
   job?: string;
@@ -130,14 +134,17 @@ export default mixins.extend({
       // since all entries have the same week ending, pull from the first entry
       const weekEnding = new Date(items[0].committedWeekEnding);
       const fields = [
-        "committedWeekEnding",
         {
           label: "Acct/Visa/Exp",
-          value: () => "Expense",
+          value: (row: Expense) => (row.visa ? "Visa" : "Expense"),
         },
         {
           label: "Job #",
           value: "job",
+        },
+        {
+          label: "Div",
+          value: "division",
         },
         {
           label: "Date",
@@ -163,6 +170,10 @@ export default mixins.extend({
         {
           label: "Description",
           value: "description",
+        },
+        {
+          label: "Company",
+          value: "vendorName",
         },
         {
           label: "Employee",
