@@ -727,14 +727,17 @@ describe("Firestore Rules", () => {
   });
   describe("Expenses", () => {
     const expenses = adminDb.collection("Expenses");
+    const divisions = adminDb.collection("Divisions");
     const jobs = adminDb.collection("Jobs");
-    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example" };
+    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime" };
     const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
+    const division = { name: "Playtime" };
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
       await jobs.doc("19-333").set({ description: "Big job for a client" });
       await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
+      await divisions.doc("ABC").set(division);
     });
 
     it("allows owner to read their own Expenses if they have time claim", async () => {
@@ -831,6 +834,13 @@ describe("Firestore Rules", () => {
       const { job, ...missingJob } = expenseJobProperties;
       await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
+    });
+    it("requires division to be present and valid", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { division, ...missingDivision } = baseline;
+      await firebase.assertFails(doc.set(missingDivision));
+      await firebase.assertFails(doc.set({ division: "DEF", ...missingDivision }));
+      await firebase.assertSucceeds(doc.set({ division: "ABC", ...missingDivision }));
     });
     it("allows documents to have vendorName field", async () => {
       const doc = timeDb.collection("Expenses").doc();

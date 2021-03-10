@@ -22,6 +22,15 @@
     </span>
     -->
     <span class="field">
+      <select name="division" v-model="item.division">
+        <option disabled selected value="">-- choose division --</option>
+        <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
+          {{ d.name }}
+        </option>
+      </select>
+    </span>
+
+    <span class="field">
       <label for="total">Total $</label>
       <input
         type="number"
@@ -150,6 +159,7 @@ export default mixins.extend({
       },
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
+      divisions: [] as firebase.firestore.DocumentData[],
       showSuggestions: false,
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
@@ -188,6 +198,7 @@ export default mixins.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     //this.$bind("expensetypes", db.collection("ExpenseTypes"));
+    this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.id);
   },
   methods: {
@@ -269,6 +280,7 @@ export default mixins.extend({
           surname: profile.get("surname"),
           managerName: profile.get("managerName"),
           managerUid: profile.get("managerUid"),
+          division: profile.get("defaultDivision"),
           submitted: false,
           approved: false,
         };
@@ -344,6 +356,20 @@ export default mixins.extend({
         delete this.item.jobDescription;
         delete this.item.client;
       }
+
+      // division must be present
+      if (this.item.division && this.item.division.length > 0) {
+        // write divisionName
+        this.item.divisionName = this.divisions.filter(
+          (i) => i.id === this.item.division
+        )[0].name;
+      } else {
+        throw "Division Missing";
+      }
+
+      // TODO: catch the above throw and notify the user.
+      // TODO: build more validation here to notify the user of errors
+      // before hitting the backend.
 
       // If there's an attachment, upload it. If successful
       // complete the rest. Otherwise cleanup and abort.
