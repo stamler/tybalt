@@ -13,6 +13,7 @@ import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
 import ExpenseTrackingList from "@/components/ExpenseTrackingList.vue";
+import ExpenseTrackingDetails from "@/components/ExpenseTrackingDetails.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
@@ -269,6 +270,14 @@ const router = new Router({
               name: "Expense List",
               props: { collection: "ExpenseTracking" },
               component: ExpenseTrackingList,
+            },
+            {
+              path: ":id/details",
+              props: (route) => {
+                return { id: route.params.id, collection: "ExpenseTracking" };
+              },
+              name: "Expense Tracking Details",
+              component: ExpenseTrackingDetails,
             },
           ],
         },

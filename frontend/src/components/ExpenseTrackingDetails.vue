@@ -3,38 +3,20 @@
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
-    <div>
-      <div
-        v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
-      >
-        <h5>Approved</h5>
-        <router-link
-          v-for="(obj, tsId) in item.pending"
-          v-bind:key="tsId"
-          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
-        >
-          {{ obj.displayName }}<br />
-        </router-link>
-        <br />
-      </div>
-      <div
-        v-if="
-          this.item.timeSheets && Object.keys(this.item.timeSheets).length > 0
-        "
-      >
-        <h5>Locked</h5>
-        <router-link
-          v-for="(obj, tsId) in item.timeSheets"
-          v-bind:key="tsId"
-          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
-        >
-          {{ obj.displayName }}<br />
-        </router-link>
-        <br />
-      </div>
-      <div v-if="missing.length > 0">
-        <h5>Missing</h5>
-        <p v-for="m in missing" v-bind:key="m.id">{{ m.displayName }}<br /></p>
+    <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
+      <!-- There must be a first item so get displayName from it -->
+      <span>{{ expenses[0].displayName }}</span>
+      <div class="listentry" v-for="item in expenses" v-bind:key="item.id">
+        <div class="anchorbox">
+          {{ item.date.toDate() | shortDate }}
+        </div>
+        <div class="detailsbox">
+          <div class="headline_wrapper">
+            <div class="headline">
+              {{ item.description }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -45,40 +27,13 @@ import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+import _ from "lodash";
 const db = firebase.firestore();
-
-interface TimeSheetTrackingPayload {
-  displayName: string;
-  uid: string;
-}
 
 export default mixins.extend({
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
-    missing(): firebase.firestore.DocumentData[] {
-      if (this && this.item) {
-        let pendingUserKeys = [] as string[];
-        if (this.item.pending && Object.keys(this.item.pending).length > 0) {
-          pendingUserKeys = (Object.values(
-            this.item.pending
-          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
-        }
-        let lockedUserKeys = [] as string[];
-        if (
-          this.item.timeSheets &&
-          Object.keys(this.item.timeSheets).length > 0
-        ) {
-          lockedUserKeys = (Object.values(
-            this.item.timeSheets
-          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
-        }
-        return this.profiles
-          .filter((p) => !pendingUserKeys.includes(p.id))
-          .filter((l) => !lockedUserKeys.includes(l.id));
-      }
-      return [];
-    },
     weekStart(): Date {
       if (this.item?.weekEnding !== undefined) {
         return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
@@ -86,13 +41,16 @@ export default mixins.extend({
         return new Date();
       }
     },
+    processedItems() {
+      return _.groupBy(this.expenses, "uid");
+    },
   },
   data() {
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData | undefined,
-      profiles: [] as firebase.firestore.DocumentData[],
+      expenses: [] as firebase.firestore.DocumentData[],
     };
   },
   filters: {
@@ -110,9 +68,6 @@ export default mixins.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
-    this.$bind("profiles", db.collection("Profiles")).catch((error) => {
-      alert(`Can't load Profiles: ${error.message}`);
-    });
   },
   methods: {
     setItem(id: string) {
@@ -126,6 +81,15 @@ export default mixins.extend({
           .then((snap) => {
             if (snap.exists) {
               this.item = snap.data();
+              this.$bind(
+                "expenses",
+                db
+                  .collection("Expenses")
+                  .where("committedWeekEnding", "==", this.item.weekEnding)
+                  .where("committed", "==", true)
+              ).catch((error) => {
+                alert(`Can't load Expenses: ${error.message}`);
+              });
             } else {
               // A document with this id doesn't exist in the database,
               // list instead.  TODO: show a message to the user
