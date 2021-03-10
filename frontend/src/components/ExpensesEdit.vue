@@ -23,7 +23,12 @@
     -->
     <span class="field">
       <label for="total">Total $</label>
-      <input type="number" name="total" v-model.number="item.total" />
+      <input
+        type="number"
+        name="total"
+        v-model.number="item.total"
+        placeholder="including any tax"
+      />
     </span>
 
     <span class="field">
