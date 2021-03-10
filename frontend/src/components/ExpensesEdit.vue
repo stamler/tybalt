@@ -38,7 +38,7 @@
         value="CorporateCreditCard"
         v-model="item.paymentType"
       />
-      <label for="ccc">Corporate Credit Card</label>
+      <label for="ccc">Corp Visa</label>
       <input
         type="radio"
         id="expense"
