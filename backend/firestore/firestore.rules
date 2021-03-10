@@ -95,7 +95,7 @@ service cloud.firestore {
         // allowed fields
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
-          "managerUid", "managerName", "division", "divisionName",
+          "managerUid", "managerName", "division", "divisionName", "paymentType",
           "vendorName",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectionReason", "committed" ]) &&
@@ -103,8 +103,9 @@ service cloud.firestore {
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
           "surname", "givenName", "total", "submitted", "approved",
-          "managerUid", "managerName", "division", "divisionName"]) &&
+          "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
+        (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard") &&
         isInCollection("division","Divisions") &&
 
         // when job provided, job exists in db,

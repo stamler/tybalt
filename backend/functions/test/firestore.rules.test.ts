@@ -729,7 +729,7 @@ describe("Firestore Rules", () => {
     const expenses = adminDb.collection("Expenses");
     const divisions = adminDb.collection("Divisions");
     const jobs = adminDb.collection("Jobs");
-    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime" };
+    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense" };
     const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
     const division = { name: "Playtime" };
 
@@ -841,6 +841,14 @@ describe("Firestore Rules", () => {
       await firebase.assertFails(doc.set(missingDivision));
       await firebase.assertFails(doc.set({ division: "DEF", ...missingDivision }));
       await firebase.assertSucceeds(doc.set({ division: "ABC", ...missingDivision }));
+    });
+    it("requires paymentType to be either CorporateCreditCard or Expense", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, ...missingPaymentType } = baseline;
+      await firebase.assertFails(doc.set(missingPaymentType));
+      await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
     });
     it("allows documents to have vendorName field", async () => {
       const doc = timeDb.collection("Expenses").doc();

@@ -12,6 +12,23 @@
         v-model="item.date"
       />
     </span>
+    <span class="field">
+      <input
+        type="radio"
+        id="ccc"
+        value="CorporateCreditCard"
+        v-model="item.paymentType"
+      />
+      <label for="ccc">Corporate Credit Card</label>
+      <input
+        type="radio"
+        id="expense"
+        value="Expense"
+        v-model="item.paymentType"
+      />
+      <label for="expense">Expense</label>
+    </span>
+
     <!--
     <span class="field">
       <select name="expensetype" v-model="item.expensetype">
@@ -281,6 +298,7 @@ export default mixins.extend({
           managerName: profile.get("managerName"),
           managerUid: profile.get("managerUid"),
           division: profile.get("defaultDivision"),
+          paymentType: "Expense",
           submitted: false,
           approved: false,
         };

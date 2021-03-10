@@ -58,7 +58,7 @@ interface Expense {
   total: number;
   division: string;
   divisionName: string;
-  visa: boolean;
+  paymentType: string;
   vendorName?: string;
   attachment?: string;
   client?: string;
@@ -136,7 +136,7 @@ export default mixins.extend({
       const fields = [
         {
           label: "Acct/Visa/Exp",
-          value: (row: Expense) => (row.visa ? "Visa" : "Expense"),
+          value: "paymentType",
         },
         {
           label: "Job #",

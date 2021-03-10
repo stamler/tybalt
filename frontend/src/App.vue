@@ -307,9 +307,17 @@ button {
   -webkit-appearance: none;
 }
 #editor .field input[type="checkbox"] {
-  -moz-appearance: auto;
-  -webkit-appearance: auto;
-  appearance: auto;
+  -moz-appearance: checkbox;
+  -webkit-appearance: checkbox;
+  appearance: checkbox;
+  flex-grow: 0;
+  width: auto;
+}
+#editor .field input[type="radio"] {
+  -moz-appearance: radio;
+  -webkit-appearance: radio;
+  margin-right: 0.25em;
+  appearance: radio;
   flex-grow: 0;
   width: auto;
 }

@@ -41,6 +41,9 @@
           </template>
         </div>
         <div class="thirdline">
+          <span class="label" v-if="item.paymentType === 'CorporateCreditCard'">
+            Corporate Credit Card
+          </span>
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
           </span>
