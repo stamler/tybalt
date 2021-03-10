@@ -131,11 +131,45 @@ export default mixins.extend({
       const weekEnding = new Date(items[0].committedWeekEnding);
       const fields = [
         "committedWeekEnding",
-        "surname",
-        "givenName",
-        "displayName",
         {
-          label: "manager",
+          label: "Acct/Visa/Exp",
+          value: () => "Expense",
+        },
+        {
+          label: "Job #",
+          value: "job",
+        },
+        {
+          label: "Date",
+          value: (row) => new Date(row.date).getDate(),
+        },
+        {
+          label: "Month",
+          value: (row) =>
+            new Date(row.date).toLocaleString("en-US", { month: "short" }),
+        },
+        {
+          label: "Year",
+          value: (row) => new Date(row.date).getFullYear(),
+        },
+        {
+          label: "Total",
+          value: "total",
+        },
+        {
+          label: "PO#",
+          value: "po",
+        },
+        {
+          label: "Description",
+          value: "description",
+        },
+        {
+          label: "Employee",
+          value: "displayName",
+        },
+        {
+          label: "Approved By",
           value: "managerName",
         },
       ];
@@ -157,7 +191,7 @@ export default mixins.extend({
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
-        `payroll_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+        `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
           weekEnding
         )}.csv`
       );
