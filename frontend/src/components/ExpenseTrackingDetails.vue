@@ -1,20 +1,37 @@
 <template>
-  <div>
+  <div id="list">
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
+    <span>Download Attachment Bundle</span>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
       <!-- There must be a first item so get displayName from it -->
-      <span>{{ expenses[0].displayName }}</span>
-      <div class="listentry" v-for="item in expenses" v-bind:key="item.id">
+      <span class="listheader">{{ expenses[0].displayName }}</span>
+      <div class="listentry" v-for="exp in expenses" v-bind:key="exp.id">
         <div class="anchorbox">
-          {{ item.date.toDate() | shortDate }}
+          {{ exp.date.toDate() | shortDate }}
         </div>
         <div class="detailsbox">
           <div class="headline_wrapper">
             <div class="headline">
-              {{ item.description }}
+              {{ exp.description }}
             </div>
+            <div class="byline">
+              ${{ exp.total }}
+              <span v-if="exp.po"> PO#{{ exp.po }}</span>
+            </div>
+          </div>
+          <div class="secondline">
+            <template v-if="exp.job !== undefined">
+              {{ exp.job }} {{ exp.jobDescription }} for {{ exp.client }}
+            </template>
+            <template v-if="exp.attachment">
+              <router-link to="#" v-on:click.native="downloadAttachment(exp)">
+                <download-icon></download-icon>
+              </router-link>
+            </template>
+            <span v-else>[no attachment]</span>
+            approved by {{ exp.managerName }}
           </div>
         </div>
       </div>
