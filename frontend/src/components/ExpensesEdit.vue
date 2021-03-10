@@ -12,22 +12,6 @@
         v-model="item.date"
       />
     </span>
-    <span class="field">
-      <input
-        type="radio"
-        id="ccc"
-        value="CorporateCreditCard"
-        v-model="item.paymentType"
-      />
-      <label for="ccc">Corporate Credit Card</label>
-      <input
-        type="radio"
-        id="expense"
-        value="Expense"
-        v-model="item.paymentType"
-      />
-      <label for="expense">Expense</label>
-    </span>
 
     <!--
     <span class="field">
@@ -45,6 +29,23 @@
           {{ d.name }}
         </option>
       </select>
+    </span>
+
+    <span class="field">
+      <input
+        type="radio"
+        id="ccc"
+        value="CorporateCreditCard"
+        v-model="item.paymentType"
+      />
+      <label for="ccc">Corporate Credit Card</label>
+      <input
+        type="radio"
+        id="expense"
+        value="Expense"
+        v-model="item.paymentType"
+      />
+      <label for="expense">Expense</label>
     </span>
 
     <span class="field">
