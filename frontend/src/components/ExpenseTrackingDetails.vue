@@ -18,7 +18,8 @@
             </div>
             <div class="byline">
               ${{ exp.total }}
-              <span v-if="exp.po"> PO#{{ exp.po }}</span>
+              <span v-if="exp.po">/PO:{{ exp.po }}</span>
+              <span v-if="exp.vendorName">/vendor: {{ exp.vendorName }}</span>
             </div>
           </div>
           <div class="secondline">
@@ -33,6 +34,14 @@
             <span v-else>[no attachment]</span>
             approved by {{ exp.managerName }}
           </div>
+          <div class="thirdline">
+            <span
+              class="label"
+              v-if="item.paymentType === 'CorporateCreditCard'"
+            >
+              Corporate Credit Card
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -45,10 +54,13 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import _ from "lodash";
+import { DownloadIcon } from "vue-feather-icons";
+
 const db = firebase.firestore();
 
 export default mixins.extend({
   props: ["id", "collection"],
+  components: { DownloadIcon },
   computed: {
     ...mapState(["user", "claims"]),
     weekStart(): Date {
