@@ -262,7 +262,8 @@ service cloud.firestore {
         hasClaim("time") && uidMatches() ||
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
         hasClaim("erej") && resource.data.approved == true ||
-        hasClaim("eapr") && (resource.data.approved == true || resource.data.committed == true)
+        hasClaim("eapr") && (resource.data.approved == true || resource.data.committed == true) ||
+        hasClaim("report") && resource.data.committed == true
       )
       allow create: if 
         hasClaim("time") && validExpenseEntry() &&
@@ -297,7 +298,8 @@ service cloud.firestore {
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
         hasClaim("tsrej") && resource.data.approved == true ||
         hasClaim("tame") && resource.data.approved == true ||
-        hasClaim("admin") && resource.data.submitted == true
+        hasClaim("admin") && resource.data.submitted == true ||
+        hasClaim("report") && resource.data.locked == true
       );
       // Allow submission by directly editing the 'submitted' field
       // Prevent setting 'submitted' to false if already 'approved'
