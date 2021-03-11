@@ -271,7 +271,7 @@ service cloud.firestore {
       allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
         // owner can edit
-        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged()) ||
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false) ||
         // tapr can approve 
         (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
         // tapr or erej can reject uncommitted expenses

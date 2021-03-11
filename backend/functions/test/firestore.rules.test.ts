@@ -748,6 +748,16 @@ describe("Firestore Rules", () => {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.delete())
     });
+    it("allows owner to recall unapproved Expenses and prevents recall of approved ones", async () => {
+      // unapproved
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.update({ submitted: false }));
+      // approved
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true });
+      await firebase.assertFails(doc.update({ submitted: false }));
+    });
+
     it("allows manager (tapr) to read submitted Expenses they manage", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
