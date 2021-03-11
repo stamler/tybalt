@@ -716,13 +716,13 @@ describe("Firestore Rules", () => {
     });
   });
   describe("TimeAmendments", () => {
-    it("allows time administrators (tadm) to read");
-    it("allows time administrators (tadm) to create valid amendments");
-    it("allows time administrators (tadm) to update valid uncommitted amendments");
-    it("allows time administrators (tadm) to commit amendments");
-    it("allows time administrators (tadm) to delete uncommitted amendments");
-    it("prevents time administrators (tadm) from creating invalid amendments");
-    it("prevents time administrators (tadm) from deleting committed amendments");
+    it("allows time administrators (tame) to read");
+    it("allows time administrators (tame) to create valid amendments");
+    it("allows time administrators (tame) to update valid uncommitted amendments");
+    it("allows time administrators (tame) to commit amendments");
+    it("allows time administrators (tame) to delete uncommitted amendments");
+    it("prevents time administrators (tame) from creating invalid amendments");
+    it("prevents time administrators (tame) from deleting committed amendments");
     it("prevents admins from creating, reading, updating, or deleting amendments");
   });
   describe("Expenses", () => {

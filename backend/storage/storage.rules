@@ -9,7 +9,7 @@ service firebase.storage {
       );    
     }
   	match /TimeTrackingExports/{exportId} {
-    	// TODO: restrict to tadm
+    	// TODO: restrict to report claim users
       allow read: if request.auth != null;
     }
   	match /Expenses/{userId}/{expenseFilename} {

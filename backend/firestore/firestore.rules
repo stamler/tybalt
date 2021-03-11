@@ -247,10 +247,10 @@ service cloud.firestore {
       allow read, delete: if hasClaim("admin");
     }
     match /TimeAmendments/{entry} {
-      allow read: if hasClaim("tadm");
-      allow delete: if hasClaim("tadm") && resource.data.committed == false;
-      allow update: if hasClaim("tadm") && validAmendmentEntry() && resource.data.committed == false;
-      allow create: if hasClaim("tadm") && validAmendmentEntry();
+      allow read: if hasClaim("tame");
+      allow delete: if hasClaim("tame") && resource.data.committed == false;
+      allow update: if hasClaim("tame") && validAmendmentEntry() && resource.data.committed == false;
+      allow create: if hasClaim("tame") && validAmendmentEntry();
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
@@ -286,17 +286,17 @@ service cloud.firestore {
         );
     }
     match /TimeTracking/{entry} {
-      allow read: if hasClaim("tadm") || hasClaim("admin");
+      allow read: if hasClaim("report") || hasClaim("admin");
     }
     match /ExpenseTracking/{entry} {
-      allow read: if hasClaim("tadm") || hasClaim("admin");
+      allow read: if hasClaim("report") || hasClaim("admin");
     }
     match /TimeSheets/{sheet} {
       allow read: if (
         hasClaim("time") && uidMatches() || 
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
         hasClaim("tsrej") && resource.data.approved == true ||
-        hasClaim("tadm") && resource.data.approved == true ||
+        hasClaim("tame") && resource.data.approved == true ||
         hasClaim("admin") && resource.data.submitted == true
       );
       // Allow submission by directly editing the 'submitted' field

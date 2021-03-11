@@ -15,9 +15,12 @@ tapr: true
 Holders of this claim can approve submitted timesheets whose 
 managerUid field matches their uid.
 
-tadm: true
-Holders of this claim can create time amendments and also export reports 
-for distribution to accounting for payroll and to admin for invoicing
+tame: true
+Holders of this claim can create time amendments and view approved timesheets
+
+report: true
+Holders of this claim can view reports and exports
+
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -503,7 +506,7 @@ function contextHasClaim(context: functions.https.CallableContext, claim: string
 }
 
 export async function commitTimeAmendment(data: unknown, context: functions.https.CallableContext) {
-  if (!contextHasClaim(context, "tadm")) {
+  if (!contextHasClaim(context, "tame")) {
     throw new functions.https.HttpsError(
       "permission-denied",
       "Call to commitTimeAmendment() failed"
