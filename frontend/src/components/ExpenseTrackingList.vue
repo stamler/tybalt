@@ -43,6 +43,7 @@ import mixins from "./mixins";
 import { format } from "date-fns";
 import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
 import { parse } from "json2csv";
+import store from "../store";
 
 const db = firebase.firestore();
 
@@ -126,14 +127,22 @@ export default mixins.extend({
   },
   methods: {
     refreshAttachments(trackingId: string) {
+      store.commit("startTask", {
+        id: `refresh${trackingId}`,
+        message: "refreshing attachment zip",
+      });
+
       const generateExpenseAttachmentArchive = firebase
         .functions()
         .httpsCallable("generateExpenseAttachmentArchive");
-      return generateExpenseAttachmentArchive({ id: trackingId }).catch(
-        (error) => {
+      return generateExpenseAttachmentArchive({ id: trackingId })
+        .then(() => {
+          store.commit("endTask", { id: `refresh${trackingId}` });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: `refresh${trackingId}` });
           alert(`Refresh failed: ${error}`);
-        }
-      );
+        });
     },
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
