@@ -3,7 +3,6 @@
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
-    <span>Download Attachment Bundle</span>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
       <!-- There must be a first item so get displayName from it -->
       <span class="listheader">{{ expenses[0].displayName }}</span>

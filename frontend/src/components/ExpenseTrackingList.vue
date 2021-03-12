@@ -17,6 +17,10 @@
         <div class="secondline"></div>
       </div>
       <div class="rowactionsbox">
+        <button v-on:click="refreshAttachments(item.id)">regen</button>
+        <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
+          attachments.zip<download-icon></download-icon>
+        </a>
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
@@ -37,7 +41,7 @@ import { utcToZonedTime } from "date-fns-tz";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
-import { DownloadIcon } from "vue-feather-icons";
+import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
 import { parse } from "json2csv";
 
 const db = firebase.firestore();
@@ -105,7 +109,7 @@ function isExpense(data: any): data is Expense {
 
 export default mixins.extend({
   props: ["collection"],
-  components: { DownloadIcon },
+  components: { DownloadIcon, RefreshCwIcon },
   filters: {
     exportDate(date: Date) {
       return format(date, "yyyy MMM dd");
@@ -121,6 +125,16 @@ export default mixins.extend({
     };
   },
   methods: {
+    refreshAttachments(trackingId: string) {
+      const generateExpenseAttachmentArchive = firebase
+        .functions()
+        .httpsCallable("generateExpenseAttachmentArchive");
+      return generateExpenseAttachmentArchive({ id: trackingId }).catch(
+        (error) => {
+          alert(`Refresh failed: ${error}`);
+        }
+      );
+    },
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
