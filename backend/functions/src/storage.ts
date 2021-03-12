@@ -49,11 +49,11 @@ export async function generateExpenseAttachmentArchive(
     const bucket = admin.storage().bucket();
 
     // create an empty archive in the working directory
-    const filename = `ExpenseAttachments${trackingSnapshot
+    const zipFilename = `ExpenseAttachments${trackingSnapshot
       .get("weekEnding")
       .toDate()
       .getTime()}.zip`;
-    const tempLocalFileName = path.join(os.tmpdir(), filename);
+    const tempLocalFileName = path.join(os.tmpdir(), zipFilename);
 
     const zipfile = fs.createWriteStream(tempLocalFileName);
 
@@ -61,8 +61,6 @@ export async function generateExpenseAttachmentArchive(
     // 'close' event is fired only when a file descriptor is involved
     zipfile.on("close", function() {
       console.log(archive.pointer() + " total bytes");
-      console.log("archiver has been finalized and the output file descriptor has closed.");
-      console.log("returning zip file to caller");
     });
 
     // initialize the archiver
@@ -103,7 +101,7 @@ export async function generateExpenseAttachmentArchive(
       await archive.finalize();
 
       // upload the zip file
-      const destination = "ExpenseTrackingExports/" + filename;
+      const destination = "ExpenseTrackingExports/" + zipFilename;
       const newToken = uuidv4();
 
       // upload the file into the current firebase project default bucket
