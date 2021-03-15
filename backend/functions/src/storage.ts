@@ -49,7 +49,7 @@ export async function generateExpenseAttachmentArchive(
     const bucket = admin.storage().bucket();
 
     // create an empty archive in the working directory
-    const zipFilename = `ExpenseAttachments${trackingSnapshot
+    const zipFilename = `attachments${trackingSnapshot
       .get("weekEnding")
       .toDate()
       .getTime()}.zip`;
@@ -61,51 +61,13 @@ export async function generateExpenseAttachmentArchive(
     // 'close' event is fired only when a file descriptor is involved
     zipfile.on("close", function() {
       console.log(archive.pointer() + " total bytes");
-    });
-
-    // initialize the archiver
-    const archive = archiver('zip', {
-      zlib: { level: 9 }, // Sets the compression level.
-    });
-
-    // good practice to catch warnings (ie stat failures and other non-blocking errors)
-    archive.on('warning', function(err) {
-      if (err.code === 'ENOENT') {
-        console.log(`archiver error: ${err}`);
-        
-      } else {
-        // throw error
-        throw err;
-      }
-    });
-
-    // good practice to catch this error explicitly
-    archive.on('error', function(err) {
-      throw err;
-    });
-
-    // pipe archive data to the file
-    archive.pipe(zipfile);
-
-    return new Promise<void>(async (resolve, reject) => {
-
-      // iterate over the documents with attachments, adding their
-      // contents to the zip file with descriptive names
-      expensesSnapshot.forEach((expenseDoc) => {
-        // get the attachment reference
-        // download the attachment to the working directory
-        // add the attachment from the working directory to the zip with a name that is descriptive 
-      });
-
-      // close the archive which will trigger the "close" event handler
-      await archive.finalize();
 
       // upload the zip file
       const destination = "ExpenseTrackingExports/" + zipFilename;
       const newToken = uuidv4();
 
       // upload the file into the current firebase project default bucket
-      bucket
+      return bucket
         .upload(tempLocalFileName, {
           destination,
           // Workaround: firebase console not generating token for files
@@ -126,9 +88,57 @@ export async function generateExpenseAttachmentArchive(
               newToken
             ),
           });
-          return resolve();
-        })
-        .catch((err) => reject(err));
+        });
     });
+
+    // initialize the archiver
+    const archive = archiver('zip', {
+      zlib: { level: 9 }, // Sets the compression level.
+    });
+    console.log("initialized archiver");
+    
+
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    archive.on('warning', function(err) {
+      if (err.code === 'ENOENT') {
+        console.log(`archiver error: ${err}`);
+      } else {
+        throw err;
+      }
+    });
+
+    // good practice to catch this error explicitly
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    // pipe archive data to the file
+    archive.pipe(zipfile);
+    console.log(`configured archiver to pipe to ${tempLocalFileName}`);
+    
+
+    // iterate over the documents with attachments, adding their
+    // contents to the zip file with descriptive names
+    const contents: { filename: string, tempLocalAttachmentName: string }[] = [];
+    const downloadPromises: Promise<any>[] = [];
+    await expensesSnapshot.forEach( (expenseDoc) => {
+      // download the attachment to the working directory
+      const attachment = expenseDoc.get("attachment");
+      const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${expenseDoc.get("total")}${path.extname(attachment)}`;
+      const tempLocalAttachmentName = path.join(os.tmpdir(), filename);
+      downloadPromises.push(bucket.file(attachment).download({destination: tempLocalAttachmentName}))
+      contents.push({filename, tempLocalAttachmentName});
+    });
+
+    await Promise.all(downloadPromises);
+    console.log(contents);
+    contents.forEach((file) => {
+        archive.append(fs.createReadStream(file.tempLocalAttachmentName), { name: file.filename});
+        console.log(`${file.filename} appended to zip file`);
+    });
+
+    // close the archive which will trigger the "close" event handler
+    console.log("calling finalize");
+    await archive.finalize();
   }
 
