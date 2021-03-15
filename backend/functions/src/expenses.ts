@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import { generateExpenseAttachmentArchive } from "./storage";
 
 // onWrite()
 // check if the filepath changed
@@ -105,7 +106,8 @@ export const updateExpenseTracking = functions.firestore
         }
       );
     }
-    return exportJson({ id: expenseTrackingDocRef.id });
+    await exportJson({ id: expenseTrackingDocRef.id });
+    return generateExpenseAttachmentArchive({ id: expenseTrackingDocRef.id });
   });
 
 // Given an ExpenseTracking id, create or update a file on Google storage

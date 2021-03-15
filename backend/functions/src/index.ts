@@ -16,7 +16,6 @@ import { cleanUpOrphanedAttachment } from "./expenses";
 export { updateTimeTracking } from "./timesheets";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
-import { generateExpenseAttachmentArchive } from "./storage";
 
 // clean up expense attachments that are orphaned by deletion or update of 
 // corresponding expense document
@@ -106,5 +105,3 @@ exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);
 
 // update a profile from the MS Graph
 exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);
-
-exports.generateExpenseAttachmentArchive = functions.https.onCall(generateExpenseAttachmentArchive);

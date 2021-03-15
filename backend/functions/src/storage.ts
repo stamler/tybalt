@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { getAuthObject, isDocIdObject, createPersistentDownloadUrl } from "./utilities";
+import { isDocIdObject, createPersistentDownloadUrl } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -10,14 +10,8 @@ import * as archiver from "archiver";
 // Given an ExpenseTracking id, create a zip archive of all attachments
 // from Google storage for the corresponding week
 // with the committed expenses. Store zip under ExpenseTrackingExports prefix
-export async function generateExpenseAttachmentArchive(
-    data: unknown, 
-    context: functions.https.CallableContext
-  ) {
+export async function generateExpenseAttachmentArchive(data: unknown) {
     const db = admin.firestore();
-
-    // throw if the caller isn't authorized
-    const auth = getAuthObject(context, ["report"]);
     
     // Validate the data or throw
     // use a User Defined Type Guard
@@ -28,7 +22,7 @@ export async function generateExpenseAttachmentArchive(
       );
     }
 
-    console.log(`${auth.uid} requested attachment bundle generation for ${data.id}`);
+    console.log(`generating attachment bundle for ${data.id}`);
 
     // Get the Expense tracking document
     const trackingSnapshot = await db
