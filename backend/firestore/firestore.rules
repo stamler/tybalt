@@ -96,17 +96,39 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType",
-          "vendorName",
+          "vendorName", "odoStart", "odoEnd",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectionReason", "committed" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "description", "uid", "displayName",
-          "surname", "givenName", "total", "submitted", "approved",
+          "surname", "givenName", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
-        (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard") &&
+        (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard" || newDoc().paymentType == "Mileage") &&
         isInCollection("division","Divisions") &&
+
+        // when paymentType is not Mileage, total is positive number and odoStart/odoEnd are missing
+        // when paymentType is Mileage, odoEnd - odoStart is positive integer & po, vendorName, attachment, total are missing
+        (
+          (
+            newDoc().paymentType != "Mileage" &&
+            newDoc().total is number &&
+            newDoc().total > 0 &&
+            isMissing("odoEnd") &&
+            isMissing("odoStart")
+          ) ||
+          (
+            newDoc().paymentType == "Mileage" &&
+            newDoc().odoEnd is int &&
+            newDoc().odoStart is int &&
+            newDoc().odoEnd > newDoc().odoStart &&
+            isMissing("po") &&
+            isMissing("vendorName") &&
+            isMissing("attachment") &&
+            isMissing("total")
+          )
+        ) &&
 
         // when job provided, job exists in db,
         // jobDescription and client are present
