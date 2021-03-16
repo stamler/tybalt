@@ -32,23 +32,15 @@
     </span>
 
     <span class="field">
-      <input
-        type="radio"
-        id="ccc"
-        value="CorporateCreditCard"
-        v-model="item.paymentType"
-      />
-      <label for="ccc">Corp Visa</label>
-      <input
-        type="radio"
-        id="expense"
-        value="Expense"
-        v-model="item.paymentType"
-      />
-      <label for="expense">Expense</label>
+      <label for="paymentType">Type:</label>
+      <select name="paymentType" v-model="item.paymentType">
+        <option value="CorporateCreditCard">Corp Visa</option>
+        <option value="Expense">Expense</option>
+        <option value="Mileage">Personal Mileage</option>
+      </select>
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.paymentType !== 'Mileage'">
       <label for="total">Total $</label>
       <input
         type="number"
@@ -58,7 +50,7 @@
       />
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.paymentType !== 'Mileage'">
       <label for="vendorName">Vendor Name</label>
       <input
         type="text"
@@ -95,7 +87,7 @@
       </ul>
     </div>
 
-    <span class="field">
+    <span class="field" v-if="item.paymentType !== 'Mileage'">
       <input
         type="text"
         name="po"
@@ -113,7 +105,7 @@
       />
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.paymentType !== 'Mileage'">
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
         <router-link to="#" v-on:click.native="downloadAttachment(item)">
@@ -132,6 +124,26 @@
           only png, jpeg & pdf accepted
         </span>
       </span>
+    </span>
+
+    <span class="field" v-if="item.paymentType === 'Mileage'">
+      <input
+        type="number"
+        name="odoStart"
+        v-model.number="item.odoStart"
+        placeholder="odometer start km"
+      />
+    </span>
+    <span class="field" v-if="item.paymentType === 'Mileage'">
+      <input
+        type="number"
+        name="odoEnd"
+        v-model.number="item.odoEnd"
+        placeholder="odometer end km"
+      />
+    </span>
+    <span class="field" v-if="typeof item.odoEnd === 'number' && typeof item.odoStart === 'number'">
+      claim {{ item.odoEnd - item.odoStart }} km
     </span>
 
     <span class="field">
@@ -198,8 +210,12 @@ export default mixins.extend({
         this.item.description.length > 3;
       const validTotal =
         typeof this.item.total === "number" && this.item.total > 0;
+      const validOdoReading =
+        typeof this.item.odoEnd === "number" &&
+        typeof this.item.odoStart === "number" &&
+        this.item.odoEnd - this.item.odoStart > 0;
       return (
-        validTotal &&
+        (validTotal || validOdoReading) &&
         validDescription &&
         !this.attachmentPreviouslyUploaded &&
         this.validAttachmentType
