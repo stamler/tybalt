@@ -78,16 +78,10 @@ interface ExpenseMileage extends ExpenseCommon {
 }
 type Expense = ExpenseRegular | ExpenseMileage;
 
-// Type Guard
-function isExpense(data: any): data is Expense {
+// Type Guards
+function isExpenseCommon(data: any): data is ExpenseCommon {
   // check optional string properties have correct type
-  const optionalStringVals = [
-    "attachment",
-    "client",
-    "job",
-    "jobDescription",
-    "po",
-  ]
+  const optionalStringVals = ["client", "job", "jobDescription"]
     .map((x) => data[x] === undefined || typeof data[x] === "string")
     .every((x) => x === true);
   // check string properties exist and have correct type
@@ -104,14 +98,37 @@ function isExpense(data: any): data is Expense {
     "managerUid",
     "description",
     "date",
+    "division",
+    "divisionName",
   ]
     .map((x) => data[x] !== undefined && typeof data[x] === "string")
     .every((x) => x === true);
-  // check optional number properties have correct type
-  const optionalNumVals = ["total", "odoStart", "odoEnd"]
-    .map((x) => data[x] === undefined || typeof data[x] === "number")
+  return optionalStringVals && stringVals;
+}
+
+function isExpenseRegular(data: any): data is ExpenseRegular {
+  const paymentType =
+    data.paymentType === "Expense" ||
+    data.paymentType === "CorporateCreditCard";
+  const total = typeof data.total === "number" && data.total > 0;
+  const optionalStringVals = ["vendorName", "attachment", "po"]
+    .map((x) => data[x] === undefined || typeof data[x] === "string")
     .every((x) => x === true);
-  return optionalStringVals && stringVals && optionalNumVals;
+  return isExpenseCommon(data) && paymentType && total && optionalStringVals;
+}
+
+function isExpenseMileage(data: any): data is ExpenseMileage {
+  const paymentType = data.paymentType === "Mileage";
+  const odo =
+    typeof data.odoEnd === "number" &&
+    typeof data.odoStart === "number" &&
+    data.odoEnd > data.odoStart &&
+    Number.isInteger(data.odoEnd - data.odoStart);
+  return isExpenseCommon(data) && paymentType && odo;
+}
+
+function isExpense(data: any): data is Expense {
+  return isExpenseRegular(data) || isExpenseMileage(data);
 }
 
 export default mixins.extend({
