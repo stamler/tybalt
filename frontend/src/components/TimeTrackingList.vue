@@ -17,7 +17,10 @@
         <div class="secondline" v-if="hasLocked(item)">
           {{ Object.keys(item.timeSheets).length }} locked time sheet(s)
         </div>
-        <div class="thirdline"></div>
+        <div class="thirdline" v-if="hasSubmitted(item)">
+          {{ Object.keys(item.submitted).length }} submitted time sheet(s)
+          awaiting manager approval
+        </div>
       </div>
       <div class="rowactionsbox">
         <router-link
@@ -185,7 +188,9 @@ export default mixins.extend({
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
       // Show only items with pending or locked TimeSheets
-      return this.items.filter((x) => this.hasPending(x) || this.hasLocked(x));
+      return this.items.filter(
+        (x) => this.hasPending(x) || this.hasLocked(x) || this.hasSubmitted(x)
+      );
     },
   },
   filters: {
@@ -216,6 +221,12 @@ export default mixins.extend({
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
+      );
+    },
+    hasSubmitted(item: firebase.firestore.DocumentData) {
+      return (
+        Object.prototype.hasOwnProperty.call(item, "submitted") &&
+        Object.keys(item.submitted).length > 0
       );
     },
     hasPending(item: firebase.firestore.DocumentData) {

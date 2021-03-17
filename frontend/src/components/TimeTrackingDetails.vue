@@ -4,6 +4,20 @@
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
     <div>
+      <!-- Show submitted unapproved TimeSheets -->
+      <div
+        v-if="
+          this.item.submitted && Object.keys(this.item.submitted).length > 0
+        "
+      >
+        <h5>Submitted</h5>
+        <p v-for="(obj, tsId) in item.submitted" v-bind:key="tsId">
+          {{ obj.displayName }} awaiting approval by {{ obj.managerName }}
+        </p>
+        <br />
+      </div>
+
+      <!-- Show approved unlocked TimeSheets -->
       <div
         v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
       >
@@ -17,6 +31,8 @@
         </router-link>
         <br />
       </div>
+
+      <!-- Show locked TimeSheets -->
       <div
         v-if="
           this.item.timeSheets && Object.keys(this.item.timeSheets).length > 0
@@ -32,9 +48,11 @@
         </router-link>
         <br />
       </div>
+
+      <!-- Show users with missing TimeSheets -->
       <div v-if="missing.length > 0">
         <h5>Missing</h5>
-        <p v-for="m in missing" v-bind:key="m.id">{{ m.displayName }}<br /></p>
+        <p v-for="m in missing" v-bind:key="m.id">{{ m.displayName }}</p>
       </div>
     </div>
   </div>
@@ -73,9 +91,19 @@ export default mixins.extend({
             this.item.timeSheets
           ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
         }
+        let submittedUserKeys = [] as string[];
+        if (
+          this.item.submitted &&
+          Object.keys(this.item.submitted).length > 0
+        ) {
+          submittedUserKeys = (Object.values(
+            this.item.submitted
+          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+        }
         return this.profiles
           .filter((p) => !pendingUserKeys.includes(p.id))
-          .filter((l) => !lockedUserKeys.includes(l.id));
+          .filter((l) => !lockedUserKeys.includes(l.id))
+          .filter((s) => !submittedUserKeys.includes(s.id));
       }
       return [];
     },

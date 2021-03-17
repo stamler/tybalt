@@ -119,17 +119,20 @@ export const updateTimeTracking = functions.firestore
     const db = admin.firestore();
     const beforeData = change.before.data();
     const afterData = change.after.data();
+    let beforeSubmitted: boolean;
     let beforeApproved: boolean;
     let beforeLocked: boolean;
     let weekEnding: Date;
     if (beforeData) {
       // the TimeSheet was updated
+      beforeSubmitted = beforeData.submitted
       beforeApproved = beforeData.approved
       beforeLocked = beforeData.locked
       weekEnding = beforeData.weekEnding.toDate();
     }
     else if (afterData) {
       // the TimeSheet was just created
+      beforeSubmitted = false;
       beforeApproved = false;
       beforeLocked = false;
       weekEnding = afterData.weekEnding.toDate();
@@ -167,14 +170,18 @@ export const updateTimeTracking = functions.firestore
 
     if (
       afterData &&
+      afterData.submitted === beforeSubmitted &&
+      afterData.submitted === true &&
       afterData.approved !== beforeApproved &&
       afterData.approved === true &&
       afterData.locked === false
     ) {
-      // add the newly approved TimeSheet to pending
+      // just approved
+      // add the newly approved TimeSheet to pending, remove from submitted
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else if (
@@ -183,6 +190,7 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === false &&
       afterData.approved === true
     ) {
+      // just unlocked
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
       console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked. The export JSON will not be updated again until lockTimesheets() is called`);
@@ -192,11 +200,41 @@ export const updateTimeTracking = functions.firestore
           [`timeSheets.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
+    } else if (
+      afterData &&
+      afterData.submitted !== beforeSubmitted &&
+      afterData.submitted === true &&
+      afterData.approved === false &&
+      afterData.locked === false
+    ) {
+      // just submitted
+      // add the document to submitted
+      return timeTrackingDocRef.update(
+        {
+          [`submitted.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, managerName: afterData.managerName },
+        }
+      );
+    } else if (
+      afterData &&
+      afterData.submitted !== beforeSubmitted &&
+      afterData.submitted === false &&
+      afterData.approved === false &&
+      afterData.locked === false
+    ) {
+      // just recalled
+      // remove the document from submitted
+      return timeTrackingDocRef.update(
+        {
+          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+        }
+      );
     } else {
+      // rejected or deleted or manually unapproved (without rejection)
       // remove the TimeSheet from pending
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         },
       );
     }
