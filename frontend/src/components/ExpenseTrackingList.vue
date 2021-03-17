@@ -191,16 +191,12 @@ export default mixins.extend({
         {
           label: "calculatedSubtotal",
           value: (row: Expense) =>
-            row.paymentType !== "Mileage"
-              ? row.total * (100 / 113)
-              : (row.odoEnd - row.odoStart) * MILEAGE_RATE * (100 / 113),
+            row.paymentType !== "Mileage" ? row.total * (100 / 113) : "",
         },
         {
           label: "calculatedOntarioHST",
           value: (row: Expense) =>
-            row.paymentType !== "Mileage"
-              ? row.total * (13 / 113)
-              : (row.odoEnd - row.odoStart) * MILEAGE_RATE * (13 / 113),
+            row.paymentType !== "Mileage" ? row.total * (13 / 113) : "",
         },
         {
           label: "Total",
