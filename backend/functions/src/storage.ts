@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as archiver from "archiver";
+import { format } from "date-fns";
 
 // Given an ExpenseTracking id, create a zip archive of all attachments
 // from Google storage for the corresponding week
@@ -118,7 +119,7 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     await expensesSnapshot.forEach( (expenseDoc) => {
       // download the attachment to the working directory
       const attachment = expenseDoc.get("attachment");
-      const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${expenseDoc.get("total")}${path.extname(attachment)}`;
+      const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${format(expenseDoc.get("date").toDate(), "yyyy_MMM_dd")}-${expenseDoc.get("total")}${path.extname(attachment)}`;
       const tempLocalAttachmentName = path.join(os.tmpdir(), filename);
       downloadPromises.push(bucket.file(attachment).download({destination: tempLocalAttachmentName}))
       contents.push({filename, tempLocalAttachmentName});
