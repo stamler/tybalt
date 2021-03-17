@@ -39,7 +39,11 @@
         <option value="Mileage">Personal Mileage</option>
       </select>
     </span>
-
+    <span v-if="!validInsuranceExpiry" class="attention"
+      >You do not have valid personal vehicle insurance in your profile. Please
+      contact HR to update your profile prior to submitting a personal mileage
+      expense.
+    </span>
     <span class="field" v-if="item.paymentType !== 'Mileage'">
       <label for="total">Total $</label>
       <input
@@ -142,7 +146,12 @@
         placeholder="odometer end km"
       />
     </span>
-    <span class="field" v-if="typeof item.odoEnd === 'number' && typeof item.odoStart === 'number'">
+    <span
+      class="field"
+      v-if="
+        typeof item.odoEnd === 'number' && typeof item.odoStart === 'number'
+      "
+    >
       claim {{ item.odoEnd - item.odoStart }} km
     </span>
 
@@ -194,6 +203,7 @@ export default mixins.extend({
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
+      profile: {} as firebase.firestore.DocumentData,
       //expensetypes: [] as firebase.firestore.DocumentData[],
       attachmentPreviouslyUploaded: false,
       validAttachmentType: true,
@@ -220,6 +230,15 @@ export default mixins.extend({
         !this.attachmentPreviouslyUploaded &&
         this.validAttachmentType
       );
+    },
+    validInsuranceExpiry(): boolean {
+      if (this.item.paymentType === "Mileage") {
+        return (
+          this.profile.get("personalVehicleInsuranceExpiry").toDate() >=
+          this.item.date
+        );
+      }
+      return true;
     },
   },
   watch: {
@@ -282,6 +301,7 @@ export default mixins.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
+      this.profile = await db.collection("Profiles").doc(this.user.uid).get();
       if (id) {
         this.collectionObject
           .doc(id)
@@ -301,20 +321,15 @@ export default mixins.extend({
             this.$router.push(this.parentPath);
           });
       } else {
-        const profile = await db
-          .collection("Profiles")
-          .doc(this.user.uid)
-          .get();
-
         this.item = {
           date: new Date(),
           uid: this.user.uid,
-          displayName: profile.get("displayName"),
-          givenName: profile.get("givenName"),
-          surname: profile.get("surname"),
-          managerName: profile.get("managerName"),
-          managerUid: profile.get("managerUid"),
-          division: profile.get("defaultDivision"),
+          displayName: this.profile.get("displayName"),
+          givenName: this.profile.get("givenName"),
+          surname: this.profile.get("surname"),
+          managerName: this.profile.get("managerName"),
+          managerUid: this.profile.get("managerUid"),
+          division: this.profile.get("defaultDivision"),
           paymentType: "Expense",
           submitted: false,
           approved: false,
