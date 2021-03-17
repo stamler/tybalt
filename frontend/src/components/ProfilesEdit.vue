@@ -59,6 +59,18 @@
     </span>
 
     <span class="field">
+      <label for="datepicker">Vehicle Insurance Expiry</label>
+      <datepicker
+        name="datepicker"
+        input-class="calendar-input"
+        wrapper-class="calendar-wrapper"
+        placeholder="Date"
+        :inline="false"
+        v-model="item.personalVehicleInsuranceExpiry"
+      />
+    </span>
+
+    <span class="field">
       <button type="button" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
         Cancel
@@ -72,9 +84,11 @@ import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
+import Datepicker from "vuejs-datepicker";
 
 export default Vue.extend({
   components: {
+    Datepicker,
     PlusCircleIcon,
     XCircleIcon,
   },
@@ -122,6 +136,7 @@ export default Vue.extend({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
+              this.item.personalVehicleInsuranceExpiry = result.personalVehicleInsuranceExpiry?.toDate();
             }
           })
           .catch(() => {
@@ -153,6 +168,7 @@ export default Vue.extend({
           defaultDivision: string;
           salary: boolean;
           tbtePayrollId?: number;
+          personalVehicleInsuranceExpiry?: Date;
         } = {
           displayName: this.item.displayName,
           managerUid: this.item.managerUid,
@@ -163,6 +179,9 @@ export default Vue.extend({
         };
         if (this.item.tbtePayrollId) {
           obj.tbtePayrollId = this.item.tbtePayrollId;
+        }
+        if (this.item.personalVehicleInsuranceExpiry) {
+          obj.personalVehicleInsuranceExpiry = this.item.personalVehicleInsuranceExpiry;
         }
         this.collectionObject
           .doc(this.id)

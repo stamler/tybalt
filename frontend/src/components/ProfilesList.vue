@@ -22,13 +22,22 @@
         </div>
         <div class="thirdline">
           <span v-if="item.tbtePayrollId">
-            Payroll ID: {{ item.tbtePayrollId }}
+            /Payroll ID: {{ item.tbtePayrollId }}
           </span>
           <span v-else class="attention"> Missing Payroll ID </span>
           <span v-if="typeof item.salary === 'boolean'">
-            Wage:
+            /Wage:
             <template v-if="item.salary">salary</template>
             <template v-else>hourly</template>
+          </span>
+          <span v-if="item.personalVehicleInsuranceExpiry">
+            <template
+              v-if="item.personalVehicleInsuranceExpiry.toDate() >= new Date()"
+            >
+              /vehicle insurance expiry:
+              {{ item.personalVehicleInsuranceExpiry.toDate() | shortDate }}
+            </template>
+            <span v-else class="attention"> /vehicle insurance expired</span>
           </span>
         </div>
       </div>
@@ -47,6 +56,7 @@ import firebase from "../firebase";
 const db = firebase.firestore();
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
+import { format } from "date-fns";
 
 export default mixins.extend({
   props: ["collection"],
@@ -66,6 +76,9 @@ export default mixins.extend({
   filters: {
     keysString(obj: { [key: string]: unknown }): string {
       return obj ? Object.keys(obj).join(", ") : "";
+    },
+    shortDate(date: Date) {
+      return format(date, "MMM dd, yyyy");
     },
   },
   data() {
