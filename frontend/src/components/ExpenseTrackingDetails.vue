@@ -15,23 +15,26 @@
             <div class="headline">
               {{ exp.description }}
             </div>
-            <div class="byline">
+            <div class="byline" v-if="exp.paymentType === 'Mileage'">
+              {{ exp.odoEnd - exp.odoStart }} km
+            </div>
+            <div class="byline" v-else>
               ${{ exp.total }}
               <span v-if="exp.po">/PO:{{ exp.po }}</span>
               <span v-if="exp.vendorName">/vendor: {{ exp.vendorName }}</span>
             </div>
           </div>
           <div class="secondline">
-            <template v-if="exp.job !== undefined">
-              {{ exp.job }} {{ exp.jobDescription }} for {{ exp.client }}
-            </template>
             <template v-if="exp.attachment">
               <router-link to="#" v-on:click.native="downloadAttachment(exp)">
                 <download-icon></download-icon>
               </router-link>
             </template>
             <span v-else>[no attachment]</span>
-            approved by {{ exp.managerName }}
+            <template v-if="exp.job !== undefined">
+              {{ exp.job }} {{ exp.jobDescription }} for {{ exp.client }}
+            </template>
+            /approved by:{{ exp.managerName }}
           </div>
           <div class="thirdline">
             <span

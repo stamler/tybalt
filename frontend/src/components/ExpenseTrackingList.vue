@@ -45,7 +45,7 @@ import { parse } from "json2csv";
 
 const db = firebase.firestore();
 
-interface Expense {
+interface ExpenseCommon {
   uid: string;
   displayName: string;
   surname: string;
@@ -58,17 +58,25 @@ interface Expense {
   managerUid: string;
   description: string;
   date: string;
-  total: number;
   division: string;
   divisionName: string;
-  paymentType: string;
-  vendorName?: string;
-  attachment?: string;
   client?: string;
   job?: string;
   jobDescription?: string;
+}
+interface ExpenseRegular extends ExpenseCommon {
+  paymentType: "Expense" | "CorporateCreditCard";
+  total: number;
+  vendorName?: string;
+  attachment?: string;
   po?: string;
 }
+interface ExpenseMileage extends ExpenseCommon {
+  paymentType: "Mileage";
+  odoStart: number;
+  odoEnd: number;
+}
+type Expense = ExpenseRegular | ExpenseMileage;
 
 // Type Guard
 function isExpense(data: any): data is Expense {
@@ -99,11 +107,11 @@ function isExpense(data: any): data is Expense {
   ]
     .map((x) => data[x] !== undefined && typeof data[x] === "string")
     .every((x) => x === true);
-  // check number properties exist and have correct type
-  const numVals = ["total"]
-    .map((x) => data[x] !== undefined && typeof data[x] === "number")
+  // check optional number properties have correct type
+  const optionalNumVals = ["total", "odoStart", "odoEnd"]
+    .map((x) => data[x] === undefined || typeof data[x] === "number")
     .every((x) => x === true);
-  return optionalStringVals && stringVals && numVals;
+  return optionalStringVals && stringVals && optionalNumVals;
 }
 
 export default mixins.extend({
@@ -131,6 +139,7 @@ export default mixins.extend({
       );
     },
     async generatePayablesCSV(url: string) {
+      const MILEAGE_RATE = 0.5; // dollars per km
       const response = await fetch(url);
       const items = (await response.json()) as Expense[];
 
@@ -164,7 +173,10 @@ export default mixins.extend({
         },
         {
           label: "Total",
-          value: "total",
+          value: (row: Expense) =>
+            row.paymentType !== "Mileage"
+              ? row.total
+              : (row.odoEnd - row.odoStart) * MILEAGE_RATE,
         },
         {
           label: "PO#",

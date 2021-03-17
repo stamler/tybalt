@@ -16,7 +16,10 @@
               {{ item.displayName }}
             </template>
           </div>
-          <div class="byline">
+          <div class="byline" v-if="item.paymentType === 'Mileage'">
+            {{ item.odoEnd - item.odoStart }} km
+          </div>
+          <div class="byline" v-else>
             ${{ item.total }}
             <span v-if="item.po">/PO:{{ item.po }}</span>
             <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
