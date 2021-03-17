@@ -39,7 +39,7 @@
           <div class="thirdline">
             <span
               class="label"
-              v-if="item.paymentType === 'CorporateCreditCard'"
+              v-if="exp.paymentType === 'CorporateCreditCard'"
             >
               Corporate Credit Card
             </span>
