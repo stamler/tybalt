@@ -233,10 +233,10 @@ export default mixins.extend({
     },
     validInsuranceExpiry(): boolean {
       if (this.item.paymentType === "Mileage") {
-        return (
-          this.profile.get("personalVehicleInsuranceExpiry").toDate() >=
-          this.item.date
-        );
+        const expiryDate = this.profile.get("personalVehicleInsuranceExpiry");
+        return expiryDate === undefined
+          ? false
+          : expiryDate.toDate() >= this.item.date;
       }
       return true;
     },
