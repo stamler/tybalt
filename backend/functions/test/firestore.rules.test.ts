@@ -1,10 +1,11 @@
 import * as firebase from "@firebase/rules-unit-testing";
 import "mocha";
 //import * as wtf from "wtfnode";
+import { addDays, subDays } from "date-fns";
 
 const projectId = "charade-ca63f";
 
-const alice = { displayName: "Alice Example", email: "alice@example.com" };
+const alice = { displayName: "Alice Example", email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7) };
 const bob = { displayName: "Bob Example", email: "bob@example.com" };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
@@ -739,6 +740,7 @@ describe("Firestore Rules", () => {
   describe("Expenses", () => {
     const expenses = adminDb.collection("Expenses");
     const divisions = adminDb.collection("Divisions");
+    const profiles = adminDb.collection("Profiles");
     const jobs = adminDb.collection("Jobs");
     const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense" };
     const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
@@ -749,6 +751,7 @@ describe("Firestore Rules", () => {
       await jobs.doc("19-333").set({ description: "Big job for a client" });
       await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
       await divisions.doc("ABC").set(division);
+      await profiles.doc("alice").set(alice);
     });
 
     it("allows owner to read their own Expenses if they have time claim", async () => {
@@ -861,6 +864,15 @@ describe("Firestore Rules", () => {
       const doc = timeDb.collection("Expenses").doc();
       await firebase.assertSucceeds(doc.set(baseline));
       await firebase.assertFails(doc.set({ ...baseline, foo: "bar" }));
+    });
+    it("rejects Mileage Expenses where the user doesn't have valid personal car insurance on their profile", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, ...missingPaymentType } = baseline;
+      const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
+      const { personalVehicleInsuranceExpiry, ...missingPersonalVehicleInsuranceExpiry } = alice;
+      await profiles.doc("alice").set({personalVehicleInsuranceExpiry: subDays(new Date(), 7), ...missingPersonalVehicleInsuranceExpiry});
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
     });
     it("requires any referenced job to be valid", async () => {
       const doc = timeDb.collection("Expenses").doc();

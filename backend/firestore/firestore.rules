@@ -126,7 +126,8 @@ service cloud.firestore {
             isMissing("po") &&
             isMissing("vendorName") &&
             isMissing("attachment") &&
-            isMissing("total")
+            isMissing("total") && 
+            get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.personalVehicleInsuranceExpiry >= newDoc().date
           )
         ) &&
 
