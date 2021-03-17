@@ -184,6 +184,54 @@ describe("Firestore Rules", () => {
         })
       );
     });
+    it("requires personalVehicleInsuranceExpiry to be Timestamp or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+          personalVehicleInsuranceExpiry: "not a date",
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+          personalVehicleInsuranceExpiry: 6,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+          personalVehicleInsuranceExpiry: new Date(),
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+          personalVehicleInsuranceExpiry: firebase.firestore.FieldValue.delete()
+        })
+      );
+    });
     it("requires salary to be present and boolean", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
