@@ -10,6 +10,7 @@ import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
+import PayrollList from "@/components/PayrollList.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
 import ExpenseTrackingList from "@/components/ExpenseTrackingList.vue";
@@ -278,6 +279,21 @@ const router = new Router({
               },
               name: "Expense Tracking Details",
               component: ExpenseTrackingDetails,
+            },
+          ],
+        },
+        {
+          path: "payroll",
+          name: "Payroll",
+          redirect: "/reports/payroll/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Payroll List",
+              props: { collection: "TimeTracking" },
+              component: PayrollList,
             },
           ],
         },

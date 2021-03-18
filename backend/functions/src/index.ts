@@ -12,8 +12,9 @@ import { writeWeekEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheets, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment } from "./expenses";
+import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 export { updateTimeTracking } from "./timesheets";
+export { updatePayrollFromTimeTracking, updatePayrollFromExpenseTracking } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 
@@ -39,6 +40,8 @@ exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 // lock approved timesheets
 exports.lockTimesheets = functions.https.onCall(lockTimesheets);
 
+// return expense documents associated with a pay period
+exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
