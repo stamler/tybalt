@@ -1,22 +1,6 @@
 <template>
   <div>
-    <modal ref="rejectModal">
-      <template v-slot:header>
-        <h1>Reject</h1>
-      </template>
-
-      <template v-slot:body>
-        <p>What's wrong with this time sheet?</p>
-        <textarea id="rejectionInput" v-model="rejectionReason"></textarea>
-      </template>
-
-      <template v-slot:footer>
-        <div>
-          <button v-on:click="$refs.rejectModal.closeModal()">Cancel</button>
-          <button v-on:click="rejectThenRedirect()">Reject</button>
-        </div>
-      </template>
-    </modal>
+    <modal ref="rejectModal" />
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
       <!-- approve button -->
@@ -61,7 +45,7 @@
           item.rejected === false
         "
         v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
-        v-on:click.native="$refs.rejectModal.openModal()"
+        v-on:click.native="$refs.rejectModal.openModal(id)"
       >
         <x-circle-icon></x-circle-icon>
       </router-link>
@@ -188,12 +172,6 @@ export default mixins.extend({
     this.setItem(this.id);
   },
   methods: {
-    async rejectThenRedirect() {
-      await this.rejectTs(this.id, this.rejectionReason);
-      // TODO: remove any on next line
-      (this.$refs.rejectModal as any).closeModal();
-      this.$router.push(this.parentPath);
-    },
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";

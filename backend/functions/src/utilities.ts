@@ -64,6 +64,8 @@ export function isWeekReference(data: any): data is WeekReference {
   return false;
 }
 
+export type TimeOffTypes = "OB" | "OH" | "OP" | "OS" | "OV";
+
 // these fields need to match the validTimeEntry() function in firestore rules
 export interface TimeEntry {
   // required properties always

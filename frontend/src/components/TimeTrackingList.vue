@@ -23,13 +23,6 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link
-          v-if="hasPending(item)"
-          v-bind:to="{ name: 'Time Tracking' }"
-          v-on:click.native="lockTimesheets(item.weekEnding)"
-        >
-          <lock-icon></lock-icon>
-        </router-link>
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
@@ -51,7 +44,6 @@ import { format } from "date-fns";
 import { isTimeSheet, TimeSheet, Amendment } from "./types";
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
-import store from "../store";
 import { parse } from "json2csv";
 import _ from "lodash";
 const db = firebase.firestore();
@@ -117,29 +109,6 @@ export default mixins.extend({
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
         Object.keys(item.timeSheets).length > 0
       );
-    },
-    lockTimesheets(weekEnding: firebase.firestore.Timestamp) {
-      const lockTimesheets = firebase
-        .functions()
-        .httpsCallable("lockTimesheets");
-      const week = weekEnding.toDate().getTime();
-      // TODO: replace confirm() with modal in Vue
-      if (
-        confirm("Locking Timesheets is not reversible. Do you want to proceed?")
-      ) {
-        store.commit("startTask", {
-          id: `lock${week}`,
-          message: "locking + exporting",
-        });
-        return lockTimesheets({ weekEnding: week })
-          .then(() => {
-            store.commit("endTask", { id: `lock${week}` });
-          })
-          .catch((error) => {
-            store.commit("endTask", { id: `lock${week}` });
-            alert(`Error exporting timesheets: ${error.message}`);
-          });
-      }
     },
     async generateInvoicingCSV(url: string) {
       const response = await fetch(url);

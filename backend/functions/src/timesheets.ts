@@ -30,7 +30,48 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl } from "./utilities";
+import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
+
+// Get the TimeTracking doc if it exists, otherwise create it.
+async function getTimeTrackingDoc(weekEnding: Date) {
+  const db = admin.firestore();
+
+  // Get the TimeTracking doc if it exists, otherwise create it.
+  const querySnap = await db
+    .collection("TimeTracking")
+    .where("weekEnding", "==", weekEnding)
+    .get();
+
+  let timeTrackingDocRef: admin.firestore.DocumentReference;
+  if (querySnap.size > 1) {
+    throw new Error(
+      `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
+    );
+  } else if (querySnap.size === 1) {
+    // retrieve existing tracking document
+    timeTrackingDocRef = querySnap.docs[0].ref;
+  } else {
+    // create new tracking document
+    timeTrackingDocRef = db.collection("TimeTracking").doc();
+    await timeTrackingDocRef.set({ weekEnding });
+  }
+  return timeTrackingDocRef;
+}
+
+
+interface PendingTimeSheetSummary {
+  displayName: string;
+  uid: string;
+  offRotationDaysTally: number;
+  hoursWorked: number;
+  bankedHours: number;
+  payoutRequest: number;
+  OB?: number;
+  OH?: number;
+  OP?: number;
+  OS?: number;
+  OV?: number;
+}
 
 export async function unbundleTimesheet(
   data: unknown, 
@@ -116,7 +157,6 @@ export async function unbundleTimesheet(
 export const updateTimeTracking = functions.firestore
   .document("TimeSheets/{timesheetId}")
   .onWrite(async (change, context) => {
-    const db = admin.firestore();
     const beforeData = change.before.data();
     const afterData = change.after.data();
     let beforeSubmitted: boolean;
@@ -148,25 +188,7 @@ export const updateTimeTracking = functions.firestore
       );
     }
 
-    // Get the TimeTracking doc if it exists, otherwise create it.
-    const querySnap = await db
-      .collection("TimeTracking")
-      .where("weekEnding", "==", weekEnding)
-      .get();
-
-    let timeTrackingDocRef;
-    if (querySnap.size > 1) {
-      throw new Error(
-        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
-      );
-    } else if (querySnap.size === 1) {
-      // retrieve existing TimeTracking document
-      timeTrackingDocRef = querySnap.docs[0].ref;
-    } else {
-      // create new TimeTracking document
-      timeTrackingDocRef = db.collection("TimeTracking").doc();
-      await timeTrackingDocRef.set({ weekEnding });
-    }
+    const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding);
 
     if (
       afterData &&
@@ -177,10 +199,23 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === false
     ) {
       // just approved
-      // add the newly approved TimeSheet to pending, remove from submitted
+      // add summary of newly approved TimeSheet to pending, remove from submitted
+      const pendingObj: PendingTimeSheetSummary = { 
+        displayName: afterData.displayName, 
+        uid: afterData.uid,
+        offRotationDaysTally: afterData.offRotationDaysTally,
+        hoursWorked: afterData.workHoursTally.jobHours + afterData.workHoursTally.hours,
+        bankedHours: afterData.bankedHours,
+        payoutRequest: afterData.payoutRequest,
+      }
+      // add nonWorkHoursTally props
+      for (const key in afterData.nonWorkHoursTally) {
+        pendingObj[key as TimeOffTypes] = afterData.nonWorkHoursTally[key];
+      }
+
       return timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+          [`pending.${change.after.ref.id}`]: pendingObj,
           [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
@@ -241,18 +276,71 @@ export const updateTimeTracking = functions.firestore
   });
 
 /*
+  Given a document id, lock the corresponding approved TimeSheet document 
+  then add it to the timeSheets property array of the TimeTracking doc. 
+  Finally, call exportJson()
+*/
+export async function lockTimesheet(data: unknown, context: functions.https.CallableContext) {
+  if (!contextHasClaim(context, "tslock")) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Call to lockTimesheet() failed"
+    );
+  }
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid document reference"
+    );
+  }
+
+  // run transaction to read the timesheet and if it exists check that
+  // it is approved and submitted. Then lock it and call exportJson()
+  const db = admin.firestore();
+  const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
+  const weekEnding = timeSheet.get("weekEnding");
+  if (weekEnding === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The TimeSheet document is missing a weekEnding property"
+    );
+  }
+  const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding.toDate());
+  await db.runTransaction(async (transaction) => {
+    return transaction.get(timeSheet.ref).then(async (tsSnap) => {
+      const snapData = tsSnap.data();
+      if (!snapData) {
+        throw new Error("The TimeSheet docsnap was empty during the locking transaction")
+      }
+      if (
+        snapData.submitted === true &&
+        snapData.approved === true &&
+        snapData.locked === false
+      ) {
+        // timesheet is lockable, lock it then add it to the export
+        return transaction
+          .update(timeSheet.ref, { locked: true })
+          .update(timeTrackingDocRef, {
+            [`timeSheets.${tsSnap.id}`]: { displayName: snapData.displayName, uid: snapData.uid },
+          });
+      } else {
+        throw new Error(
+          "The timesheet has either not been submitted and approved " +
+            "or it was already locked"
+        );
+      }
+    });
+  });
+  return exportJson({ id: timeTrackingDocRef.id });
+}
+/*
   Given a weekEnding as a property of data, lock all of the currently
   approved TimeSheets and add their ids to the timeSheets property array
-  of the TimeTracking doc.
-
-  TODO:
-  write exportTimesheets function that triggers on TimeTracking write and
-  exports *new* items in the timeSheets array to a new JSON doc in Google Cloud
-  Storage. The TimeTracking "exports" array field is updated with a link to
-  the new document. The function also updates a "consolidated" document which
-  contains all of the exports together as well as the individual exports. In
-  this way users can see what they've already done.
- */
+  of the TimeTracking doc. Finally, call exportJson()
+*/
 export async function lockTimesheets(data: unknown, context: functions.https.CallableContext) {
   if (!contextHasClaim(context, "tslock")) {
     throw new functions.https.HttpsError(
@@ -310,24 +398,7 @@ export async function lockTimesheets(data: unknown, context: functions.https.Cal
       management while preserving values for future use and reducing queries
     */
 
-    // Get the TimeTracking doc if it exists, otherwise create it.
-    const querySnap = await db
-      .collection("TimeTracking")
-      .where("weekEnding", "==", weekEnding)
-      .get();
-
-    let timeTrackingDocRef: admin.firestore.DocumentReference;
-    if (querySnap.size > 1) {
-      throw new Error(
-        `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
-      );
-    } else if (querySnap.size === 1) {
-      timeTrackingDocRef = querySnap.docs[0].ref;
-    } else {
-      throw new Error(
-        `There is no TimeTracking document for weekEnding ${weekEnding}`
-      );
-    }
+    const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding);
 
     const transactions: Promise<admin.firestore.Transaction>[] = [];
     timeSheets.forEach((timeSheet) => {
@@ -486,32 +557,14 @@ export async function exportJson(data: unknown) {
     });
 };
 
-// call exportJson as soon as a TimeAmnendment is committed
+// call exportJson as soon as a TimeAmendment is committed
 export async function exportOnAmendmentCommit(
   change: functions.ChangeJson,
   context: functions.EventContext,
 ) {
-    const db = admin.firestore();
     const committedWeekEnding = change.after.data().committedWeekEnding;
     if (committedWeekEnding !== undefined) {
-      // Get the TimeTracking doc or throw
-      const querySnap = await db
-        .collection("TimeTracking")
-        .where("weekEnding", "==", committedWeekEnding)
-        .get();
-
-      let timeTrackingDocRef;
-      if (querySnap.size > 1) {
-        throw new Error(
-          `There is more than one document in TimeTracking for weekEnding ${committedWeekEnding}`
-        );
-      } else if (querySnap.size === 1) {
-        timeTrackingDocRef = querySnap.docs[0].ref;
-      } else {
-        // create new TimeTracking document
-        timeTrackingDocRef = db.collection("TimeTracking").doc();
-        await timeTrackingDocRef.set({ weekEnding: committedWeekEnding });
-      }
+      const timeTrackingDocRef = await getTimeTrackingDoc(committedWeekEnding);
       return exportJson({ id: timeTrackingDocRef.id });
     }
   };

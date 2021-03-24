@@ -1,28 +1,6 @@
 <template>
   <div id="list">
-    <modal ref="rejectModal">
-      <template v-slot:header>
-        <h1>Reject</h1>
-      </template>
-
-      <template v-slot:body>
-        <p>What's wrong with this time sheet?</p>
-        <textarea id="rejectionInput" v-model="rejectionReason"></textarea>
-      </template>
-
-      <template v-slot:footer>
-        <div>
-          <button v-on:click="closeRejectModal()">Cancel</button>
-          <button
-            v-on:click="
-              rejectTs(rejectionId, rejectionReason).then(closeRejectModal())
-            "
-          >
-            Reject
-          </button>
-        </div>
-      </template>
-    </modal>
+    <modal ref="rejectModal" />
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
@@ -103,7 +81,7 @@
             </router-link>
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="openRejectModal(item.id)"
+              v-on:click.native="$refs.rejectModal.openModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -118,7 +96,7 @@
           <template v-if="!item.locked">
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="openRejectModal(item.id)"
+              v-on:click.native="$refs.rejectModal.openModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -166,8 +144,6 @@ export default Vue.extend({
   },
   data() {
     return {
-      rejectionId: "",
-      rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: [],
@@ -216,17 +192,6 @@ export default Vue.extend({
     );
   },
   methods: {
-    openRejectModal(id: string) {
-      this.rejectionId = id;
-      // TODO: remove any on next line
-      (this.$refs.rejectModal as any).openModal();
-    },
-    closeRejectModal() {
-      this.rejectionId = "";
-      this.rejectionReason = "";
-      // TODO: remove any on next line
-      (this.$refs.rejectModal as any).closeModal();
-    },
     hoursWorked(item: firebase.firestore.DocumentData) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;
