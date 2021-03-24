@@ -33,7 +33,7 @@
               <th>vacation</th>
               <th>sick</th>
               <th>to bank</th>
-              <th>payout request</th>
+              <th>OT payout request</th>
               <th>bereavement</th>
               <th>days off rotation</th>
             </tr>
