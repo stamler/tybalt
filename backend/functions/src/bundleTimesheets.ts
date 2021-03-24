@@ -11,67 +11,71 @@ export async function bundleTimesheet(
   data: unknown, 
   context: functions.https.CallableContext
 ) {
+  const db = admin.firestore();
 
-const db = admin.firestore();
+  // throw if the caller isn't authorized
+  const auth = getAuthObject(context, ["time"]);
 
-// throw if the caller isn't authorized
-const auth = getAuthObject(context, ["time"]);
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isWeekReference(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid week reference"
+    );
+  }
 
-// Validate the data or throw
-// use a User Defined Type Guard
-if (!isWeekReference(data)) {
-  throw new functions.https.HttpsError(
-    "invalid-argument",
-    "The provided data isn't a valid week reference"
+  // Firestore timestamps and JS Date objects represent a point in time and
+  // have no associated time zone info. To determine time zone dependent
+  // facts like whether a day is a saturday or to set the time specific to
+  // eastern time as desired (for week endings), we must interpret date
+  // in a time zone. Hre we rebase time objects to America/Thunder_Bay to
+  // do manipulations and validate week days, then we change it back.
+  const tbay_week = utcToZonedTime(
+    new Date(data.weekEnding),
+    "America/Thunder_Bay"
   );
-}
 
-// Firestore timestamps and JS Date objects represent a point in time and
-// have no associated time zone info. To determine time zone dependent
-// facts like whether a day is a saturday or to set the time specific to
-// eastern time as desired (for week endings), we must interpret date
-// in a time zone. Hre we rebase time objects to America/Thunder_Bay to
-// do manipulations and validate week days, then we change it back.
-const tbay_week = utcToZonedTime(
-  new Date(data.weekEnding),
-  "America/Thunder_Bay"
-);
+  // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
+  tbay_week.setHours(23, 59, 59, 999);
 
-// Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
-tbay_week.setHours(23, 59, 59, 999);
+  // verify tbay_week is a Saturday in America/Thunder_Bay time zone
+  if (tbay_week.getDay() !== 6) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The week ending specified is not a Saturday"
+    );
+  }
 
-// verify tbay_week is a Saturday in America/Thunder_Bay time zone
-if (tbay_week.getDay() !== 6) {
-  throw new functions.https.HttpsError(
-    "invalid-argument",
-    "The week ending specified is not a Saturday"
-  );
-}
+  // Convert back to UTC for queries against firestore
+  const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
-// Convert back to UTC for queries against firestore
-const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
+  // Throw if a timesheet already exists for this week
+  const timeSheets = await db
+    .collection("TimeSheets")
+    .where("uid", "==", auth.uid)
+    .where("weekEnding", "==", week)
+    .get();
+  if (!timeSheets.empty) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Only one time sheet can exist for a week. Please edit the existing one."
+    );
+  }
 
-// Throw if a timesheet already exists for this week
-const timeSheets = await db
-  .collection("TimeSheets")
-  .where("uid", "==", auth.uid)
-  .where("weekEnding", "==", week)
-  .get();
-if (!timeSheets.empty) {
-  throw new functions.https.HttpsError(
-    "failed-precondition",
-    "Only one time sheet can exist for a week. Please edit the existing one."
-  );
-}
-
-// Look for TimeEntries to bundle
-const timeEntries = await db
-  .collection("TimeEntries")
-  .where("uid", "==", auth.uid)
-  .where("weekEnding", "==", week)
-  .orderBy("date", "asc")
-  .get();
-if (!timeEntries.empty) {
+  // Look for TimeEntries to bundle
+  const timeEntries = await db
+    .collection("TimeEntries")
+    .where("uid", "==", auth.uid)
+    .where("weekEnding", "==", week)
+    .orderBy("date", "asc")
+    .get();
+  if (timeEntries.empty) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `There are no entries for the week ending ${format(week, "yyyy MMM dd")}`
+    );
+  }
   // Outstanding TimeEntries exist, start the bundling process
   const batch = db.batch();
 
@@ -215,6 +219,31 @@ if (!timeEntries.empty) {
     payoutRequest = payoutRequests[0].payoutRequestAmount;
   }
 
+  // Load the profile for the user to get manager and salary information
+  const profile = await db.collection("Profiles").doc(auth.uid).get();
+  if (!profile.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "A Profile doesn't exist for this user"
+    );
+  }
+
+  // prevent salaried employees from using vacation or PPTO to raise their
+  // timesheet hours beyond 40.
+  const discretionaryTimeOffPay = 
+    (nonWorkHoursTally.OV ?? 0) + 
+    (nonWorkHoursTally.OP ?? 0);
+  if (
+    profile.get("salary") === true &&
+    discretionaryTimeOffPay > 0 && 
+    workHoursTally.hours + workHoursTally.jobHours + discretionaryTimeOffPay > 40
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
+    );
+  }
+
   /*
   // Prevent users from entering more than 14 consecutive off-rotation days
 
@@ -260,79 +289,66 @@ if (!timeEntries.empty) {
       );
     }
   }
-  // Load the profile for the user to get manager information
-  const profile = await db.collection("Profiles").doc(auth.uid).get();
-  if (profile.exists) {
-    const managerUid = profile.get("managerUid");
-    const tbtePayrollId = profile.get("tbtePayrollId");
-    if (tbtePayrollId === undefined) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "The Profile for this user doesn't contain a tbtePayrollId"
-      );
-    }
-    if (managerUid !== undefined) {
-      // Verify that the auth user with managerUid exists
-      let manager;
-      try {
-        manager = await admin.auth().getUser(managerUid);
-      } catch (error) {
-        // The Profile for this user likely specifies an identifier
-        // (managerUid) that doesn't correspond to valid User Record.
-        throw new functions.https.HttpsError("internal", error.message);
-      }
-      const claims = manager.customClaims;
-      if (claims && claims["tapr"] === true) {
-        // The profile contains a valid manager, build the TimeSheet document
-        const timesheet = db.collection("TimeSheets").doc();
-        batch.set(timesheet, {
-          uid: auth.uid,
-          surname: profile.get("surname"),
-          givenName: profile.get("givenName"),
-          displayName: profile.get("displayName"),
-          managerName: profile.get("managerName"),
-          salary: profile.get("salary"),
-          tbtePayrollId,
-          weekEnding: week,
-          managerUid,
-          locked: false,
-          approved: false,
-          rejected: false,
-          rejectionReason: "",
-          submitted: true,
-          entries,
-          nonWorkHoursTally,
-          offRotationDaysTally: offRotationDates.length,
-          workHoursTally,
-          mealsHoursTally,
-          divisionsTally,
-          jobsTally,
-          bankedHours,
-          payoutRequest,
-        });
-        return batch.commit();
-      } else {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "The manager specified in the Profile doesn't have required permissions"
-        );
-      }
-    } else {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "The Profile for this user doesn't contain a managerUid"
-      );
-    }
-  } else {
+
+  // get manager information from profile
+  const managerUid = profile.get("managerUid");
+  const tbtePayrollId = profile.get("tbtePayrollId");
+  if (tbtePayrollId === undefined) {
     throw new functions.https.HttpsError(
-      "not-found",
-      "A Profile doesn't exist for this user"
+      "failed-precondition",
+      "The Profile for this user doesn't contain a tbtePayrollId"
     );
   }
-} else {
-  throw new functions.https.HttpsError(
-    "failed-precondition",
-    `There are no entries for the week ending ${format(week, "yyyy MMM dd")}`
-  );
-}
+  if (managerUid === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a managerUid"
+    );
+  }
+
+  // Verify that the auth user with managerUid exists
+  let manager;
+  try {
+    manager = await admin.auth().getUser(managerUid);
+  } catch (error) {
+    // The Profile for this user likely specifies an identifier
+    // (managerUid) that doesn't correspond to valid User Record.
+    throw new functions.https.HttpsError("internal", error.message);
+  }
+  const claims = manager.customClaims;
+  if (claims && claims["tapr"] === true) {
+    // The profile contains a valid manager, build the TimeSheet document
+    const timesheet = db.collection("TimeSheets").doc();
+    batch.set(timesheet, {
+      uid: auth.uid,
+      surname: profile.get("surname"),
+      givenName: profile.get("givenName"),
+      displayName: profile.get("displayName"),
+      managerName: profile.get("managerName"),
+      salary: profile.get("salary"),
+      tbtePayrollId,
+      weekEnding: week,
+      managerUid,
+      locked: false,
+      approved: false,
+      rejected: false,
+      rejectionReason: "",
+      submitted: true,
+      entries,
+      nonWorkHoursTally,
+      offRotationDaysTally: offRotationDates.length,
+      workHoursTally,
+      mealsHoursTally,
+      divisionsTally,
+      jobsTally,
+      bankedHours,
+      payoutRequest,
+    });
+    return batch.commit();
+  } else {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The manager specified in the Profile doesn't have required permissions"
+    );
+  }
 };
