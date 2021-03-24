@@ -104,7 +104,11 @@
       <input
         type="text"
         name="description"
-        placeholder="Expense Description"
+        v-bind:placeholder="
+          item.paymentType === 'Mileage'
+            ? 'Where did you go & why?'
+            : 'Expense Description'
+        "
         v-model.trim="item.description"
       />
     </span>
