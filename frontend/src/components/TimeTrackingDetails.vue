@@ -1,5 +1,6 @@
 <template>
   <div>
+    <modal ref="rejectModal" />
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>
@@ -22,13 +23,74 @@
         v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
       >
         <h5>Approved</h5>
-        <router-link
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>hours worked</th>
+              <th>stat</th>
+              <th>ppto</th>
+              <th>vacation</th>
+              <th>sick</th>
+              <th>to bank</th>
+              <th>payout request</th>
+              <th>bereavement</th>
+              <th>days off rotation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(entry, tsId) in this.item.pending" v-bind:key="tsId">
+              <td>
+                <router-link
+                  v-bind:to="{
+                    name: 'Time Sheet Details',
+                    params: { id: tsId },
+                  }"
+                  >{{ entry.displayName }}</router-link
+                >
+              </td>
+              <td>{{ entry.hoursWorked }}</td>
+              <td>{{ entry.OH }}</td>
+              <td>{{ entry.OP }}</td>
+              <td>{{ entry.OV }}</td>
+              <td>{{ entry.OS }}</td>
+              <td>{{ entry.RB }}</td>
+              <td>{{ entry.payoutRequest }}</td>
+              <td>{{ entry.OB }}</td>
+              <td>{{ entry.offRotationDaysTally }}</td>
+              <td>
+                <router-link
+                  v-bind:to="{
+                    name: 'Time Tracking Details',
+                    params: { id },
+                  }"
+                  v-on:click.native="$refs.rejectModal.openModal(tsId)"
+                >
+                  <x-circle-icon></x-circle-icon>
+                </router-link>
+              </td>
+              <td>
+                <router-link
+                  v-bind:to="{
+                    name: 'Time Tracking Details',
+                    params: { id },
+                  }"
+                  v-on:click.native="lockTimesheet(tsId)"
+                >
+                  <lock-icon></lock-icon>
+                </router-link>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- <router-link
           v-for="(obj, tsId) in item.pending"
           v-bind:key="tsId"
           v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
         >
           {{ obj.displayName }}<br />
-        </router-link>
+        </router-link> -->
         <br />
       </div>
 
@@ -59,10 +121,14 @@
 </template>
 
 <script lang="ts">
+import Modal from "./Modal.vue";
 import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+import store from "../store";
+import { LockIcon, XCircleIcon } from "vue-feather-icons";
+
 const db = firebase.firestore();
 
 interface TimeSheetTrackingPayload {
@@ -71,6 +137,7 @@ interface TimeSheetTrackingPayload {
 }
 
 export default mixins.extend({
+  components: { XCircleIcon, LockIcon, Modal },
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
@@ -162,6 +229,26 @@ export default mixins.extend({
           });
       } else {
         this.item = {};
+      }
+    },
+    lockTimesheet(id: string) {
+      const lockTimesheet = firebase.functions().httpsCallable("lockTimesheet");
+      // TODO: replace confirm() with modal in Vue
+      if (
+        confirm("Locking Timesheets is not reversible. Do you want to proceed?")
+      ) {
+        store.commit("startTask", {
+          id: `lock${id}`,
+          message: "locking + exporting",
+        });
+        return lockTimesheet({ id })
+          .then(() => {
+            store.commit("endTask", { id: `lock${id}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `lock${id}` });
+            alert(`Error exporting timesheets: ${error.message}`);
+          });
       }
     },
   },

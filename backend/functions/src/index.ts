@@ -9,7 +9,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
 import { writeWeekEnding } from "./utilities";
-import { unbundleTimesheet, lockTimesheets, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
+import { unbundleTimesheet, lockTimesheets, lockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment } from "./expenses";
@@ -36,8 +36,9 @@ exports.bundleTimesheet = functions.https.onCall(bundleTimesheet);
 // unbundle a timesheet
 exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 
-// lock approved timesheets
+// lock approved timesheets as a whole or individually by TimeSheet doc id
 exports.lockTimesheets = functions.https.onCall(lockTimesheets);
+exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 
 
 const writeCreated = function (

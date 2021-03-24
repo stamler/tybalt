@@ -211,45 +211,6 @@ export default Vue.extend({
           alert(`Approval failed: ${error}`);
         });
     },
-    rejectTs(timesheetId: string, reason: string) {
-      store.commit("startTask", {
-        id: `reject${timesheetId}`,
-        message: "rejecting",
-      });
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(timesheet)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `A timesheet with id ${timesheetId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (
-                data !== undefined &&
-                data.submitted === true &&
-                data.locked === false
-              ) {
-                // timesheet is rejectable because it is submitted and not locked
-                transaction.update(timesheet, {
-                  approved: false,
-                  rejected: true,
-                  rejectionReason: reason,
-                });
-              } else {
-                throw "The timesheet has not been submitted or is locked";
-              }
-            });
-        })
-        .then(() => {
-          store.commit("endTask", { id: `reject${timesheetId}` });
-        })
-        .catch(function (error) {
-          store.commit("endTask", { id: `reject${timesheetId}` });
-          alert(`Rejection failed: ${error}`);
-        });
-    },
     recallTs(timesheetId: string) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve

@@ -4,37 +4,99 @@
       <div class="modal__backdrop" />
       <div class="modal__dialog">
         <div class="modal__header">
-          <slot name="header" />
+          <h1>Reject</h1>
+          <h5>{{ itemId }}</h5>
         </div>
         <div class="modal__body">
-          <slot name="body" />
+          <p>What's wrong with this time sheet?</p>
+          <textarea id="rejectionInput" v-model="rejectionReason"></textarea>
         </div>
         <div class="modal__footer">
-          <slot name="footer" />
+          <button v-on:click="closeModal()">Cancel</button>
+          <button v-on:click="rejectThenRedirect()">Reject</button>
         </div>
       </div>
     </div>
   </transition>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from "vue";
+import store from "../store";
+import firebase from "../firebase";
+
+const db = firebase.firestore();
+
 export default Vue.extend({
   name: "Modal",
   data() {
     return {
+      parentPath: "",
       show: false,
+      rejectionReason: "",
+      itemId: "",
     };
   },
   methods: {
+    async rejectThenRedirect() {
+      await this.rejectTs(this.itemId, this.rejectionReason);
+      this.closeModal();
+      this.$router.push(this.parentPath);
+    },
     closeModal() {
       this.show = false;
-      document.querySelector("body").classList.remove("overflow-hidden");
+      this.itemId = "";
+      this.rejectionReason = "";
+      document.querySelector("body")?.classList.remove("overflow-hidden");
     },
-    openModal() {
+    openModal(id: string) {
       this.show = true;
-      document.querySelector("body").classList.add("overflow-hidden");
+      this.itemId = id;
+      document.querySelector("body")?.classList.add("overflow-hidden");
     },
+    rejectTs(timesheetId: string, reason: string) {
+      store.commit("startTask", {
+        id: `reject${timesheetId}`,
+        message: "rejecting",
+      });
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function (transaction) {
+          return transaction
+            .get(timesheet)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (
+                data !== undefined &&
+                data.submitted === true &&
+                data.locked === false
+              ) {
+                // timesheet is rejectable because it is submitted and not locked
+                transaction.update(timesheet, {
+                  approved: false,
+                  rejected: true,
+                  rejectionReason: reason,
+                });
+              } else {
+                throw "The timesheet has not been submitted or is locked";
+              }
+            });
+        })
+        .then(() => {
+          store.commit("endTask", { id: `reject${timesheetId}` });
+        })
+        .catch(function (error) {
+          store.commit("endTask", { id: `reject${timesheetId}` });
+          alert(`Rejection failed: ${error}`);
+        });
+    },
+  },
+  created() {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
   },
 });
 </script>

@@ -141,8 +141,6 @@ export default mixins.extend({
   },
   data() {
     return {
-      rejectionId: "",
-      rejectionReason: "",
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: [],
