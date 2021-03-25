@@ -990,8 +990,10 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(
         doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );
-
     });
+    it("allows manager (eapr) to commit approved expenses");
+    it("prevents manager (eapr) from committing unapproved expenses");
+    it("prevents manager (eapr) from committing approved expenses with date in the future");
   });
   //wtf.dump()
 });
