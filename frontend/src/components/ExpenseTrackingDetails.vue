@@ -16,7 +16,7 @@
               {{ exp.description }}
             </div>
             <div class="byline" v-if="exp.paymentType === 'Mileage'">
-              {{ exp.odoEnd - exp.odoStart }} km
+              {{ exp.distance }} km
             </div>
             <div class="byline" v-else>
               ${{ exp.total }}

@@ -73,8 +73,7 @@ interface ExpenseRegular extends ExpenseCommon {
 }
 interface ExpenseMileage extends ExpenseCommon {
   paymentType: "Mileage";
-  odoStart: number;
-  odoEnd: number;
+  distance: number;
 }
 type Expense = ExpenseRegular | ExpenseMileage;
 
@@ -119,12 +118,11 @@ function isExpenseRegular(data: any): data is ExpenseRegular {
 
 function isExpenseMileage(data: any): data is ExpenseMileage {
   const paymentType = data.paymentType === "Mileage";
-  const odo =
-    typeof data.odoEnd === "number" &&
-    typeof data.odoStart === "number" &&
-    data.odoEnd > data.odoStart &&
-    Number.isInteger(data.odoEnd - data.odoStart);
-  return isExpenseCommon(data) && paymentType && odo;
+  const distance =
+    typeof data.distance === "number" &&
+    data.distance > 0 &&
+    Number.isInteger(data.distance);
+  return isExpenseCommon(data) && paymentType && distance;
 }
 
 function isExpense(data: any): data is Expense {
@@ -201,7 +199,7 @@ export default mixins.extend({
           value: (row: Expense) =>
             row.paymentType !== "Mileage"
               ? row.total
-              : (row.odoEnd - row.odoStart) * MILEAGE_RATE,
+              : row.distance * MILEAGE_RATE,
         },
         {
           label: "PO#",

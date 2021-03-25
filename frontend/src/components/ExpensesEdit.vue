@@ -137,26 +137,10 @@
     <span class="field" v-if="item.paymentType === 'Mileage'">
       <input
         type="number"
-        name="odoStart"
-        v-model.number="item.odoStart"
-        placeholder="odometer start km"
+        name="distance"
+        v-model.number="item.distance"
+        placeholder="distance travelled (km)"
       />
-    </span>
-    <span class="field" v-if="item.paymentType === 'Mileage'">
-      <input
-        type="number"
-        name="odoEnd"
-        v-model.number="item.odoEnd"
-        placeholder="odometer end km"
-      />
-    </span>
-    <span
-      class="field"
-      v-if="
-        typeof item.odoEnd === 'number' && typeof item.odoStart === 'number'
-      "
-    >
-      claim {{ item.odoEnd - item.odoStart }} km
     </span>
 
     <span class="field">
@@ -177,7 +161,7 @@ import store from "../store";
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
-import _ from "lodash";
+import _, { isInteger } from "lodash";
 import { sha256 } from "js-sha256";
 import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
 
@@ -224,12 +208,12 @@ export default mixins.extend({
         this.item.description.length > 3;
       const validTotal =
         typeof this.item.total === "number" && this.item.total > 0;
-      const validOdoReading =
-        typeof this.item.odoEnd === "number" &&
-        typeof this.item.odoStart === "number" &&
-        this.item.odoEnd - this.item.odoStart > 0;
+      const validDistance =
+        typeof this.item.distance === "number" &&
+        isInteger(this.item.distance) &&
+        this.item.distance > 0;
       return (
-        (validTotal || validOdoReading) &&
+        (validTotal || validDistance) &&
         validDescription &&
         !this.attachmentPreviouslyUploaded &&
         this.validAttachmentType

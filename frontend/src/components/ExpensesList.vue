@@ -17,7 +17,7 @@
             </template>
           </div>
           <div class="byline" v-if="item.paymentType === 'Mileage'">
-            {{ item.odoEnd - item.odoStart }} km
+            {{ item.distance }} km
           </div>
           <div class="byline" v-else>
             ${{ item.total }}

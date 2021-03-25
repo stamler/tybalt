@@ -917,10 +917,10 @@ describe("Firestore Rules", () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
       const { personalVehicleInsuranceExpiry, ...missingPersonalVehicleInsuranceExpiry } = alice;
       await profiles.doc("alice").set({personalVehicleInsuranceExpiry: subDays(new Date(), 7), ...missingPersonalVehicleInsuranceExpiry});
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
     });
     it("requires any referenced job to be valid", async () => {
       const doc = timeDb.collection("Expenses").doc();
@@ -950,36 +950,33 @@ describe("Firestore Rules", () => {
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
       await firebase.assertFails(doc.set(missingPaymentType));
       await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
       await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
     });
-    it("requires odoEnd - odoStart to be integer > 0 if paymentType is Mileage", async () => {
+    it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, total, ...missingPaymentTypeAndTotal } = baseline;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 6, odoEnd: 5, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5.5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: "foo", odoEnd: 6, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: "6", ...missingPaymentTypeAndTotal }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: -1, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 0.5, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: "foo", ...missingPaymentTypeAndTotal }));
       await firebase.assertFails(doc.set({ paymentType: "Mileage", ...missingPaymentTypeAndTotal }));
     });
     it("requires po, vendorName, attachment, total to be missing if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, total, ...missingPaymentTypeAndTotal } = baseline;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, po: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, vendorName: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, attachment: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", odoStart: 5, odoEnd: 6, total: 55, ...missingPaymentTypeAndTotal }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, po: "foo", ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, vendorName: "foo", ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, attachment: "foo", ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, total: 55, ...missingPaymentTypeAndTotal }));
     });
-    it("requires odoEnd and odoStart to missing if paymentType is not Mileage", async () => {
+    it("requires distance to missing if paymentType is not Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType}));
-      await firebase.assertFails(doc.set({ paymentType: "Expense", odoStart: 5, ...missingPaymentType}));
-      await firebase.assertFails(doc.set({ paymentType: "Expense", odoEnd: 5, ...missingPaymentType}));
-      await firebase.assertFails(doc.set({ paymentType: "Expense", odoStart: 5, odoEnd: 6, ...missingPaymentType}));
+      await firebase.assertFails(doc.set({ paymentType: "Expense", distance: 5, ...missingPaymentType}));
     });
     it("allows documents to have vendorName field", async () => {
       const doc = timeDb.collection("Expenses").doc();
