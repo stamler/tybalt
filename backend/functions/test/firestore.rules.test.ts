@@ -991,9 +991,87 @@ describe("Firestore Rules", () => {
         doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );
     });
-    it("allows manager (eapr) to commit approved expenses");
-    it("prevents manager (eapr) from committing unapproved expenses");
-    it("prevents manager (eapr) from committing approved expenses with date in the future");
+    it("allows manager (eapr) to commit approved expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+    });
+    it("prevents manager (eapr) from committing approved expenses with UID that doesn't belong to them", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "alice",
+        commitName: "Bob Example",
+      }));
+      await firebase.assertSucceeds(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+    });
+    it("prevents manager (eapr) from committing unapproved expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
+      await firebase.assertSucceeds(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+
+    });
+    it("prevents manager (eapr) from rejecting unapproved expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.update({
+        approved: false,
+        rejected: true,
+        rejectionReason: "no reason given",
+      }));
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
+      await firebase.assertSucceeds(doc.update({
+        approved: false,
+        rejected: true,
+        rejectionReason: "no reason given",
+      }));
+    });
+    it("prevents manager (eapr) from committing approved expenses with date in the future", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ date: addDays(new Date(), 1) , submitted: true, approved: true, managerUid: "alice" });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ date: subDays(new Date(), 1) , submitted: true, approved: true, managerUid: "alice" });
+      await firebase.assertSucceeds(doc.update({ 
+        committed: true,
+        commitTime: firebase.firestore.FieldValue.serverTimestamp(),
+        commitUid: "bob",
+        commitName: "Bob Example",
+      }));
+    });
   });
   //wtf.dump()
 });
