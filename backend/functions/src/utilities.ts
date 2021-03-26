@@ -204,7 +204,7 @@ export async function writeWeekEnding(
       // update the Document only if required
       if (
         weekEnding === null ||
-        weekEnding.toDateString() !== calculatedSaturday.toDateString
+        weekEnding.toDateString() !== calculatedSaturday.toDateString()
       ) {
         return change.after.ref.set(
           { [weekEndingProperty]: calculatedSaturday },
