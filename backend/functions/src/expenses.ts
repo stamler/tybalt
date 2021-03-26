@@ -7,7 +7,7 @@ import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays } from "date-fns";
 import * as _ from "lodash";
 
 // onWrite()
