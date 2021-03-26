@@ -160,6 +160,7 @@ export async function exportJson(data: unknown) {
     docData.date = docData.date.toDate();
     docData.commitTime = docData.commitTime.toDate();
     docData.committedWeekEnding = docData.committedWeekEnding.toDate();
+    docData.payPeriodEnding = docData.payPeriodEnding.toDate();
     return docData;
   });
   
