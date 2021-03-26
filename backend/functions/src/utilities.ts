@@ -1,7 +1,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as path from "path";
-import { zonedTimeToUtc } from "date-fns-tz";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { differenceInCalendarDays, addDays, subDays } from "date-fns";
 
 // make a string with serial & manufacturer that uniquely identifies a computer
 export function makeSlug(serial: string, mfg: string) {
@@ -205,7 +206,7 @@ export async function writeWeekEnding(
       // update the Document only if required
       if (
         weekEnding === null ||
-        weekEnding.toDateString() !== calculatedSaturday.toDateString
+        weekEnding.toDateString() !== calculatedSaturday.toDateString()
       ) {
         return change.after.ref.set(
           { [weekEndingProperty]: calculatedSaturday },
@@ -220,6 +221,74 @@ export async function writeWeekEnding(
       console.log("writeWeekEnding() called but Document was deleted");
       return null;
     }
+  };
+
+// add timestamp of pay period ending (23:59:59.999 EST on saturday of week2) 
+// to payPeriodEnding of Document based on date and commitTime
+export async function writeExpensePayPeriodEnding(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+) {
+  if (!change.after.exists) {
+    // The Document was deleted, do nothing
+    console.log("writePayPeriodEnding() called but Document was deleted");
+    return null;
+  }
+  const afterData = change.after.data();
+  if (afterData === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Cannot read Document with id ${change.after.id} during writePayPeriodEnding()`
+    )
+  }
+  const date = afterData.date?.toDate();
+  if (date === undefined) {
+    console.log(
+      `unable to read property date for Document with id ${change.after.id}`
+    );
+    return null;
+  }
+  const committedWeekEnding = afterData.committedWeekEnding?.toDate();
+  if (committedWeekEnding === undefined) {
+    console.log(
+      `unable to read property committedWeekEnding for Document with id ${change.after.id}`
+    );
+    return null;
+  }
+
+  // If payPeriodEnding is defined on the Document, get it, otherwise set null
+  const payPeriodEnding = afterData.payPeriodEnding?.toDate();
+
+  // Calculate the correct payPeriodEnding based on commitTime AND date
+  // (in America/Thunder_Bay timezone)
+  let calculatedPayPeriodEnding
+  if (isPayrollWeek2(committedWeekEnding)) {
+    calculatedPayPeriodEnding = committedWeekEnding;
+  } else {
+    // committedWeekEnding is week1 of this pay period
+    // if the expense date is before the end of the last pay period set 
+    // calculatedPayPeriodEnding to the previous one
+    const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+    if (date.getTime() <= lastPayPeriodEnding ) {
+      calculatedPayPeriodEnding = lastPayPeriodEnding;
+    } else {
+      // the date is after the end of the last pay period
+      calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+    }
+  }
+  
+  // update the Document only if required
+  if (
+    payPeriodEnding === undefined ||
+    payPeriodEnding.toDateString() !== calculatedPayPeriodEnding.toDateString()
+  ) {
+    return change.after.ref.set(
+      { payPeriodEnding: calculatedPayPeriodEnding },
+      { merge: true }
+    );
+  }
+  // no changes to be made
+  return null;
   };
 
 // Calculate the correct saturday of the weekEnding in America/Thunder_Bay 
@@ -257,4 +326,81 @@ export function nextSaturday(date: Date): Date {
     );
   }
   return calculatedSaturday;
+}
+
+// Confirm the context has specified claim and throw userful errors as necessary
+export function contextHasClaim(context: functions.https.CallableContext, claim: string) {
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  // caller must have the claim
+  if (
+    !(
+      Object.prototype.hasOwnProperty.call(context.auth.token, claim) &&
+      context.auth.token[claim] === true
+    )
+  ) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      `Caller must have the ${claim} claim`
+    );
+  } else {
+    return true;
+  }
+}
+
+// Given a number (result of getTime() from js Date object), verify that it is
+// 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
+// week 2 of a payroll at TBT Engineering. The definition of this is an
+// integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
+// NB: THIS FUNCTION ALSO IN FRONTEND mixins.ts
+export function isPayrollWeek2(weekEnding: Date): boolean {
+  const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
+  
+  // There will not be integer days if epoch and weekEnding are in different
+  // time zones (EDT vs EST). Convert them both to the same timezone prior
+  // to calculating the difference
+  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, "America/Thunder_Bay");
+  const tbayWeekEnding = utcToZonedTime(weekEnding, "America/Thunder_Bay");
+  const difference = differenceInCalendarDays(tbayWeekEnding, tbayEpoch);
+  
+  // confirm the time of weekEnding is 23:59:59.999 in Thunder Bay
+  const isLastMillisecondOfDay = tbayWeekEnding.getHours() === 23 && tbayWeekEnding.getMinutes() === 59 && tbayWeekEnding.getSeconds() === 59 && tbayWeekEnding.getMilliseconds() === 999;
+
+  // confirm difference in calendar days from the epoch modulo 14 is 0
+  return difference % 14 === 0 && isLastMillisecondOfDay ? true : false;
+}
+
+export function getPayPeriodFromWeekEnding(weekEnding: Date): Date {
+  if (isPayrollWeek2(weekEnding)) {
+    return weekEnding;
+  }
+
+  // check if the weekEnding is a week1 ending by adding 7 days
+  // and checking if there result is a week2 ending. If it is
+  // return the result, otherwise throw because the weekEnding
+  // isn't valid
+  const week2candidate = thisTimeNextWeekInTimeZone(weekEnding, "America/Thunder_Bay");
+  if (isPayrollWeek2(week2candidate)) {
+    return week2candidate;
+  }
+  throw new Error("The provided weekEnding isn't valid and cannot be used to getPayPeriodFromWeekEnding");
+}
+
+// return the same time 7 days ago in the given time zone
+export function thisTimeLastWeekInTimeZone(datetime: Date, timezone: string) {
+  const zone_time = utcToZonedTime(datetime, timezone);
+  return zonedTimeToUtc(subDays(zone_time, 7), timezone);
+}
+
+// return the same time 7 days ago in the given time zone
+export function thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
+  const zone_time = utcToZonedTime(datetime, timezone);
+  return zonedTimeToUtc(addDays(zone_time, 7), timezone);
 }
