@@ -221,6 +221,74 @@ export async function writeWeekEnding(
     }
   };
 
+// add timestamp of pay period ending (23:59:59.999 EST on saturday of week2) 
+// to payPeriodEnding of Document based on date and commitTime
+export async function writeExpensePayPeriodEnding(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+) {
+  if (!change.after.exists) {
+    // The Document was deleted, do nothing
+    console.log("writePayPeriodEnding() called but Document was deleted");
+    return null;
+  }
+  const afterData = change.after.data();
+  if (afterData === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Cannot read Document with id ${change.after.id} during writePayPeriodEnding()`
+    )
+  }
+  const date = afterData.date?.toDate();
+  if (date === undefined) {
+    console.log(
+      `unable to read property date for Document with id ${change.after.id}`
+    );
+    return null;
+  }
+  const committedWeekEnding = afterData.committedWeekEnding?.toDate();
+  if (committedWeekEnding === undefined) {
+    console.log(
+      `unable to read property committedWeekEnding for Document with id ${change.after.id}`
+    );
+    return null;
+  }
+
+  // If payPeriodEnding is defined on the Document, get it, otherwise set null
+  const payPeriodEnding = afterData.payPeriodEnding?.toDate();
+
+  // Calculate the correct payPeriodEnding based on commitTime AND date
+  // (in America/Thunder_Bay timezone)
+  let calculatedPayPeriodEnding
+  if (isPayrollWeek2(committedWeekEnding)) {
+    calculatedPayPeriodEnding = committedWeekEnding;
+  } else {
+    // committedWeekEnding is week1 of this pay period
+    // if the expense date is before the end of the last pay period set 
+    // calculatedPayPeriodEnding to the previous one
+    const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+    if (date.getTime() <= lastPayPeriodEnding ) {
+      calculatedPayPeriodEnding = lastPayPeriodEnding;
+    } else {
+      // the date is after the end of the last pay period
+      calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+    }
+  }
+  
+  // update the Document only if required
+  if (
+    payPeriodEnding === undefined ||
+    payPeriodEnding.toDateString() !== calculatedPayPeriodEnding.toDateString()
+  ) {
+    return change.after.ref.set(
+      { payPeriodEnding: calculatedPayPeriodEnding },
+      { merge: true }
+    );
+  }
+  // no changes to be made
+  return null;
+  };
+
 // Calculate the correct saturday of the weekEnding in America/Thunder_Bay 
 // assuming input is in America/Thunder_Bay timezone as well.
 export function nextSaturday(date: Date): Date {

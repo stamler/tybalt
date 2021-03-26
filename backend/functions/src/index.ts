@@ -8,7 +8,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import { writeWeekEnding } from "./utilities";
+import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheets, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
@@ -67,8 +67,13 @@ exports.timeAmendmentsCommittedWeekEnding = functions.firestore
 
 // Write the committedWeekEnding on Expenses
 exports.expensesCommittedWeekEnding = functions.firestore
-.document("Expenses/{expenseId}")
-.onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
+  .document("Expenses/{expenseId}")
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
+
+// Write the payPeriodEnding on Expenses
+exports.expensesPayPeriodEnding = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onWrite(writeExpensePayPeriodEnding);
 
 // commit a TimeAmendment (TODO: include export JSON call here rather than trigger)
 exports.commitTimeAmendment = functions.https.onCall(commitTimeAmendment);
