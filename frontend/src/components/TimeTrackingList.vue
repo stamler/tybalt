@@ -45,7 +45,6 @@ import { isTimeSheet, TimeSheet, Amendment } from "./types";
 import { LockIcon, DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import { parse } from "json2csv";
-import _ from "lodash";
 const db = firebase.firestore();
 
 export default mixins.extend({
@@ -227,127 +226,6 @@ export default mixins.extend({
           weekEnding
         )}.csv`
       );
-    },
-    // If an amendment has a corresponding timesheet, fold it into that
-    // timesheet and update the tallies for that timesheet. Otherwise
-    // just return the amendment by itself. Returns an object with a
-    // timesheets property whose value is an array of timesheets and
-    // an amendments property whose value is amendments that didn't have a
-    // corresponding timesheet.
-    foldAmendments(items: (TimeSheet | Amendment)[]) {
-      const [amendments, timesheets] = _.partition(items, { amendment: true });
-      const groupedAmendments = _.groupBy(amendments, "uid") as {
-        [x: string]: Amendment[];
-      };
-      const unfoldedAmendmentsOutput = [] as Amendment[];
-      for (const uid in groupedAmendments) {
-        const destination = timesheets.find((a) => a.uid === uid) as TimeSheet;
-        if (destination !== undefined) {
-          // record each amendment's week in the timesheet
-          destination.hasAmendmentsForWeeksEnding = [];
-
-          // There is a destination timesheet to fold amendments into.
-          // Load the existing tallies
-          const workHoursTally = destination["workHoursTally"];
-          const nonWorkHoursTally = destination["nonWorkHoursTally"];
-          let mealsHoursTally = destination["mealsHoursTally"];
-          const divisionsTally = destination["divisionsTally"];
-          const jobsTally = destination["jobsTally"];
-
-          // fold all of the amendments in groupedAmendments[uid] into
-          // destination and update tallies
-          // tally the amendments
-          for (const item of groupedAmendments[uid]) {
-            // record the week ending of this amendment
-            destination.hasAmendmentsForWeeksEnding.push(item.weekEnding);
-            if (
-              item.timetype === "R" &&
-              item.division &&
-              item.divisionName &&
-              (item.hours || item.jobHours)
-            ) {
-              // Tally the regular work hours
-              if (item.hours) {
-                workHoursTally["hours"] += item.hours;
-              }
-              if (item.jobHours) {
-                workHoursTally["jobHours"] += item.jobHours;
-              }
-              if (item.mealsHours) {
-                mealsHoursTally += item.mealsHours;
-              }
-
-              // Tally the divisions (must be present for work hours)
-              divisionsTally[item.division] = item.divisionName;
-
-              // Tally the jobs (may not be present)
-              if (item.job && item.jobDescription && item.client) {
-                if (item.job in jobsTally) {
-                  // a previous entry already tracked this job, add to totals
-                  const hours = item.hours
-                    ? jobsTally[item.job].hours + item.hours
-                    : jobsTally[item.job].hours;
-                  const jobHours = item.jobHours
-                    ? jobsTally[item.job].jobHours + item.jobHours
-                    : jobsTally[item.job].jobHours;
-                  jobsTally[item.job] = {
-                    description: item.jobDescription,
-                    client: item.client,
-                    hours,
-                    jobHours,
-                  };
-                } else {
-                  // first instance of this job in the timesheet, set totals to zero
-                  jobsTally[item.job] = {
-                    description: item.jobDescription,
-                    client: item.client,
-                    hours: item.hours || 0,
-                    jobHours: item.jobHours || 0,
-                  };
-                }
-              } else if (item.hours) {
-                // keep track of the number of hours not associated with a job
-                // (as opposed to job hours not billable to the client)
-                workHoursTally["noJobNumber"] += item.hours;
-              } else {
-                throw new Error(
-                  "The TimeEntry is of type Regular hours but no job or hours are present"
-                );
-              }
-            } else {
-              if (!item.hours) {
-                throw new Error(
-                  "The Amendment is of type nonWorkHours but no hours are present"
-                );
-              }
-              // Tally the non-work hours
-              if (item.timetype in nonWorkHoursTally) {
-                nonWorkHoursTally[item.timetype] += item.hours;
-              } else {
-                nonWorkHoursTally[item.timetype] = item.hours;
-              }
-            }
-
-            // mark this entry as an amendment
-            item.amendment = true;
-
-            // add the amendment to timesheet entries
-            destination["entries"].push(item);
-          }
-
-          // merge the tallies. Because objects are edit-in-place, we only
-          // need to reassign the mealsHours which is a primitive value
-          destination["mealsHoursTally"] = mealsHoursTally;
-        } else {
-          // all of the amendments in groupedAmendments[uid] do not match
-          // a timesheet and must be exported separately
-          unfoldedAmendmentsOutput.push(...groupedAmendments[uid]);
-        }
-      }
-      return {
-        timesheets,
-        amendments: unfoldedAmendmentsOutput,
-      };
     },
   },
 });
