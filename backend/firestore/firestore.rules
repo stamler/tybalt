@@ -160,22 +160,22 @@ service cloud.firestore {
         request.auth.uid == request.resource.data['uid'] &&
 
         // when job provided, job & division exist in db,
-        // jobDescription and client are present, timetype is 'R'
+        // jobDescription and client are present, timetype is 'R' or 'RT'
         (
           ( isInCollection("job","Jobs") && 
             isInCollection("division","Divisions") &&
             newDoc().keys().hasAll(["jobDescription", "client"]) &&
-            newDoc().timetype == "R" ) || 
+            (newDoc().timetype == "R" || newDoc().timetype == "RT") ) || 
           isMissing("job")
         ) &&
 
-        // when provided, division exists in db, Time Type is 'R'
-        // when division is missing, Time Type is not 'R'
+        // when provided, division exists in db, Time Type is 'R' or 'RT'
+        // when division is missing, Time Type is not 'R' and is not 'RT'
         (
           ( isInCollection("division","Divisions") && 
-            newDoc().timetype == "R" ) ||
+            (newDoc().timetype == "R" || newDoc().timetype == "RT") ) ||
           (isMissing("division") && 
-            newDoc().timetype != "R" )
+            (newDoc().timetype != "R" && newDoc().timetype != "RT") )
         ) &&
 
         // at least one hours type is provided OR the timetype is "OR" or "OTO"

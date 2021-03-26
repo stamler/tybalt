@@ -28,7 +28,7 @@
       </select>
     </span>
 
-    <span class="field" v-if="item.timetype === 'R'">
+    <span class="field" v-if="['R', 'RT'].includes(item.timetype)">
       <select name="division" v-model="item.division">
         <option disabled selected value="">-- choose division --</option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
@@ -39,7 +39,11 @@
 
     <span
       class="field"
-      v-if="item.timetype === 'R' && item.division && item.division !== ''"
+      v-if="
+        ['R', 'RT'].includes(item.timetype) &&
+        item.division &&
+        item.division !== ''
+      "
     >
       <label for="job">Job</label>
       <!-- TODO: Show job description/client in uneditable part of field -->
@@ -70,7 +74,10 @@
     <span
       class="field"
       v-if="
-        item.job && item.job !== '' && item.division && item.timetype === 'R'
+        item.job &&
+        item.job !== '' &&
+        item.division &&
+        ['R', 'RT'].includes(item.timetype)
       "
     >
       <label for="jobHours">Job Hours</label>
@@ -88,7 +95,10 @@
     <span
       class="field"
       v-if="
-        item.job && item.job !== '' && item.division && item.timetype === 'R'
+        item.job &&
+        item.job !== '' &&
+        item.division &&
+        ['R', 'RT'].includes(item.timetype)
       "
     >
       <label for="mealsHours">Meals Hours</label>
@@ -98,7 +108,10 @@
     <span
       class="field"
       v-if="
-        item.job && item.job !== '' && item.division && item.timetype === 'R'
+        item.job &&
+        item.job !== '' &&
+        item.division &&
+        ['R', 'RT'].includes(item.timetype)
       "
     >
       <label for="workrecord">Work Record</label>
@@ -307,8 +320,8 @@ export default Vue.extend({
         (i) => i.id === this.item.timetype
       )[0].name;
 
-      // if timetype isn't R, delete disallowed properties
-      if (this.item.timetype !== "R") {
+      // if timetype isn't R or RT, delete disallowed properties
+      if (!["R", "RT"].includes(this.item.timetype)) {
         [
           "division",
           "divisionName",
@@ -320,7 +333,7 @@ export default Vue.extend({
           "workrecord",
         ].forEach((x) => delete this.item[x]);
       } else {
-        // timetype is R, division must be present
+        // timetype is R or RT, division must be present
         if (this.item.division && this.item.division.length > 0) {
           // write divisionName
           this.item.divisionName = this.divisions.filter(
