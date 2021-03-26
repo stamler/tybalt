@@ -27,6 +27,9 @@
         </option>
       </select>
     </span>
+    <span v-if="trainingTokensInDescriptionWhileRegularHours" class="attention">
+      ^Should you choose training instead?
+    </span>
 
     <span class="field" v-if="['R', 'RT'].includes(item.timetype)">
       <select name="division" v-model="item.division">
@@ -206,6 +209,30 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["user"]),
+    trainingTokensInDescriptionWhileRegularHours(): boolean {
+      if (
+        this.item.timetype !== undefined &&
+        this.item.workDescription !== undefined
+      ) {
+        const lowercase = this.item.workDescription.toLowerCase().trim();
+        const lowercaseTokens = lowercase.split(/\s+/);
+        return (
+          this.item.timetype === "R" &&
+          ([
+            "training",
+            "train",
+            "orientation",
+            "course",
+            "whmis",
+            "learning",
+          ].some((token) => lowercaseTokens.includes(token)) ||
+            ["working at heights", "first aid"].some((token) =>
+              lowercase.includes(token)
+            ))
+        );
+      }
+      return false;
+    },
   },
   watch: {
     id: function (id) {
