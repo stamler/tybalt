@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2 } from "./utilities";
+import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeLastWeekInTimeZone, thisTimeNextWeekInTimeZone } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -266,9 +266,9 @@ export async function getPayPeriodExpenses(
   // derive the first week and week following of the pay period
   // weekEndings must account for time changes so do date math in local time
   // then convert to UTC for queries
-  const week1Ending = zonedTimeToUtc(subDays(tbay_week, 7), "America/Thunder_Bay");
-  const week3Ending = zonedTimeToUtc(addDays(tbay_week, 7), "America/Thunder_Bay");
-  const week0Ending = zonedTimeToUtc(subDays(tbay_week, 14), "America/Thunder_Bay"); // upper bound of the prior week
+  const week1Ending = thisTimeLastWeekInTimeZone(week2Ending, "America/Thunder_Bay");
+  const week3Ending = thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay");
+  const week0Ending = thisTimeLastWeekInTimeZone(week1Ending, "America/Thunder_Bay"); // upper bound of the prior week
 
   /* 
   throw if the current datetime is before week3Ending because there may

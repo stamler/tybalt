@@ -2,7 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as path from "path";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { differenceInCalendarDays, addDays } from "date-fns";
+import { differenceInCalendarDays, addDays, subDays } from "date-fns";
 
 // make a string with serial & manufacturer that uniquely identifies a computer
 export function makeSlug(serial: string, mfg: string) {
@@ -316,10 +316,21 @@ export function getPayPeriodFromWeekEnding(weekEnding: Date): Date {
   // and checking if there result is a week2 ending. If it is
   // return the result, otherwise throw because the weekEnding
   // isn't valid
-  const tbayWeekEnding = utcToZonedTime(weekEnding, "America/Thunder_Bay");
-  const week2candidate = zonedTimeToUtc(addDays(tbayWeekEnding, 7), "America/Thunder_Bay");
+  const week2candidate = thisTimeNextWeekInTimeZone(weekEnding, "America/Thunder_Bay");
   if (isPayrollWeek2(week2candidate)) {
     return week2candidate;
   }
   throw new Error("The provided weekEnding isn't valid and cannot be used to getPayPeriodFromWeekEnding");
+}
+
+// return the same time 7 days ago in the given time zone
+export function thisTimeLastWeekInTimeZone(datetime: Date, timezone: string) {
+  const zone_time = utcToZonedTime(datetime, timezone);
+  return zonedTimeToUtc(subDays(zone_time, 7), timezone);
+}
+
+// return the same time 7 days ago in the given time zone
+export function thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
+  const zone_time = utcToZonedTime(datetime, timezone);
+  return zonedTimeToUtc(addDays(zone_time, 7), timezone);
 }
