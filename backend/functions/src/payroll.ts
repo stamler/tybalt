@@ -1,8 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as _ from "lodash";
-import { subDays } from "date-fns";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { getPayPeriodFromWeekEnding, isPayrollWeek2 } from "./utilities";
 
 async function getPayrollTrackingDoc(payPeriodEnding: Date) {
@@ -62,57 +60,37 @@ export const updatePayrollFromTimeTracking = functions.firestore
     }    
   });
 
-export const updatePayrollFromExpenseTracking = functions.firestore
-  .document("ExpenseTracking/{expenseTrackingId}")
+export const updatePayrollFromExpenses = functions.firestore
+  .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => {
+    const beforeData = change.before.data();
     const afterData = change.after.data();
+    const payPeriodEnding: Date = afterData?.payPeriodEnding?.toDate() ?? beforeData?.payPeriodEnding?.toDate();
+
     if (afterData === undefined) {
-      functions.logger.warn(`ExpenseTracking document ${change.after.ref.id} was deleted`);
-      return;
+      throw new Error(`Expenses document ${change.after.ref.id} was deleted. PayrollTracking, ExpenseTracking, and exports may contain inconsistent data.`);
     }
-    const afterWeekEnding = afterData.weekEnding;
-    if (afterWeekEnding === undefined) {
-      functions.logger.warn(`property "weekEnding" of ExpenseTracking doc ${change.after.ref.id} has no value.`);
+    if (payPeriodEnding === undefined) {
+      functions.logger.warn(`property "payPeriodEnding" of Expenses doc ${change.after.ref.id} has no value. Doing nothing.`);
       return;  
     }
-    const expenses = afterData.expenses;
-    if (expenses === undefined) {
-      functions.logger.warn(`property "expenses" of ExpenseTracking doc ${change.after.ref.id} has no value.`);
-      return;
-    }
-    const weekEnding = afterWeekEnding.toDate();
-    const payPeriodEnding = getPayPeriodFromWeekEnding(weekEnding);
     const payrollTrackingDocRef = await getPayrollTrackingDoc(payPeriodEnding);
 
-    if (isPayrollWeek2(weekEnding.toDate())) {
-      // save all expenses to the PayrollTracking doc week2expenses prop
-      return payrollTrackingDocRef.update({ week2expenses: expenses });
+    if (afterData.committed) {
+    // the expense is committed, add to expenses property of PayrollTracking doc
+    return payrollTrackingDocRef.update(
+        {
+          [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, date: afterData.date, commitTime: afterData.commitTime },
+        }
+      );  
     } else {
-      // it's week 1 of a pay period. partition the expenses by date and
-      // save them into two different payroll docs.
-
-      // Derive the upper bound of the prior pay period, call it week0ending.
-      const tbay_week = utcToZonedTime(
-        weekEnding.toDate(),
-        "America/Thunder_Bay"
-      );
-      const week0Ending = zonedTimeToUtc(subDays(tbay_week, 7), "America/Thunder_Bay");
-
-      // If the date is > week0ending, store it
-      // in week1expenses of payrollTrackingDocRef
-      // otherwise, store it in week3expenses property of the previous 
-      // chronological payrollTrackingDocRef
-      const [week1expenses, week3expenses] = _.partition(expenses, (o) => { o.date.getTime() > week0Ending.getTime() });
-      const promises = [];
-      promises.push(payrollTrackingDocRef.update({ week1expenses }));
-
-      if (week3expenses.length > 0) {
-        // There are week3expenses, get the previous payrollTrackingDocRef
-        const previousPayrollTrackingDocRef = await getPayrollTrackingDoc(week0Ending);
-        promises.push(previousPayrollTrackingDocRef.update({ week3expenses }));
-      }
-
-      return Promise.all(promises);
+      // the expense isn't committed, remove from PayrollTracking doc
+      return payrollTrackingDocRef.update(
+        {
+          [`expenses.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+        }
+      );  
     }
 
+    
   });

@@ -108,13 +108,15 @@ export const updateExpenseTracking = functions.firestore
           [`expenses.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
-      // remove commitName, commitTime, commitUid, committedWeekEnding from 
-      // Expense doc so it becomes a validExpenseEntry() and can be recalled
+      // remove commitName, commitTime, commitUid, committedWeekEnding and
+      // payPeriodEnding from Expense doc so it becomes a validExpenseEntry()
+      // and can be rejected
       await change.after.ref.update({
         commitTime: admin.firestore.FieldValue.delete(),
         commitName: admin.firestore.FieldValue.delete(),
         commitUid: admin.firestore.FieldValue.delete(),
         committedWeekEnding: admin.firestore.FieldValue.delete(),
+        payPeriodEnding: admin.firestore.FieldValue.delete(),
       });
     }
     await exportJson({ id: expenseTrackingDocRef.id });

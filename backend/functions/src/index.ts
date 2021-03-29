@@ -14,7 +14,7 @@ import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 export { updateTimeTracking } from "./timesheets";
-export { updatePayrollFromTimeTracking, updatePayrollFromExpenseTracking } from "./payroll";
+export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 
