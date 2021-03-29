@@ -8,12 +8,13 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
-import { writeWeekEnding } from "./utilities";
+import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment } from "./expenses";
+import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 export { updateTimeTracking } from "./timesheets";
+export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 
@@ -36,10 +37,11 @@ exports.bundleTimesheet = functions.https.onCall(bundleTimesheet);
 // unbundle a timesheet
 exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 
-// lock approved timesheets as a whole or individually by TimeSheet doc id
-//exports.lockTimesheets = functions.https.onCall(lockTimesheets);
+// lock approved timesheets individually by TimeSheet doc id
 exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 
+// return expense documents associated with a pay period
+exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
@@ -65,8 +67,13 @@ exports.timeAmendmentsCommittedWeekEnding = functions.firestore
 
 // Write the committedWeekEnding on Expenses
 exports.expensesCommittedWeekEnding = functions.firestore
-.document("Expenses/{expenseId}")
-.onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
+  .document("Expenses/{expenseId}")
+  .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
+
+// Write the payPeriodEnding on Expenses
+exports.expensesPayPeriodEnding = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onWrite(writeExpensePayPeriodEnding);
 
 // commit a TimeAmendment (TODO: include export JSON call here rather than trigger)
 exports.commitTimeAmendment = functions.https.onCall(commitTimeAmendment);

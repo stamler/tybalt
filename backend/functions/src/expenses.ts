@@ -1,11 +1,14 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, createPersistentDownloadUrl } from "./utilities";
+import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeNextWeekInTimeZone } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
+import { utcToZonedTime } from "date-fns-tz";
+import { format, addDays } from "date-fns";
+import * as _ from "lodash";
 
 // onWrite()
 // check if the filepath changed
@@ -88,7 +91,7 @@ export const updateExpenseTracking = functions.firestore
       // add the committed Expense to expenses
       await expenseTrackingDocRef.update(
         {
-          [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+          [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, date: afterData.date },
         }
       );
     }
@@ -105,13 +108,15 @@ export const updateExpenseTracking = functions.firestore
           [`expenses.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
-      // remove commitName, commitTime, commitUid, committedWeekEnding from 
-      // Expense doc so it becomes a validExpenseEntry() and can be recalled
+      // remove commitName, commitTime, commitUid, committedWeekEnding and
+      // payPeriodEnding from Expense doc so it becomes a validExpenseEntry()
+      // and can be rejected
       await change.after.ref.update({
         commitTime: admin.firestore.FieldValue.delete(),
         commitName: admin.firestore.FieldValue.delete(),
         commitUid: admin.firestore.FieldValue.delete(),
         committedWeekEnding: admin.firestore.FieldValue.delete(),
+        payPeriodEnding: admin.firestore.FieldValue.delete(),
       });
     }
     await exportJson({ id: expenseTrackingDocRef.id });
@@ -211,3 +216,80 @@ export async function exportJson(data: unknown) {
     });
   });
 };
+
+export async function getPayPeriodExpenses(
+    data: unknown, 
+    context: functions.https.CallableContext
+): Promise<admin.firestore.DocumentData[]> {
+
+  if (!contextHasClaim(context, "report")) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Call to getPayPeriodExpenses() failed"
+    );
+  }
+  
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isWeekReference(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid week reference"
+    );
+  }
+
+  // Get argument
+  const week2Ending = new Date(data.weekEnding);
+
+  // Verify that the provided weekEnding is a payroll week 2
+  // by ensuring an even week difference from a week epoch
+  if (!isPayrollWeek2(week2Ending)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The week ending specified is not week 2 of a payroll period"
+    )
+  }
+
+  /* 
+  throw if the current datetime is before the end of the week following the 
+  pay period because more expenses may still be committed. This allows
+  adding and committing of expenses up to a full week following the end of
+  the pay period to be paid out during that period
+  */
+  if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay")) {
+    const tbay_week = utcToZonedTime(
+      new Date(data.weekEnding),
+      "America/Thunder_Bay"
+    );  
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      `Wait until ${format(addDays(tbay_week,8), "MMM dd")} to process expenses for pay period ending ${format(tbay_week, "MMM dd")}`
+    )
+  }
+
+  /*
+  pay periods are two weeks long. Expenses are reported in the week in 
+  which they are committed. We will use all expenses commited in week2
+  of the pay period, and all expenses committed in the week after whose
+  date is before the end of the pay period. Because they will already have
+  been paid out, we also must remove out any expense commited in week1 of
+  the pay period whose date is before the beginning of the pay period.
+  */
+  const db = admin.firestore();
+
+  const expensesSnapshot = await db.collection("Expenses")
+    .where("committed", "==", true)
+    .where("payPeriodEnding", "==", week2Ending)
+    .get();
+
+  const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
+  
+  // convert commitTime, committedWeekEnding, and date to strings
+  return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
+    e.date = e.date.toDate().toString();
+    e.commitTime = e.commitTime.toDate().toString();
+    e.committedWeekEnding = e.committedWeekEnding.toDate().toString();
+    e.payPeriodEnding = e.payPeriodEnding.toDate().toString();
+    return e
+  });
+}
