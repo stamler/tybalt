@@ -228,6 +228,9 @@ export async function bundleTimesheet(
     );
   }
 
+  // calculate total non-work hours
+  const nonWorkHoursTotal = Object.values(nonWorkHoursTally).reduce((a,b) => a + b, 0);
+
   // prevent salaried employees from using vacation or PPTO to raise their
   // timesheet hours beyond 40.
   const discretionaryTimeOff = 
@@ -236,16 +239,13 @@ export async function bundleTimesheet(
   if (
     profile.get("salary") === true &&
     discretionaryTimeOff > 0 && 
-    workHoursTally.hours + workHoursTally.jobHours + discretionaryTimeOff > 40
+    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal > 40
   ) {
     throw new functions.https.HttpsError(
       "failed-precondition",
       "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
     );
   }
-
-  // Tally the non-work hours
-  const nonWorkHoursTotal = Object.values(nonWorkHoursTally).reduce((a,b) => a + b, 0);
   
   // require salaried employees to have at least 40 hours on a timesheet
   if (
