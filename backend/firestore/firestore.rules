@@ -25,8 +25,8 @@ service cloud.firestore {
     function newDoc() {
       return request.resource.data;
     }
-    function isPositiveNumberUnderEighteen(field) {
-      return request.resource.data[field] is number && request.resource.data[field] > 0 && request.resource.data[field] <= 18;
+    function isPositiveMultipleOfPointFiveUnderEighteen(field) {
+      return request.resource.data[field] is number && int(request.resource.data[field] * 2) == (request.resource.data[field] * 2) && request.resource.data[field] > 0 && request.resource.data[field] <= 18;
     }
     function hasValidWorkrecord() {
       return "workrecord" in newDoc() && newDoc().workrecord.matches('[FKQ][0-9]{2}-[0-9]{3,}(-[0-9]+)?');
@@ -183,9 +183,9 @@ service cloud.firestore {
             newDoc().timetype != "OTO" && 
             !(newDoc().keys().hasAll(["payoutRequestAmount"])) && // payoutRequestAmount is not defined
             (
-              (isPositiveNumberUnderEighteen("jobHours") && !(newDoc().timetype == "OR")) ||
-              (isPositiveNumberUnderEighteen("hours") && !(newDoc().timetype == "OR")) ||
-              (isPositiveNumberUnderEighteen("mealsHours") && !(newDoc().timetype == "OR")) 
+              (isPositiveMultipleOfPointFiveUnderEighteen("jobHours") && !(newDoc().timetype == "OR")) ||
+              (isPositiveMultipleOfPointFiveUnderEighteen("hours") && !(newDoc().timetype == "OR")) ||
+              (isPositiveMultipleOfPointFiveUnderEighteen("mealsHours") && !(newDoc().timetype == "OR")) 
             ) 
           ) ||
           (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
@@ -194,19 +194,19 @@ service cloud.firestore {
 
         // if timetype is "RB", only hours is provided and is a positive number
         (
-          (isPositiveNumberUnderEighteen("hours") && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
+          (isPositiveMultipleOfPointFiveUnderEighteen("hours") && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
           newDoc().timetype != "RB"
         ) &&
 
         // when provided, jobHours require an existing job
         (
-          ( isPositiveNumberUnderEighteen("jobHours") && isInCollection("job", "Jobs") ) ||
+          ( isPositiveMultipleOfPointFiveUnderEighteen("jobHours") && isInCollection("job", "Jobs") ) ||
           isMissing("jobHours") 
         ) &&
 
         // when provided, mealsHours requires an existing job
         (
-          ( isPositiveNumberUnderEighteen("mealsHours") && isInCollection("job", "Jobs") ) ||
+          ( isPositiveMultipleOfPointFiveUnderEighteen("mealsHours") && isInCollection("job", "Jobs") ) ||
           isMissing("mealsHours") 
         ) &&
 

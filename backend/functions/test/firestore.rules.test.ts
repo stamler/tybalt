@@ -665,18 +665,24 @@ describe("Firestore Rules", () => {
       await firebase.assertFails( doc.set({ ...missingHours, ...missingJob, job: "notjob", jobHours: 5 }) );
       await firebase.assertFails( doc.set({ ...missingHours, ...missingJob, jobHours: 5 }) );
     });
-    it("requires hours, jobHours, and mealsHours to be positive real numbers under 18", async () => {
+    it("requires hours, jobHours, and mealsHours to be positive multiples of 0.5 under 18", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { hours, ...missingHours } = baseline;
       await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 5}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 5.5}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 5.6}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 19}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: "duck"}));
       await firebase.assertSucceeds(doc.set({ ...missingHours, hours: 5}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, hours: 5.5}));
+      await firebase.assertFails(doc.set({ ...missingHours, hours: 5.6}));
       await firebase.assertFails(doc.set({ ...missingHours, hours: 19}));
       await firebase.assertFails(doc.set({ ...missingHours, hours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, hours: "duck"}));
       await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 1}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 0.5}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 0.6}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 19}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: "duck"}));
