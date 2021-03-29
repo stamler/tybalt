@@ -238,24 +238,8 @@ export async function getPayPeriodExpenses(
     );
   }
 
-  const tbay_week = utcToZonedTime(
-    new Date(data.weekEnding),
-    "America/Thunder_Bay"
-  );
-
-  // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
-  tbay_week.setHours(23, 59, 59, 999);
-
-  // verify tbay_week is a Saturday in America/Thunder_Bay time zone
-  if (tbay_week.getDay() !== 6) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The week ending specified is not a Saturday"
-    );
-  }
-
-  // Convert back to UTC for queries against firestore 
-  const week2Ending = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
+  // Get argument
+  const week2Ending = new Date(data.weekEnding);
 
   // Verify that the provided weekEnding is a payroll week 2
   // by ensuring an even week difference from a week epoch
@@ -266,20 +250,17 @@ export async function getPayPeriodExpenses(
     )
   }
 
-  // derive the first week and week following of the pay period
-  // weekEndings must account for time changes so do date math in local time
-  // then convert to UTC for queries
-  const week1Ending = thisTimeLastWeekInTimeZone(week2Ending, "America/Thunder_Bay");
-  const week3Ending = thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay");
-  const week0Ending = thisTimeLastWeekInTimeZone(week1Ending, "America/Thunder_Bay"); // upper bound of the prior week
-
   /* 
-  throw if the current datetime is before week3Ending because there may
-  still be more items committed in week following the pay period. This allows
+  throw if the current datetime is before the end of the week following the 
+  pay period because more expenses may still be committed. This allows
   adding and committing of expenses up to a full week following the end of
   the pay period to be paid out during that period
   */
-  if (new Date() < week3Ending) {
+  if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay")) {
+    const tbay_week = utcToZonedTime(
+      new Date(data.weekEnding),
+      "America/Thunder_Bay"
+    );  
     throw new functions.https.HttpsError(
       "invalid-argument",
       `Wait until ${format(addDays(tbay_week,8), "MMM dd")} to process expenses for pay period ending ${format(tbay_week, "MMM dd")}`
@@ -296,31 +277,19 @@ export async function getPayPeriodExpenses(
   */
   const db = admin.firestore();
 
-  // Run the 3 queries simultaneously
-  const week1Expenses = db.collection("Expenses")
-    .where("committedWeekEnding", "==", week1Ending)
-    .where("date", ">", week0Ending) // > instead of >= because last period week0Ending was week2Ending
-    .get();
-  const week2Expenses = db.collection("Expenses")
-    .where("committedWeekEnding", "==", week2Ending)
-    .get();
-  const week3Expenses = db.collection("Expenses")
-    .where("committedWeekEnding", "==", week3Ending)
-    .where("date", "<=", week2Ending)
+  const expensesSnapshot = await db.collection("Expenses")
+    .where("committed", "==", true)
+    .where("payPeriodEnding", "==", week2Ending)
     .get();
 
-  const querySnapshots = // an array of QuerySnapshot objects
-    await Promise.all([week1Expenses, week2Expenses, week3Expenses]);
+  const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
   
-  // get the docs and flatten the results into an array of QueryDocumentSnapshots
-  const docs = querySnapshots.map((s: admin.firestore.QuerySnapshot): admin.firestore.QueryDocumentSnapshot[] => {return s.docs}).reduce((a, b) => { return a.concat(b)});
-  const expenses = docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
-
   // convert commitTime, committedWeekEnding, and date to strings
   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
+    e.date = e.date.toDate().toString();
     e.commitTime = e.commitTime.toDate().toString();
     e.committedWeekEnding = e.committedWeekEnding.toDate().toString();
-    e.date = e.date.toDate().toString();
+    e.payPeriodEnding = e.payPeriodEnding.toDate().toString();
     return e
   });
 }
