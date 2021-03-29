@@ -248,9 +248,10 @@ export async function bundleTimesheet(
   }
   
   // require salaried employees to have at least 40 hours on a timesheet
+  const offRotationHours = offRotationDates.length * 8;
   if (
     profile.get("salary") === true &&
-    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal < 40
+    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
   ) {
     throw new functions.https.HttpsError(
       "failed-precondition",
