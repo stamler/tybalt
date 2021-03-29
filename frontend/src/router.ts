@@ -292,7 +292,7 @@ const router = new Router({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Payroll List",
-              props: { collection: "TimeTracking" },
+              props: { collection: "PayrollTracking" },
               component: PayrollList,
             },
           ],

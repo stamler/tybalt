@@ -1,8 +1,8 @@
 <template>
   <div id="list">
-    <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
+    <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.weekEnding.toDate() | exportDate }}
+        {{ item.payPeriodEnding.toDate() | exportDate }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
@@ -22,29 +22,33 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-if="isPayrollWeek2(item.weekEnding.toDate())"
+          v-if="Object.keys(item.expenses).length > 0"
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="
-            generatePayPeriodExpenses(item.weekEnding.toDate())
+            generatePayPeriodExpenses(item.payPeriodEnding.toDate())
           "
         >
           expenses<download-icon></download-icon>
         </router-link>
         <router-link
-          v-if="
-            hasLink(item, 'json') && isPayrollWeek2(item.weekEnding.toDate())
-          "
+          v-if="hasLink(item, 'json')"
           v-bind:to="{ name: 'Payroll' }"
         >
           attachments.zip<download-icon></download-icon>
         </router-link>
         <router-link
-          v-if="hasLink(item, 'json')"
+          v-if="hasLink(item, 'week1TimeJson')"
           v-bind:to="{ name: 'Payroll' }"
-          v-on:click.native="generatePayrollCSV(item['json'])"
+          v-on:click.native="generatePayrollCSV(item['week1TimeJson'])"
         >
-          week{{ isPayrollWeek2(item.weekEnding.toDate()) ? 2 : 1
-          }}<download-icon></download-icon>
+          week1 <download-icon></download-icon>
+        </router-link>
+        <router-link
+          v-if="hasLink(item, 'week2TimeJson')"
+          v-bind:to="{ name: 'Payroll' }"
+          v-on:click.native="generatePayrollCSV(item['week2TimeJson'])"
+        >
+          week2 <download-icon></download-icon>
         </router-link>
       </div>
     </div>
@@ -74,14 +78,6 @@ export default mixins.extend({
     LockIcon,
     DownloadIcon,
   },
-  computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
-      // Show only items with pending or locked TimeSheets
-      return this.items.filter(
-        (x) => this.hasPending(x) || this.hasLocked(x) || this.hasSubmitted(x)
-      );
-    },
-  },
   filters: {
     exportDate(date: Date) {
       return format(date, "yyyy MMM dd");
@@ -100,9 +96,9 @@ export default mixins.extend({
     this.collectionObject = db.collection(this.collection);
     this.$bind(
       "items",
-      this.collectionObject.orderBy("weekEnding", "desc")
+      this.collectionObject.orderBy("payPeriodEnding", "desc")
     ).catch((error) => {
-      alert(`Can't load TimeTracking: ${error.message}`);
+      alert(`Can't load ${this.collection}: ${error.message}`);
     });
   },
   methods: {

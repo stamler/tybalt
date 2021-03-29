@@ -26,7 +26,7 @@ async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   } else {
     // create new tracking document
     payrollTrackingDocRef = db.collection("PayrollTracking").doc();
-    await payrollTrackingDocRef.set({ payPeriodEnding });
+    await payrollTrackingDocRef.set({ payPeriodEnding, expenses: {} });
   }
   return payrollTrackingDocRef;
 }
