@@ -372,9 +372,10 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
   
   // confirm the time of weekEnding is 23:59:59.999 in Thunder Bay
   const isLastMillisecondOfDay = tbayWeekEnding.getHours() === 23 && tbayWeekEnding.getMinutes() === 59 && tbayWeekEnding.getSeconds() === 59 && tbayWeekEnding.getMilliseconds() === 999;
+  const isSaturday = tbayWeekEnding.getDay() === 6;
 
   // confirm difference in calendar days from the epoch modulo 14 is 0
-  return difference % 14 === 0 && isLastMillisecondOfDay ? true : false;
+  return difference % 14 === 0 && isLastMillisecondOfDay && isSaturday ? true : false;
 }
 
 export function getPayPeriodFromWeekEnding(weekEnding: Date): Date {
