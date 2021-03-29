@@ -1,12 +1,12 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeLastWeekInTimeZone, thisTimeNextWeekInTimeZone } from "./utilities";
+import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeNextWeekInTimeZone } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { utcToZonedTime } from "date-fns-tz";
 import { format, addDays } from "date-fns";
 import * as _ from "lodash";
 
