@@ -258,6 +258,17 @@ export async function bundleTimesheet(
     )
   }
 
+  // prevent salaried employees from claiming sick time
+  if (
+    profile.get("salary") === true &&
+    Object.prototype.hasOwnProperty.call(nonWorkHoursTally, "OS") 
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Salaried staff cannot claim Sick time. Please use PPTO or vacation instead."
+    )
+  }
+
   /*
   // Prevent users from entering more than 14 consecutive off-rotation days
 
