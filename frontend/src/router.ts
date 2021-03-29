@@ -10,7 +10,7 @@ import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
-import PayrollList from "@/components/PayrollList.vue";
+import PayrollTrackingList from "@/components/PayrollTrackingList.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
 import ExpenseTrackingList from "@/components/ExpenseTrackingList.vue";
@@ -293,7 +293,7 @@ const router = new Router({
               path: "list",
               name: "Payroll List",
               props: { collection: "PayrollTracking" },
-              component: PayrollList,
+              component: PayrollTrackingList,
             },
           ],
         },
