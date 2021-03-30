@@ -94,6 +94,18 @@
         <br />
       </div>
 
+      <!-- Show users with missing TimeSheets -->
+      <div v-if="missing.length > 0">
+        <h5>Missing</h5>
+        <p
+          v-for="m in missing.filter((t) => t.timeSheetExpected)"
+          v-bind:key="m.id"
+        >
+          {{ m.displayName }}
+        </p>
+        <br />
+      </div>
+
       <!-- Show locked TimeSheets -->
       <div
         v-if="
@@ -108,18 +120,6 @@
         >
           {{ obj.displayName }}<br />
         </router-link>
-        <br />
-      </div>
-
-      <!-- Show users with missing TimeSheets -->
-      <div v-if="missing.length > 0">
-        <h5>Missing</h5>
-        <p
-          v-for="m in missing.filter((t) => t.timeSheetExpected)"
-          v-bind:key="m.id"
-        >
-          {{ m.displayName }}
-        </p>
         <br />
       </div>
 
