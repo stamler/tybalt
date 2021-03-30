@@ -42,7 +42,7 @@
             generatePayPeriodExpenses(item.payPeriodEnding.toDate())
           "
         >
-          expenses<download-icon></download-icon>
+          expenses json<download-icon></download-icon>
         </router-link>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<download-icon></download-icon>
