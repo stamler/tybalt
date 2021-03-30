@@ -22,21 +22,6 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-if="Object.keys(item.expenses).length > 0"
-          v-bind:to="{ name: 'Payroll' }"
-          v-on:click.native="
-            generatePayPeriodExpenses(item.payPeriodEnding.toDate())
-          "
-        >
-          expenses<download-icon></download-icon>
-        </router-link>
-        <router-link
-          v-if="hasLink(item, 'json')"
-          v-bind:to="{ name: 'Payroll' }"
-        >
-          attachments.zip<download-icon></download-icon>
-        </router-link>
-        <router-link
           v-if="hasLink(item, 'week1TimeJson')"
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="generatePayrollCSV(item['week1TimeJson'])"
@@ -50,6 +35,18 @@
         >
           week2 <download-icon></download-icon>
         </router-link>
+        <router-link
+          v-if="Object.keys(item.expenses).length > 0"
+          v-bind:to="{ name: 'Payroll' }"
+          v-on:click.native="
+            generatePayPeriodExpenses(item.payPeriodEnding.toDate())
+          "
+        >
+          expenses<download-icon></download-icon>
+        </router-link>
+        <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
+          attachments.zip<download-icon></download-icon>
+        </a>
       </div>
     </div>
   </div>
