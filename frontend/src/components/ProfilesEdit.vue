@@ -17,6 +17,14 @@
       <input type="checkbox" name="salary" v-model="item.salary" />
     </span>
     <span class="field">
+      <label for="timeSheetExpected">Time Sheet Expected</label>
+      <input
+        type="checkbox"
+        name="timeSheetExpected"
+        v-model="item.timeSheetExpected"
+      />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input type="text" name="displayName" v-model="item.displayName" />
     </span>
@@ -167,6 +175,7 @@ export default Vue.extend({
           customClaims: { [x: string]: boolean };
           defaultDivision: string;
           salary: boolean;
+          timeSheetExpected: boolean;
           tbtePayrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
@@ -175,6 +184,7 @@ export default Vue.extend({
           email: this.item.email,
           customClaims: this.item.customClaims,
           salary: this.item.salary ?? false,
+          timeSheetExpected: this.item.timeSheetExpected ?? true,
           defaultDivision: this.item.defaultDivision,
         };
         if (this.item.tbtePayrollId) {

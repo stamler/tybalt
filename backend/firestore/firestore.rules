@@ -238,7 +238,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry"
+          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected"
         ]) &&
         (
           (newDoc().tbtePayrollId is int &&
@@ -250,6 +250,7 @@ service cloud.firestore {
           newDoc().personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
         ) &&
         newDoc().salary is bool &&
+        newDoc().timeSheetExpected is bool &&
         isInCollection("managerUid","Profiles") && 
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager

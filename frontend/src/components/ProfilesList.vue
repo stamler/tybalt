@@ -30,6 +30,12 @@
             <template v-if="item.salary">salary</template>
             <template v-else>hourly</template>
           </span>
+          <span v-if="typeof item.timeSheetExpected === 'boolean'">
+            <template v-if="!item.timeSheetExpected">
+              /Time Sheet: not expected
+            </template>
+          </span>
+          <span v-else class="attention">timeSheetExpected not specified</span>
           <span v-if="item.personalVehicleInsuranceExpiry">
             <template
               v-if="item.personalVehicleInsuranceExpiry.toDate() >= new Date()"

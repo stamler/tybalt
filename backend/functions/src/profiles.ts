@@ -64,6 +64,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
       managerUid: null,
       tbtePayrollId: null,
       salary: false,
+      timeSheetExpected: true,
     }, { merge: true });
   } catch (error) {
     console.log(error);
