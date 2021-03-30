@@ -43,78 +43,6 @@ const router = new Router({
       component: Me,
     },
     {
-      path: "/expense",
-      name: "Expense",
-      meta: { claims: ["time"] },
-      redirect: "/expense/entries",
-      component: Main,
-      children: [
-        {
-          path: "entries",
-          name: "Expenses",
-          redirect: "/expense/entries/list",
-          component: ContentShell,
-          children: [
-            {
-              meta: { showInUi: true, uiName: "List" },
-              path: "list",
-              name: "Expenses List",
-              props: { collection: "Expenses" },
-              component: ExpensesList,
-            },
-            {
-              meta: { showInUi: true, uiName: "Add" },
-              path: "add",
-              name: "Add Expense",
-              props: { collection: "Expenses" },
-              component: ExpensesEdit,
-            },
-            {
-              path: ":id/edit",
-              props: (route) => {
-                return { id: route.params.id, collection: "Expenses" };
-              },
-              name: "Edit Expense Entry",
-              component: ExpensesEdit,
-            },
-            {
-              meta: {
-                showInUi: true,
-                uiName: "Pending",
-                requiredClaims: ["tapr"],
-              },
-              path: "pending",
-              name: "Expenses Pending",
-              props: { approved: false, collection: "Expenses" },
-              component: ExpensesList,
-            },
-            {
-              meta: {
-                showInUi: true,
-                uiName: "Approved",
-                requiredClaims: ["tapr"],
-              },
-              path: "approved",
-              name: "Expenses Approved",
-              props: { approved: true, collection: "Expenses" },
-              component: ExpensesList,
-            },
-            {
-              meta: {
-                showInUi: true,
-                uiName: "Commit Queue",
-                requiredClaims: ["eapr"],
-              },
-              path: "commit",
-              name: "Expenses Commit Queue",
-              props: { commitqueue: true, collection: "Expenses" },
-              component: ExpensesList,
-            },
-          ],
-        },
-      ],
-    },
-    {
       path: "/time",
       name: "Time",
       meta: { claims: ["time"] },
@@ -223,6 +151,78 @@ const router = new Router({
               },
               name: "Edit Time Amendments",
               component: TimeEntriesEdit,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      path: "/expense",
+      name: "Expense",
+      meta: { claims: ["time"] },
+      redirect: "/expense/entries",
+      component: Main,
+      children: [
+        {
+          path: "entries",
+          name: "Expenses",
+          redirect: "/expense/entries/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Expenses List",
+              props: { collection: "Expenses" },
+              component: ExpensesList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add Expense",
+              props: { collection: "Expenses" },
+              component: ExpensesEdit,
+            },
+            {
+              path: ":id/edit",
+              props: (route) => {
+                return { id: route.params.id, collection: "Expenses" };
+              },
+              name: "Edit Expense Entry",
+              component: ExpensesEdit,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Pending",
+                requiredClaims: ["tapr"],
+              },
+              path: "pending",
+              name: "Expenses Pending",
+              props: { approved: false, collection: "Expenses" },
+              component: ExpensesList,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Approved",
+                requiredClaims: ["tapr"],
+              },
+              path: "approved",
+              name: "Expenses Approved",
+              props: { approved: true, collection: "Expenses" },
+              component: ExpensesList,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Commit Queue",
+                requiredClaims: ["eapr"],
+              },
+              path: "commit",
+              name: "Expenses Commit Queue",
+              props: { commitqueue: true, collection: "Expenses" },
+              component: ExpensesList,
             },
           ],
         },
