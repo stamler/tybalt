@@ -9,11 +9,20 @@
         </div>
         <div class="modal__body">
           <p>What's wrong with this time sheet?</p>
-          <textarea id="rejectionInput" v-model="rejectionReason"></textarea>
+          <textarea
+            placeholder="give a reason at least 6 characters long"
+            id="rejectionInput"
+            v-model="rejectionReason"
+          ></textarea>
         </div>
         <div class="modal__footer">
           <button v-on:click="closeModal()">Cancel</button>
-          <button v-on:click="rejectThenRedirect()">Reject</button>
+          <button
+            v-if="this.rejectionReason.length > 5"
+            v-on:click="rejectThenRedirect()"
+          >
+            Reject
+          </button>
         </div>
       </div>
     </div>
