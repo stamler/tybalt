@@ -168,6 +168,15 @@ export default mixins.extend({
           value: "R",
         },
         {
+          label: "salaryHoursOver44",
+          value: (row: PayrollReportRecord) => {
+            if (row.salary && row.R) {
+              return row.R > 44 ? row.R - 44 : 0;
+            }
+            return 0;
+          },
+        },
+        {
           label: "Bereavement",
           value: "OB",
         },
