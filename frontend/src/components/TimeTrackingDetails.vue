@@ -231,22 +231,9 @@ export default mixins.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap) => {
-            if (snap.exists) {
-              this.item = snap.data();
-            } else {
-              // A document with this id doesn't exist in the database,
-              // list instead.  TODO: show a message to the user
-              this.$router.push(this.parentPath);
-            }
-          });
-      } else {
-        this.item = {};
-      }
+      this.$bind("item", this.collectionObject.doc(id)).catch((error) => {
+        alert(`Can't load TimeTracking document ${id}: ${error.message}`);
+      });
     },
     lockTimesheet(id: string) {
       const lockTimesheet = firebase.functions().httpsCallable("lockTimesheet");
