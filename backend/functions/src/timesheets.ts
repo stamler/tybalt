@@ -228,8 +228,8 @@ export const updateTimeTracking = functions.firestore
       // just unlocked
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
-      console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked. The export JSON will not be updated again until lockTimesheets() is called`);
-      return timeTrackingDocRef.update(
+      console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked.`);
+      await timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
           [`timeSheets.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
@@ -273,6 +273,7 @@ export const updateTimeTracking = functions.firestore
         },
       );
     }
+    return exportJson({ id: timeTrackingDocRef.id });
   });
 
 /*
