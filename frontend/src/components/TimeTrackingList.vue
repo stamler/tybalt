@@ -11,8 +11,8 @@
           <div class="headline"></div>
           <div class="byline"></div>
         </div>
-        <div class="firstline" v-if="hasPending(item)">
-          {{ Object.keys(item.pending).length }} time sheet(s) pending
+        <div class="firstline" v-if="hasApproved(item)">
+          {{ Object.keys(item.pending).length }} approved time sheet(s)
         </div>
         <div class="secondline" v-if="hasLocked(item)">
           {{ Object.keys(item.timeSheets).length }} locked time sheet(s)
@@ -179,9 +179,9 @@ export default mixins.extend({
   },
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
-      // Show only items with pending or locked TimeSheets
+      // Show only items with submitted, approved or locked TimeSheets
       return this.items.filter(
-        (x) => this.hasPending(x) || this.hasLocked(x) || this.hasSubmitted(x)
+        (x) => this.hasApproved(x) || this.hasLocked(x) || this.hasSubmitted(x)
       );
     },
   },
@@ -221,7 +221,7 @@ export default mixins.extend({
         Object.keys(item.submitted).length > 0
       );
     },
-    hasPending(item: firebase.firestore.DocumentData) {
+    hasApproved(item: firebase.firestore.DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "pending") &&
         Object.keys(item.pending).length > 0
