@@ -200,22 +200,9 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just approved
       // add summary of newly approved TimeSheet to pending, remove from submitted
-      const pendingObj: PendingTimeSheetSummary = { 
-        displayName: afterData.displayName, 
-        uid: afterData.uid,
-        offRotationDaysTally: afterData.offRotationDaysTally,
-        hoursWorked: afterData.workHoursTally.jobHours + afterData.workHoursTally.hours,
-        bankedHours: afterData.bankedHours,
-        payoutRequest: afterData.payoutRequest,
-      }
-      // add nonWorkHoursTally props
-      for (const key in afterData.nonWorkHoursTally) {
-        pendingObj[key as TimeOffTypes] = afterData.nonWorkHoursTally[key];
-      }
-
       return timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: pendingObj,
+          [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
           [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
@@ -231,7 +218,7 @@ export const updateTimeTracking = functions.firestore
       console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked.`);
       await timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid },
+          [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
           [`timeSheets.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
@@ -643,3 +630,20 @@ export async function commitTimeAmendment(data: unknown, context: functions.http
       tbtePayrollId: profile.tbtePayrollId,
     });
 };
+
+// create object summary of TimeSheet
+function buildPendingObj(data: admin.firestore.DocumentData ) {
+  const pendingObj: PendingTimeSheetSummary = { 
+    displayName: data.displayName, 
+    uid: data.uid,
+    offRotationDaysTally: data.offRotationDaysTally,
+    hoursWorked: data.workHoursTally.jobHours + data.workHoursTally.hours,
+    bankedHours: data.bankedHours,
+    payoutRequest: data.payoutRequest,
+  }
+  // add nonWorkHoursTally props
+  for (const key in data.nonWorkHoursTally) {
+    pendingObj[key as TimeOffTypes] = data.nonWorkHoursTally[key];
+  }
+  return pendingObj;
+}
