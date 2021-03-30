@@ -270,7 +270,9 @@ export default mixins.extend({
         const result = await getPayPeriodExpenses({
           weekEnding: week.getTime(),
         });
-        const blob = new Blob([JSON.stringify(result.data)], { type: "application/json;charset=utf-8" });
+        const blob = new Blob([JSON.stringify(result.data)], {
+          type: "application/json;charset=utf-8",
+        });
         this.downloadBlob(blob, "expenses.json", true);
       } catch (error) {
         alert(`Error getting expenses: ${error}`);
