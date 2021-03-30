@@ -177,6 +177,31 @@ export default mixins.extend({
           },
         },
         {
+          label: "adjustedHoursWorked",
+          value: (row: PayrollReportRecord) => {
+            const reg = row.R || 0;
+            if (row.salary) {
+              const stat = row.OH || 0;
+              const bereavement = row.OB || 0;
+              return reg + stat + bereavement > 40
+                ? 40 - stat - bereavement
+                : reg;
+            } else {
+              return reg > 44 ? 44 : reg;
+            }
+          },
+        },
+        {
+          label: "overtime",
+          value: (row: PayrollReportRecord) => {
+            if (!row.salary) {
+              const reg = row.R || 0;
+              return reg > 44 ? reg - 44 : 0;
+            }
+            return 0;
+          },
+        },
+        {
           label: "Bereavement",
           value: "OB",
         },
