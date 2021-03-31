@@ -17,6 +17,9 @@ import * as functions from "firebase-functions";
 import * as _ from "lodash";
 import axios from "axios";
 import jwtDecode, { JwtPayload } from "jwt-decode";
+import { subDays } from "date-fns";
+import algoliasearch from "algoliasearch";
+const env = functions.config();
 
 interface MSJwtPayload extends JwtPayload {
   oid: string;
@@ -199,3 +202,59 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
     { merge: true }
   );
 }
+
+export const algoliaUpdateSecuredAPIKey = functions.firestore
+  .document("Profiles/{profileId}")
+  .onWrite(async (change, context) => {
+
+  const db = admin.firestore();
+  functions.logger.log(`update of profile ${change.after.id} triggered Secured API Key generation for Algolia search`);
+
+
+  if (!change.after.exists) {
+    functions.logger.log(`profile ${change.after.id} was deleted, aborting.`);
+    return;
+  }
+
+  // if algoliaSearchKeyUpdated is after the date 14 days ago, 
+  // return and do nothing. This prevents an infinite loop.
+  const algoliaSearchKeyUpdated = change.after.get("algoliaSearchKeyUpdated")
+  if (algoliaSearchKeyUpdated !== undefined && algoliaSearchKeyUpdated.toDate() > subDays(new Date(), 14)) {
+    functions.logger.log(`profile ${change.after.id} received a key update less than 14 days ago, aborting.`);
+    return;
+  } 
+
+  // setup the Algolia client
+  const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
+
+  const claimIndexMap = {
+    job: "tybalt_jobs",
+    time: "tybalt_jobs",
+  }
+
+  const customClaims = change.after.get("customClaims");
+  if (customClaims === undefined) {
+    functions.logger.error(`profile ${change.after.id} has no customClaims from which to derive restrictIndices`);
+    return;
+  }
+  
+  // get the list of unique indices mapped by the profiles customClaims
+  const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims))) as string[];
+
+  // Generate a secured api key using the search-only API key secret stored in functions.config().algolia.searchkey
+  // specify userToken to match the profile id (which in turn matches the firebase auth uid)
+  // specify restrictIndices here based on indices calculated from claims above 
+  // https://www.algolia.com/doc/api-reference/api-methods/generate-secured-api-key/
+  const key = client.generateSecuredApiKey(env.algolia.searchkey, {
+    userToken: change.after.id,
+    restrictIndices: [...new Set(restrictIndices)],
+  });
+
+  functions.logger.info(`generated algolia key for profile ${change.after.id}`);
+
+  // save the key to the firestore profile
+  return db.collection("Profiles").doc(change.after.id).update({
+    algoliaSearchKey: key,
+    algoliaSearchKeyUpdated: admin.firestore.FieldValue.serverTimestamp(),
+  });
+});
