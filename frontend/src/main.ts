@@ -1,7 +1,10 @@
 import Vue from "vue";
 import { firestorePlugin } from "vuefire";
+import InstantSearch from "vue-instantsearch";
+
 Vue.config.productionTip = false;
 Vue.use(firestorePlugin);
+Vue.use(InstantSearch);
 
 // first import is here to initializeApp()
 import firebase from "./firebase";

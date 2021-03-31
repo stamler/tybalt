@@ -25,6 +25,7 @@ import UsersDetails from "@/components/UsersDetails.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
 import JobsList from "@/components/JobsList.vue";
+import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
@@ -426,6 +427,13 @@ const router = new Router({
               name: "Jobs List",
               props: { collection: "Jobs" },
               component: JobsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Search" },
+              path: "search",
+              name: "Jobs Search",
+              props: { collection: "Jobs" },
+              component: JobsSearch,
             },
             {
               meta: {
