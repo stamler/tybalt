@@ -13,10 +13,18 @@ import { unbundleTimesheet, lockTimesheet, exportOnAmendmentCommit, commitTimeAm
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
+import { updateAlgoliaIndex } from "./algolia";
 export { updateTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
+
+// update algolia indexes
+exports.algoliaUpdateJobsIndex = functions.firestore
+  .document("Jobs/{jobId}")
+  .onWrite((change, context) => {
+    return updateAlgoliaIndex(change, context, "tybalt_jobs");
+  });
 
 // clean up expense attachments that are orphaned by deletion or update of 
 // corresponding expense document
