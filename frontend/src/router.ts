@@ -418,7 +418,7 @@ const router = new Router({
         {
           path: "jobs",
           name: "Jobs",
-          redirect: "/admin/jobs/list",
+          redirect: "/admin/jobs/search",
           component: ContentShell,
           children: [
             {
