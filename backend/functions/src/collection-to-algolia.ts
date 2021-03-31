@@ -23,17 +23,17 @@ async function updateAlgoliaIndexFromCollection(indexName: string, collection: s
   };
 }
 
-const indexName = process.argv[2];
-const collection = process.argv[3];
-const appId = process.argv[4];
-const apiKey = process.argv[5];
+const indexNameArg = process.argv[2];
+const collectionArg = process.argv[3];
+const appIdArg = process.argv[4];
+const apiKeyArg = process.argv[5];
 if (process.argv.length !== 6) {
   console.log(
     "Usage: \nnode collection-to-algolia.js <indexName> <collection> <algolia_appid> <algolia_apikey>\n"
   );
   process.exit(1);
 } else {  
-  updateAlgoliaIndexFromCollection(indexName, collection, appId, apiKey)
+  updateAlgoliaIndexFromCollection(indexNameArg, collectionArg, appIdArg, apiKeyArg)
     .then((result) => {
       return Promise.resolve(process.exit(0));
     })
