@@ -4,7 +4,9 @@ import firebase from "../firebase";
 import store from "../store";
 import { format, subDays, differenceInDays } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
-import { TimeSheet, Amendment } from "./types";
+import { TimeSheet, Amendment, Expense, isExpense } from "./types";
+import { parse } from "json2csv";
+
 const db = firebase.firestore();
 const storage = firebase.storage();
 import _ from "lodash";
@@ -468,6 +470,107 @@ export default Vue.extend({
       const difference = differenceInDays(tbayWeekEnding, tbayEpoch);
 
       return difference % 14 === 0 ? true : false;
+    },
+    async generatePayablesCSV(urlOrExpenseArray: string | Expense[]) {
+      const MILEAGE_RATE = 0.5; // dollars per km
+      let items;
+      if (typeof urlOrExpenseArray === "string") {
+        const response = await fetch(urlOrExpenseArray);
+        items = (await response.json()) as Expense[];
+      } else if (Array.isArray(urlOrExpenseArray)) {
+        items = urlOrExpenseArray;
+      } else {
+        throw new Error("The provided argument isn't an array or a string");
+      }
+
+      // since all entries have the same week ending, pull from the first entry
+      const weekEnding = new Date(items[0].committedWeekEnding);
+      const fields = [
+        {
+          label: "Acct/Visa/Exp",
+          value: "paymentType",
+        },
+        {
+          label: "Job #",
+          value: "job",
+        },
+        {
+          label: "Div",
+          value: "division",
+        },
+        {
+          label: "Date",
+          value: (row: Expense) => new Date(row.date).getDate(),
+        },
+        {
+          label: "Month",
+          value: (row: Expense) =>
+            new Date(row.date).toLocaleString("en-US", { month: "short" }),
+        },
+        {
+          label: "Year",
+          value: (row: Expense) => new Date(row.date).getFullYear(),
+        },
+        {
+          label: "calculatedSubtotal",
+          value: (row: Expense) =>
+            row.paymentType !== "Mileage" ? row.total * (100 / 113) : "",
+        },
+        {
+          label: "calculatedOntarioHST",
+          value: (row: Expense) =>
+            row.paymentType !== "Mileage" ? row.total * (13 / 113) : "",
+        },
+        {
+          label: "Total",
+          value: (row: Expense) =>
+            row.paymentType !== "Mileage"
+              ? row.total
+              : row.distance * MILEAGE_RATE,
+        },
+        {
+          label: "PO#",
+          value: "po",
+        },
+        {
+          label: "Description",
+          value: "description",
+        },
+        {
+          label: "Company",
+          value: "vendorName",
+        },
+        {
+          label: "Employee",
+          value: "displayName",
+        },
+        {
+          label: "Approved By",
+          value: "managerName",
+        },
+      ];
+      const opts = { fields };
+      const expenseRecords = items.map((x) => {
+        if (!isExpense(x)) {
+          throw new Error("There was an error validating the expense");
+        }
+        x["committedWeekEnding"] = format(
+          utcToZonedTime(
+            new Date(x.committedWeekEnding),
+            "America/Thunder_Bay"
+          ),
+          "yyyy MMM dd"
+        );
+        return x;
+      });
+      const csv = parse(expenseRecords, opts);
+      const blob = new Blob([csv], { type: "text/csv" });
+      this.downloadBlob(
+        blob,
+        `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+          weekEnding
+        )}.csv`
+      );
     },
   },
 });
