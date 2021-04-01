@@ -61,22 +61,41 @@
               <router-link to="#" v-on:click.native="commit(item)">
                 <check-circle-icon></check-circle-icon>
               </router-link>
-              <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+              <router-link
+                :to="[parentPath, item.id, 'edit'].join('/')"
+                title="edit"
+              >
                 <edit-icon></edit-icon>
               </router-link>
               <router-link
                 to="#"
                 v-on:click.native="del(item, collectionObject)"
+                title="delete"
               >
                 <x-circle-icon></x-circle-icon>
               </router-link>
             </template>
           </template>
           <template v-else>
-            <router-link :to="[parentPath, item.id, 'edit'].join('/')">
+            <router-link
+              v-if="isMtoTh(item)"
+              :to="{ name: 'Time Entries List' }"
+              v-on:click.native="copyEntry(item)"
+              title="copy to tomorrow"
+            >
+              <copy-icon></copy-icon>
+            </router-link>
+            <router-link
+              :to="[parentPath, item.id, 'edit'].join('/')"
+              title="edit"
+            >
               <edit-icon></edit-icon>
             </router-link>
-            <router-link to="#" v-on:click.native="del(item, collectionObject)">
+            <router-link
+              to="#"
+              v-on:click.native="del(item, collectionObject)"
+              title="delete"
+            >
               <x-circle-icon></x-circle-icon>
             </router-link>
           </template>
@@ -135,6 +154,7 @@
           <router-link
             v-bind:to="{ name: 'Time Sheets' }"
             v-on:click.native="bundle(new Date(Number(week)))"
+            title="bundle and submit"
           >
             <send-icon></send-icon>
           </router-link>
@@ -146,12 +166,13 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import { format, subDays } from "date-fns";
+import { format, addDays, subDays } from "date-fns";
 import {
   EditIcon,
   XCircleIcon,
   SendIcon,
   CheckCircleIcon,
+  CopyIcon,
 } from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
@@ -165,6 +186,7 @@ export default mixins.extend({
     XCircleIcon,
     SendIcon,
     CheckCircleIcon,
+    CopyIcon,
   },
   filters: {
     shortDate(date: Date) {
@@ -227,6 +249,33 @@ export default mixins.extend({
     },
   },
   methods: {
+    isMtoTh(item: firebase.firestore.DocumentData) {
+      const dayOfWeek = item.date.toDate().getDay();
+      // prevent copying to or from weekends in UI
+      return dayOfWeek < 5 && dayOfWeek > 0;
+    },
+    copyEntry(item: firebase.firestore.DocumentData) {
+      if (confirm("Want to copy this entry to tomorrow?")) {
+        const { date, ...newItem } = item;
+        newItem.date = addDays(item.date.toDate(), 1);
+        store.commit("startTask", {
+          id: `copy${item.id}`,
+          message: "copying",
+        });
+        if (this.collectionObject === null) {
+          throw "There is no valid collection object";
+        }
+        return this.collectionObject
+          .add(newItem)
+          .then(() => {
+            store.commit("endTask", { id: `copy${item.id}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `copy${item.id}` });
+            alert(`Error copying: ${error.message}`);
+          });
+      }
+    },
     commit(item: firebase.firestore.DocumentData) {
       const commitTimeAmendment = firebase
         .functions()
