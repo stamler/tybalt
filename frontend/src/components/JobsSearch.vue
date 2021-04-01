@@ -1,26 +1,29 @@
 <template>
-  <div v-if="searchClientLoaded">
-    <img
-      style="padding-right: 1em; float: right"
-      alt="Algolia required notice"
-      src="../assets/search-by-algolia-light-background.png"
-    />
-
+  <div id="list" v-if="searchClientLoaded">
     <ais-instant-search
       v-bind:search-client="searchClient"
       index-name="tybalt_jobs"
     >
-      <ais-search-box />
+      <ais-search-box id="searchbox" placeholder="search..." />
       <ais-hits>
-        <div slot="item" slot-scope="{ item }">
-          <span>{{ item.objectID }}</span>
-          <h2>{{ item.client }}</h2>
-          <span>{{ item.description }} </span>
-          <span>/manager:{{ item.manager }}</span>
-          <span v-if="item.proposal">{{ item.proposal }}</span>
-          <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
-            <edit-icon></edit-icon>
-          </router-link>
+        <div class="listentry" slot="item" slot-scope="{ item }">
+          <div class="anchorbox">{{ item.objectID }}</div>
+          <div class="detailsbox">
+            <div class="headline_wrapper">
+              <div class="headline">{{ item.client }}</div>
+              <div class="byline">{{ item.description }}</div>
+            </div>
+            <div class="firstline">{{ item.manager }}</div>
+            <div class="secondline">{{ item.proposal }} {{ item.status }}</div>
+            <div v-if="item.clientContact" class="thirdline">
+              Contact: {{ item.clientContact }}
+            </div>
+          </div>
+          <div class="rowactionsbox">
+            <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
+              <edit-icon></edit-icon>
+            </router-link>
+          </div>
         </div>
       </ais-hits>
     </ais-instant-search>
@@ -35,7 +38,6 @@ import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
-import "instantsearch.css/themes/satellite-min.css";
 
 export default Vue.extend({
   components: {
@@ -67,3 +69,26 @@ export default Vue.extend({
   },
 });
 </script>
+<style>
+.ais-Hits-list {
+  list-style: none;
+}
+.ais-SearchBox-form {
+  display: flex;
+}
+.ais-SearchBox-input {
+  flex: 1;
+  border: none;
+  order: 2;
+}
+.ais-SearchBox-submit {
+  order: 1;
+}
+button.ais-SearchBox-submit {
+  display: none;
+  background: none;
+}
+.ais-SearchBox-reset {
+  order: 3;
+}
+</style>

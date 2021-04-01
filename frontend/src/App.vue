@@ -274,10 +274,7 @@ body,
 
 input,
 select {
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: 1px solid #e6e6e6;
+  border: none;
 }
 
 #content input {
@@ -286,6 +283,7 @@ select {
 }
 #searchbox {
   padding-left: 0.3em;
+  border-bottom: 1px solid #e6e6e6;
 }
 button {
   appearance: none;
@@ -305,6 +303,7 @@ button {
   border-radius: 0;
   -moz-appearance: none;
   -webkit-appearance: none;
+  border-bottom: 1px solid #e6e6e6;
 }
 #editor .field input[type="checkbox"] {
   -moz-appearance: checkbox;
