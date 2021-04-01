@@ -78,7 +78,14 @@ interface ExpenseMileage extends ExpenseCommon {
 type Expense = ExpenseRegular | ExpenseMileage;
 
 // Type Guards
-function isExpenseCommon(data: any): data is ExpenseCommon {
+function isObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x != null;
+}
+
+function isExpenseCommon(data: unknown): data is ExpenseCommon {
+  if (!isObject(data)) {
+    return false;
+  }
   // check optional string properties have correct type
   const optionalStringVals = ["client", "job", "jobDescription"]
     .map((x) => data[x] === undefined || typeof data[x] === "string")
@@ -105,7 +112,10 @@ function isExpenseCommon(data: any): data is ExpenseCommon {
   return optionalStringVals && stringVals;
 }
 
-function isExpenseRegular(data: any): data is ExpenseRegular {
+function isExpenseRegular(data: unknown): data is ExpenseRegular {
+  if (!isObject(data)) {
+    return false;
+  }
   const paymentType =
     data.paymentType === "Expense" ||
     data.paymentType === "CorporateCreditCard";
@@ -116,7 +126,10 @@ function isExpenseRegular(data: any): data is ExpenseRegular {
   return isExpenseCommon(data) && paymentType && total && optionalStringVals;
 }
 
-function isExpenseMileage(data: any): data is ExpenseMileage {
+function isExpenseMileage(data: unknown): data is ExpenseMileage {
+  if (!isObject(data)) {
+    return false;
+  }
   const paymentType = data.paymentType === "Mileage";
   const distance =
     typeof data.distance === "number" &&
@@ -125,7 +138,7 @@ function isExpenseMileage(data: any): data is ExpenseMileage {
   return isExpenseCommon(data) && paymentType && distance;
 }
 
-function isExpense(data: any): data is Expense {
+function isExpense(data: unknown): data is Expense {
   return isExpenseRegular(data) || isExpenseMileage(data);
 }
 
