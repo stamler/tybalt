@@ -11,7 +11,7 @@
           this.item.submitted && Object.keys(this.item.submitted).length > 0
         "
       >
-        <h5>Submitted</h5>
+        <h5>Submitted ({{ Object.keys(this.item.submitted).length }})</h5>
         <p v-for="(obj, tsId) in item.submitted" v-bind:key="tsId">
           {{ obj.displayName }} awaiting approval by {{ obj.managerName }}
         </p>
@@ -22,7 +22,7 @@
       <div
         v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
       >
-        <h5>Approved</h5>
+        <h5>Approved ({{ Object.keys(this.item.pending).length }})</h5>
         <table>
           <thead>
             <tr>
@@ -96,7 +96,7 @@
 
       <!-- Show users with missing TimeSheets -->
       <div v-if="missing.length > 0">
-        <h5>Missing</h5>
+        <h5>Missing ({{ missing.length }})</h5>
         <p
           v-for="m in missing.filter((t) => t.timeSheetExpected)"
           v-bind:key="m.id"
@@ -112,7 +112,7 @@
           this.item.timeSheets && Object.keys(this.item.timeSheets).length > 0
         "
       >
-        <h5>Locked</h5>
+        <h5>Locked ({{ Object.keys(this.item.timeSheets).length }})</h5>
         <router-link
           v-for="(obj, tsId) in item.timeSheets"
           v-bind:key="tsId"
