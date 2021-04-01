@@ -39,10 +39,12 @@
           v-if="Object.keys(item.expenses).length > 0"
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="
-            generatePayPeriodExpenses(item.payPeriodEnding.toDate())
+            generatePayablesCSV(
+              getPayPeriodExpenses(item.payPeriodEnding.toDate())
+            )
           "
         >
-          expenseJson<download-icon></download-icon>
+          payables<download-icon></download-icon>
         </router-link>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<download-icon></download-icon>
@@ -296,7 +298,7 @@ export default mixins.extend({
         )}.csv`
       );
     },
-    async generatePayPeriodExpenses(week: Date) {
+    async getPayPeriodExpenses(week: Date) {
       const getPayPeriodExpenses = firebase
         .functions()
         .httpsCallable("getPayPeriodExpenses");
@@ -304,10 +306,13 @@ export default mixins.extend({
         const result = await getPayPeriodExpenses({
           weekEnding: week.getTime(),
         });
+        return result.data;
+        /*
         const blob = new Blob([JSON.stringify(result.data)], {
           type: "application/json;charset=utf-8",
         });
         this.downloadBlob(blob, "expenses.json", true);
+        */
       } catch (error) {
         alert(`Error getting expenses: ${error}`);
       }
