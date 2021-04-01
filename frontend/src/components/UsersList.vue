@@ -1,11 +1,14 @@
 <template>
   <div id="list">
-    <input
-      id="searchbox"
-      type="textbox"
-      placeholder="search..."
-      v-model="search"
-    />
+    <div id="listbar">
+      <input
+        id="searchbox"
+        type="textbox"
+        placeholder="search..."
+        v-model="search"
+      />
+      <span>{{ processedItems.length }} items</span>
+    </div>
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
