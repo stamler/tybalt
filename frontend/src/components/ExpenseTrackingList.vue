@@ -164,10 +164,18 @@ export default mixins.extend({
         item[property].length > 32
       );
     },
-    async generatePayablesCSV(url: string) {
+    async generatePayablesCSV(urlOrExpenseArray: string | Expense[]) {
       const MILEAGE_RATE = 0.5; // dollars per km
-      const response = await fetch(url);
-      const items = (await response.json()) as Expense[];
+      let items;
+      console.log(typeof urlOrExpenseArray);
+      if (typeof urlOrExpenseArray === "string") {
+        const response = await fetch(urlOrExpenseArray);
+        items = (await response.json()) as Expense[];
+      } else if (Array.isArray(urlOrExpenseArray)) {
+        items = urlOrExpenseArray;
+      } else {
+        throw new Error("The provided argument isn't an array or a string");
+      }
 
       // since all entries have the same week ending, pull from the first entry
       const weekEnding = new Date(items[0].committedWeekEnding);
