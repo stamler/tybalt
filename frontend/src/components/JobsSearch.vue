@@ -1,5 +1,11 @@
 <template>
   <div v-if="searchClientLoaded">
+    <img
+      style="padding-right: 1em; float: right"
+      alt="Algolia required notice"
+      src="../assets/search-by-algolia-light-background.png"
+    />
+
     <ais-instant-search
       v-bind:search-client="searchClient"
       index-name="tybalt_jobs"
