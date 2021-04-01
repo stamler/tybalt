@@ -24,7 +24,7 @@ import UsersList from "@/components/UsersList.vue";
 import UsersDetails from "@/components/UsersDetails.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
-import JobsList from "@/components/JobsList.vue";
+//import JobsList from "@/components/JobsList.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
@@ -421,6 +421,7 @@ const router = new Router({
           redirect: "/admin/jobs/search",
           component: ContentShell,
           children: [
+            /*
             {
               meta: { showInUi: true, uiName: "List" },
               path: "list",
@@ -428,6 +429,7 @@ const router = new Router({
               props: { collection: "Jobs" },
               component: JobsList,
             },
+            */
             {
               meta: { showInUi: true, uiName: "Search" },
               path: "search",
