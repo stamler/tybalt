@@ -103,7 +103,17 @@
           v-for="m in missing.filter((t) => t.timeSheetExpected)"
           v-bind:key="m.id"
         >
-          {{ m.displayName }}
+          <a
+            :href="`mailto:${
+              m.email
+            }?subject=Please submit a timesheet for the week ending ${$options.filters.shortDate(
+              item.weekEnding.toDate()
+            )}&body=Hi ${
+              m.givenName
+            }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible.`"
+          >
+            {{ m.displayName }}
+          </a>
         </p>
         <br />
       </div>
