@@ -64,10 +64,8 @@ export async function createProfile(user: admin.auth.UserRecord) {
       displayName: user.displayName,
       email: user.email,
       customClaims,
-      // very important that managerUid and tbtePayrollId be undefined as we
-      // throw on undefined in bundleTimeSheet rather than null
-      managerUid: undefined,
-      tbtePayrollId: undefined,
+      managerUid: null,
+      tbtePayrollId: null,
       salary: false,
       timeSheetExpected: true,
     }, { merge: true });

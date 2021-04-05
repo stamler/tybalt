@@ -317,15 +317,17 @@ export async function bundleTimesheet(
   }
 
   // get manager information from profile
+  // managerUid and tbtePayroll Uid have initial values of null to allow
+  // editing by users of default division
   const managerUid = profile.get("managerUid");
   const tbtePayrollId = profile.get("tbtePayrollId");
-  if (tbtePayrollId === undefined) {
+  if (tbtePayrollId === undefined || tbtePayrollId === null) {
     throw new functions.https.HttpsError(
       "failed-precondition",
       "The Profile for this user doesn't contain a tbtePayrollId"
     );
   }
-  if (managerUid === undefined) {
+  if (managerUid === undefined || managerUid === null) {
     throw new functions.https.HttpsError(
       "failed-precondition",
       "The Profile for this user doesn't contain a managerUid"
