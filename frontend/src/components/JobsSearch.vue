@@ -91,4 +91,7 @@ button.ais-SearchBox-submit {
 .ais-SearchBox-reset {
   order: 3;
 }
+.anchorbox {
+  flex-basis: 6em;
+}
 </style>
