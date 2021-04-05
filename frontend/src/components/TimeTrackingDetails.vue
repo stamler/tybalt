@@ -110,7 +110,7 @@
               item.weekEnding.toDate()
             )}&body=Hi ${
               m.givenName
-            }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible.`"
+            }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting https://tybalt.tbte.ca.`"
           >
             {{ m.displayName }}
           </a>
