@@ -96,7 +96,9 @@
 
       <!-- Show users with missing TimeSheets -->
       <div v-if="missing.length > 0">
-        <h5>Missing ({{ missing.length }})</h5>
+        <h5>
+          Missing ({{ missing.filter((t) => t.timeSheetExpected).length }})
+        </h5>
         <p
           v-for="m in missing.filter((t) => t.timeSheetExpected)"
           v-bind:key="m.id"
