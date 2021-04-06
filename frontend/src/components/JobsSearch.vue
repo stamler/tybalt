@@ -46,7 +46,7 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      profile: {} as firebase.firestore.DocumentData,
+      profileSecrets: {} as firebase.firestore.DocumentData,
       searchClient: {} as SearchClient,
       searchClientLoaded: false,
     };
@@ -58,8 +58,11 @@ export default Vue.extend({
   },
   methods: {
     async setup() {
-      this.profile = await db.collection("Profiles").doc(this.user.uid).get();
-      const searchkey = this.profile.get("algoliaSearchKey");
+      this.profileSecrets = await db
+        .collection("ProfileSecrets")
+        .doc(this.user.uid)
+        .get();
+      const searchkey = this.profileSecrets.get("algoliaSearchKey");
       this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
       this.searchClientLoaded = true;
     },

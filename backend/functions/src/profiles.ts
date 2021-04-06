@@ -17,7 +17,7 @@ import * as functions from "firebase-functions";
 import * as _ from "lodash";
 import axios from "axios";
 import jwtDecode, { JwtPayload } from "jwt-decode";
-import { subDays } from "date-fns";
+//import { subDays } from "date-fns";
 import algoliasearch from "algoliasearch";
 const env = functions.config();
 
@@ -215,7 +215,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
     functions.logger.log(`profile ${change.after.id} was deleted, aborting.`);
     return;
   }
-
+/*
   // if algoliaSearchKeyUpdated is after the date 14 days ago, 
   // return and do nothing. This prevents an infinite loop.
   const algoliaSearchKeyUpdated = change.after.get("algoliaSearchKeyUpdated")
@@ -223,7 +223,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
     functions.logger.log(`profile ${change.after.id} received a key update less than 14 days ago, aborting.`);
     return;
   } 
-
+*/
   // setup the Algolia client
   const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
 
@@ -252,9 +252,9 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
 
   functions.logger.info(`generated algolia key for profile ${change.after.id}`);
 
-  // save the key to the firestore profile
-  return db.collection("Profiles").doc(change.after.id).update({
+  // save the key to the ProfileSecrets doc
+  return db.collection("ProfileSecrets").doc(change.after.id).set({
     algoliaSearchKey: key,
     algoliaSearchKeyUpdated: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
 });
