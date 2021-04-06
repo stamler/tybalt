@@ -34,8 +34,27 @@
       <input type="text" name="code" v-model="item.description" />
     </span>
     <span class="field">
-      <label for="status">Status</label>
-      <input type="text" name="status" v-model="item.status" />
+      <select name="status" v-model="item.status">
+        <option disabled selected value="">-- choose status --</option>
+        <option value="Active">Active</option>
+        <option value="Cancelled">Cancelled</option>
+        <template v-if="editing">
+          <option v-if="id.startsWith('P')" value="Not Awarded">
+            Not Awarded
+          </option>
+          <option v-if="id.startsWith('P')" value="Awarded">Awarded</option>
+          <option v-if="!id.startsWith('P')" value="Closed">Closed</option>
+        </template>
+        <template v-if="!editing && item.id">
+          <option v-if="item.id.startsWith('P')" value="Not Awarded">
+            Not Awarded
+          </option>
+          <option v-if="item.id.startsWith('P')" value="Awarded">
+            Awarded
+          </option>
+          <option v-if="!item.id.startsWith('P')" value="Closed">Closed</option>
+        </template>
+      </select>
     </span>
 
     <span class="field">
@@ -98,7 +117,9 @@ export default Vue.extend({
             }
           });
       } else {
-        this.item = {};
+        this.item = {
+          status: "",
+        };
       }
     },
     save() {
