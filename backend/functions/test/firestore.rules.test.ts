@@ -650,7 +650,7 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe("TimeEntries", () => {
+  describe.only("TimeEntries", () => {
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
@@ -792,8 +792,8 @@ describe("Firestore Rules", () => {
     });
   });
   
-  describe("Jobs", () => {
-    const job = { description: "A basic job", client: "A special client", manager: "A company employee" };
+  describe.only("Jobs", () => {
+    const job = { description: "A basic job", client: "A special client", manager: "A company employee", status: "Active" };
     const jobs = adminDb.collection("Jobs");
 
     beforeEach("reset data", async () => {
@@ -808,6 +808,26 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set(job));
       const { manager, ...noManager } = job;
       await firebase.assertSucceeds(doc.update({ ...noManager, manager: "A different employee" }));
+    });
+    it("restricts value of status for projects", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      const {status, ...noStatus} = job;
+      await firebase.assertFails(doc.set({ status: "Awarded", ...noStatus}));
+      await firebase.assertFails(doc.set({ status: "Not Awarded", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Active", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Closed", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Cancelled", ...noStatus}));
+    });
+    it("restricts value of status for proposals", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("P19-333");
+      const {status, ...noStatus} = job;
+      await firebase.assertFails(doc.set({ status: "Closed", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Active", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Not Awarded", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Awarded", ...noStatus}));
+      await firebase.assertSucceeds(doc.set({ status: "Cancelled", ...noStatus}));
     });
     it("prevents job claim holders from creating jobs with invalid ID format", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
