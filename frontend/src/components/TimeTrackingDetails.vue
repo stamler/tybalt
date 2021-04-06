@@ -123,16 +123,6 @@
           {{ profile.surname }}, {{ profile.givenName }}<br />
         </router-link>
         <br />
-        <!--
-        <router-link
-          v-for="(obj, tsId) in item.timeSheets"
-          v-bind:key="tsId"
-          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
-        >
-          {{ obj.displayName }}<br />
-        </router-link>
-        <br />
-        -->
       </div>
 
       <!-- Show users not expected to submit TimeSheets -->
