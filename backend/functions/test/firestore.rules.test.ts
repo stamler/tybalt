@@ -5,8 +5,8 @@ import { addDays, subDays } from "date-fns";
 
 const projectId = "charade-ca63f";
 
-const alice = { displayName: "Alice Example", email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7) };
-const bob = { displayName: "Bob Example", email: "bob@example.com" };
+const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7) };
+const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
 
@@ -373,11 +373,12 @@ describe("Firestore Rules", () => {
         })
       );
     });
-    it("requires a displayName and email", async () => {
+    it("requires a displayName and email and boolean timeSheetExpected", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice", ...alice, admin: true} }).firestore();
       const doc = db.collection("Profiles").doc("bob");
       await firebase.assertFails(
         doc.set({ 
+          timeSheetExpected: true,
           email: "bob@example.com",
           managerUid: "alice",
           tbtePayrollId: 28,
@@ -387,7 +388,29 @@ describe("Firestore Rules", () => {
       );
       await firebase.assertFails(
         doc.set({ 
+          timeSheetExpected: true,
           displayName: "Bob", 
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.set({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.set({
+          timeSheetExpected: "foo",
+          displayName: "Bob",
+          email: "bob@example.com",
           managerUid: "alice",
           tbtePayrollId: 28,
           defaultDivision: "ABC",
@@ -396,6 +419,7 @@ describe("Firestore Rules", () => {
       );
       await firebase.assertSucceeds(
         doc.set({
+          timeSheetExpected: true,
           displayName: "Bob",
           email: "bob@example.com",
           managerUid: "alice",
@@ -603,7 +627,7 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe.only("TimeEntries", () => {
+  describe("TimeEntries", () => {
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
