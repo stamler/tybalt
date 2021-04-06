@@ -25,6 +25,7 @@ const collections = [
   "TimeAmendments",
   "TimeTypes",
   "Users",
+  "ProfileSecrets",
 ];
 
 function denyUnauthenticatedReadWrite(collection: string) {
@@ -101,7 +102,7 @@ describe("Firestore Rules", () => {
     ["Divisions", "Jobs", "TimeTypes", "Profiles"].forEach((collection) => {
       allowAuthenticatedRead(collection);
     });
-    ["Config", "RawLogins"].forEach((collection) => {
+    ["Config", "RawLogins", "ProfileSecrets"].forEach((collection) => {
       denyAuthenticatedRead(collection);
     });
   });
@@ -113,6 +114,7 @@ describe("Firestore Rules", () => {
       "Divisions",
       "Jobs",
       "RawLogins",
+      "ProfileSecrets",
       "TimeTypes",
     ].forEach((collection) => {
       denyAuthenticatedWrite(collection);
@@ -129,7 +131,7 @@ describe("Firestore Rules", () => {
     ["Divisions", "TimeTypes"].forEach((collection) => {
       allowAdminWrite(collection);
     });
-    ["Computers", "Config", "RawLogins"].forEach((collection) => {
+    ["Computers", "Config", "ProfileSecrets", "RawLogins"].forEach((collection) => {
       denyAdminWrite(collection);
     });
   });
@@ -147,6 +149,27 @@ describe("Firestore Rules", () => {
       const doc = db.collection("RawLogins").doc();  
       await firebase.assertFails(doc.delete());
     });
+  });
+
+  describe("ProfileSecrets", () => {
+    const profileSecrets = adminDb.collection("ProfilesSecrets");
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await profileSecrets.doc("alice").set({ secret: "foo" });
+      await profileSecrets.doc("bob").set({ secret: "bar" });
+    });
+
+    it("grants read access if requesting uid matches the document ID", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("ProfileSecrets").doc("alice");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("reject read access if requesting uid does not match the document ID", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("ProfileSecrets").doc("bob");
+      await firebase.assertFails(doc.get());
+    });
+
   });
 
   describe("Profiles", () => {
