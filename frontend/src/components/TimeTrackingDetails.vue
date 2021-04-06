@@ -6,14 +6,11 @@
     </h4>
     <div>
       <!-- Show submitted unapproved TimeSheets -->
-      <div
-        v-if="
-          this.item.submitted && Object.keys(this.item.submitted).length > 0
-        "
-      >
-        <h5>Submitted ({{ Object.keys(this.item.submitted).length }})</h5>
-        <p v-for="(obj, tsId) in item.submitted" v-bind:key="tsId">
-          {{ obj.displayName }} awaiting approval by {{ obj.managerName }}
+      <div v-if="submittedProfiles.length > 0">
+        <h5>Submitted ({{ submittedProfiles.length }})</h5>
+        <p v-for="profile in submittedProfiles" v-bind:key="profile.id">
+          {{ profile.surname }}, {{ profile.givenName }} awaiting approval by
+          {{ profile.managerName }}
         </p>
         <br />
       </div>
@@ -83,48 +80,50 @@
             </tr>
           </tbody>
         </table>
-
-        <!-- <router-link
-          v-for="(obj, tsId) in item.pending"
-          v-bind:key="tsId"
-          v-bind:to="{ name: 'Time Sheet Details', params: { id: tsId } }"
-        >
-          {{ obj.displayName }}<br />
-        </router-link> -->
         <br />
       </div>
 
       <!-- Show users with missing TimeSheets -->
-      <div v-if="missing.length > 0">
+      <div v-if="missingProfiles.length > 0">
         <h5>
-          Missing ({{ missing.filter((t) => t.timeSheetExpected).length }})
+          Missing ({{
+            missingProfiles.filter((t) => t.timeSheetExpected).length
+          }})
         </h5>
         <p
-          v-for="m in missing.filter((t) => t.timeSheetExpected)"
-          v-bind:key="m.id"
+          v-for="profile in missingProfiles.filter((t) => t.timeSheetExpected)"
+          v-bind:key="profile.id"
         >
           <a
             :href="`mailto:${
-              m.email
+              profile.email
             }?subject=Please submit a timesheet for the week ending ${$options.filters.shortDate(
               item.weekEnding.toDate()
             )}&body=Hi ${
-              m.givenName
+              profile.givenName
             }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting https://tybalt.tbte.ca.`"
           >
-            {{ m.displayName }}
+            {{ profile.surname }}, {{ profile.givenName }}
           </a>
         </p>
         <br />
       </div>
 
       <!-- Show locked TimeSheets -->
-      <div
-        v-if="
-          this.item.timeSheets && Object.keys(this.item.timeSheets).length > 0
-        "
-      >
-        <h5>Locked ({{ Object.keys(this.item.timeSheets).length }})</h5>
+      <div v-if="lockedProfiles.length > 0">
+        <h5>Locked ({{ lockedProfiles.length }})</h5>
+        <router-link
+          v-for="profile in lockedProfiles"
+          v-bind:key="profile.id"
+          v-bind:to="{
+            name: 'Time Sheet Details',
+            params: { id: tsIdForUid(profile.id) },
+          }"
+        >
+          {{ profile.surname }}, {{ profile.givenName }}<br />
+        </router-link>
+        <br />
+        <!--
         <router-link
           v-for="(obj, tsId) in item.timeSheets"
           v-bind:key="tsId"
@@ -133,16 +132,17 @@
           {{ obj.displayName }}<br />
         </router-link>
         <br />
+        -->
       </div>
 
       <!-- Show users not expected to submit TimeSheets -->
       <div>
         <h5>Not expected</h5>
         <p
-          v-for="n in missing.filter((t) => !t.timeSheetExpected)"
-          v-bind:key="n.id"
+          v-for="profile in missingProfiles.filter((t) => !t.timeSheetExpected)"
+          v-bind:key="profile.id"
         >
-          {{ n.displayName }}
+          {{ profile.surname }}, {{ profile.givenName }}
         </p>
       </div>
     </div>
@@ -157,6 +157,7 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
 import { LockIcon, XCircleIcon } from "vue-feather-icons";
+import _ from "lodash";
 
 const db = firebase.firestore();
 
@@ -170,38 +171,67 @@ export default mixins.extend({
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
-    missing(): firebase.firestore.DocumentData[] {
-      if (this && this.item) {
-        let pendingUserKeys = [] as string[];
-        if (this.item.pending && Object.keys(this.item.pending).length > 0) {
-          pendingUserKeys = (Object.values(
-            this.item.pending
-          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
-        }
-        let lockedUserKeys = [] as string[];
-        if (
-          this.item.timeSheets &&
-          Object.keys(this.item.timeSheets).length > 0
-        ) {
-          lockedUserKeys = (Object.values(
-            this.item.timeSheets
-          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
-        }
-        let submittedUserKeys = [] as string[];
-        if (
-          this.item.submitted &&
-          Object.keys(this.item.submitted).length > 0
-        ) {
-          submittedUserKeys = (Object.values(
-            this.item.submitted
-          ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
-        }
-        return this.profiles
-          .filter((p) => !pendingUserKeys.includes(p.id))
-          .filter((l) => !lockedUserKeys.includes(l.id))
-          .filter((s) => !submittedUserKeys.includes(s.id));
+    submittedProfiles(): firebase.firestore.DocumentData[] {
+      if (this?.item === undefined) {
+        return [];
       }
-      return [];
+      return this.profiles
+        .filter((s) => this.submittedUserKeys.includes(s.id))
+        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a, b) => a.surname.localeCompare(b.surname));
+    },
+    lockedProfiles(): firebase.firestore.DocumentData[] {
+      if (this?.item === undefined) {
+        return [];
+      }
+      return this.profiles
+        .filter((s) => this.lockedUserKeys.includes(s.id))
+        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a, b) => a.surname.localeCompare(b.surname));
+    },
+    missingProfiles(): firebase.firestore.DocumentData[] {
+      if (this?.item === undefined) {
+        return [];
+      }
+      return this.profiles
+        .filter((p) => !this.pendingUserKeys.includes(p.id))
+        .filter((l) => !this.lockedUserKeys.includes(l.id))
+        .filter((s) => !this.submittedUserKeys.includes(s.id))
+        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a, b) => a.surname.localeCompare(b.surname));
+    },
+    pendingUserKeys() {
+      let pendingUserKeys = [] as string[];
+      if (this?.item?.pending && Object.keys(this.item.pending).length > 0) {
+        pendingUserKeys = (Object.values(
+          this.item.pending
+        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+      }
+      return pendingUserKeys;
+    },
+    submittedUserKeys() {
+      let submittedUserKeys = [] as string[];
+      if (
+        this?.item?.submitted &&
+        Object.keys(this.item.submitted).length > 0
+      ) {
+        submittedUserKeys = (Object.values(
+          this.item.submitted
+        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+      }
+      return submittedUserKeys;
+    },
+    lockedUserKeys() {
+      let lockedUserKeys = [] as string[];
+      if (
+        this?.item?.timeSheets &&
+        Object.keys(this.item.timeSheets).length > 0
+      ) {
+        lockedUserKeys = (Object.values(
+          this.item.timeSheets
+        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+      }
+      return lockedUserKeys;
     },
     weekStart(): Date {
       if (this.item?.weekEnding !== undefined) {
@@ -239,6 +269,17 @@ export default mixins.extend({
     });
   },
   methods: {
+    tsIdForUid(uid: string) {
+      const tsObj = this?.item?.timeSheets;
+      if (tsObj === undefined) {
+        return null;
+      }
+      const keys = Object.keys(_.pickBy(tsObj, (i) => i.uid === uid));
+      if (keys.length === 1) {
+        return keys[0];
+      }
+      return null;
+    },
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
