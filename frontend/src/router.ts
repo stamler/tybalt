@@ -27,6 +27,7 @@ import ProfilesEdit from "@/components/ProfilesEdit.vue";
 //import JobsList from "@/components/JobsList.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
+import JobsDetails from "@/components/JobsDetails.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
 
@@ -455,6 +456,14 @@ const router = new Router({
               },
               name: "Edit Job",
               component: JobsEdit,
+            },
+            {
+              path: ":id/details",
+              props: (route) => {
+                return { id: route.params.id, collection: "Jobs" };
+              },
+              name: "Job Details",
+              component: JobsDetails,
             },
           ],
         },
