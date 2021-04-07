@@ -88,6 +88,7 @@ export async function bundleTimesheet(
   let mealsHoursTally = 0;
   const workHoursTally = { hours: 0, jobHours: 0, noJobNumber: 0 };
   const divisionsTally: { [division: string]: string } = {}; // value is divisionName
+  const timetypes = new Set();
   const jobsTally: { [job: string]: { description: string, client: string, hours: number, jobHours: number } } = {};
   timeEntries.forEach((timeEntry) => {
     const item = timeEntry.data() as TimeEntry;
@@ -96,6 +97,7 @@ export async function bundleTimesheet(
     // simplify below code. For example RegularTimeEntry, BankTimeEntry,
     // NonWorkTimeEntry, OffRotationTimeEntry with corresponding type guards
 
+    timetypes.add(item.timetype);
     if (item.timetype === "OR") {
       // Count the off rotation dates and ensure that there are not two
       // off rotation entries for a given date.
@@ -375,6 +377,7 @@ export async function bundleTimesheet(
       mealsHoursTally,
       divisionsTally,
       divisions: Object.keys(divisionsTally),
+      timetypes: Array.from(timetypes),
       jobsTally,
       jobNumbers: Object.keys(jobsTally), // for array-contains queries
       bankedHours,
