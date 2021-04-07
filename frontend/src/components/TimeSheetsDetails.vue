@@ -58,50 +58,52 @@
     <span v-if="item.rejected" style="color: red">
       Rejected: {{ item.rejectionReason }}
     </span>
-    <table>
-      <thead>
-        <tr>
-          <th rowspan="2">job/proposal</th>
-          <th rowspan="2">time type</th>
-          <th rowspan="2">date</th>
-          <th colspan="3">hours</th>
-          <th rowspan="2">request $</th>
-          <th rowspan="2">work record</th>
-          <th rowspan="2">job</th>
-          <th rowspan="2">work description</th>
-        </tr>
-        <tr>
-          <th>job</th>
-          <th>non</th>
-          <th>meals</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(entry, index) in item.entries" v-bind:key="index">
-          <td>{{ entry.job }}</td>
-          <td>{{ entry.timetype }}</td>
-          <td>
-            {{ entry.date.toDate() | shortDate }}
-          </td>
-          <td>{{ entry.jobHours }}</td>
-          <td>{{ entry.hours }}</td>
-          <td>{{ entry.mealsHours }}</td>
-          <td>{{ entry.payoutRequestAmount }}</td>
-          <td>{{ entry.workrecord }}</td>
-          <td>{{ entry.client }}:{{ entry.jobDescription }}</td>
-          <td>{{ entry.workDescription }}</td>
-        </tr>
-      </tbody>
-      <tfoot v-if="item.workHoursTally !== undefined">
-        <tr>
-          <td colspan="3">Totals</td>
-          <td>{{ item.workHoursTally.jobHours }}</td>
-          <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
-          <td>{{ item.mealsHoursTally }}</td>
-          <td>{{ item.payoutRequest }}</td>
-        </tr>
-      </tfoot>
-    </table>
+    <div class="horizontalScroll">
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">job/proposal</th>
+            <th rowspan="2">time type</th>
+            <th rowspan="2">date</th>
+            <th colspan="3">hours</th>
+            <th rowspan="2">request $</th>
+            <th rowspan="2">work record</th>
+            <th rowspan="2">job</th>
+            <th rowspan="2">work description</th>
+          </tr>
+          <tr>
+            <th>job</th>
+            <th>non</th>
+            <th>meals</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(entry, index) in item.entries" v-bind:key="index">
+            <td>{{ entry.job }}</td>
+            <td>{{ entry.timetype }}</td>
+            <td>
+              {{ entry.date.toDate() | shortDate }}
+            </td>
+            <td>{{ entry.jobHours }}</td>
+            <td>{{ entry.hours }}</td>
+            <td>{{ entry.mealsHours }}</td>
+            <td>{{ entry.payoutRequestAmount }}</td>
+            <td>{{ entry.workrecord }}</td>
+            <td>{{ entry.client }}:{{ entry.jobDescription }}</td>
+            <td>{{ entry.workDescription }}</td>
+          </tr>
+        </tbody>
+        <tfoot v-if="item.workHoursTally !== undefined">
+          <tr>
+            <td colspan="3">Totals</td>
+            <td>{{ item.workHoursTally.jobHours }}</td>
+            <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
+            <td>{{ item.mealsHoursTally }}</td>
+            <td>{{ item.payoutRequest }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
 </template>
 

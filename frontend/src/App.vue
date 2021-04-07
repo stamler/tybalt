@@ -357,4 +357,9 @@ button {
   resize: none;
   padding: 0.2em;
 }
+
+/* horizontal scrolling of wide components that need more space */
+.horizontalScroll {
+  overflow-x: auto;
+}
 </style>
