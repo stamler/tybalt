@@ -305,13 +305,19 @@ export async function bundleTimesheet(
   for (const job in jobsTally) {
     try {
       // eslint-disable-next-line no-await-in-loop
-      const snap = await db.collection("Jobs").doc(job).get();
+      const jobData = (await db.collection("Jobs").doc(job).get()).data();
+      if (jobData?.status !== "Active") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Job status isn't Active. Ask a job admin to mark it Active then resubmit."
+        )
+      }
       // fold in existing data
-      Object.assign(jobsTally[job], snap.data());
+      Object.assign(jobsTally[job], jobData);
     } catch (error) {
       throw new functions.https.HttpsError(
         "internal",
-        `failed to tally details of job ${job}: ${error.message}`
+        `failed to open ${job}: ${error.message}`
       );
     }
   }
