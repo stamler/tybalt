@@ -118,7 +118,7 @@ export async function bundleTimesheet(
       // This is an overtime bank entry, store it in the bankEntries
       // array for processing after completing the tallies.
       bankEntries.push(item);
-    } else if (item.timetype === "R" && item.division && item.divisionName && (item.hours || item.jobHours)) {
+    } else if ((item.timetype === "R" || item.timetype === "RT") && item.division && item.divisionName && (item.hours || item.jobHours)) {
       // Tally the regular work hours
       if (item.hours) {
         workHoursTally["hours"] += item.hours;
