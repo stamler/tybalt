@@ -7,7 +7,11 @@
       <ais-search-box id="searchbox" placeholder="search..." />
       <ais-hits>
         <div class="listentry" slot="item" slot-scope="{ item }">
-          <div class="anchorbox">{{ item.objectID }}</div>
+          <div class="anchorbox">
+            <router-link :to="[parentPath, item.objectID, 'details'].join('/')">
+              {{ item.objectID }}
+            </router-link>
+          </div>
           <div class="detailsbox">
             <div class="headline_wrapper">
               <div class="headline">{{ item.client }}</div>
