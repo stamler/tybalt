@@ -253,6 +253,13 @@ export const updateTimeTracking = functions.firestore
     } else {
       // rejected or deleted or manually unapproved (without rejection)
       // remove the TimeSheet from pending
+
+      // This case is also reached if a property is added or removed
+      // to or from a TimeSheet manually or any other change that isn't
+      // caught in the else clauses above. 
+      // TODO: We should check to see which fields changed and if 
+      // it wasn't locked, approved, or submitted we should do nothing here
+
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
