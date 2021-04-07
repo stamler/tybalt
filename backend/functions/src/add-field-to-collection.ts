@@ -14,14 +14,14 @@ async function addFieldToCollection(fieldname: string, collection: string) {
     // eslint-disable-next-line no-await-in-loop
     const querySnap = await db
       .collection(collection)
-      .orderBy("jobsTally")  // CUSTOMIZATION POINT
+      .orderBy("divisionsTally")  // CUSTOMIZATION POINT
       .limit(500) // limit 500 writes per batch request
       .get();
     const batch = db.batch();
 
     querySnap.forEach((docSnap) => {
       batch.update(docSnap.ref, {
-        [fieldname]: Object.keys(docSnap.get("jobsTally")), // CUSTOMIZATION POINT
+        [fieldname]: Object.keys(docSnap.get("divisionsTally")), // CUSTOMIZATION POINT
       });
     });
 

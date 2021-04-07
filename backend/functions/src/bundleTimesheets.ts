@@ -374,6 +374,7 @@ export async function bundleTimesheet(
       workHoursTally,
       mealsHoursTally,
       divisionsTally,
+      divisions: Object.keys(divisionsTally),
       jobsTally,
       jobNumbers: Object.keys(jobsTally), // for array-contains queries
       bankedHours,
