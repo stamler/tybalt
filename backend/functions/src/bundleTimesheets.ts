@@ -364,7 +364,7 @@ export async function bundleTimesheet(
       weekEnding: week,
       managerUid,
       locked: false,
-      approved: false,
+      approved: (managerUid === auth.uid),
       rejected: false,
       rejectionReason: "",
       submitted: true,
@@ -375,6 +375,7 @@ export async function bundleTimesheet(
       mealsHoursTally,
       divisionsTally,
       jobsTally,
+      jobNumbers: Object.keys(jobsTally), // for array-contains queries
       bankedHours,
       payoutRequest,
     });
