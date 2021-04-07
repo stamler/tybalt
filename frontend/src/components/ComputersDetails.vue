@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div>Login History</div>
+    <div>Login History (up to 20)</div>
     <div v-for="login in logins" v-bind:key="login.id">
       {{ login.created.toDate() | relativeTime }}
       <!-- 
@@ -140,6 +140,7 @@ export default Vue.extend({
                   .collection("Logins")
                   .where("computer", "==", id)
                   .orderBy("created", "desc")
+                  .limit(20)
               ).catch((error) => {
                 alert(`Can't load logins: ${error.message}`);
               });
