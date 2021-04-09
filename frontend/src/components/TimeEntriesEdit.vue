@@ -128,12 +128,16 @@
 
     <span
       class="field"
-      v-if="item.timetype !== 'OR' && item.timetype !== 'OTO'"
+      v-if="
+        item.timetype !== 'OR' &&
+        item.timetype !== 'OTO' &&
+        item.timetype !== 'RB'
+      "
     >
       <input
         type="text"
         name="workDescription"
-        placeholder="Work Description"
+        placeholder="Work Description (5 char minimum)"
         v-model.trim="item.workDescription"
       />
     </span>
