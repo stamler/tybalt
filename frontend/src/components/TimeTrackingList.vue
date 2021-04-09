@@ -159,7 +159,7 @@ export default mixins.extend({
             job: "", // the job number
             code: entry.division,
             date: date.getDate(),
-            month: date.getMonth() + 1,
+            month: format(date, "MMM"),
             year: date.getFullYear(),
             qty: entry.jobHours || 0,
             unit: "hours",
@@ -194,7 +194,7 @@ export default mixins.extend({
           job: "", // the job number
           code: entry.division,
           date: date.getDate(),
-          month: date.getMonth() + 1,
+          month: format(date, "MMM"),
           year: date.getFullYear(),
           qty: entry.jobHours || 0,
           unit: "hours",
