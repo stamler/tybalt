@@ -650,12 +650,12 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe.only("TimeEntries", () => {
+  describe("TimeEntries", () => {
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
     const jobs = adminDb.collection("Jobs");
-    const baseline = { uid: "alice", date: new Date(), timetype: "R", timetypeName: "Hours Worked", division: "ABC", hours: 5, };
+    const baseline = { uid: "alice", date: new Date(), timetype: "R", timetypeName: "Hours Worked", division: "ABC", hours: 5, workDescription: "5char" };
     const entryJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
 
     beforeEach("reset data", async () => {
@@ -696,6 +696,23 @@ describe("Firestore Rules", () => {
       await firebase.assertSucceeds(doc.set(baseline));
       const { timetype, ...missingTimetype } = baseline;
       await firebase.assertFails(doc.set({ ...missingTimetype, timetype: "NONVALIDTIMETYPE" }));
+    });
+    it("requires date to be a date timestamp", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const { date, ...missingDate } = baseline;
+      await firebase.assertFails(doc.set({date: "foo", ...missingDate }));
+      await firebase.assertSucceeds(doc.set(baseline));
+    });
+    it("requires description to be present unless timetype is OR, RB, or OTO", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const { workDescription, ...missingDescription } = baseline;
+      await firebase.assertFails(doc.set(missingDescription));
+      await firebase.assertFails(doc.set({ workDescription: "4cha",...missingDescription }));
+      await firebase.assertSucceeds(doc.set({ workDescription: "5chars",...missingDescription }));
+      await firebase.assertSucceeds(doc.set(baseline));
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation" }));
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 254.4 }));
     });
     it("requires documents with workrecord key to reference a valid job", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
@@ -780,6 +797,7 @@ describe("Firestore Rules", () => {
     it("requires off-rotation entries (OR) to have only uid, date, timetype, timetypeName", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank" }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", workDescription: "Valid Description" }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", jobHours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Add Overtime to Bank", mealsHours: 5 }));
@@ -792,7 +810,7 @@ describe("Firestore Rules", () => {
     });
   });
   
-  describe.only("Jobs", () => {
+  describe("Jobs", () => {
     const job = { description: "A basic job", client: "A special client", manager: "A company employee", status: "Active" };
     const jobs = adminDb.collection("Jobs");
 
