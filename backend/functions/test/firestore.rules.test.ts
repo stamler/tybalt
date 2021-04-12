@@ -954,11 +954,17 @@ describe("Firestore Rules", () => {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
     });
-    it("prevents report claim holder from reading any uncommitted Expenses", async () => {
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice", committed: false });
+    it("prevents report claim holder from reading any unsubmitted Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: false, approved: false, managerUid: "alice", committed: false });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, report: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.get());
+    });
+    it("allows report claim holder to read any submitted Expenses", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, managerUid: "alice", committed: false });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, report: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.get());
     });
     it("allows expense rejector (erej) to read any approved Expenses", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });

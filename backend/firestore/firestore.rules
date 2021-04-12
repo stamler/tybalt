@@ -313,7 +313,7 @@ service cloud.firestore {
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
         hasClaim("erej") && resource.data.approved == true ||
         hasClaim("eapr") && (resource.data.approved == true || resource.data.committed == true) ||
-        hasClaim("report") && resource.data.committed == true
+        hasClaim("report") && resource.data.submitted == true
       )
       allow create: if 
         hasClaim("time") && validExpenseEntry() &&

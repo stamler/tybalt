@@ -1,6 +1,7 @@
 <template>
   <div id="list">
-    <div class="listentry" v-for="item in items" v-bind:key="item.id">
+    <span class="listheader">Approved</span>
+    <div class="listentry" v-for="item in approved" v-bind:key="item.id">
       <div class="anchorbox">
         {{ item.date.toDate() | shortDate }}
       </div>
@@ -56,6 +57,63 @@
         </router-link>
       </div>
     </div>
+    <span class="listheader">Awaiting manager approval</span>
+    <div class="listentry" v-for="item in submitted" v-bind:key="item.id">
+      <div class="anchorbox">
+        {{ item.date.toDate() | shortDate }}
+      </div>
+      <div class="detailsbox">
+        <div class="headline_wrapper">
+          <div class="headline">
+            {{ item.displayName }}
+          </div>
+          <div class="byline" v-if="item.paymentType === 'Mileage'">
+            {{ item.distance }} km
+          </div>
+          <div class="byline" v-else>
+            ${{ item.total }}
+            <span v-if="item.po">/PO:{{ item.po }}</span>
+            <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
+          </div>
+        </div>
+        <div class="firstline">
+          {{ item.description }}
+        </div>
+        <div class="secondline">
+          <template v-if="item.job !== undefined">
+            {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
+          </template>
+          <template v-if="item.attachment">
+            <router-link to="#" v-on:click.native="downloadAttachment(item)">
+              <download-icon></download-icon>
+            </router-link>
+          </template>
+          /manager: {{ item.managerName }}
+        </div>
+        <div class="thirdline">
+          <span class="label" v-if="item.paymentType === 'CorporateCreditCard'">
+            Corporate Credit Card
+          </span>
+          <span v-if="item.rejected" style="color: red">
+            Rejected: {{ item.rejectionReason }}
+          </span>
+        </div>
+      </div>
+      <div class="rowactionsbox">
+        <router-link
+          v-bind:to="{ name: 'Expenses Pending' }"
+          v-on:click.native="rejectExpense(item.id, 'no reason given')"
+        >
+          <x-circle-icon></x-circle-icon>
+        </router-link>
+        <router-link
+          v-bind:to="{ name: 'Expenses Approved' }"
+          v-on:click.native="commitItem(item, collectionObject)"
+        >
+          <lock-icon></lock-icon>
+        </router-link>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -85,7 +143,8 @@ export default Vue.extend({
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [],
+      approved: [],
+      submitted: [],
     };
   },
   methods: {
@@ -108,31 +167,40 @@ export default Vue.extend({
           alert(`Error committing item: ${err}`);
         });
     },
-    updateItems() {
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-      const uid = store.state.user?.uid;
-      if (uid === undefined) {
-        throw "There is no valid uid";
-      }
-
-      // populate with the commit queue
-      this.$bind(
-        "items",
-        this.collectionObject
-          .where("approved", "==", true)
-          .where("committed", "==", false)
-          .orderBy("date", "desc")
-      ).catch((error) => {
-        alert(`Can't load Expenses: ${error.message}`);
-      });
-    },
   },
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
+    if (this.collectionObject === null) {
+      throw "There is no valid collection object";
+    }
+    const uid = store.state.user?.uid;
+    if (uid === undefined) {
+      throw "There is no valid uid";
+    }
+
+    // populate approved items awaiting commit
+    this.$bind(
+      "approved",
+      this.collectionObject
+        .where("approved", "==", true)
+        .where("committed", "==", false)
+        .orderBy("date", "desc")
+    ).catch((error) => {
+      alert(`Can't load Expenses: ${error.message}`);
+    });
+
+    // populate submitted items awaiting commit
+    this.$bind(
+      "submitted",
+      this.collectionObject
+        .where("submitted", "==", true)
+        .where("approved", "==", false)
+        .orderBy("date", "desc")
+    ).catch((error) => {
+      alert(`Can't load Expenses: ${error.message}`);
+    });
   },
 });
 </script>
