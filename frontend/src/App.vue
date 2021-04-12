@@ -193,6 +193,7 @@ body,
   margin-bottom: 1em;
 }
 .listheader {
+  flex-basis: auto;
   padding: 0.1em 0.5em;
   font-weight: bold;
   color: #555555;
