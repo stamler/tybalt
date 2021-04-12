@@ -368,7 +368,7 @@ export default mixins.extend({
             // This is an overtime bank entry, store it in the bankEntries
             // array for processing after completing the tallies.
             tallyObject[key].bankEntries.push(item);
-          } else if (item.timetype === "R") {
+          } else if (item.timetype === "R" || item.timetype === "RT") {
             // Tally the work hours and meals hours
             if ("hours" in item) {
               tallyObject[key].workHoursTally["hours"] += item.hours;
