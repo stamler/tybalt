@@ -1,6 +1,6 @@
 <template>
   <div id="list">
-    <span class="listheader">Approved</span>
+    <span class="listheader" v-if="approved.length > 0">Approved</span>
     <div class="listentry" v-for="item in approved" v-bind:key="item.id">
       <div class="anchorbox">
         {{ item.date.toDate() | shortDate }}
@@ -57,7 +57,9 @@
         </router-link>
       </div>
     </div>
-    <span class="listheader">Awaiting manager approval</span>
+    <span class="listheader" v-if="submitted.length > 0">
+      Awaiting manager approval
+    </span>
     <div class="listentry" v-for="item in submitted" v-bind:key="item.id">
       <div class="anchorbox">
         {{ item.date.toDate() | shortDate }}
