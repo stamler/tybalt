@@ -584,7 +584,7 @@ export default Vue.extend({
       if (payroll) {
         this.downloadBlob(
           blob,
-          `ExpensesByPayroll${this.exportDateWeekStart(
+          `ExpensesForPayPeriod${this.exportDateWeekStart(
             subDays(weekEnding, 7)
           )}-${this.exportDate(weekEnding)}.csv`
         );
