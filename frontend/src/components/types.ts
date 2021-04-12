@@ -138,6 +138,7 @@ interface ExpenseCommon {
   date: string;
   division: string;
   divisionName: string;
+  payPeriodEnding: string;
   client?: string;
   job?: string;
   jobDescription?: string;

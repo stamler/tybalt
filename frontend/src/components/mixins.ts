@@ -471,20 +471,36 @@ export default Vue.extend({
 
       return difference % 14 === 0 ? true : false;
     },
-    async generatePayablesCSV(urlOrExpenseArray: string | Expense[]) {
+    async generatePayablesCSV(
+      urlOrExpenseArrayPromise: string | Promise<Expense[]>
+    ) {
+      // We assume that string arguments are for weekly reports and promise
+      // arguments are for payroll-oriented reports. The only difference is the
+      // range of dates which are included in the report
+      let payroll = false;
+
       const MILEAGE_RATE = 0.5; // dollars per km
       let items;
-      if (typeof urlOrExpenseArray === "string") {
-        const response = await fetch(urlOrExpenseArray);
+      let weekEnding;
+      if (typeof urlOrExpenseArrayPromise === "string") {
+        const response = await fetch(urlOrExpenseArrayPromise);
         items = (await response.json()) as Expense[];
-      } else if (Array.isArray(urlOrExpenseArray)) {
-        items = urlOrExpenseArray;
+        // since all entries have the same week ending, pull from the first entry
+        weekEnding = new Date(items[0].committedWeekEnding);
       } else {
-        throw new Error("The provided argument isn't an array or a string");
+        const result = await Promise.resolve(urlOrExpenseArrayPromise);
+        if (Array.isArray(result)) {
+          items = result;
+          // since all entries have the same week ending, pull from the first entry
+          weekEnding = new Date(items[0].payPeriodEnding);
+          payroll = true;
+        } else {
+          throw new Error(
+            "The provided promise doesn't resolve an array or a string"
+          );
+        }
       }
 
-      // since all entries have the same week ending, pull from the first entry
-      const weekEnding = new Date(items[0].committedWeekEnding);
       const fields = [
         {
           label: "Acct/Visa/Exp",
@@ -565,12 +581,21 @@ export default Vue.extend({
       });
       const csv = parse(expenseRecords, opts);
       const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(
-        blob,
-        `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
-          weekEnding
-        )}.csv`
-      );
+      if (payroll) {
+        this.downloadBlob(
+          blob,
+          `ExpensesByPayroll${this.exportDateWeekStart(
+            subDays(weekEnding, 7)
+          )}-${this.exportDate(weekEnding)}.csv`
+        );
+      } else {
+        this.downloadBlob(
+          blob,
+          `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+            weekEnding
+          )}.csv`
+        );
+      }
     },
   },
 });
