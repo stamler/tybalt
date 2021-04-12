@@ -83,7 +83,7 @@
         ['R', 'RT'].includes(item.timetype)
       "
     >
-      <label for="jobHours">Job Hours</label>
+      <label for="jobHours">Chargeable Hours</label>
       <input type="number" name="jobHours" v-model.number="item.jobHours" />
     </span>
 
@@ -91,7 +91,16 @@
       class="field"
       v-if="item.timetype !== 'OR' && item.timetype !== 'OTO'"
     >
-      <label for="hours">Non-Job Hours</label>
+      <label for="hours">
+        {{
+          item.job &&
+          item.job !== "" &&
+          item.division &&
+          ["R", "RT"].includes(item.timetype)
+            ? "Non-Chargeable "
+            : ""
+        }}Hours
+      </label>
       <input type="number" name="hours" v-model.number="item.hours" />
     </span>
 
