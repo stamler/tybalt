@@ -91,7 +91,8 @@ function denyAdminWrite(collection: string) {
   });
 }
 
-describe("Firestore Rules", () => {
+describe("Firestore Rules", function () {
+  this.timeout(3000);
   describe("Unauthenticated Reads and Writes", () => {
     collections.forEach((collection) => {
       denyUnauthenticatedReadWrite(collection);
@@ -650,8 +651,7 @@ describe("Firestore Rules", () => {
     });
   });
 
-  describe("TimeEntries", function() {
-    this.timeout(3000);
+  describe("TimeEntries", () => {
     const divisions = adminDb.collection("Divisions");
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
