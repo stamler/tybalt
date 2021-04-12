@@ -942,6 +942,27 @@ describe("Firestore Rules", () => {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
     });
+    it("prevents manager (tapr) from approving Expenses they do not manage", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
+      let db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      let doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ approved: true, committed: false }, { merge: true })
+      );
+      db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...bob, tapr: true } }).firestore();
+      doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true, committed: false }, { merge: true })
+      );
+    });
+    it("prevents manager (tapr) from approving unsubmitted Expenses", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      let doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ approved: true, committed: false }, { merge: true })
+      );
+    });
+
     it("allows manager (eapr) to read any approved Expenses", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
@@ -1101,8 +1122,13 @@ describe("Firestore Rules", () => {
     });
     it("allows manager (tapr) to reject submitted expenses they manage", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false });
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
-      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      let db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...bob, tapr: true } }).firestore();
+      let doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+      db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
         doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );

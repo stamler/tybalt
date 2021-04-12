@@ -323,10 +323,10 @@ service cloud.firestore {
       allow update: if 
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false) ||
-        // tapr can approve 
-        (hasClaim("tapr") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false) ||
-        // tapr or erej can reject uncommitted expenses
-        ((hasClaim("tapr") || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && (newDoc().committed == false || !('committed' in newDoc())) && newDoc().approved == false) ||
+        // tapr can approve submitted expenses if they are manager
+        (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && resource.data.submitted == true) ||
+        // erej can reject uncommitted expenses, tapr can reject those they manage
+        (((hasClaim("tapr") && managerUidMatches()) || hasClaim("erej")) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && (newDoc().committed == false || !('committed' in newDoc())) && newDoc().approved == false) ||
         // eapr can only commit or reject approved expenses
         (
           hasClaim("eapr") && 
