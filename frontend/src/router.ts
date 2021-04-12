@@ -6,6 +6,7 @@ import Main from "@/views/Main.vue";
 import Me from "@/components/Me.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
 import ExpensesList from "@/components/ExpensesList.vue";
+import ExpensesQueue from "@/components/ExpensesQueue.vue";
 import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
@@ -216,17 +217,6 @@ const router = new Router({
               props: { approved: true, collection: "Expenses" },
               component: ExpensesList,
             },
-            {
-              meta: {
-                showInUi: true,
-                uiName: "Commit Queue",
-                requiredClaims: ["eapr"],
-              },
-              path: "commit",
-              name: "Expenses Commit Queue",
-              props: { commitqueue: true, collection: "Expenses" },
-              component: ExpensesList,
-            },
           ],
         },
       ],
@@ -281,6 +271,17 @@ const router = new Router({
               },
               name: "Expense Tracking Details",
               component: ExpenseTrackingDetails,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Commit Queue",
+                requiredClaims: ["eapr", "reports"],
+              },
+              path: "queue",
+              name: "Expenses Commit Queue",
+              props: { collection: "Expenses" },
+              component: ExpensesQueue,
             },
           ],
         },
