@@ -192,7 +192,6 @@ export const updateTimeTracking = functions.firestore
 
     if (
       afterData &&
-      afterData.submitted === beforeSubmitted &&
       afterData.submitted === true &&
       afterData.approved !== beforeApproved &&
       afterData.approved === true &&
