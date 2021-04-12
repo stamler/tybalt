@@ -195,10 +195,14 @@ service cloud.firestore {
           (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number && newDoc().payoutRequestAmount > 0)
         ) &&
 
-        // description must be over 4 characters unless timetype is RB, OTO or OR
+        // validate presence and length of description for Regular Hours and Training
         (
-          (newDoc().workDescription.size() > 4 && !(newDoc().timetype in ["RB", "OTO", "OR"])) ||
-          (newDoc().timetype in ["RB", "OTO", "OR"])
+          (newDoc().workDescription.size() > 4 && newDoc().timetype in ["R", "RT"]) || !(newDoc().timetype in ["R", "RT"])
+        ) &&
+
+        // ensure absence of description for Banking, Payout and Off Rotation
+        (
+          ( isMissing("workDescription") && newDoc().timetype in ["RB", "OTO", "OR"]) || !(newDoc().timetype in ["RB", "OTO", "OR"])
         ) &&
 
         // if timetype is "RB", only hours is provided and is a positive number
