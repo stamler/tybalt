@@ -276,7 +276,7 @@ const router = new Router({
               meta: {
                 showInUi: true,
                 uiName: "Commit Queue",
-                requiredClaims: ["eapr", "reports"],
+                requiredClaims: ["eapr", "report"],
               },
               path: "queue",
               name: "Expenses Commit Queue",

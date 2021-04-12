@@ -44,13 +44,13 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Expenses Pending' }"
+          v-bind:to="{ name: 'Expenses Commit Queue' }"
           v-on:click.native="rejectExpense(item.id, 'no reason given')"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Expenses Approved' }"
+          v-bind:to="{ name: 'Expenses Commit Queue' }"
           v-on:click.native="commitItem(item, collectionObject)"
         >
           <lock-icon></lock-icon>
@@ -103,13 +103,13 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Expenses Pending' }"
+          v-bind:to="{ name: 'Expenses Commit Queue' }"
           v-on:click.native="rejectExpense(item.id, 'no reason given')"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Expenses Approved' }"
+          v-bind:to="{ name: 'Expenses Commit Queue' }"
           v-on:click.native="commitItem(item, collectionObject)"
         >
           <lock-icon></lock-icon>
