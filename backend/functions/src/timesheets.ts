@@ -227,7 +227,7 @@ export const updateTimeTracking = functions.firestore
       // just unlocked
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
-      console.log(`TimeSheet ${change.after.ref.id} has been manually unlocked.`);
+      functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} has been manually unlocked.`);
       await timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
@@ -262,6 +262,21 @@ export const updateTimeTracking = functions.firestore
           [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
+    } else if (
+      afterData &&
+      afterData.submitted === true &&
+      afterData.approved === true &&
+      afterData.locked !== beforeLocked &&
+      afterData.locked === true
+    ) {
+      // just locked
+      // remove document from pending and add it to timeSheets
+      await timeTrackingDocRef.update(
+        {
+          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`timeSheets.${change.after.ref.id}`]: buildPendingObj(afterData),
+        }
+      );
     } else {
       // rejected or deleted or manually unapproved (without rejection)
       // remove the TimeSheet from pending
@@ -271,7 +286,7 @@ export const updateTimeTracking = functions.firestore
       // caught in the else clauses above. 
       // TODO: We should check to see which fields changed and if 
       // it wasn't locked, approved, or submitted we should do nothing here
-
+      functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} default condition, removing entries.`);
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
@@ -307,17 +322,9 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
   // run transaction to read the timesheet and if it exists check that
   // it is approved and submitted. Then lock it and call exportJson()
   const db = admin.firestore();
-  const timeSheet = await db.collection("TimeSheets").doc(data.id).get();
-  const weekEnding = timeSheet.get("weekEnding");
-  if (weekEnding === undefined) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "The TimeSheet document is missing a weekEnding property"
-    );
-  }
-  const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding.toDate());
+  const timeSheet = db.collection("TimeSheets").doc(data.id);
   await db.runTransaction(async (transaction) => {
-    return transaction.get(timeSheet.ref).then(async (tsSnap) => {
+    return transaction.get(timeSheet).then(async (tsSnap) => {
       const snapData = tsSnap.data();
       if (!snapData) {
         throw new Error("The TimeSheet docsnap was empty during the locking transaction")
@@ -327,12 +334,8 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
         snapData.approved === true &&
         snapData.locked === false
       ) {
-        // timesheet is lockable, lock it then add it to the export
-        return transaction
-          .update(timeSheet.ref, { locked: true })
-          .update(timeTrackingDocRef, {
-            [`timeSheets.${tsSnap.id}`]: { displayName: snapData.displayName, uid: snapData.uid },
-          });
+        // timesheet is lockable, lock it
+        return transaction.update(timeSheet, { locked: true });
       } else {
         throw new Error(
           "The timesheet has either not been submitted and approved " +
@@ -341,7 +344,6 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
       }
     });
   });
-  return exportJson({ id: timeTrackingDocRef.id });
 }
 /*
   Given a weekEnding as a property of data, lock all of the currently
