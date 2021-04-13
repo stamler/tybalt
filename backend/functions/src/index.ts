@@ -19,6 +19,7 @@ export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payr
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey } from "./profiles";
+export { scheduledFirestoreExport } from "./export";
 
 // update algolia indexes
 exports.algoliaUpdateJobsIndex = functions.firestore
