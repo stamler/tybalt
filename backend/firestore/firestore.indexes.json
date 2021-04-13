@@ -67,6 +67,24 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "approved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "committed",
           "order": "ASCENDING"
         },
@@ -196,6 +214,24 @@
         },
         {
           "fieldPath": "managerUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobNumbers",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "locked",
           "order": "ASCENDING"
         },
         {
