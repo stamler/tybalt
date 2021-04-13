@@ -7,8 +7,11 @@ import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
 import { utcToZonedTime } from "date-fns-tz";
-import { format, addDays } from "date-fns";
+import { format, addDays, subSeconds, addSeconds } from "date-fns";
 import * as _ from "lodash";
+
+const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+const WITHIN_SECONDS = 2;
 
 // onWrite()
 // check if the filepath changed
@@ -65,10 +68,19 @@ export const updateExpenseTracking = functions.firestore
     }
 
     // Get the ExpenseTracking doc if it exists, otherwise create it.
-    const querySnap = await db
-      .collection("ExpenseTracking")
-      .where("weekEnding", "==", weekEnding)
-      .get();
+    let querySnap;
+    if (EXACT_TIME_SEARCH) {
+      querySnap = await db
+        .collection("ExpenseTracking")
+        .where("weekEnding", "==", weekEnding)
+        .get();
+    } else {
+      querySnap = await db
+        .collection("ExpenseTracking")
+        .where("weekEnding", ">", subSeconds(weekEnding, WITHIN_SECONDS))
+        .where("weekEnding", "<", addSeconds(weekEnding, WITHIN_SECONDS))
+        .get();
+    }
 
     let expenseTrackingDocRef;
     if (querySnap.size > 1) {
@@ -81,7 +93,8 @@ export const updateExpenseTracking = functions.firestore
     } else {
       // create new ExpenseTracking document
       expenseTrackingDocRef = db.collection("ExpenseTracking").doc();
-      await expenseTrackingDocRef.set({ weekEnding });
+      functions.logger.info(`creating new ExpenseTracking document ${expenseTrackingDocRef.id}`);
+      await expenseTrackingDocRef.set({ weekEnding, created: admin.firestore.FieldValue.serverTimestamp() });
     }
     if (
       afterData &&

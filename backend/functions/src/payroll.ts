@@ -2,6 +2,10 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as _ from "lodash";
 import { getPayPeriodFromWeekEnding, isPayrollWeek2 } from "./utilities";
+import { subSeconds, addSeconds } from "date-fns";
+
+const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+const WITHIN_SECONDS = 2;
 
 async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   const db = admin.firestore();
@@ -10,10 +14,19 @@ async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   }
 
   // Get the PayrollTracking doc if it exists, otherwise create it.
-  const querySnap = await db
-    .collection("PayrollTracking")
-    .where("payPeriodEnding", "==", payPeriodEnding)
-    .get();
+  let querySnap;
+  if (EXACT_TIME_SEARCH) {
+    querySnap = await db
+      .collection("PayrollTracking")
+      .where("payPeriodEnding", "==", payPeriodEnding)
+      .get();
+  } else {
+    querySnap = await db
+      .collection("TimeTracking")
+      .where("payPeriodEnding", ">", subSeconds(payPeriodEnding, WITHIN_SECONDS))
+      .where("payPeriodEnding", "<", addSeconds(payPeriodEnding, WITHIN_SECONDS))
+      .get();
+  }
 
   let payrollTrackingDocRef;
   if (querySnap.size > 1) {
@@ -26,7 +39,12 @@ async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   } else {
     // create new tracking document
     payrollTrackingDocRef = db.collection("PayrollTracking").doc();
-    await payrollTrackingDocRef.set({ payPeriodEnding, expenses: {} });
+    functions.logger.info(`creating new PayrollTracking document ${payrollTrackingDocRef.id}`);
+    await payrollTrackingDocRef.set({
+      payPeriodEnding,
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      expenses: {},
+    });
   }
   return payrollTrackingDocRef;
 }

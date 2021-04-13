@@ -25,22 +25,34 @@ Holders of this claim can view reports and exports
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format } from "date-fns";
+import { format, subSeconds, addSeconds } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
 
+const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+const WITHIN_SECONDS = 2;
+
 // Get the TimeTracking doc if it exists, otherwise create it.
 async function getTimeTrackingDoc(weekEnding: Date) {
   const db = admin.firestore();
 
   // Get the TimeTracking doc if it exists, otherwise create it.
-  const querySnap = await db
-    .collection("TimeTracking")
-    .where("weekEnding", "==", weekEnding)
-    .get();
+  let querySnap;
+  if (EXACT_TIME_SEARCH) {
+    querySnap = await db
+      .collection("TimeTracking")
+      .where("weekEnding", "==", weekEnding)
+      .get();
+  } else {
+    querySnap = await db
+      .collection("TimeTracking")
+      .where("weekEnding", ">", subSeconds(weekEnding, WITHIN_SECONDS))
+      .where("weekEnding", "<", addSeconds(weekEnding, WITHIN_SECONDS))
+      .get();
+  }
 
   let timeTrackingDocRef: admin.firestore.DocumentReference;
   if (querySnap.size > 1) {
@@ -53,7 +65,8 @@ async function getTimeTrackingDoc(weekEnding: Date) {
   } else {
     // create new tracking document
     timeTrackingDocRef = db.collection("TimeTracking").doc();
-    await timeTrackingDocRef.set({ weekEnding });
+    functions.logger.info(`getTimeTrackingDoc() creating new TimeTracking document ${timeTrackingDocRef.id}`);
+    await timeTrackingDocRef.set({ weekEnding, created: admin.firestore.FieldValue.serverTimestamp() });
   }
   return timeTrackingDocRef;
 }
