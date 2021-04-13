@@ -993,10 +993,18 @@ describe("Firestore Rules", function () {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
     });
-    it("allows expense rejector (erej) to reject any approved Expense", async () => {
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, erej: true } }).firestore();
+    it("allows expense rejector (erej) to reject any approved Expense, but not unapproved", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, erej: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: false, approved: false, committed: false });
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, committed: false });
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+      );
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
       await firebase.assertSucceeds(
         doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
       );
@@ -1150,7 +1158,7 @@ describe("Firestore Rules", function () {
         commitName: "Bob Example",
       }));
     });
-    it("prevents manager (eapr) from committing approved expenses with UID that doesn't belong to them", async () => {
+    it("prevents manager (eapr) from committing approved expenses if writing a UID other than their own", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
