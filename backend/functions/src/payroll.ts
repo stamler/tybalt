@@ -22,7 +22,7 @@ async function getPayrollTrackingDoc(payPeriodEnding: Date) {
       .get();
   } else {
     querySnap = await db
-      .collection("TimeTracking")
+      .collection("PayrollTracking")
       .where("payPeriodEnding", ">", subSeconds(payPeriodEnding, WITHIN_SECONDS))
       .where("payPeriodEnding", "<", addSeconds(payPeriodEnding, WITHIN_SECONDS))
       .get();
