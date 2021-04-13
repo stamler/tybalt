@@ -2,7 +2,10 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getAuthObject, isWeekReference, TimeEntry } from "./utilities";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format } from "date-fns";
+import { format, subSeconds, addSeconds } from "date-fns";
+
+const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+const WITHIN_SECONDS = 2;
 
 // The bundleTimesheet groups TimeEntries together
 // into a timesheet for a given user and week
@@ -51,11 +54,21 @@ export async function bundleTimesheet(
   const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
   // Throw if a timesheet already exists for this week
-  const timeSheets = await db
-    .collection("TimeSheets")
-    .where("uid", "==", auth.uid)
-    .where("weekEnding", "==", week)
-    .get();
+  let timeSheets;
+  if (EXACT_TIME_SEARCH) {
+    timeSheets = await db
+      .collection("TimeSheets")
+      .where("uid", "==", auth.uid)
+      .where("weekEnding", "==", week)
+      .get();
+  } else {
+    timeSheets = await db
+      .collection("TimeSheets")
+      .where("uid", "==", auth.uid)
+      .where("weekEnding", ">", subSeconds(week, WITHIN_SECONDS))
+      .where("weekEnding", "<", addSeconds(week, WITHIN_SECONDS))
+      .get();    
+  }
   if (!timeSheets.empty) {
     throw new functions.https.HttpsError(
       "failed-precondition",
@@ -64,12 +77,23 @@ export async function bundleTimesheet(
   }
 
   // Look for TimeEntries to bundle
-  const timeEntries = await db
-    .collection("TimeEntries")
-    .where("uid", "==", auth.uid)
-    .where("weekEnding", "==", week)
-    .orderBy("date", "asc")
-    .get();
+  let timeEntries;
+  if (EXACT_TIME_SEARCH) {
+    timeEntries = await db
+      .collection("TimeEntries")
+      .where("uid", "==", auth.uid)
+      .where("weekEnding", "==", week)
+      .orderBy("date", "asc")
+      .get();
+  } else {
+    timeEntries = await db
+      .collection("TimeEntries")
+      .where("uid", "==", auth.uid)
+      .where("weekEnding", ">", subSeconds(week, WITHIN_SECONDS))
+      .where("weekEnding", "<", addSeconds(week, WITHIN_SECONDS))
+      .orderBy("date", "asc")
+      .get();
+  }
   if (timeEntries.empty) {
     throw new functions.https.HttpsError(
       "failed-precondition",
