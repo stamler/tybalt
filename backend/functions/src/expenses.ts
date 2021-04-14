@@ -7,11 +7,11 @@ import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
 import { utcToZonedTime } from "date-fns-tz";
-import { format, addDays, subSeconds, addSeconds } from "date-fns";
+import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
 import * as _ from "lodash";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_SECONDS = 2;
+const WITHIN_MSEC = 1;
 
 // onWrite()
 // check if the filepath changed
@@ -77,8 +77,8 @@ export const updateExpenseTracking = functions.firestore
     } else {
       querySnap = await db
         .collection("ExpenseTracking")
-        .where("weekEnding", ">", subSeconds(weekEnding, WITHIN_SECONDS))
-        .where("weekEnding", "<", addSeconds(weekEnding, WITHIN_SECONDS))
+        .where("weekEnding", ">", subMilliseconds(weekEnding, WITHIN_MSEC))
+        .where("weekEnding", "<", addMilliseconds(weekEnding, WITHIN_MSEC))
         .get();
     }
 
@@ -290,10 +290,19 @@ export async function getPayPeriodExpenses(
   */
   const db = admin.firestore();
 
-  const expensesSnapshot = await db.collection("Expenses")
-    .where("committed", "==", true)
-    .where("payPeriodEnding", "==", week2Ending)
-    .get();
+  let expensesSnapshot;
+  if (EXACT_TIME_SEARCH) {
+    expensesSnapshot = await db.collection("Expenses")
+      .where("committed", "==", true)
+      .where("payPeriodEnding", "==", week2Ending)
+      .get();
+  } else {
+    expensesSnapshot = await db.collection("Expenses")
+      .where("committed", "==", true)
+      .where("payPeriodEnding", ">", subMilliseconds(week2Ending, WITHIN_MSEC))
+      .where("payPeriodEnding", "<", addMilliseconds(week2Ending, WITHIN_MSEC))
+      .get();
+  }
 
   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
   
