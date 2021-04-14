@@ -72,6 +72,7 @@
         <!-- The template for "pending" -->
         <template v-if="approved === false">
           <template v-if="!item.approved && !item.rejected">
+            <!--
             <router-link
               v-if="!item.rejected"
               v-bind:to="{ name: 'Time Sheets Pending' }"
@@ -79,6 +80,7 @@
             >
               <check-circle-icon></check-circle-icon>
             </router-link>
+            -->
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
               v-on:click.native="$refs.rejectModal.openModal(item.id)"
@@ -120,7 +122,7 @@ import {
   EditIcon,
   SendIcon,
   RewindIcon,
-  CheckCircleIcon,
+  //CheckCircleIcon,
   XCircleIcon,
 } from "vue-feather-icons";
 import store from "../store";
@@ -134,7 +136,7 @@ export default Vue.extend({
     EditIcon,
     SendIcon,
     RewindIcon,
-    CheckCircleIcon,
+    //CheckCircleIcon,
     XCircleIcon,
   },
   filters: {
