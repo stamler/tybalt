@@ -91,7 +91,6 @@ export async function bundleTimesheet(
       .where("uid", "==", auth.uid)
       .where("weekEnding", ">", subSeconds(week, WITHIN_SECONDS))
       .where("weekEnding", "<", addSeconds(week, WITHIN_SECONDS))
-      .orderBy("date", "asc")
       .get();
   }
   if (timeEntries.empty) {

@@ -175,6 +175,20 @@
         {
           "fieldPath": "weekEnding",
           "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "ASCENDING"
         },
         {
           "fieldPath": "date",
@@ -237,6 +251,20 @@
         {
           "fieldPath": "weekEnding",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "ASCENDING"
         }
       ]
     },
