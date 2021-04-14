@@ -18,7 +18,7 @@
         }"
         >{{ timeSheet.displayName }}</router-link
       >
-      /hours: {{ timeSheet.jobsTally[id].hours }} /jobHours:
+      /non-chargeable: {{ timeSheet.jobsTally[id].hours }} /chargeable:
       {{ timeSheet.jobsTally[id].jobHours }}
     </div>
   </div>
