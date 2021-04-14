@@ -175,7 +175,7 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
 
   // Get the Azure ID to make specific queries
   const decoded = jwtDecode<MSJwtPayload>(data.accessToken);
-  const query = "$select=givenName,surname,onPremisesImmutableId,id,jobTitle,mobilePhone"
+  const query = "$select=givenName,surname,onPremisesImmutableId,id,jobTitle,mobilePhone,displayName,mail"
   // OAuth access and id tokens can also be retrieved:
   const bearer = "Bearer " + data.accessToken;
   //const idToken = credential.idToken;
@@ -190,6 +190,8 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
     {
       givenName: response.data.givenName,
       surname: response.data.surname,
+      displayName: response.data.displayName,
+      email: response.data.mail,
       azureId: response.data.id,
       userSourceAnchor64: response.data.onPremisesImmutableId,
       userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, 'base64').toString("hex"),
