@@ -2,10 +2,10 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getAuthObject, isWeekReference, TimeEntry } from "./utilities";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format, subSeconds, addSeconds } from "date-fns";
+import { format, subMilliseconds, addMilliseconds } from "date-fns";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_SECONDS = 2;
+const WITHIN_MSEC = 1;
 
 // The bundleTimesheet groups TimeEntries together
 // into a timesheet for a given user and week
@@ -65,8 +65,8 @@ export async function bundleTimesheet(
     timeSheets = await db
       .collection("TimeSheets")
       .where("uid", "==", auth.uid)
-      .where("weekEnding", ">", subSeconds(week, WITHIN_SECONDS))
-      .where("weekEnding", "<", addSeconds(week, WITHIN_SECONDS))
+      .where("weekEnding", ">", subMilliseconds(week, WITHIN_MSEC))
+      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC))
       .get();    
   }
   if (!timeSheets.empty) {
@@ -89,8 +89,8 @@ export async function bundleTimesheet(
     timeEntries = await db
       .collection("TimeEntries")
       .where("uid", "==", auth.uid)
-      .where("weekEnding", ">", subSeconds(week, WITHIN_SECONDS))
-      .where("weekEnding", "<", addSeconds(week, WITHIN_SECONDS))
+      .where("weekEnding", ">", subMilliseconds(week, WITHIN_MSEC))
+      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC))
       .get();
   }
   if (timeEntries.empty) {
