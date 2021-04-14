@@ -25,7 +25,7 @@ Holders of this claim can view reports and exports
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format, subSeconds, addSeconds } from "date-fns";
+import { format, subMilliseconds, addMilliseconds } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -33,7 +33,7 @@ import * as os from "os";
 import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_SECONDS = 2;
+const WITHIN_MSEC = 1;
 
 // Get the TimeTracking doc if it exists, otherwise create it.
 async function getTimeTrackingDoc(weekEnding: Date) {
@@ -49,8 +49,8 @@ async function getTimeTrackingDoc(weekEnding: Date) {
   } else {
     querySnap = await db
       .collection("TimeTracking")
-      .where("weekEnding", ">", subSeconds(weekEnding, WITHIN_SECONDS))
-      .where("weekEnding", "<", addSeconds(weekEnding, WITHIN_SECONDS))
+      .where("weekEnding", ">", subMilliseconds(weekEnding, WITHIN_MSEC))
+      .where("weekEnding", "<", addMilliseconds(weekEnding, WITHIN_MSEC))
       .get();
   }
 
