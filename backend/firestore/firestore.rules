@@ -160,6 +160,12 @@ service cloud.firestore {
         // prevent user from submitting an entry with an unauthorized uid
         request.auth.uid == request.resource.data['uid'] &&
 
+        // prevent salaried staff from submitting an RB entry
+        (
+          get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.salary == false ||
+          ( get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.salary == true && newDoc().timetype != "RB" )
+        ) &&
+
         // when job provided, job & division exist in db,
         // jobDescription and client are present, timetype is 'R' or 'RT'
         (

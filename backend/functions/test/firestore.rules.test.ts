@@ -5,7 +5,7 @@ import { addDays, subDays } from "date-fns";
 
 const projectId = "charade-ca63f";
 
-const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7) };
+const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7), salary: false };
 const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
@@ -656,6 +656,7 @@ describe("Firestore Rules", function () {
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
     const jobs = adminDb.collection("Jobs");
+    const profiles = adminDb.collection("Profiles");
     const baseline = { uid: "alice", date: new Date(), timetype: "R", timetypeName: "Hours Worked", division: "ABC", hours: 5, workDescription: "5char" };
     const entryJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
 
@@ -672,6 +673,7 @@ describe("Firestore Rules", function () {
       await timetypes.doc("OTO").set({ name: "Request Overtime Payout" });
       await jobs.doc("19-333").set({ description: "Big job for a client" });
       await timeentries.doc("EF312A64Lein7bRiC5HG").set(baseline);
+      await profiles.doc("alice").set(alice);
     });
 
     it("requires submitted uid to match the authenticated user id", async () => {
@@ -826,6 +828,14 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 254.4 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OTO", timetypeName: "Request Overtime Payout" }));
+    });
+    it("prevents RB (banking) entries from being created for staff with salary:true on their profile", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();      
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
+      // TODO: set profile salary: true here
+      const { salary, ...missingSalary } = alice;
+      await profiles.doc("alice").set({ salary: true, ...missingSalary });
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
     });
   });
   
