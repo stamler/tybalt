@@ -24,13 +24,12 @@ Holders of this claim can view reports and exports
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { format, subMilliseconds, addMilliseconds } from "date-fns";
+import { subMilliseconds, addMilliseconds } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { getAuthObject, isWeekReference, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
+import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -345,112 +344,6 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
     });
   });
 }
-/*
-  Given a weekEnding as a property of data, lock all of the currently
-  approved TimeSheets and add their ids to the timeSheets property array
-  of the TimeTracking doc. Finally, call exportJson()
-*/
-export async function lockTimesheets(data: unknown, context: functions.https.CallableContext) {
-  if (!contextHasClaim(context, "tslock")) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Call to lockTimesheets() failed"
-    );
-  }
-
-  // Validate the data or throw
-  // use a User Defined Type Guard
-  if (!isWeekReference(data)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The provided data isn't a valid week reference"
-    );
-  }
-
-  const tbay_week = utcToZonedTime(
-    new Date(data.weekEnding),
-    "America/Thunder_Bay"
-  );
-
-  // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
-  tbay_week.setHours(23, 59, 59, 999);
-
-  // verify tbay_week is a Saturday in America/Thunder_Bay time zone
-  if (tbay_week.getDay() !== 6) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The week ending specified is not a Saturday"
-    );
-  }
-
-  // Convert back to UTC for queries against firestore
-  const weekEnding = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
-
-  // Look for TimeSheets to export
-  const db = admin.firestore();
-  const timeSheets = await db
-    .collection("TimeSheets")
-    .where("approved", "==", true)
-    .where("locked", "==", false)
-    .where("weekEnding", "==", weekEnding)
-    .get();
-
-  if (!timeSheets.empty) {
-    /* TODO: for each Timesheet, run a transaction to verify
-      that submitted & approved are true and that it isn't locked. Then lock it, 
-      and add it as an array element to the timeSheets property of the export
-      document that has week_ending.getTime() as ID. Create the export document
-      if it doesn't already exist.
-        
-      The idea here is that at some point we can delete locked TimeSheets from
-      the database as they're aggregated into TimeTracking. This assists in data
-      management while preserving values for future use and reducing queries
-    */
-
-    const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding);
-
-    const transactions: Promise<admin.firestore.Transaction>[] = [];
-    timeSheets.forEach((timeSheet) => {
-      const trans = db.runTransaction(async (transaction) => {
-        return transaction.get(timeSheet.ref).then(async (tsSnap) => {
-          const snapData = tsSnap.data();
-          if (!snapData) {
-            throw new Error("A DocumentSnapshot was empty during the locking transaction")
-          }
-          if (
-            snapData.submitted === true &&
-            snapData.approved === true &&
-            snapData.locked === false
-          ) {
-            // timesheet is lockable, lock it then add it to the export
-            return transaction
-              .update(timeSheet.ref, { locked: true })
-              .update(timeTrackingDocRef, {
-                [`timeSheets.${tsSnap.id}`]: { displayName: snapData.displayName, uid: snapData.uid },
-              });
-          } else {
-            throw new Error(
-              "The timesheet has either not been submitted and approved " +
-                "or it was already locked"
-            );
-          }
-        });
-      });
-      transactions.push(trans);
-    });
-    return Promise.all(transactions).then(() => {
-      return exportJson({ id: timeTrackingDocRef.id });
-    });
-  } else {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      `There are no outstanding approved timesheets for the week ending ${format(
-        utcToZonedTime(weekEnding, "America/Thunder_Bay"),
-        "yyyy MMM dd"
-      )}`
-    );
-  }
-};
 
 // Given a TimeTracking id, create or update a file on Google storage
 // with the locked timeSheets and amendments. Must be called by another
