@@ -2,10 +2,10 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as _ from "lodash";
 import { getPayPeriodFromWeekEnding, isPayrollWeek2 } from "./utilities";
-import { subSeconds, addSeconds } from "date-fns";
+import { subMilliseconds, addMilliseconds } from "date-fns";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_SECONDS = 2;
+const WITHIN_MSEC = 1;
 
 async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   const db = admin.firestore();
@@ -23,8 +23,8 @@ async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   } else {
     querySnap = await db
       .collection("PayrollTracking")
-      .where("payPeriodEnding", ">", subSeconds(payPeriodEnding, WITHIN_SECONDS))
-      .where("payPeriodEnding", "<", addSeconds(payPeriodEnding, WITHIN_SECONDS))
+      .where("payPeriodEnding", ">", subMilliseconds(payPeriodEnding, WITHIN_MSEC))
+      .where("payPeriodEnding", "<", addMilliseconds(payPeriodEnding, WITHIN_MSEC))
       .get();
   }
 
