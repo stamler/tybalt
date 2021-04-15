@@ -2,7 +2,10 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as path from "path";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
-import { differenceInCalendarDays, addDays, subDays } from "date-fns";
+import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
+
+const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+const WITHIN_MSEC = 1;
 
 // make a string with serial & manufacturer that uniquely identifies a computer
 export function makeSlug(serial: string, mfg: string) {
@@ -404,4 +407,49 @@ export function thisTimeLastWeekInTimeZone(datetime: Date, timezone: string) {
 export function thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
   const zone_time = utcToZonedTime(datetime, timezone);
   return zonedTimeToUtc(addDays(zone_time, 7), timezone);
+}
+
+export async function getTrackingDoc(date: Date, collection: string, property: string, otherProps = {}) {
+
+  // otherProps, an object containing property names and default values
+  // if a new Tracking Document is created
+  // example: {expenses: {}} for an ExpenseTracking document
+  // TODO: remove dependencies on default properties in other code
+
+  const db = admin.firestore();
+
+  // Get the Tracking doc if it exists, otherwise create it.
+  let querySnap;
+  if (EXACT_TIME_SEARCH) {
+    querySnap = await db
+      .collection(collection)
+      .where(property, "==", date)
+      .get();
+  } else {
+    querySnap = await db
+      .collection(collection)
+      .where(property, ">", subMilliseconds(date, WITHIN_MSEC))
+      .where(property, "<", addMilliseconds(date, WITHIN_MSEC))
+      .get();
+  }
+
+  let trackingDocRef;
+  if (querySnap.size > 1) {
+    throw new Error(
+      `There is more than one document in ${collection} for ${property} ${date}`
+    );
+  } else if (querySnap.size === 1) {
+    // retrieve existing tracking document
+    trackingDocRef = querySnap.docs[0].ref;
+  } else {
+    // create new tracking document
+    trackingDocRef = db.collection(collection).doc();
+    functions.logger.info(`creating new ${collection} document ${trackingDocRef.id}`);
+    await trackingDocRef.set({
+      [property]: date,
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      ...otherProps,
+    });
+  }
+  return trackingDocRef;
 }

@@ -1,9 +1,8 @@
 import * as firebase from "@firebase/rules-unit-testing";
 import "mocha";
-//import * as wtf from "wtfnode";
 import { addDays, subDays } from "date-fns";
 
-const projectId = "charade-ca63f";
+const projectId = "test-app-id";
 
 const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7), salary: false };
 const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
