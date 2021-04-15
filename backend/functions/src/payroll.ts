@@ -1,52 +1,13 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as _ from "lodash";
-import { getPayPeriodFromWeekEnding, isPayrollWeek2 } from "./utilities";
-import { subMilliseconds, addMilliseconds } from "date-fns";
-
-const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_MSEC = 1;
+import { getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "./utilities";
 
 async function getPayrollTrackingDoc(payPeriodEnding: Date) {
-  const db = admin.firestore();
   if (!isPayrollWeek2(payPeriodEnding)) {
     throw new Error(`${payPeriodEnding} is not a valid pay period ending`);
   }
-
-  // Get the PayrollTracking doc if it exists, otherwise create it.
-  let querySnap;
-  if (EXACT_TIME_SEARCH) {
-    querySnap = await db
-      .collection("PayrollTracking")
-      .where("payPeriodEnding", "==", payPeriodEnding)
-      .get();
-  } else {
-    querySnap = await db
-      .collection("PayrollTracking")
-      .where("payPeriodEnding", ">", subMilliseconds(payPeriodEnding, WITHIN_MSEC))
-      .where("payPeriodEnding", "<", addMilliseconds(payPeriodEnding, WITHIN_MSEC))
-      .get();
-  }
-
-  let payrollTrackingDocRef;
-  if (querySnap.size > 1) {
-    throw new Error(
-      `There is more than one document in PayrollTracking for payPeriodEnding ${payPeriodEnding}`
-    );
-  } else if (querySnap.size === 1) {
-    // retrieve existing tracking document
-    payrollTrackingDocRef = querySnap.docs[0].ref;
-  } else {
-    // create new tracking document
-    payrollTrackingDocRef = db.collection("PayrollTracking").doc();
-    functions.logger.info(`creating new PayrollTracking document ${payrollTrackingDocRef.id}`);
-    await payrollTrackingDocRef.set({
-      payPeriodEnding,
-      created: admin.firestore.FieldValue.serverTimestamp(),
-      expenses: {},
-    });
-  }
-  return payrollTrackingDocRef;
+  return getTrackingDoc(payPeriodEnding,"PayrollTracking","payPeriodEnding", { expenses: {} });
 }
 
 export const updatePayrollFromTimeTracking = functions.firestore

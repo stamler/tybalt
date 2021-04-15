@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeNextWeekInTimeZone } from "./utilities";
+import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeNextWeekInTimeZone, getTrackingDoc } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -57,7 +57,6 @@ export async function cleanUpOrphanedAttachment(
 export const updateExpenseTracking = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => {
-    const db = admin.firestore();
     const beforeData = change.before.data();
     const afterData = change.after.data();
     const beforeCommitted: boolean = beforeData?.committed ?? false;
@@ -68,34 +67,8 @@ export const updateExpenseTracking = functions.firestore
     }
 
     // Get the ExpenseTracking doc if it exists, otherwise create it.
-    let querySnap;
-    if (EXACT_TIME_SEARCH) {
-      querySnap = await db
-        .collection("ExpenseTracking")
-        .where("weekEnding", "==", weekEnding)
-        .get();
-    } else {
-      querySnap = await db
-        .collection("ExpenseTracking")
-        .where("weekEnding", ">", subMilliseconds(weekEnding, WITHIN_MSEC))
-        .where("weekEnding", "<", addMilliseconds(weekEnding, WITHIN_MSEC))
-        .get();
-    }
+    const expenseTrackingDocRef = await getTrackingDoc(weekEnding,"ExpenseTracking","weekEnding");
 
-    let expenseTrackingDocRef;
-    if (querySnap.size > 1) {
-      throw new Error(
-        `There is more than one document in ExpenseTracking for weekEnding ${weekEnding}`
-      );
-    } else if (querySnap.size === 1) {
-      // retrieve existing ExpenseTracking document
-      expenseTrackingDocRef = querySnap.docs[0].ref;
-    } else {
-      // create new ExpenseTracking document
-      expenseTrackingDocRef = db.collection("ExpenseTracking").doc();
-      functions.logger.info(`creating new ExpenseTracking document ${expenseTrackingDocRef.id}`);
-      await expenseTrackingDocRef.set({ weekEnding, created: admin.firestore.FieldValue.serverTimestamp() });
-    }
     if (
       afterData &&
       afterData.committed === true &&

@@ -24,52 +24,11 @@ Holders of this claim can view reports and exports
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { subMilliseconds, addMilliseconds } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes } from "./utilities";
-
-const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_MSEC = 1;
-
-// Get the TimeTracking doc if it exists, otherwise create it.
-async function getTimeTrackingDoc(weekEnding: Date) {
-  const db = admin.firestore();
-
-  // Get the TimeTracking doc if it exists, otherwise create it.
-  let querySnap;
-  if (EXACT_TIME_SEARCH) {
-    querySnap = await db
-      .collection("TimeTracking")
-      .where("weekEnding", "==", weekEnding)
-      .get();
-  } else {
-    querySnap = await db
-      .collection("TimeTracking")
-      .where("weekEnding", ">", subMilliseconds(weekEnding, WITHIN_MSEC))
-      .where("weekEnding", "<", addMilliseconds(weekEnding, WITHIN_MSEC))
-      .get();
-  }
-
-  let timeTrackingDocRef: admin.firestore.DocumentReference;
-  if (querySnap.size > 1) {
-    throw new Error(
-      `There is more than one document in TimeTracking for weekEnding ${weekEnding}`
-    );
-  } else if (querySnap.size === 1) {
-    // retrieve existing tracking document
-    timeTrackingDocRef = querySnap.docs[0].ref;
-  } else {
-    // create new tracking document
-    timeTrackingDocRef = db.collection("TimeTracking").doc();
-    functions.logger.info(`getTimeTrackingDoc() creating new TimeTracking document ${timeTrackingDocRef.id}`);
-    await timeTrackingDocRef.set({ weekEnding, created: admin.firestore.FieldValue.serverTimestamp() });
-  }
-  return timeTrackingDocRef;
-}
-
+import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
 
 interface PendingTimeSheetSummary {
   displayName: string;
@@ -200,7 +159,7 @@ export const updateTimeTracking = functions.firestore
       );
     }
 
-    const timeTrackingDocRef = await getTimeTrackingDoc(weekEnding);
+    const timeTrackingDocRef = await getTrackingDoc(weekEnding,"TimeTracking","weekEnding");
 
     if (
       afterData &&
@@ -466,7 +425,7 @@ export async function exportOnAmendmentCommit(
 ) {
     const committedWeekEnding = change.after.data().committedWeekEnding;
     if (committedWeekEnding !== undefined) {
-      const timeTrackingDocRef = await getTimeTrackingDoc(committedWeekEnding);
+      const timeTrackingDocRef = await getTrackingDoc(committedWeekEnding,"TimeTracking","weekEnding");
       return exportJson({ id: timeTrackingDocRef.id });
     }
   };
