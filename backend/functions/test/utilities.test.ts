@@ -56,7 +56,7 @@ describe("utilities.ts", () => {
       assert(isPayrollWeek2(weekEnding) === false);
     });
   });
-  describe("getPayPeriodFromWeekEnding", () => {
+  describe("getPayPeriodFromWeekEnding()", () => {
     it("returns argument when argument is a valid payroll week 2", () => {
       let weekEnding = new Date("2021-01-09T23:59:59.999-05:00");
       assert(getPayPeriodFromWeekEnding(weekEnding) === weekEnding);
@@ -82,7 +82,7 @@ describe("utilities.ts", () => {
       assert.throws(() => { getPayPeriodFromWeekEnding(weekEnding)});
     });
   });
-  describe("getTrackingDoc", () => {
+  describe("getTrackingDoc()", () => {
 
     beforeEach("reset data", async () => {
       await cleanupFirestore(projectId);
