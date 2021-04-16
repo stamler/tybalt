@@ -22,7 +22,7 @@ export async function cleanupFirestore(projectId: string) {
   return axios.delete(u.toString());
 }
 
-describe.only("utilities.ts", () => {
+describe("utilities.ts", () => {
   describe("makeSlug()", () => {
     it("correctly forms slugs from manufacturer and serial number", () => {
       assert(makeSlug("kQDS 9/452,At", "Dell, Inc. Ltd  ") === "kQDS9452At,dell");
