@@ -43,7 +43,7 @@ describe.only("utilities.ts", () => {
       assert.throws(() => {getAuthObject({} as CallableContext,["claim1"])}, "Caller must be authenticated");
     });
     it("throws if the auth object contains no valid claims", () => {
-      assert.throws(() => {getAuthObject(context as CallableContext,["claim5"])});
+      assert.throws(() => {getAuthObject(context as CallableContext,["claim5"])}, "Caller must have one of [claim5] claims");
     });
     it("returns the auth object if the auth object contains a valid claim", () => {
       const auth = getAuthObject(context as CallableContext,["claim1"]);
