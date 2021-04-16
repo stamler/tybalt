@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, contextHasClaim, isPayrollWeek2, thisTimeNextWeekInTimeZone, getTrackingDoc } from "./utilities";
+import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, isPayrollWeek2, thisTimeNextWeekInTimeZone, getTrackingDoc, getAuthObject } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -208,12 +208,8 @@ export async function getPayPeriodExpenses(
     context: functions.https.CallableContext
 ): Promise<admin.firestore.DocumentData[]> {
 
-  if (!contextHasClaim(context, "report")) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Call to getPayPeriodExpenses() failed"
-    );
-  }
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context, ["report"]);
   
   // Validate the data or throw
   // use a User Defined Type Guard

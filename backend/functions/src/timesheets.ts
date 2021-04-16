@@ -261,12 +261,8 @@ export const updateTimeTracking = functions.firestore
   Finally, call exportJson()
 */
 export async function lockTimesheet(data: unknown, context: functions.https.CallableContext) {
-  if (!contextHasClaim(context, "tslock")) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Call to lockTimesheet() failed"
-    );
-  }
+
+  getAuthObject(context, ["tslock"])
 
   // Validate the data or throw
   // use a User Defined Type Guard
@@ -430,40 +426,10 @@ export async function exportOnAmendmentCommit(
     }
   };
 
-// Confirm the context has specified claim and throw userful errors as necessary
-function contextHasClaim(context: functions.https.CallableContext, claim: string) {
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Caller must be authenticated"
-    );
-  }
-
-  // caller must have the claim
-  if (
-    !(
-      Object.prototype.hasOwnProperty.call(context.auth.token, claim) &&
-      context.auth.token[claim] === true
-    )
-  ) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      `Caller must have the ${claim} claim`
-    );
-  } else {
-    return true;
-  }
-}
-
 export async function commitTimeAmendment(data: unknown, context: functions.https.CallableContext) {
-  if (!contextHasClaim(context, "tame")) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Call to commitTimeAmendment() failed"
-    );
-  }
+
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context, ["tame"]);
 
   // Validate the data or throw
   // use a User Defined Type Guard

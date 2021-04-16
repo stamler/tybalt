@@ -314,33 +314,6 @@ export function nextSaturday(date: Date): Date {
   return calculatedSaturday;
 }
 
-// Confirm the context has specified claim and throw userful errors as necessary
-export function contextHasClaim(context: functions.https.CallableContext, claim: string) {
-  if (!context.auth) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Caller must be authenticated"
-    );
-  }
-
-  // caller must have the claim
-  if (
-    !(
-      Object.prototype.hasOwnProperty.call(context.auth.token, claim) &&
-      context.auth.token[claim] === true
-    )
-  ) {
-    // Throw an HttpsError so that the client gets the error details
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      `Caller must have the ${claim} claim`
-    );
-  } else {
-    return true;
-  }
-}
-
 // Given a number (result of getTime() from js Date object), verify that it is
 // 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
 // week 2 of a payroll at TBT Engineering. The definition of this is an
