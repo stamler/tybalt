@@ -11,7 +11,8 @@ import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const assert = chai.assert;
 
-import { makeSlug, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "../src/utilities";
+import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "../src/utilities";
+import { CallableContext } from "firebase-functions/lib/providers/https";
 
 export async function cleanupFirestore(projectId: string) {
   // clear data
@@ -34,6 +35,23 @@ describe.only("utilities.ts", () => {
     it("throws if the manufacturer is under 2 characters long", () => {
       assert.throws(() => {makeSlug("FE/KJ","J Inc.")});
       assert(makeSlug("FE/KJ","JR Inc.") === "FEKJ,jr");
+    });
+  });
+  describe("getAuthObject()", () => {
+    const context = { auth: { token: { claim1: true, claim2: true, claim3: true, unique: "jkl" }}} as unknown;
+    it("throws if the callable context contains no auth object", () => {
+      assert.throws(() => {getAuthObject({} as CallableContext,["claim1"])}, "Caller must be authenticated");
+    });
+    it("throws if the auth object contains no valid claims", () => {
+      assert.throws(() => {getAuthObject(context as CallableContext,["claim5"])});
+    });
+    it("returns the auth object if the auth object contains a valid claim", () => {
+      const auth = getAuthObject(context as CallableContext,["claim1"]);
+      assert(auth.token.unique === "jkl");
+    });
+    it("returns the auth object if the auth object contains at least one valid claim", () => {
+      const auth = getAuthObject(context as CallableContext,["claim5","claim3"]);
+      assert(auth.token.unique === "jkl");
     });
   });
   describe("isPayrollWeek2()", () => {
