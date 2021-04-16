@@ -110,7 +110,30 @@ describe("utilities.ts", () => {
       const doc3 = db.collection("TimeTracking").doc("id3");
       await doc2.set({ weekEnding: date, unique: "throwTest2" }); 
       await doc3.set({ weekEnding: date, unique: "throwTest3" });
-      assert.isRejected(getTrackingDoc(date, "TimeTracking","weekEnding"));
+      await assert.isRejected(getTrackingDoc(date, "TimeTracking","weekEnding"));
+    });
+    it("throws when the provided date argument is not a saturday at 23:59:59.999 in America/Thunder_Bay", async () => {
+      const date1 = new Date("2021-01-09T23:59:59.990-05:00"); // should fail (wrong msec)
+      const date2 = new Date("2021-01-10T23:59:59.999-05:00"); // should fail (not saturday)
+      const date3 = new Date("2021-04-17T23:59:59.999-04:00"); // should succeed (EDT, week2)
+      const date4 = new Date("2021-01-02T23:59:59.999-05:00"); // should succeed (week1)
+      const db = admin.firestore();
+      const doc1 = db.collection("TimeTracking").doc("id1");
+      const doc2 = db.collection("TimeTracking").doc("id2");
+      const doc3 = db.collection("TimeTracking").doc("id3");
+      const doc4 = db.collection("TimeTracking").doc("id4");
+      await doc1.set({ weekEnding: date1, unique: "throwTest01" }); 
+      await doc2.set({ weekEnding: date2, unique: "throwTest02" }); 
+      await doc3.set({ weekEnding: date3, unique: "success03" });
+      await doc4.set({ weekEnding: date4, unique: "success04" });
+      await assert.isRejected(getTrackingDoc(date1, "TimeTracking","weekEnding"));
+      await assert.isRejected(getTrackingDoc(date2, "TimeTracking","weekEnding"));
+      let docRef = await getTrackingDoc(date3, "TimeTracking","weekEnding");
+      let docSnap = await docRef.get()      
+      assert(docSnap.get("unique") === "success03");
+      docRef = await getTrackingDoc(date4, "TimeTracking","weekEnding");
+      docSnap = await docRef.get()      
+      assert(docSnap.get("unique") === "success04");
     });
   });
 });

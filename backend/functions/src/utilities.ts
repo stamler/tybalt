@@ -416,6 +416,12 @@ export async function getTrackingDoc(date: Date, collection: string, property: s
   // example: {expenses: {}} for an ExpenseTracking document
   // TODO: remove dependencies on default properties in other code
 
+  if (!isPayrollWeek2(date)) {
+    if (!isPayrollWeek2(thisTimeNextWeekInTimeZone(date,"America/Thunder_Bay"))) {
+      throw new Error("The provided date is not a valid week ending");
+    }
+  }
+
   const db = admin.firestore();
 
   // Get the Tracking doc if it exists, otherwise create it.
