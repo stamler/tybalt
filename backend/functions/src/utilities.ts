@@ -140,24 +140,7 @@ export const writeFileLinks = functions.storage
       );
     }
 
-    // Get the <collection> doc or throw
-    const querySnap = await db
-      .collection(collection)
-      .where("weekEnding", "==", weekEnding)
-      .get();
-
-    let trackingDocRef;
-    if (querySnap.size > 1) {
-      throw new Error(
-        `There is more than one document in ${collection} for weekEnding ${weekEnding}`
-      );
-    } else if (querySnap.size === 1) {
-      trackingDocRef = querySnap.docs[0].ref;
-    } else {
-      throw new Error(
-        `There are no documents in ${collection} for weekEnding ${weekEnding}`
-      );
-    }
+    const trackingDocRef = await getTrackingDoc(weekEnding,collection,"weekEnding");
 
     return trackingDocRef.update({
       [parsed.ext.substring(1)]: createPersistentDownloadUrl(
