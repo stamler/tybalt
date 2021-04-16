@@ -11,7 +11,7 @@ import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const assert = chai.assert;
 
-import { getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "../src/utilities";
+import { makeSlug, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "../src/utilities";
 
 export async function cleanupFirestore(projectId: string) {
   // clear data
@@ -21,7 +21,21 @@ export async function cleanupFirestore(projectId: string) {
   return axios.delete(u.toString());
 }
 
-describe("utilities.ts", () => {
+describe.only("utilities.ts", () => {
+  describe("makeSlug()", () => {
+    it("correctly forms slugs from manufacturer and serial number", () => {
+      assert(makeSlug("kQDS 9/452,At", "Dell, Inc. Ltd  ") === "kQDS9452At,dell");
+      assert(makeSlug("LENISJ/PFU ", "Lenovo Computer, Inc. Ltd  ") === "LENISJPFU,lenovo_computer");
+    });
+    it("throws if the serial number is under 4 characters long", () => {
+      assert.throws(() => {makeSlug("FE/K","Dell, Inc. Ltd")});
+      assert(makeSlug("FE/KJ","Dell, Inc. Ltd") === "FEKJ,dell");
+    });
+    it("throws if the manufacturer is under 2 characters long", () => {
+      assert.throws(() => {makeSlug("FE/KJ","J Inc.")});
+      assert(makeSlug("FE/KJ","JR Inc.") === "FEKJ,jr");
+    });
+  });
   describe("isPayrollWeek2()", () => {
     it("returns true when argument is a valid week 2 of a pay period", () => {
       let weekEnding = new Date("2021-01-09T23:59:59.999-05:00");
