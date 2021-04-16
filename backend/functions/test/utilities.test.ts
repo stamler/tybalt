@@ -11,7 +11,7 @@ import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const assert = chai.assert;
 
-import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "../src/utilities";
+import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc, nextSaturday } from "../src/utilities";
 import { CallableContext } from "firebase-functions/lib/providers/https";
 
 export async function cleanupFirestore(projectId: string) {
@@ -52,6 +52,18 @@ describe.only("utilities.ts", () => {
     it("returns the auth object if the auth object contains at least one valid claim", () => {
       const auth = getAuthObject(context as CallableContext,["claim5","claim3"]);
       assert(auth.token.unique === "jkl");
+    });
+  });
+  describe("nextSaturday()", () => {
+    it("returns the following Saturday at 23:59:59.999 in America/Thunder_Bay timezone", () => {
+      const date1 = new Date("2021-01-09T23:59:59.999-05:00"); // a valid weekEnding
+      const date2 = new Date("2021-01-03T16:23:45.000-05:00"); // a Sunday afternoon
+      const date3 = new Date("2021-03-14T01:59:59.999-05:00"); // Sunday morning the millisecond before EDT kicks in
+      const date4 = new Date("2021-04-15T13:55:01.000-05:00"); // a Thursday afternoon
+      assert(nextSaturday(date1).getTime() === date1.getTime());
+      assert(nextSaturday(date2).getTime() === date1.getTime());
+      assert(nextSaturday(date3).getTime() === (new Date("2021-03-20T23:59:59.999-04:00")).getTime());
+      assert(nextSaturday(date4).getTime() === (new Date("2021-04-17T23:59:59.999-04:00")).getTime());
     });
   });
   describe("isPayrollWeek2()", () => {

@@ -51,7 +51,7 @@ export function getAuthObject(context: functions.https.CallableContext, authoriz
 }
 
 // Dates are not supported in Firebase Functions yet so
-// data.weekEnding is the valueOf() a Date object
+// data.weekEnding is the getTime() a Date object
 // https://github.com/firebase/firebase-functions/issues/316
 export interface WeekReference {
   // milliseconds since the epoch
@@ -191,7 +191,7 @@ export async function writeWeekEnding(
       // update the Document only if required
       if (
         weekEnding === null ||
-        weekEnding.toDateString() !== calculatedSaturday.toDateString()
+        weekEnding.getTime() !== calculatedSaturday.getTime()
       ) {
         return change.after.ref.set(
           { [weekEndingProperty]: calculatedSaturday },
@@ -265,7 +265,7 @@ export async function writeExpensePayPeriodEnding(
   // update the Document only if required
   if (
     payPeriodEnding === undefined ||
-    payPeriodEnding.toDateString() !== calculatedPayPeriodEnding.toDateString()
+    payPeriodEnding.getTime() !== calculatedPayPeriodEnding.getTime()
   ) {
     return change.after.ref.set(
       { payPeriodEnding: calculatedPayPeriodEnding },
@@ -295,7 +295,7 @@ export function nextSaturday(date: Date): Date {
       "America/Thunder_Bay"
     );
   } else {
-    const nextsat = new Date(date.valueOf());
+    const nextsat = new Date(date.getTime());
     nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
     calculatedSaturday = zonedTimeToUtc(
       new Date(

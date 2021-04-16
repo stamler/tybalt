@@ -304,7 +304,7 @@ export default mixins.extend({
       return this.items.filter(
         (x) =>
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
-          x.weekEnding.toDate().valueOf() === Number(weekEnding)
+          x.weekEnding.toDate().getTime() === Number(weekEnding)
       );
     },
   },
@@ -330,7 +330,7 @@ export default mixins.extend({
 
       for (const item of this.items) {
         if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
-          const key = item.weekEnding.toDate().valueOf();
+          const key = item.weekEnding.toDate().getTime();
           // this item can be tallied because it has a weekEnding property
           // Check if it already has an entry in the tally object to
           // accumulate values and create it if not.
