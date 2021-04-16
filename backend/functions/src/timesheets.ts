@@ -50,7 +50,7 @@ export async function unbundleTimesheet(
 ) {
   const db = admin.firestore();
 
-  // throws if the caller isn't authorized
+  // throw if the caller isn't authenticated & authorized
   const auth = getAuthObject(context, ["time"]);
 
   // Validate the data or throw

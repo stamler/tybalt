@@ -16,7 +16,7 @@ export async function bundleTimesheet(
 ) {
   const db = admin.firestore();
 
-  // throw if the caller isn't authorized
+  // throw if the caller isn't authenticated & authorized
   const auth = getAuthObject(context, ["time"]);
 
   // Validate the data or throw

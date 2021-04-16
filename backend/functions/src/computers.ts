@@ -6,6 +6,7 @@ https://firebase.google.com/docs/functions/callable
 */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { getAuthObject } from "./utilities";
 
 interface ComputerAssignment {
   computerId: string; 
@@ -34,31 +35,8 @@ export async function assignComputerToUser(
   ) {
     const db = admin.firestore();
 
-    // TODO: replace lines 38 to 61 with utilities.getAuthObject()
-    if (!context.auth) {
-      // Throw an HttpsError so that the client gets the error details
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Caller must be authenticated"
-      );
-    }
-    const auth = context.auth;
-
-    // caller must have at least one authorized custom claim
-    const authorizedClaims = ["computers"];
-    if (
-      !authorizedClaims.some(
-        (claim: string) =>
-          Object.prototype.hasOwnProperty.call(auth.token, claim) &&
-          auth.token[claim] === true
-      )
-    ) {
-      // Throw an HttpsError so that the client gets the error details
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        `Caller must have one of [${authorizedClaims.toString()}] claims`
-      );
-    }
+    // throw if the caller isn't authenticated & authorized
+    const auth = getAuthObject(context,["computers"]);
 
     // Validate the data or throw
     // use a User Defined Type Guard
