@@ -360,6 +360,7 @@ export default mixins.extend({
           managerName: this.profile.get("managerName"),
           managerUid: this.profile.get("managerUid"),
           division: this.profile.get("defaultDivision"),
+          tbtePayrollId: this.profile.get("tbtePayrollId"),
           paymentType: "Expense",
           submitted: false,
           approved: false,
