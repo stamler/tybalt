@@ -43,6 +43,9 @@
             >
               Corporate Credit Card
             </span>
+            <span class="label" v-if="exp.paymentType === 'FuelCard'">
+              Fuel Card
+            </span>
           </div>
         </div>
       </div>

@@ -144,7 +144,7 @@ interface ExpenseCommon {
   jobDescription?: string;
 }
 interface ExpenseRegular extends ExpenseCommon {
-  paymentType: "Expense" | "CorporateCreditCard";
+  paymentType: "Expense" | "CorporateCreditCard" | "FuelCard";
   total: number;
   vendorName?: string;
   attachment?: string;
@@ -198,6 +198,7 @@ function isExpenseRegular(data: unknown): data is ExpenseRegular {
   }
   const paymentType =
     data.paymentType === "Expense" ||
+    data.paymentType === "FuelCard" ||
     data.paymentType === "CorporateCreditCard";
   const total = typeof data.total === "number" && data.total > 0;
   const optionalStringVals = ["vendorName", "attachment", "po"]

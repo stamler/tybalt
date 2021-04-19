@@ -1099,12 +1099,14 @@ describe("Firestore Rules", function () {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, total, ...missingPaymentTypeAndTotal } = baseline;
       await firebase.assertFails(doc.set({paymentType: "Expense",...missingPaymentTypeAndTotal}));
+      await firebase.assertFails(doc.set({paymentType: "FuelCard",...missingPaymentTypeAndTotal}));
       await firebase.assertFails(doc.set({paymentType: "CorporateCreditCard",...missingPaymentTypeAndTotal}));
       await firebase.assertFails(doc.set({paymentType: "Expense", total: -50.5, ...missingPaymentTypeAndTotal}));
       await firebase.assertSucceeds(doc.set({paymentType: "Expense", total: 50.5, ...missingPaymentTypeAndTotal}));
       await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", total: 50.5, ...missingPaymentTypeAndTotal}));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", total: 50.5, ...missingPaymentTypeAndTotal}));
     });
-    it("requires paymentType to be either CorporateCreditCard or Expense or Mileage", async () => {
+    it("requires paymentType to be either CorporateCreditCard or Expense or Mileage or FuelCard", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
@@ -1112,6 +1114,7 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
       await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {

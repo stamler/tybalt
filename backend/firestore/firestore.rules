@@ -105,7 +105,7 @@ service cloud.firestore {
           "surname", "givenName", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
-        (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard" || newDoc().paymentType == "Mileage") &&
+        (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard" || newDoc().paymentType == "Mileage" || newDoc().paymentType == "FuelCard") &&
         isInCollection("division","Divisions") &&
 
         // when paymentType is not Mileage, total is positive number and distance is missing

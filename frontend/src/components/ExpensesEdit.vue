@@ -35,6 +35,7 @@
       <label for="paymentType">Type:</label>
       <select name="paymentType" v-model="item.paymentType">
         <option value="CorporateCreditCard">Corp Visa</option>
+        <option value="FuelCard">Fuel Card</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">Personal Mileage</option>
       </select>

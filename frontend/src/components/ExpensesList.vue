@@ -47,6 +47,9 @@
           <span class="label" v-if="item.paymentType === 'CorporateCreditCard'">
             Corporate Credit Card
           </span>
+          <span class="label" v-if="item.paymentType === 'FuelCard'">
+            Fuel Card
+          </span>
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
           </span>
