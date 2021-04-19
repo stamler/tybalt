@@ -40,6 +40,18 @@
         <option value="Mileage">Personal Mileage</option>
       </select>
     </span>
+    <span
+      class="field"
+      v-if="['FuelCard', 'CorporateCreditCard'].includes(item.paymentType)"
+    >
+      <label for="ccLast4digits">Last 4 digits of Card</label>
+      <input
+        type="text"
+        name="ccLast4digits"
+        v-model="item.ccLast4digits"
+        placeholder="0000"
+      />
+    </span>
     <span v-if="!validInsuranceExpiry" class="attention"
       >You do not have valid personal vehicle insurance in your profile. Please
       contact HR to update your profile prior to submitting a personal mileage
