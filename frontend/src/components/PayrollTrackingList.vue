@@ -140,6 +140,7 @@ export default mixins.extend({
         weekEnding = new Date(amendments[0].committedWeekEnding);
       }
       const fields = [
+        "tbtePayrollId",
         "weekEnding",
         {
           label: "surname",
@@ -233,7 +234,6 @@ export default mixins.extend({
         },
         "hasAmendmentsForWeeksEnding",
         "salary",
-        "tbtePayrollId",
       ];
       const opts = { fields };
       const timesheetRecords = items.map((x) => {
