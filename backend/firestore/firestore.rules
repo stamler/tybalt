@@ -108,6 +108,12 @@ service cloud.firestore {
         (newDoc().paymentType == "Expense" || newDoc().paymentType == "CorporateCreditCard" || newDoc().paymentType == "Mileage" || newDoc().paymentType == "FuelCard") &&
         isInCollection("division","Divisions") &&
 
+
+        // requires attachment if paymentType is "CorporateCreditCard" or "FuelCard"
+        (
+          newDoc().paymentType in ["CorporateCreditCard","FuelCard"] && !isMissing("attachment") ||
+          !(newDoc().paymentType in ["CorporateCreditCard","FuelCard"])
+        ) &&
         // when paymentType is not Mileage, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
         (

@@ -915,7 +915,7 @@ describe("Firestore Rules", function () {
     const divisions = adminDb.collection("Divisions");
     const profiles = adminDb.collection("Profiles");
     const jobs = adminDb.collection("Jobs");
-    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense" };
+    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense", attachment: "foo" };
     const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
     const division = { name: "Playtime" };
 
@@ -1075,12 +1075,11 @@ describe("Firestore Rules", function () {
     });
     it("rejects Mileage Expenses where the user doesn't have valid personal car insurance on their profile", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, ...missingPaymentType } = baseline;
-      const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
+      const { paymentType, attachment, total,...missingPaymentTypeAndAttachmentAndTotal } = baseline;
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndAttachmentAndTotal }));
       const { personalVehicleInsuranceExpiry, ...missingPersonalVehicleInsuranceExpiry } = alice;
       await profiles.doc("alice").set({personalVehicleInsuranceExpiry: subDays(new Date(), 7), ...missingPersonalVehicleInsuranceExpiry});
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndAttachmentAndTotal }));
     });
     it("requires any referenced job to be valid", async () => {
       const doc = timeDb.collection("Expenses").doc();
@@ -1106,34 +1105,43 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", total: 50.5, ...missingPaymentTypeAndTotal}));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", total: 50.5, ...missingPaymentTypeAndTotal}));
     });
+    it("requires attachment if paymentType is either CorporateCreditCard or FuelCard", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, attachment, ...missingPaymentTypeAndAttachment } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "FuelCard", ...missingPaymentTypeAndAttachment}));
+      await firebase.assertFails(doc.set({paymentType: "CorporateCreditCard", ...missingPaymentTypeAndAttachment}));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", attachment: "foo", ...missingPaymentTypeAndAttachment}));
+      await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", attachment: "foo", ...missingPaymentTypeAndAttachment}));
+    });
     it("requires paymentType to be either CorporateCreditCard or Expense or Mileage or FuelCard", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
+      const { attachment, ...missingPaymentTypeAndTotalAndAttachment } = missingPaymentTypeAndTotal;
       await firebase.assertFails(doc.set(missingPaymentType));
       await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, total, ...missingPaymentTypeAndTotal } = baseline;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: -1, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 0.5, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", ...missingPaymentTypeAndTotal }));
+      const { paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: -1, ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 0.5, ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: "foo", ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", ...missingPaymentTypeAndTotalAndAttachment }));
     });
     it("requires po, vendorName, attachment, total to be missing if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, total, ...missingPaymentTypeAndTotal } = baseline;
-      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, po: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, vendorName: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, attachment: "foo", ...missingPaymentTypeAndTotal }));
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, total: 55, ...missingPaymentTypeAndTotal }));
+      const { paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
+      await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, po: "foo", ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, vendorName: "foo", ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, attachment: "foo", ...missingPaymentTypeAndTotalAndAttachment }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, total: 55, ...missingPaymentTypeAndTotalAndAttachment }));
     });
     it("requires distance to missing if paymentType is not Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
