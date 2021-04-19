@@ -40,6 +40,9 @@
         <option value="Mileage">Personal Mileage</option>
       </select>
     </span>
+    <span v-if="mileageTokensInDescWhileOtherPaymentType" class="attention">
+      ^Should you choose personal mileage instead?
+    </span>
     <span
       class="field"
       v-if="['FuelCard', 'CorporateCreditCard'].includes(item.paymentType)"
@@ -214,6 +217,32 @@ export default mixins.extend({
   },
   computed: {
     ...mapState(["user"]),
+    mileageTokensInDescWhileOtherPaymentType(): boolean {
+      if (
+        this.item.paymentType !== undefined &&
+        this.item.description !== undefined
+      ) {
+        const lowercase = this.item.description.toLowerCase().trim();
+        const lowercaseTokens = lowercase.split(/\s+/);
+        return (
+          !["Mileage", "FuelCard"].includes(this.item.paymentType) &&
+          [
+            "mileage",
+            "miles",
+            "distance",
+            "travel",
+            "travelled",
+            "km",
+            "kms",
+            "kilometers",
+            "kilometres",
+            "drove",
+            "drive",
+          ].some((token) => lowercaseTokens.includes(token))
+        );
+      }
+      return false;
+    },
     validItem(): boolean {
       // TODO: build out client-side validation
       const validDescription =
