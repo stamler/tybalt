@@ -4,10 +4,10 @@ import { TimeEntry, AuthObject } from "./utilities";
 import { format } from "date-fns";
 // Lines 114-366 from bundleTimesheets.ts
 export async function tallyAndValidate(
-  timeEntries: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>, 
-  profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>,
-  weekEnding: Date,
   auth: AuthObject,
+  profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>,
+  timeEntries: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>, 
+  weekEnding: Date,
   ) {
 
   const db = admin.firestore();
