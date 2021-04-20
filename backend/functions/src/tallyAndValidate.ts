@@ -1,11 +1,13 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { TimeEntry } from "./utilities";
+import { TimeEntry, AuthObject } from "./utilities";
 import { format } from "date-fns";
 // Lines 114-366 from bundleTimesheets.ts
 export async function tallyAndValidate(
   timeEntries: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>, 
-  profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>
+  profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>,
+  weekEnding: Date,
+  auth: AuthObject,
   ) {
 
   const db = admin.firestore();
@@ -202,8 +204,8 @@ export async function tallyAndValidate(
     const previousTimeSheets = await db
       .collection("TimeSheets")
       .where("uid", "==", auth.uid)
-      .where("weekEnding", ">=", subWeeks(week, 2))
-      .where("weekEnding", "<", week)
+      .where("weekEnding", ">=", subWeeks(weekEnding, 2))
+      .where("weekEnding", "<", weekEnding)
       .get();
     if (!previousTimeSheets.empty) {
       // There are 1 or more timesheets in the previous 2 weeks.
@@ -262,4 +264,33 @@ export async function tallyAndValidate(
       "The Profile for this user doesn't contain a managerUid"
     );
   }
+
+  return {
+    uid: auth.uid,
+    surname: profile.get("surname"),
+    givenName: profile.get("givenName"),
+    displayName: profile.get("displayName"),
+    managerName: profile.get("managerName"),
+    salary: profile.get("salary"),
+    tbtePayrollId,
+    weekEnding,
+    managerUid,
+    locked: false,
+    approved: (managerUid === auth.uid),
+    rejected: false,
+    rejectionReason: "",
+    submitted: true,
+    entries,
+    nonWorkHoursTally,
+    offRotationDaysTally: offRotationDates.length,
+    workHoursTally,
+    mealsHoursTally,
+    divisionsTally,
+    divisions: Object.keys(divisionsTally),
+    timetypes: Array.from(timetypes),
+    jobsTally,
+    jobNumbers: Object.keys(jobsTally), // for array-contains queries
+    bankedHours,
+    payoutRequest,
+  };
 }

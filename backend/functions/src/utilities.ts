@@ -7,6 +7,12 @@ import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMillise
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
 
+// The auth property of functions.https.CallableContext
+export interface AuthObject {
+  uid: string;
+  token: admin.auth.DecodedIdToken;
+}
+
 // make a string with serial & manufacturer that uniquely identifies a computer
 export function makeSlug(serial: string, mfg: string) {
   const sc = serial.replace(/\s|\/|,/g, "");
@@ -23,7 +29,7 @@ export function makeSlug(serial: string, mfg: string) {
 };
 
 // throw if at least one authorizedClaim isn't present in the context
-export function getAuthObject(context: functions.https.CallableContext, authorizedClaims: string[]): {uid: string, token: admin.auth.DecodedIdToken} {
+export function getAuthObject(context: functions.https.CallableContext, authorizedClaims: string[]): AuthObject {
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
     throw new functions.https.HttpsError(
