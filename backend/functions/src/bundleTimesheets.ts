@@ -102,6 +102,15 @@ export async function bundleTimesheet(
   // Outstanding TimeEntries exist, start the bundling process
   const batch = db.batch();
 
+  // Load the profile for the user to get manager and salary information
+  const profile = await db.collection("Profiles").doc(auth.uid).get();
+  if (!profile.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "A Profile doesn't exist for this user"
+    );
+  }
+  
   // Put the existing timeEntries into an array then delete from Collection
   const entries: TimeEntry[] = [];
   const bankEntries: TimeEntry[] = [];
@@ -242,15 +251,6 @@ export async function bundleTimesheet(
   } 
   if (payoutRequests.length === 1 && payoutRequests[0].payoutRequestAmount) {
     payoutRequest = payoutRequests[0].payoutRequestAmount;
-  }
-
-  // Load the profile for the user to get manager and salary information
-  const profile = await db.collection("Profiles").doc(auth.uid).get();
-  if (!profile.exists) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "A Profile doesn't exist for this user"
-    );
   }
 
   // calculate total non-work hours
