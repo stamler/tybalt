@@ -106,12 +106,7 @@
 
     <span
       class="field"
-      v-if="
-        item.job &&
-        item.job !== '' &&
-        item.division &&
-        ['R', 'RT'].includes(item.timetype)
-      "
+      v-if="item.division && ['R', 'RT'].includes(item.timetype)"
     >
       <label for="mealsHours">Meals Hours</label>
       <input type="number" name="mealsHours" v-model.number="item.mealsHours" />
@@ -396,7 +391,6 @@ export default Vue.extend({
           delete this.item.client;
           delete this.item.jobDescription;
           delete this.item.jobHours;
-          delete this.item.mealsHours;
           delete this.item.workorder;
         }
       }

@@ -231,12 +231,11 @@ service cloud.firestore {
           isMissing("jobHours") 
         ) &&
 
-        // when provided, mealsHours requires an existing job and either jobHours or hours to be present
+        // when provided, mealsHours requires either jobHours or hours to be present
         (
           ( 
             isPositiveMultipleOfPointFiveUnderEighteen("mealsHours") &&
-            (isPositiveMultipleOfPointFiveUnderEighteen("hours") || isPositiveMultipleOfPointFiveUnderEighteen("jobHours")) &&  
-            isInCollection("job", "Jobs") 
+            (isPositiveMultipleOfPointFiveUnderEighteen("hours") || isPositiveMultipleOfPointFiveUnderEighteen("jobHours"))
           ) ||
           isMissing("mealsHours") 
         ) &&
