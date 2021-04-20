@@ -3,7 +3,6 @@ const projectId = "test-app-id";
 admin.initializeApp({ projectId });
 // NOTE: export FIRESTORE_EMULATOR_HOST="localhost:8080" must be set
 
-import axios from "axios";
 import "mocha";
 
 import * as chai from "chai";    
@@ -13,14 +12,7 @@ const assert = chai.assert;
 
 import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc, nextSaturday } from "../src/utilities";
 import { CallableContext } from "firebase-functions/lib/providers/https";
-
-export async function cleanupFirestore(projectId: string) {
-  // clear data
-  // https://firebase.google.com/docs/emulator-suite/connect_fi restore#clear_your_database_between_tests
-  const endpoint = `/emulator/v1/projects/${projectId}/databases/(default)/documents`;
-  const u: URL = new URL(endpoint, "http://" + process.env.FIRESTORE_EMULATOR_HOST);
-  return axios.delete(u.toString());
-}
+import { cleanupFirestore } from "./helpers";
 
 describe("utilities.ts", () => {
   describe("makeSlug()", () => {
