@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import { TimeEntry } from "./utilities";
 import { format } from "date-fns";
 // Lines 114-366 from bundleTimesheets.ts
-export function tallyAndValidate(
+export async function tallyAndValidate(
   timeEntries: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>, 
   profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>
   ) {
