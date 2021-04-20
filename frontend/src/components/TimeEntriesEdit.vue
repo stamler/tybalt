@@ -35,7 +35,7 @@
       <select name="division" v-model="item.division">
         <option disabled selected value="">-- choose division --</option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
-          {{ d.name }}
+          {{ d.id }} - {{ d.name }}
         </option>
       </select>
     </span>
