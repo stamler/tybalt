@@ -67,6 +67,21 @@ describe("tallyAndValidate", async () => {
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Salaried staff must have a minimum of 40 hours on each time sheet."
       );
+    });
+    it("rejects for salaried staff member who claims sick time", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Stick", hours: 8 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,5);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "Salaried staff cannot claim Sick time. Please use PPTO or vacation instead."
+      );
     });    
     it("rejects for salaried or hourly staff member with missing tbtePayrollId", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
