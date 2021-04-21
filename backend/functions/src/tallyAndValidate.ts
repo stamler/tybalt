@@ -149,7 +149,14 @@ export async function tallyAndValidate(
     );
   } 
   if (payoutRequests.length === 1 && payoutRequests[0].payoutRequestAmount) {
+    if (profile.get("salary") === true) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Salaried staff cannot request overtime payouts. Please speak with management."
+      )
+    }
     payoutRequest = payoutRequests[0].payoutRequestAmount;
+  
   }
 
   // calculate total non-work hours

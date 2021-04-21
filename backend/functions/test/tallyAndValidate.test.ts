@@ -148,6 +148,22 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.payoutRequest, 499, "payoutRequest doesn't match");
     });
+    it("rejects for salaried staff member who requests overtime payout", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 499 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,6);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "Salaried staff cannot request overtime payouts. Please speak with management."
+      )
+    });
     it("rejects for hourly staff member who includes more than one overtime payout request", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 499 });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 200 });
