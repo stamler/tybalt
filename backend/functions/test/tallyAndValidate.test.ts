@@ -120,6 +120,27 @@ describe("tallyAndValidate", async () => {
         tallyAndValidate(auth, profileC, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a tbtePayrollId"
       );
+    });
+    it("rejects for salaried or hourly staff member with missing managerUid", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,5);
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, tbtePayrollId: 28 },"Profiles/alice");
+      const profileC = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, tbtePayrollId: 28 },"Profiles/alice");
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "The Profile for this user doesn't contain a managerUid"
+      );
+      await assert.isRejected(
+        tallyAndValidate(auth, profileC, timeEntries, weekEnding),
+        "The Profile for this user doesn't contain a managerUid"
+      );
     });    
     it("tallies and validates for hourly staff member with fewer than 40 regular hours", async () => {
       const timeEntries = await db
