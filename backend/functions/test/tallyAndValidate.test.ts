@@ -55,6 +55,24 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,40, "noJobNumber tally doesn't match");
     });
+    it("tallies and validates for salaried staff member with PPTO", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OP", timetypeName: "PPTO", hours: 4 });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OP", timetypeName: "PPTO", hours: 4 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,6);
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
+      assert.equal(tally.nonWorkHoursTally.OP, 8, "PPTO tally doesn't match");
+      assert(_.isEqual(tally.timetypes.sort(), ["OP", "R"]));
+      assert(_.isEqual(tally.divisions, ["CI"]));
+    });
     it("rejects for salary or hourly staff member if a 'R' time entry is missing hours", async () => {
       const { hours, ...missingHours } = fullITDay;
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...missingHours });
