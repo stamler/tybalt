@@ -12,9 +12,9 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test_coverage": "firebase emulators:exec --only firestore 'nyc mocha'",
-    "test": "firebase emulators:exec --only firestore mocha",
-    "test_emu": "mocha"
+    "test": "firebase emulators:exec --only firestore 'nyc mocha'",
+    "test_no_coverage": "firebase emulators:exec --only firestore mocha",
+    "test_no_emulator": "mocha"
   },
   "mocha": {
     "require": [
