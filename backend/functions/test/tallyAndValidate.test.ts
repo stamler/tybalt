@@ -14,7 +14,7 @@ import { tallyAndValidate } from "../src/tallyAndValidate";
 import { cleanupFirestore } from "./helpers";
 import * as _ from "lodash";
 
-describe.only("tallyAndValidate", async () => {
+describe("tallyAndValidate", async () => {
 
   const db = admin.firestore();
   // a valid week2 ending
@@ -397,7 +397,7 @@ describe.only("tallyAndValidate", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,7), uid: alice.uid, weekEnding, ...fullEEDay });
     });
     it("tallies and validates for salaried staff member with 40 regular hours", async () => {
-      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, ...jobPartial2 }
+      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, mealsHours: 0.5, ...jobPartial2 }
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -410,6 +410,11 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,24, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
+      assert.equal(tally.mealsHoursTally,0.5, "mealsHoursTally doesn't match");
+      assert.equal(tally.jobsTally["25-001"].hours,16, "hours tally for job 25-001 doesn't match");
+      assert.equal(tally.jobsTally["25-001"].jobHours,16, "jobHours tally for job 25-001 doesn't match");
+      assert.equal(tally.jobsTally["25-002"].hours,0, "hours tally for job 25-002 doesn't match");
+      assert.equal(tally.jobsTally["25-002"].jobHours,8, "jobHours tally for job 25-002 doesn't match");
       assert(_.isEqual(tally.timetypes, ["R"]));
       assert(_.isEqual(tally.divisions.sort(), ["EE", "EG"]));
       assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
