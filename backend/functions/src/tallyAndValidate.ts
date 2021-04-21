@@ -103,7 +103,7 @@ export async function tallyAndValidate(
       }
     } else {
       if (!item.hours) {
-        throw new Error("The TimeEntry is of type nonWorkHours but no hours are present");
+        throw new Error("The TimeEntry is missing an hours field");
       }
       // Tally the non-work hours
       if (item.timetype in nonWorkHoursTally) {
