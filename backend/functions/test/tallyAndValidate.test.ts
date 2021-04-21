@@ -366,11 +366,13 @@ describe.only("tallyAndValidate", async () => {
 
     const jobPartial = { client: "Superman", jobDescription: "Earth Rotation", job: "25-001", jobHours: 4 }
     const jobPartial2 = { client: "Lex Luthor", jobDescription: "Counter-Earth Rotation", job: "25-002", jobHours: 8 }
+    const jobPartial3 = { client: "Lex Luthor", jobDescription: "Neutralize Superman", job: "25-003", jobHours: 8 }
     const fullEEDay = { division: "EE", divisionName: "Environmental", timetype: "R", timetypeName: "Hours Worked", hours: 4, workDescription, ...jobPartial };
     beforeEach("reset data", async () => {
       await cleanupFirestore(projectId);
       await db.collection("Jobs").doc("25-001").set({ client: "Superman", description: "Earth Rotation", manager: "Joe Schmoe", status: "Active" });
       await db.collection("Jobs").doc("25-002").set({ client: "Lex Luthor", description: "Counter-Earth Rotation", manager: "Joe Schmoe", status: "Active" });
+      await db.collection("Jobs").doc("25-003").set({ client: "Lex Luthor", description: "Neuralize Superman", manager: "Joe Schmoe", status: "Cancelled" });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,4), uid: alice.uid, weekEnding, ...fullEEDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,5), uid: alice.uid, weekEnding, ...fullEEDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,6), uid: alice.uid, weekEnding, ...fullEEDay });
@@ -396,6 +398,20 @@ describe.only("tallyAndValidate", async () => {
       assert(_.isEqual(tally.jobNumbers.sort(),["25-001", "25-002"]));
       assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
     });
-
+    it("rejects if a job in a time entry isn't active", async () => {
+      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, ...jobPartial3 }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "failed to open 25-003: Job status isn't Active. Ask a job admin to mark it Active then resubmit."
+      );
+    });
   });
 });
