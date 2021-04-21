@@ -131,6 +131,13 @@ export async function tallyAndValidate(
   if (bankEntries.length === 1 && bankEntries[0].hours) {
     bankedHours = bankEntries[0].hours;
 
+    if (profile.get("salary") === true) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Salaried staff cannot bank overtime."
+      )
+    }
+
     // The sum of all hours worked minus the banked hours mustn't be under 44
     if (workHoursTally.hours + workHoursTally.jobHours - bankedHours < 44) {
       throw new functions.https.HttpsError(

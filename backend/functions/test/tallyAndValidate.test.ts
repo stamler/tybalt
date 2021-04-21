@@ -167,6 +167,23 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,48, "noJobNumber tally doesn't match");
       assert.equal(tally.bankedHours,4, "bankedHours tally doesn't match");
     });
+    it("rejects for salaried staff member who add overtime to bank", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 4 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,7);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "Salaried staff cannot bank overtime."
+      )
+    });
     it("rejects for hourly staff member who creates more than one overtime bank entry", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
