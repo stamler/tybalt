@@ -100,7 +100,7 @@ describe.only("tallyAndValidate", async () => {
       );
     });
     it("rejects for salaried staff member who claims sick time", async () => {
-      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Stick", hours: 8 });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Sick", hours: 8 });
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)
@@ -115,7 +115,7 @@ describe.only("tallyAndValidate", async () => {
       );
     });
     it("tallies and validates for hourly staff member who claims sick time", async () => {
-      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Stick", hours: 8 });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Sick", hours: 8 });
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)
@@ -130,6 +130,40 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.nonWorkHoursTally.OS,8, "sick tally doesn't match");
+    });
+    it("tallies and validates for hourly staff member who requests overtime payout", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 499 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
+      assert.equal(tally.payoutRequest, 499, "payoutRequest doesn't match");
+    });
+    it("rejects for hourly staff member who includes more than one overtime payout request", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 499 });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 200 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,6);
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "Only one payout request entry can exist on a timesheet."
+      )
     });
     it("rejects for salaried or hourly staff member with missing tbtePayrollId", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
