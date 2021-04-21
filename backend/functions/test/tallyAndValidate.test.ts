@@ -13,7 +13,7 @@ const tester = test();
 import { tallyAndValidate } from "../src/tallyAndValidate";
 import { cleanupFirestore } from "./helpers";
 
-describe("tallyAndValidate", async () => {
+describe.only("tallyAndValidate", async () => {
 
   const db = admin.firestore();
   // a valid week2 ending
@@ -68,6 +68,22 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.offRotationDaysTally,1, "offRotationDaysTally doesn't match");
+    });
+    it("rejects for salaried staff member with more than one off rotation entry on the same day", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,6);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "More than one Off-Rotation entry exists for 2020 Jan 08"
+      );
+
     });
     it("rejects for salaried staff member with fewer than 40 regular hours", async () => {
       const timeEntries = await db

@@ -38,7 +38,7 @@ export async function tallyAndValidate(
       if (offRotationDates.includes(orDate.getTime())) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          "More than one Off-Rotation entry exists for" +
+          "More than one Off-Rotation entry exists for " +
             format(orDate, "yyyy MMM dd")
         );
       } else {
