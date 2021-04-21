@@ -12,16 +12,33 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test_legacy_coverage": "nyc --produce-source-map=true --reporter=lcov --reporter=text mocha --reporter spec",
+    "test_coverage": "firebase emulators:exec --only firestore 'nyc mocha'",
     "test": "firebase emulators:exec --only firestore mocha",
     "test_emu": "mocha"
   },
   "mocha": {
-    "require": ["ts-node/register", "source-map-support/register"],
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
+    ],
     "spec": [
       "test/**/*.ts"
     ],
     "exit": true
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts"
+    ],
+    "reporter": [
+      "lcov",
+      "text"
+    ],
+    "all": true  
   },
   "main": "lib/index.js",
   "dependencies": {
