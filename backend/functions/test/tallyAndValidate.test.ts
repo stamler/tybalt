@@ -167,6 +167,23 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,48, "noJobNumber tally doesn't match");
       assert.equal(tally.bankedHours,4, "bankedHours tally doesn't match");
     });
+    it("rejects for hourly staff member who add overtime to bank but didn't leave at least 44 hours", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 4 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,6);
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "Banked hours cannot bring your total worked hours below 44 hours on a timesheet."
+      )
+    });
     it("rejects for salaried staff member who requests overtime payout", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OTO", timetypeName: "Request Overtime Payout", payoutRequestAmount: 499 });
