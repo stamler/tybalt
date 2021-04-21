@@ -12,6 +12,7 @@ const tester = test();
 
 import { tallyAndValidate } from "../src/tallyAndValidate";
 import { cleanupFirestore } from "./helpers";
+import * as _ from "lodash";
 
 describe.only("tallyAndValidate", async () => {
 
@@ -29,9 +30,9 @@ describe.only("tallyAndValidate", async () => {
   const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
 
   const workDescription = "Generic Description";
-  const fullITDay = { division: "CI", divisionName: "Information Technology", timetype: "R", timetypeName: "Hours Worked", hours: 8, workDescription };
 
-  describe("administrative timesheet with no job numbers or chargeable time", async () => {
+  describe("timesheet with no job numbers or chargeable time", async () => {
+    const fullITDay = { division: "CI", divisionName: "Information Technology", timetype: "R", timetypeName: "Hours Worked", hours: 8, workDescription };
     beforeEach("reset data", async () => {
       await cleanupFirestore(projectId);
       await db.collection("TimeEntries").add({ date: new Date(2020,0,4), uid: alice.uid, weekEnding, ...fullITDay });
@@ -360,5 +361,41 @@ describe.only("tallyAndValidate", async () => {
         "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
       );
     });    
+  });
+  describe("timesheet with job numbers or chargeable time", async () => {
+
+    const jobPartial = { client: "Superman", jobDescription: "Earth Rotation", job: "25-001", jobHours: 4 }
+    const jobPartial2 = { client: "Lex Luthor", jobDescription: "Counter-Earth Rotation", job: "25-002", jobHours: 8 }
+    const fullEEDay = { division: "EE", divisionName: "Environmental", timetype: "R", timetypeName: "Hours Worked", hours: 4, workDescription, ...jobPartial };
+    beforeEach("reset data", async () => {
+      await cleanupFirestore(projectId);
+      await db.collection("Jobs").doc("25-001").set({ client: "Superman", description: "Earth Rotation", manager: "Joe Schmoe", status: "Active" });
+      await db.collection("Jobs").doc("25-002").set({ client: "Lex Luthor", description: "Counter-Earth Rotation", manager: "Joe Schmoe", status: "Active" });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,4), uid: alice.uid, weekEnding, ...fullEEDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,5), uid: alice.uid, weekEnding, ...fullEEDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,6), uid: alice.uid, weekEnding, ...fullEEDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,7), uid: alice.uid, weekEnding, ...fullEEDay });
+    });
+    it("tallies and validates for salaried staff member with 40 regular hours", async () => {
+      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, ...jobPartial2 }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,24, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
+      assert(_.isEqual(tally.timetypes, ["R"]));
+      assert(_.isEqual(tally.divisions.sort(), ["EE", "EG"]));
+      assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
+      assert(_.isEqual(tally.jobNumbers.sort(),["25-001", "25-002"]));
+      assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
+    });
+
   });
 });
