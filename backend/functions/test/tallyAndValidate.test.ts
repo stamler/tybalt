@@ -167,6 +167,25 @@ describe.only("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,48, "noJobNumber tally doesn't match");
       assert.equal(tally.bankedHours,4, "bankedHours tally doesn't match");
     });
+    it("rejects for hourly staff member who creates more than one overtime bank entry", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 2 });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 2 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,8);
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "Only one overtime banking entry can exist on a timesheet."
+      )
+    });
     it("rejects for hourly staff member who add overtime to bank but didn't leave at least 44 hours", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 4 });
