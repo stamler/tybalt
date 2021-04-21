@@ -44,7 +44,6 @@ export async function tallyAndValidate(
       } else {
         offRotationDates.push(orDate.getTime());
       }
-      console.log(offRotationDates.toString());
     } else if (item.timetype === "OTO") {
       // This is an overtime payout request entry, store it in payoutRequests
       // array for processing after completing the tallies.

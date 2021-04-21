@@ -54,6 +54,21 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,40, "noJobNumber tally doesn't match");
     });
+    it("tallies and validates for salaried staff member with off rotation days", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
+      assert.equal(tally.offRotationDaysTally,1, "offRotationDaysTally doesn't match");
+    });
     it("rejects for salaried staff member with fewer than 40 regular hours", async () => {
       const timeEntries = await db
         .collection("TimeEntries")
