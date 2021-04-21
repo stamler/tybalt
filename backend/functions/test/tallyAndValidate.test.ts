@@ -82,7 +82,24 @@ describe("tallyAndValidate", async () => {
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Salaried staff cannot claim Sick time. Please use PPTO or vacation instead."
       );
-    });    
+    });
+    it("tallies and validates for hourly staff member who claims sick time", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Stick", hours: 8 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
+      assert.equal(tally.nonWorkHoursTally.OS,8, "sick tally doesn't match");
+    });
     it("rejects for salaried or hourly staff member with missing tbtePayrollId", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
       const timeEntries = await db
