@@ -66,6 +66,8 @@
         type="number"
         name="total"
         v-model.number="item.total"
+        step="0.01"
+        min="0"
         placeholder="including any tax"
       />
     </span>
@@ -155,6 +157,8 @@
         type="number"
         name="distance"
         v-model.number="item.distance"
+        step="1.0"
+        min="0"
         placeholder="distance travelled (km)"
       />
     </span>

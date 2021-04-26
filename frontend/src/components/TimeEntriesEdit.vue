@@ -84,7 +84,14 @@
       "
     >
       <label for="jobHours">Chargeable Hours</label>
-      <input type="number" name="jobHours" v-model.number="item.jobHours" />
+      <input
+        type="number"
+        name="jobHours"
+        v-model.number="item.jobHours"
+        step="0.5"
+        min="0"
+        max="18"
+      />
     </span>
 
     <span
@@ -101,7 +108,14 @@
             : ""
         }}Hours
       </label>
-      <input type="number" name="hours" v-model.number="item.hours" />
+      <input
+        type="number"
+        name="hours"
+        v-model.number="item.hours"
+        step="0.5"
+        min="0"
+        max="18"
+      />
     </span>
 
     <span
@@ -109,7 +123,14 @@
       v-if="item.division && ['R', 'RT'].includes(item.timetype)"
     >
       <label for="mealsHours">Meals Hours</label>
-      <input type="number" name="mealsHours" v-model.number="item.mealsHours" />
+      <input
+        type="number"
+        name="mealsHours"
+        v-model.number="item.mealsHours"
+        step="0.5"
+        min="0"
+        max="2"
+      />
     </span>
 
     <span
@@ -151,6 +172,7 @@
         name="payoutRequestAmount"
         placeholder="Amount"
         v-model.number="item.payoutRequestAmount"
+        step="0.01"
       />
     </span>
 
