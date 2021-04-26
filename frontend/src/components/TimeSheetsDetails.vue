@@ -153,7 +153,7 @@ export default mixins.extend({
       const input = this.item?.entries;
       if (input && input.length > 0) {
         return input.slice().sort((a: TimeEntry, b: TimeEntry) => {
-          return b.date.toDate().getTime() - a.date.toDate().getTime();
+          return a.date.toDate().getTime() - b.date.toDate().getTime();
         });
       }
       return [];
