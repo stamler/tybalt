@@ -1,6 +1,6 @@
 <template>
   <div>
-    <modal ref="rejectModal" />
+    <modal ref="rejectModal" collection="TimeSheets" />
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
       <!-- approve button -->

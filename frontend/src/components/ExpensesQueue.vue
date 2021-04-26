@@ -1,5 +1,6 @@
 <template>
   <div id="list">
+    <modal ref="rejectModal" collection="Expenses" />
     <span class="listheader" v-if="approved.length > 0">Approved</span>
     <div class="listentry" v-for="item in approved" v-bind:key="item.id">
       <div class="anchorbox">
@@ -48,7 +49,7 @@
       <div class="rowactionsbox">
         <router-link
           v-bind:to="{ name: 'Expenses Commit Queue' }"
-          v-on:click.native="rejectExpense(item.id, 'no reason given')"
+          v-on:click.native="$refs.rejectModal.openModal(item.id)"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
@@ -110,7 +111,7 @@
       <div class="rowactionsbox">
         <router-link
           v-bind:to="{ name: 'Expenses Commit Queue' }"
-          v-on:click.native="rejectExpense(item.id, 'no reason given')"
+          v-on:click.native="$refs.rejectModal.openModal(item.id)"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
@@ -127,6 +128,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import Modal from "./Modal.vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
@@ -138,6 +140,7 @@ export default Vue.extend({
   mixins: [mixins],
   props: ["collection"],
   components: {
+    Modal,
     LockIcon,
     DownloadIcon,
     XCircleIcon,

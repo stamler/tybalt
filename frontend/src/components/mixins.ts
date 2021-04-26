@@ -97,45 +97,6 @@ export default Vue.extend({
           alert(`Approval failed: ${error}`);
         });
     },
-    rejectExpense(itemId: string, reason: string) {
-      store.commit("startTask", {
-        id: `reject${itemId}`,
-        message: "rejecting",
-      });
-      const item = db.collection("Expenses").doc(itemId);
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(item)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `An expense with id ${itemId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (
-                data !== undefined &&
-                data.submitted === true &&
-                (data.committed === false || data.committed === undefined)
-              ) {
-                // timesheet is rejectable because it is submitted and not committed
-                transaction.update(item, {
-                  approved: false,
-                  rejected: true,
-                  rejectionReason: reason,
-                });
-              } else {
-                throw "The expense has not been submitted or has been committed";
-              }
-            });
-        })
-        .then(() => {
-          store.commit("endTask", { id: `reject${itemId}` });
-        })
-        .catch(function (error) {
-          store.commit("endTask", { id: `reject${itemId}` });
-          alert(`Rejection failed: ${error}`);
-        });
-    },
     recallExpense(expenseId: string) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve

@@ -1,5 +1,6 @@
 <template>
   <div id="list">
+    <modal ref="rejectModal" collection="Expenses" />
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         {{ item.date.toDate() | shortDate }}
@@ -103,7 +104,7 @@
             <router-link
               v-if="!item.approved && !item.rejected"
               v-bind:to="{ name: 'Expenses Pending' }"
-              v-on:click.native="rejectExpense(item.id, 'no reason given')"
+              v-on:click.native="$refs.rejectModal.openModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -118,7 +119,7 @@
           <template v-if="!item.committed">
             <router-link
               v-bind:to="{ name: 'Expenses Pending' }"
-              v-on:click.native="rejectExpense(item.id, 'no reason given')"
+              v-on:click.native="$refs.rejectModal.openModal(item.id)"
             >
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -131,7 +132,7 @@
         <template v-if="commitqueue === true">
           <router-link
             v-bind:to="{ name: 'Expenses Pending' }"
-            v-on:click.native="rejectExpense(item.id, 'no reason given')"
+            v-on:click.native="$refs.rejectModal.openModal(item.id)"
           >
             <x-circle-icon></x-circle-icon>
           </router-link>
@@ -148,6 +149,7 @@
 </template>
 
 <script lang="ts">
+import Modal from "./Modal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
@@ -168,6 +170,7 @@ export default Vue.extend({
   mixins: [mixins],
   props: ["approved", "commitqueue", "collection"],
   components: {
+    Modal,
     EditIcon,
     LockIcon,
     SendIcon,

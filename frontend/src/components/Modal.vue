@@ -38,6 +38,7 @@ const db = firebase.firestore();
 
 export default Vue.extend({
   name: "Modal",
+  props: ["collection"],
   data() {
     return {
       parentPath: "",
@@ -48,7 +49,7 @@ export default Vue.extend({
   },
   methods: {
     async rejectThenRedirect() {
-      await this.rejectTs(this.itemId, this.rejectionReason);
+      await this.rejectDoc(this.itemId, this.rejectionReason, this.collection);
       this.closeModal();
       this.$router.push(this.parentPath);
     },
@@ -63,42 +64,45 @@ export default Vue.extend({
       this.itemId = id;
       document.querySelector("body")?.classList.add("overflow-hidden");
     },
-    rejectTs(timesheetId: string, reason: string) {
+    rejectDoc(docId: string, reason: string, collection: string) {
       store.commit("startTask", {
-        id: `reject${timesheetId}`,
+        id: `reject${docId}`,
         message: "rejecting",
       });
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      const docRef = db.collection(collection).doc(docId);
       return db
         .runTransaction(function (transaction) {
           return transaction
-            .get(timesheet)
+            .get(docRef)
             .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
               if (!tsDoc.exists) {
-                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+                throw `A document with id ${docId} doesn't exist.`;
               }
               const data = tsDoc?.data() ?? undefined;
               if (
-                data !== undefined &&
-                data.submitted === true &&
-                data.locked === false
+                (collection === "TimeSheets" &&
+                  data?.submitted === true &&
+                  data?.locked === false) ||
+                (collection === "Expenses" &&
+                  data?.submitted === true &&
+                  (data?.committed === false || data?.committed === undefined))
               ) {
-                // timesheet is rejectable because it is submitted and not locked
-                transaction.update(timesheet, {
+                // document is rejectable because it is submitted and not locked or committed
+                transaction.update(docRef, {
                   approved: false,
                   rejected: true,
                   rejectionReason: reason,
                 });
               } else {
-                throw "The timesheet has not been submitted or is locked";
+                throw "The document has not been submitted or is locked";
               }
             });
         })
         .then(() => {
-          store.commit("endTask", { id: `reject${timesheetId}` });
+          store.commit("endTask", { id: `reject${docId}` });
         })
         .catch(function (error) {
-          store.commit("endTask", { id: `reject${timesheetId}` });
+          store.commit("endTask", { id: `reject${docId}` });
           alert(`Rejection failed: ${error}`);
         });
     },

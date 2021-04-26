@@ -1,6 +1,6 @@
 <template>
   <div>
-    <modal ref="rejectModal" />
+    <modal ref="rejectModal" collection="TimeSheets" />
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
     </h4>

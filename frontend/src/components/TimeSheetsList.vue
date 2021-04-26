@@ -1,6 +1,6 @@
 <template>
   <div id="list">
-    <modal ref="rejectModal" />
+    <modal ref="rejectModal" collection="TimeSheets" />
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
