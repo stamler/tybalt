@@ -16,6 +16,9 @@ export default Vue.extend({
     ...mapState(["claims"]),
   },
   methods: {
+    calculatedOntarioHST(total: number): number {
+      return Math.round((total * 1300) / 113) / 100;
+    },
     bundle(week: Date) {
       store.commit("startTask", {
         id: "bundle",
@@ -531,12 +534,16 @@ export default Vue.extend({
         {
           label: "calculatedSubtotal",
           value: (row: Expense) =>
-            row.paymentType !== "Mileage" ? row.total * (100 / 113) : "",
+            row.paymentType !== "Mileage"
+              ? row.total - this.calculatedOntarioHST(row.total)
+              : "",
         },
         {
           label: "calculatedOntarioHST",
           value: (row: Expense) =>
-            row.paymentType !== "Mileage" ? row.total * (13 / 113) : "",
+            row.paymentType !== "Mileage"
+              ? this.calculatedOntarioHST(row.total)
+              : "",
         },
         {
           label: "Total",
