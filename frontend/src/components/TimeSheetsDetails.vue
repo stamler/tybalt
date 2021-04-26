@@ -62,23 +62,23 @@
       <table>
         <thead>
           <tr>
-            <th rowspan="2">job/proposal</th>
-            <th rowspan="2">time type</th>
-            <th rowspan="2">date</th>
+            <th rowspan="2" style="width: 5em">job #</th>
+            <th rowspan="2" style="width: 3em">type</th>
+            <th rowspan="2" style="width: 4em">date</th>
             <th colspan="3">hours</th>
             <th rowspan="2">request $</th>
             <th rowspan="2">work record</th>
-            <th rowspan="2">job</th>
+            <th rowspan="2">job description</th>
             <th rowspan="2">work description</th>
           </tr>
           <tr>
-            <th>job</th>
+            <th>chargeable</th>
             <th>non</th>
             <th>meals</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(entry, index) in item.entries" v-bind:key="index">
+          <tr v-for="(entry, index) in sortedEntries" v-bind:key="index">
             <td>{{ entry.job }}</td>
             <td>{{ entry.timetype }}</td>
             <td>
@@ -110,6 +110,7 @@
 <script lang="ts">
 import Modal from "./Modal.vue";
 import mixins from "./mixins";
+import { TimeEntry } from "./types";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -147,6 +148,15 @@ export default mixins.extend({
       } else {
         return new Date();
       }
+    },
+    sortedEntries(): TimeEntry[] {
+      const input = this.item?.entries;
+      if (input && input.length > 0) {
+        return input.slice().sort((a: TimeEntry, b: TimeEntry) => {
+          return b.date.toDate().getTime() - a.date.toDate().getTime();
+        });
+      }
+      return [];
     },
   },
   data() {

@@ -1,3 +1,29 @@
+import firebase from "../firebase";
+
+export interface TimeEntry {
+  // required properties always
+  date: firebase.firestore.Timestamp;
+  timetype: string;
+  timetypeName: string;
+  uid: string;
+
+  // required properties for TimeEntries pulled from collection
+  weekEnding: firebase.firestore.Timestamp;
+
+  // properties which are never required, but may require eachother
+  division?: string;
+  divisionName?: string;
+  workDescription?: string;
+  hours?: number;
+  mealsHours?: number;
+  client?: string;
+  job?: string;
+  jobDescription?: string;
+  workrecord?: string;
+  jobHours?: number;
+  payoutRequestAmount?: number;
+}
+
 export interface TimeSheet {
   // required properties always
   uid: string;
