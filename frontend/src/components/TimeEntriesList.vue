@@ -9,6 +9,7 @@
         class="listentry"
         v-for="item in itemsByWeekEnding(week)"
         v-bind:key="item.id"
+        v-bind:class="{ stthsday: dayIsSTThS(item) }"
       >
         <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
         <div class="detailsbox">
@@ -249,6 +250,13 @@ export default mixins.extend({
     },
   },
   methods: {
+    dayIsSTThS(item: firebase.firestore.DocumentData): boolean {
+      // return true if day is Sunday, Tuesday, Thursday or Saturday
+      if (item.date.toDate().getDay() % 2 === 0) {
+        return true;
+      }
+      return false;
+    },
     isMtoTh(item: firebase.firestore.DocumentData) {
       const dayOfWeek = item.date.toDate().getDay();
       // prevent copying to or from weekends in UI
@@ -408,3 +416,9 @@ export default mixins.extend({
   },
 });
 </script>
+<style scoped>
+/* sunday, tuesday, thursday and saturday get different background colour */
+.stthsday {
+  background-color: beige;
+}
+</style>
