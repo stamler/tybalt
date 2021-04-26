@@ -502,6 +502,7 @@ export default Vue.extend({
       }
 
       const fields = [
+        "tbtePayrollId",
         {
           label: "Acct/Visa/Exp",
           value: "paymentType",
