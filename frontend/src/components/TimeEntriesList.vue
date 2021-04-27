@@ -360,14 +360,7 @@ export default mixins.extend({
             // Count the off rotation dates and ensure that there are not two
             // off rotation entries for a given date.
             const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
-            if (tallyObject[key].offRotationDates.includes(orDate.getTime())) {
-              throw new Error(
-                "More than one Off-Rotation entry exists for" +
-                  format(orDate, "yyyy MMM dd")
-              );
-            } else {
-              tallyObject[key].offRotationDates.push(orDate.getTime());
-            }
+            tallyObject[key].offRotationDates.push(orDate.getTime());
           } else if (item.timetype === "OTO") {
             // This is an request payout entry, store it in the payoutRequests
             // array for processing after completing the tallies.
