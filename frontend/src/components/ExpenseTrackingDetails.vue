@@ -41,10 +41,10 @@
               class="label"
               v-if="exp.paymentType === 'CorporateCreditCard'"
             >
-              Corporate Credit Card *{{ item.ccLast4digits }}
+              Corporate Credit Card *{{ exp.ccLast4digits }}
             </span>
             <span class="label" v-if="exp.paymentType === 'FuelCard'">
-              Fuel Card *{{ item.ccLast4digits }}
+              Fuel Card *{{ exp.ccLast4digits }}
             </span>
           </div>
         </div>
