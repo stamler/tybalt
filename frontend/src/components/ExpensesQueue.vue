@@ -36,10 +36,10 @@
         </div>
         <div class="thirdline">
           <span class="label" v-if="item.paymentType === 'CorporateCreditCard'">
-            Corporate Credit Card
+            Corporate Credit Card *{{ item.ccLast4digits }}
           </span>
           <span class="label" v-if="item.paymentType === 'FuelCard'">
-            Fuel Card
+            Fuel Card *{{ item.ccLast4digits }}
           </span>
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
@@ -98,10 +98,10 @@
         </div>
         <div class="thirdline">
           <span class="label" v-if="item.paymentType === 'CorporateCreditCard'">
-            Corporate Credit Card
+            Corporate Credit Card *{{ item.ccLast4digits }}
           </span>
           <span class="label" v-if="item.paymentType === 'FuelCard'">
-            Fuel Card
+            Fuel Card *{{ item.ccLast4digits }}
           </span>
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
