@@ -38,11 +38,11 @@
       "lcov",
       "text"
     ],
-    "all": true  
+    "all": true
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/firestore": "4.9.8",
+    "@google-cloud/firestore": "^4.10.0",
     "@types/archiver": "^5.1.0",
     "@types/uuid": "^8.3.0",
     "ajv": "^6.12.6",
