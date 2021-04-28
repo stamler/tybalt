@@ -90,6 +90,7 @@ export async function deleteProfile(user: admin.auth.UserRecord) {
 // TODO: rename this function because it also updates managerName in Profile
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
 export async function updateAuth(change: functions.ChangeJson, context: functions.EventContext) {
+  const db = admin.firestore();
   if (change.after.exists) {
     const before = change.before.data();
     const after = change.after.data();
@@ -99,14 +100,24 @@ export async function updateAuth(change: functions.ChangeJson, context: function
       // customClaims were changed, update them
       // Validate the customClaims format with the type guard
       const newClaims = after.customClaims
-      if (isCustomClaims(newClaims)) {
-        promises.push(
-          admin.auth().setCustomUserClaims(change.after.id, newClaims)
-        );            
-      } else {
+      if (!isCustomClaims(newClaims)) {
         throw new Error(
           `The provided data isn't a valid custom claims object`
         );
+      }
+      promises.push(
+        admin.auth().setCustomUserClaims(change.after.id, newClaims)
+      );
+
+      // update ManagerNames collection
+      if (after.customClaims.tapr === true) {
+        await db.collection("ManagerNames").doc(change.after.id).set({
+          displayName: after.displayName,
+          surname: after.surname,
+          givenName: after.givenName,
+        });
+      } else {
+        await db.collection("ManagerNames").doc(change.after.id).delete();
       }
     }
     if (
@@ -146,6 +157,8 @@ export async function updateAuth(change: functions.ChangeJson, context: function
       "A Profile document was deleted. If a corresponding user" +
         " remains in Firebase Auth, recreate it manually"
     );
+    await db.collection("ManagerNames").doc(change.before.id).delete();
+    await db.collection("ProfileSecrets").doc(change.before.id).delete();
     return null;
   }
 };
