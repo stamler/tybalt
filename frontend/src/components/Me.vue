@@ -56,10 +56,7 @@ export default Vue.extend({
   },
   computed: mapState(["user"]),
   created() {
-    this.$bind(
-      "managers",
-      db.collection("Profiles").where("customClaims.tapr", "==", true)
-    );
+    this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.user.uid);
   },

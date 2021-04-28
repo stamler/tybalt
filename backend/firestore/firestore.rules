@@ -252,6 +252,9 @@ service cloud.firestore {
     match /ProfileSecrets/{profileId} {
       allow read: if request.auth.uid == profileId;
     }
+    match /ManagerNames/{profileId} {
+      allow read: if hasClaim("time");
+    }
     match /Divisions/{division} {
       allow read: if isSignedIn();
       allow write: if hasClaim("admin");
@@ -259,8 +262,8 @@ service cloud.firestore {
     match /Logins/{login} {
       allow read: if hasClaim("admin");
     }
-    match /Profiles/{profile} {
-      allow read: if isSignedIn();
+    match /Profiles/{profileId} {
+      allow read: if request.auth.uid == profileId || hasClaim("report") || hasClaim("admin");
       // admins can update all profiles
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (

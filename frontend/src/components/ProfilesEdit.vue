@@ -120,10 +120,7 @@ export default Vue.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind(
-      "managers",
-      db.collection("Profiles").where("customClaims.tapr", "==", true)
-    );
+    this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.id);
   },

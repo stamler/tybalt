@@ -99,10 +99,10 @@ describe("Firestore Rules", function () {
   });
 
   describe("Authenticated Reads", () => {
-    ["Divisions", "Jobs", "TimeTypes", "Profiles"].forEach((collection) => {
+    ["Divisions", "Jobs", "TimeTypes"].forEach((collection) => {
       allowAuthenticatedRead(collection);
     });
-    ["Config", "RawLogins", "ProfileSecrets"].forEach((collection) => {
+    ["Config", "RawLogins", "ProfileSecrets", "Profiles"].forEach((collection) => {
       denyAuthenticatedRead(collection);
     });
   });
@@ -184,6 +184,14 @@ describe("Firestore Rules", function () {
       await divisions.doc("ABC").set(division);
     });
 
+    it("allows a user to read their own profile", async () => {
+      const doc = timeDb.collection("Profiles").doc("alice");
+      await firebase.assertSucceeds(doc.get());
+    });
+    it("prevents a user from reading someone else's profile", async () => {
+      const doc = timeDb.collection("Profiles").doc("bob");
+      await firebase.assertFails(doc.get());
+    });
     it("requires a tbtePayrollId to be present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
@@ -1261,6 +1269,18 @@ describe("Firestore Rules", function () {
         commitUid: "bob",
         commitName: "Bob Example",
       }));
+    });
+  });
+  describe("ManagerNames", () => {
+    it("allows users with time claim to read", async () => {
+      const query = timeDb.collection("ManagerNames");
+      await firebase.assertSucceeds(query.get());
+    });
+    it("prevents users without time claim from reading", async () => {
+      const auth = { uid: "alice", email: "alice@example.com" };
+      const db = firebase.initializeTestApp({ projectId, auth }).firestore();
+      const query = db.collection("ManagerNames");
+      await firebase.assertFails(query.get());
     });
   });
   //wtf.dump()
