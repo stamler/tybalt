@@ -678,7 +678,7 @@ describe("Firestore Rules", function () {
       await timetypes.doc("RB").set({ name: "Add Overtime to Bank" });
       await timetypes.doc("OR").set({ name: "Off Rotation (Full Day)" });
       await timetypes.doc("OTO").set({ name: "Request Overtime Payout" });
-      await jobs.doc("19-333").set({ description: "Big job for a client" });
+      await jobs.doc("19-333").set({ description: "A basic job", client: "A special client" });
       await timeentries.doc("EF312A64Lein7bRiC5HG").set(baseline);
       await profiles.doc("alice").set(alice);
     });
@@ -790,6 +790,14 @@ describe("Firestore Rules", function () {
       const { job, ...missingJob } = entryJobProperties;
       await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
+    });
+    it("requires jobDescription and client to match a referenced job's respective properties", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const { jobDescription, ...missingJobDescription } = entryJobProperties;
+      const { client, ...missingClient } = entryJobProperties;
+      await firebase.assertFails(doc.set({ ...baseline, ...missingJobDescription, jobDescription:"Non-matching description" }));
+      await firebase.assertFails(doc.set({ ...baseline, ...missingClient, client:"Non-matching client" }));
+      await firebase.assertSucceeds(doc.set({ ...baseline, ...entryJobProperties }));
     });
     it("requires workrecords to match the correct format", async () => {
       const doc = timeDb.collection("TimeEntries").doc();

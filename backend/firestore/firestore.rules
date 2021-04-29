@@ -180,6 +180,8 @@ service cloud.firestore {
           ( isInCollection("job","Jobs") && 
             isInCollection("division","Divisions") &&
             newDoc().keys().hasAll(["jobDescription", "client"]) &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.description == newDoc().jobDescription &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.client == newDoc().client &&
             (newDoc().timetype == "R" || newDoc().timetype == "RT") ) || 
           isMissing("job")
         ) &&
