@@ -101,9 +101,11 @@ export default mixins.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).catch((error) => {
-      alert(`Can't load Profiles: ${error.message}`);
-    });
+    this.$bind("items", this.collectionObject.orderBy("surname")).catch(
+      (error) => {
+        alert(`Can't load Profiles: ${error.message}`);
+      }
+    );
   },
 });
 </script>
