@@ -53,6 +53,7 @@
       <input
         type="text"
         name="job"
+        class="jobNumberInput"
         placeholder="Project or Proposal number"
         v-bind:value="item.job"
         v-on:keydown.arrow-down="onArrowDown"
@@ -60,6 +61,7 @@
         v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
         v-on:input="updateJobCandidates"
       />
+      <span>{{ item.jobDescription }}</span>
     </span>
     <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
       <ul>
@@ -498,6 +500,10 @@ export default Vue.extend({
 });
 </script>
 <style>
+.jobNumberInput {
+  flex-shrink: 0;
+  width: 5em;
+}
 #suggestions {
   padding: 0.25em;
   border-radius: 0em 0em 1em 1em;

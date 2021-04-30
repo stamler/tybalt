@@ -279,7 +279,6 @@ select {
 }
 
 #content input {
-  width: 100%;
   font-size: 1.25em;
 }
 #searchbox {
