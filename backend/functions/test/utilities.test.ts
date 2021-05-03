@@ -49,10 +49,14 @@ describe("utilities.ts", () => {
       const date2 = new Date("2021-01-03T16:23:45.000-05:00"); // a Sunday afternoon
       const date3 = new Date("2021-03-14T01:59:59.999-05:00"); // Sunday morning the millisecond before EDT kicks in
       const date4 = new Date("2021-04-15T13:55:01.000-05:00"); // a Thursday afternoon
+      const date5 = new Date("2021-05-01T21:25:00.000-04:00"); // finaltest cmach
+      const date6 = new Date("2021-05-02T00:31:00.000-00:00"); // other test
       assert(nextSaturday(date1).getTime() === date1.getTime());
       assert(nextSaturday(date2).getTime() === date1.getTime());
       assert(nextSaturday(date3).getTime() === (new Date("2021-03-20T23:59:59.999-04:00")).getTime());
       assert(nextSaturday(date4).getTime() === (new Date("2021-04-17T23:59:59.999-04:00")).getTime());
+      assert(nextSaturday(date5).getTime() === (new Date("2021-05-01T23:59:59.999-04:00")).getTime());
+      assert(nextSaturday(date6).getTime() === (new Date("2021-05-02T03:59:59.999-00:00")).getTime());
     });
   });
   describe("isPayrollWeek2()", () => {
