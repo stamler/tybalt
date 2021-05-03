@@ -8,7 +8,7 @@
           <h5>{{ itemId }}</h5>
         </div>
         <div class="modal__body">
-          <p>What's wrong with this time sheet?</p>
+          <p>What's wrong with this {{ collection }} document?</p>
           <textarea
             placeholder="give a reason at least 6 characters long"
             id="rejectionInput"
@@ -57,12 +57,12 @@ export default Vue.extend({
       this.show = false;
       this.itemId = "";
       this.rejectionReason = "";
-      document.querySelector("body")?.classList.remove("overflow-hidden");
+      //document.querySelector("body")?.classList.remove("overflow-hidden");
     },
     openModal(id: string) {
       this.show = true;
       this.itemId = id;
-      document.querySelector("body")?.classList.add("overflow-hidden");
+      //document.querySelector("body")?.classList.add("overflow-hidden");
     },
     rejectDoc(docId: string, reason: string, collection: string) {
       store.commit("startTask", {
