@@ -352,7 +352,7 @@ service cloud.firestore {
           hasClaim("eapr") && 
           (
             ( newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().rejected == true && newDoc().approved == false && resource.data.approved == true) ||
-            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid && resource.data.approved == true && resource.data.date < request.time )
+            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid && resource.data.approved == true && resource.data.date < request.time && resource.data.rejected == false )
           )
         );
     }
