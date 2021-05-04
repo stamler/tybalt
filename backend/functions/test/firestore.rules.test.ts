@@ -569,9 +569,13 @@ describe("Firestore Rules", function () {
       );
     });
     it("prevents rejected timesheets from being submitted", async () => {
-      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ rejected: true });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, time: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ submitted: true }, { merge: true })
+      );
+      await timesheets.doc("IG022A64Lein7bRiC5HG").set(timesheet);
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ rejected: true });
       await firebase.assertFails(
         doc.set({ submitted: true }, { merge: true })
       );
