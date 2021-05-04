@@ -340,20 +340,19 @@ service cloud.firestore {
       allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
         // owner can edit
-        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false) ||
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason")) ||
         // tapr can approve submitted expenses if they are manager
-        (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && resource.data.submitted == true) ||
+        (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && newDoc().approved == true && resource.data.submitted == true) ||
         // erej can reject any approved uncommitted expenses
         ( 
           hasClaim("erej") &&
           newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
-          (
-            newDoc().committed == false || isMissing("committed")
-          ) &&
-          newDoc().approved == false && 
-          newDoc().submitted == false && 
+          (newDoc().committed == false || isMissing("committed")) &&
+          newDoc().submitted == false &&
+          newDoc().approved == false &&
           resource.data.submitted == true &&
-          resource.data.approved == true
+          resource.data.approved == true &&
+          newDoc().rejected == true
         ) ||
         // tapr can reject submitted uncommitted expenses they manage
         (
@@ -361,8 +360,9 @@ service cloud.firestore {
             hasClaim("tapr") && managerUidMatches()
           ) && 
           newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
-          (newDoc().committed == false || !('committed' in newDoc())) &&
-          newDoc().submitted == false && 
+          (newDoc().committed == false || isMissing("committed")) &&
+          newDoc().submitted == false &&
+          newDoc().approved == false &&
           resource.data.submitted == true &&
           newDoc().rejected == true
         ) ||

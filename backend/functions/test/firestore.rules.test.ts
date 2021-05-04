@@ -951,6 +951,19 @@ describe("Firestore Rules", function () {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get())
     });
+    it("allows owner to submit expenses", async () => {
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(
+        doc.set({ submitted: true }, { merge: true })
+      );
+    });
+    it("prevents rejected expenses from being submitted", async () => {
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ rejected: true });
+      await firebase.assertFails(
+        doc.set({ submitted: true }, { merge: true })
+      );
+    });
     it("allows owner to delete their own Expenses if they have time claim", async () => {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.delete())
