@@ -541,7 +541,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows manager (tapr) to reject approved timesheets they manage", async () => {
@@ -549,7 +549,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows time sheet rejector (tsrej) to reject any approved timesheet", async () => {
@@ -557,7 +557,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, tsrej: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("prevents manager (tapr) from rejecting locked timesheets they manage", async () => {
@@ -1023,15 +1023,15 @@ describe("Firestore Rules", function () {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: false, approved: false, committed: false });
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, committed: false });
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("prevents owner from deleting their own Expenses if they are submitted", async () => {
@@ -1189,12 +1189,12 @@ describe("Firestore Rules", function () {
       let db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...bob, tapr: true } }).firestore();
       let doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
       doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows manager (eapr) to commit approved expenses", async () => {
@@ -1250,12 +1250,14 @@ describe("Firestore Rules", function () {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.update({
         approved: false,
+        submitted: false,
         rejected: true,
         rejectionReason: "no reason given",
       }));
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       await firebase.assertSucceeds(doc.update({
         approved: false,
+        submitted: false,
         rejected: true,
         rejectionReason: "no reason given",
       }));

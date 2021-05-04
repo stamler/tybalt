@@ -344,15 +344,48 @@ service cloud.firestore {
         // tapr can approve submitted expenses if they are manager
         (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && resource.data.submitted == true) ||
         // erej can reject any approved uncommitted expenses
-        ( hasClaim("erej") && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && (newDoc().committed == false || !('committed' in newDoc())) && newDoc().approved == false && resource.data.submitted == true && resource.data.approved == true) ||
+        ( 
+          hasClaim("erej") &&
+          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+          (
+            newDoc().committed == false || isMissing("committed")
+          ) &&
+          newDoc().approved == false && 
+          newDoc().submitted == false && 
+          resource.data.submitted == true &&
+          resource.data.approved == true
+        ) ||
         // tapr can reject submitted uncommitted expenses they manage
-        ((hasClaim("tapr") && managerUidMatches()) && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && (newDoc().committed == false || !('committed' in newDoc())) && resource.data.submitted == true) ||
+        (
+          (
+            hasClaim("tapr") && managerUidMatches()
+          ) && 
+          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+          (newDoc().committed == false || !('committed' in newDoc())) &&
+          newDoc().submitted == false && 
+          resource.data.submitted == true &&
+          newDoc().rejected == true
+        ) ||
         // eapr can only commit or reject approved expenses
         (
           hasClaim("eapr") && 
           (
-            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) && newDoc().rejected == true && newDoc().approved == false && resource.data.approved == true) ||
-            ( newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) && newDoc().committed == true && newDoc().commitUid == request.auth.uid && resource.data.approved == true && resource.data.date < request.time && resource.data.rejected == false )
+            (
+              newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+              newDoc().rejected == true &&
+              newDoc().approved == false &&
+              resource.data.approved == true &&
+              newDoc().submitted == false &&
+              resource.data.submitted == true
+            ) ||
+            (
+              newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) &&
+              newDoc().committed == true &&
+              newDoc().commitUid == request.auth.uid &&
+              resource.data.approved == true &&
+              resource.data.date < request.time &&
+              (resource.data.rejected == false || !("rejected" in resource.data))
+            )
           )
         );
     }
@@ -399,10 +432,11 @@ service cloud.firestore {
         managerUidMatches()
       ) || (
         ((hasClaim("tapr") && managerUidMatches()) || hasClaim("tsrej")) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["approved", "rejected", "rejectionReason"]) &&
-        request.resource.data.rejected == true &&
-        request.resource.data.approved == false &&
-        request.resource.data.rejectionReason.size() > 5 &&
+        newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+        newDoc().rejected == true &&
+        newDoc().approved == false &&
+        newDoc().submitted == false &&
+        newDoc().rejectionReason.size() > 5 &&
         resource.data.submitted == true &&
         resource.data.locked == false
       );

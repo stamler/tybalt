@@ -90,6 +90,7 @@ export default Vue.extend({
                 // document is rejectable because it is submitted and not locked or committed
                 transaction.update(docRef, {
                   approved: false,
+                  submitted: false,
                   rejected: true,
                   rejectionReason: reason,
                 });
