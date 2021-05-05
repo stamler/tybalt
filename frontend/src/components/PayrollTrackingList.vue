@@ -235,7 +235,7 @@ export default mixins.extend({
         "hasAmendmentsForWeeksEnding",
         "salary",
       ];
-      const opts = { fields };
+      const opts = { fields, withBOM: true };
       const timesheetRecords = items.map((x) => {
         if (!isTimeSheet(x)) {
           throw new Error("There was an error validating the timesheet");

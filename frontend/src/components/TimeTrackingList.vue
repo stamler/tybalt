@@ -143,7 +143,7 @@ export default mixins.extend({
         "givenName",
         "amended",
       ];
-      const opts = { fields };
+      const opts = { fields, withBOM: true };
 
       const timesheetRecords = [];
       for (const item of items) {

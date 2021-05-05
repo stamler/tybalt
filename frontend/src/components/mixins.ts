@@ -534,7 +534,7 @@ export default Vue.extend({
           value: "managerName",
         },
       ];
-      const opts = { fields };
+      const opts = { fields, withBOM: true };
       const expenseRecords = items.map((x) => {
         if (!isExpense(x)) {
           throw new Error("There was an error validating the expense");
