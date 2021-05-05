@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
-import {format} from "date-fns";
+import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
 
 // Send reminder emails to users who haven't submitted a timesheet at noon GMT on Tue, Wed, Thu "0 12 * * 2,3,4"
@@ -34,4 +34,26 @@ export const scheduledSubmitReminder = functions.pubsub
     }
 });
 
-// TODO: write scheduledEmailCleanup to delete emails more than 30 days old
+// delete emails more than OLD_AGE_DAYS old at midnight UTC 
+export const scheduledEmailCleanup = functions.pubsub
+  .schedule("0 0 * * *")
+  .onRun(async (context) => {
+    const OLD_AGE_DAYS = 30;
+    functions.logger.info(`Cleaning up emails older than ${OLD_AGE_DAYS} days`);
+    const batches = [];
+    let moreRemaining = true;  
+    const db = admin.firestore();
+    while (moreRemaining) {
+      // eslint-disable-next-line no-await-in-loop 
+      const oldEmails = await db.collection("Emails")
+        .where("delivery.endTime", "<", subDays(new Date(), OLD_AGE_DAYS))
+        .limit(500) // limit 500 ops per batch request
+        .get();
+      const batch = db.batch();
+      oldEmails.forEach(email => batch.delete(email.ref));
+      moreRemaining = oldEmails.size > 499;
+      functions.logger.info(`deleting ${oldEmails.size} email docs`);
+      batches.push(batch.commit());
+    }
+    return Promise.all(batches);
+});
