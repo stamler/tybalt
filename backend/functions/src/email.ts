@@ -34,6 +34,8 @@ export const scheduledSubmitReminder = functions.pubsub
     }
 });
 
+// TODO: create scheduledExpenseApprovalReminder for managers
+
 // delete emails more than OLD_AGE_DAYS old at midnight UTC 
 // TODO: if the batch isn't complete before the next run, it's possible that
 // this will loop more times than necessary. Use pagination to not overlap 
