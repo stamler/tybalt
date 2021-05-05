@@ -6,7 +6,7 @@ import {utcToZonedTime} from "date-fns-tz";
 
 // Send reminder emails to users who haven't submitted a timesheet at noon GMT on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
-  .schedule("*/5 * * * *")
+  .schedule("0 12 * * 2,3,4")
   .onRun(async (context) => {
     const db = admin.firestore();
     const lastWeek = thisTimeLastWeekInTimeZone(nextSaturday(new Date()),"America/Thunder_Bay");
@@ -20,7 +20,7 @@ export const scheduledSubmitReminder = functions.pubsub
     const reminderProfiles = profiles.docs.filter(x => !submittedUids.includes(x.id));
     for (const profile of reminderProfiles) {
       await db.collection("Emails").add({
-        toUids: profile.id,
+        toUids: [profile.id],
         message: {
           subject: `Please submit a timesheet for last week`,
           text: 
