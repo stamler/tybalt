@@ -33,3 +33,5 @@ export const scheduledSubmitReminder = functions.pubsub
       })
     }
 });
+
+// TODO: write scheduledEmailCleanup to delete emails more than 30 days old
