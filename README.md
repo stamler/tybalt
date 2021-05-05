@@ -20,4 +20,5 @@ Corporate time and expense tracking, computer asset management, and reporting in
     firebase functions:config:set algolia.appid="algolia app id"
     ```
 
-3. `firebase deploy`
+3. Setup the "Trigger Email" extension in firebase. The email documents collection is `Emails` and the users collection is `Profiles`. Also set an appropriate FROM address and SMTP connection URI.  
+4. `firebase deploy`
