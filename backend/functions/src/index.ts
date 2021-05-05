@@ -20,6 +20,7 @@ export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
+export { scheduledSubmitReminder } from "./email";
 
 // update algolia indexes
 exports.algoliaUpdateJobsIndex = functions.firestore
