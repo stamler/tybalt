@@ -35,6 +35,9 @@ export const scheduledSubmitReminder = functions.pubsub
 });
 
 // delete emails more than OLD_AGE_DAYS old at midnight UTC 
+// TODO: if the batch isn't complete before the next run, it's possible that
+// this will loop more times than necessary. Use pagination to not overlap 
+// operations
 export const scheduledEmailCleanup = functions.pubsub
   .schedule("0 0 * * *")
   .onRun(async (context) => {
