@@ -25,10 +25,10 @@ export const scheduledSubmitReminder = functions.pubsub
           subject: `Please submit a timesheet for last week`,
           text: 
             `Hi ${ profile.get("givenName")},\n\n` +
-            `You haven't yet submitted a time sheet for the week ending ${
+            `Your time sheet for the week ending ${
               format(utcToZonedTime(lastWeek,"America/Thunder_Bay"), "MMMM d")
-            }. Please submit one as soon as possible.\n\n` +
-            "-tybalt",
+            } is due. Please submit one as soon as possible.\n\n` +
+            "- Tybalt",
         },
       })
     }
