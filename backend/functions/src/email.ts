@@ -73,7 +73,7 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
 
 // Send reminder emails to managers who have submitted timesheets they must approve at 9am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledTimeSheetApprovalReminder = functions.pubsub
-.schedule("0 9 * * 4,5")
+.schedule("0 12 * * 2,3,4")
 .timeZone("America/Thunder_Bay")
 .onRun(async (context) => {
   const db = admin.firestore();
