@@ -406,6 +406,19 @@ export default Vue.extend({
         // TODO: build more validation here to notify the user of errors
         // before hitting the backend.
 
+        // remove values of zero in hours fields
+        if (this.item.mealsHours === 0) {
+          delete this.item.mealsHours;
+        }
+
+        if (this.item.jobHours === 0) {
+          delete this.item.jobHours;
+        }
+
+        if (this.item.hours === 0) {
+          delete this.item.hours;
+        }
+
         delete this.item.payoutRequestAmount;
 
         // Clear the Job if it's empty or too short
