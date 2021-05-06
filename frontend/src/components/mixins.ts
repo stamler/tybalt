@@ -13,7 +13,7 @@ import _ from "lodash";
 
 export default Vue.extend({
   computed: {
-    ...mapState(["claims"]),
+    ...mapState(["claims", "user"]),
   },
   methods: {
     calculatedOntarioHST(total: number): number {
@@ -57,13 +57,24 @@ export default Vue.extend({
       });
       db.collection("Expenses")
         .doc(expenseId)
-        .set({ submitted: true, approved: false }, { merge: true })
-        .then(() => {
-          store.commit("endTask", { id: `submit${expenseId}` });
-        })
-        .catch((error) => {
-          store.commit("endTask", { id: `submit${expenseId}` });
-          alert(`Error submitting expense: ${error}`);
+        .get()
+        .then((docSnap) => {
+          docSnap.ref
+            .set(
+              {
+                submitted: true,
+                approved: docSnap.get("managerUid") === this.user.uid,
+                committed: false,
+              },
+              { merge: true }
+            )
+            .then(() => {
+              store.commit("endTask", { id: `submit${expenseId}` });
+            })
+            .catch((error) => {
+              store.commit("endTask", { id: `submit${expenseId}` });
+              alert(`Error submitting expense: ${error}`);
+            });
         });
     },
     approveExpense(itemId: string) {
