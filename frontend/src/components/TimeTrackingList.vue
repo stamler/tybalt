@@ -29,9 +29,9 @@
         <router-link
           v-if="hasLink(item, 'json')"
           v-bind:to="{ name: 'Time Tracking' }"
-          v-on:click.native="generateInvoicingCSV(item['json'])"
+          v-on:click.native="generateTimeReportCSV(item['json'])"
         >
-          invoicing<download-icon></download-icon>
+          time_report<download-icon></download-icon>
         </router-link>
       </div>
     </div>
@@ -109,7 +109,7 @@ export default mixins.extend({
         Object.keys(item.timeSheets).length > 0
       );
     },
-    async generateInvoicingCSV(url: string) {
+    async generateTimeReportCSV(url: string) {
       const response = await fetch(url);
       const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
       const { timesheets: items, amendments } = this.foldAmendments(
@@ -126,7 +126,8 @@ export default mixins.extend({
       const fields = [
         "client",
         "job",
-        "code",
+        "division",
+        "timetype",
         "date",
         "month",
         "year",
@@ -151,13 +152,14 @@ export default mixins.extend({
           throw new Error("There was an error validating the timesheet");
         }
         for (const entry of item.entries) {
-          if (entry.timetype !== "R") continue;
+          //if (!["R", "RT"].includes(entry.timetype)) continue;
           // TODO: verify that time zone conversion isn't needed here
           const date = new Date(entry.date);
           const line = {
             client: "TBTE",
             job: "", // the job number
-            code: entry.division,
+            division: entry.division,
+            timetype: entry.timetype,
             date: date.getDate(),
             month: format(date, "MMM"),
             year: date.getFullYear(),
@@ -192,7 +194,8 @@ export default mixins.extend({
         const line = {
           client: "TBTE",
           job: "", // the job number
-          code: entry.division,
+          division: entry.division,
+          timetype: entry.timetype,
           date: date.getDate(),
           month: format(date, "MMM"),
           year: date.getFullYear(),
@@ -222,7 +225,7 @@ export default mixins.extend({
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,
-        `invoicing_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+        `time_report_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
           weekEnding
         )}.csv`
       );
