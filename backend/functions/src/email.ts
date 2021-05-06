@@ -4,7 +4,7 @@ import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
 import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
 
-// Send reminder emails to users who haven't submitted a timesheet at noon GMT on Tue, Wed, Thu "0 12 * * 2,3,4"
+// Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
   .schedule("0 8 * * 2,3,4")
   .timeZone("America/Thunder_Bay")
@@ -35,17 +35,17 @@ export const scheduledSubmitReminder = functions.pubsub
     }
 });
 
-// Send reminder emails to managers who have submitted expenses they must approve at noon GMT on Thu and Fri "0 12 * * 4,5"
+// Send reminder emails to managers who have submitted expenses they must approve at 9am on Thu and Fri "0 12 * * 4,5"
 export const scheduledExpenseApprovalReminder = functions.pubsub
   .schedule("0 9 * * 4,5")
   .timeZone("America/Thunder_Bay")
   .onRun(async (context) => {
     const db = admin.firestore();
-    const pendingExpenses = await db.collection("Expenses")
+    const pendingDocuments = await db.collection("Expenses")
       .where("submitted","==", true)
       .where("approved", "==", false)
       .get();
-    const managerUids = [...new Set(pendingExpenses.docs.map(x => x.get("managerUid")))];
+    const managerUids = [...new Set(pendingDocuments.docs.map(x => x.get("managerUid")))];
     functions.logger.info("creating expense approval reminders");
     for (const managerUid of managerUids) {
       const profile = await db.collection("Profiles").doc(managerUid).get();
@@ -71,7 +71,43 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
     }
 });
 
-// delete emails more than OLD_AGE_DAYS old at midnight UTC 
+// Send reminder emails to managers who have submitted timesheets they must approve at 9am on Tue, Wed, Thu "0 12 * * 2,3,4"
+export const scheduledTimeSheetApprovalReminder = functions.pubsub
+.schedule("0 9 * * 4,5")
+.timeZone("America/Thunder_Bay")
+.onRun(async (context) => {
+  const db = admin.firestore();
+  const pendingDocuments = await db.collection("TimeSheets")
+    .where("submitted","==", true)
+    .where("approved", "==", false)
+    .get();
+  const managerUids = [...new Set(pendingDocuments.docs.map(x => x.get("managerUid")))];
+  functions.logger.info("creating time sheet approval reminders");
+  for (const managerUid of managerUids) {
+    const profile = await db.collection("Profiles").doc(managerUid).get();
+    if (!profile.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `The profile doesn't exist for managerUid ${managerUid}`
+      );
+    }
+    await db.collection("Emails").add({
+      toUids: [profile.id],
+      message: {
+        subject: `There are time sheets awaiting your approval`,
+        text: 
+          `Hi ${ profile.get("givenName")},\n\n` +
+          `One or more of the staff who report to you have submitted ` +
+          `time sheets requiring your approval. Please approve them at your ` + 
+          `earliest convenience by visiting ` + 
+          `https://tybalt.tbte.ca/time/sheets/pending\n\n` +
+          "- Tybalt",
+      },
+    });
+  }
+});
+
+// delete emails more than OLD_AGE_DAYS old at midnight
 // TODO: if the batch isn't complete before the next run, it's possible that
 // this will loop more times than necessary. Use pagination to not overlap 
 // operations
