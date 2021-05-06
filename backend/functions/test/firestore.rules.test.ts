@@ -951,10 +951,57 @@ describe("Firestore Rules", function () {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get())
     });
+    it("allows owner to create expenses", async () => {
+      const doc = timeDb.collection("Expenses").doc("newExpense");
+      await firebase.assertSucceeds(
+        doc.set(baseline)
+      );
+    });
+    it("prevents owner from creating expense that's already approved or committed", async () => {
+      const doc = timeDb.collection("Expenses").doc("newExpense");
+      const {approved, ...noApproved} = baseline;
+      await firebase.assertFails(
+        doc.set({...noApproved, approved: true})
+      );
+      await firebase.assertFails(
+        doc.set({...noApproved, approved: true, committed: true})
+      );
+      await firebase.assertFails(
+        doc.set({...noApproved, committed: true})
+      );
+    });
     it("allows owner to submit expenses", async () => {
       const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
         doc.set({ submitted: true }, { merge: true })
+      );
+    });
+    it("prevents owner from approving or committing their own expenses", async () => {
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: true, approved: true }, { merge: true })
+      );
+      await firebase.assertFails(
+        doc.set({ submitted: true, committed: true }, { merge: true })
+      );
+      await firebase.assertFails(
+        doc.set({ submitted: true, approved: true, committed: true }, { merge: true })
+      );
+    });
+    it("allows owner to submit and approve expenses simultaneously if they have tapr claim and are their own manager", async () => {
+      const { managerUid, managerName, ...noManager } = baseline;
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").set({ managerUid: "alice", managerName: "Alice Example", ...noManager});
+      let doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: true, approved: true, committed: false }, { merge: true })
+      );
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ submitted: true, approved: true, committed: true }, { merge: true })
+      );
+      await firebase.assertSucceeds(
+        doc.set({ submitted: true, approved: true, committed: false }, { merge: true })
       );
     });
     it("prevents rejected expenses from being submitted", async () => {

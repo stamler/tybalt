@@ -334,15 +334,17 @@ service cloud.firestore {
         hasClaim("report") && (resource.data.submitted == true || resource.data.approved == true || resource.data.committed == true)
       )
       allow create: if 
-        hasClaim("time") && validExpenseEntry() &&
+        hasClaim("time") && validExpenseEntry() && newDoc().submitted == false && newDoc().approved == false && isMissing("committed") &&
         // prevent user from creating an entry for somebody else
         request.auth.uid == request.resource.data['uid'];
       allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
         // owner can edit
-        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason")) ||
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason") && (newDoc().committed == false || isMissing("committed")) && newDoc().approved == false) ||
         // tapr can approve submitted expenses if they are manager
         (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && newDoc().approved == true && resource.data.submitted == true) ||
+        // tapr can submit and simultaneously approve expenses if they are their own manager
+        (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "committed"]) && newDoc().submitted == true && newDoc().approved == true && newDoc().committed == false) ||
         // erej can reject any approved uncommitted expenses
         ( 
           hasClaim("erej") &&
