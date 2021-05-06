@@ -6,7 +6,8 @@ import {utcToZonedTime} from "date-fns-tz";
 
 // Send reminder emails to users who haven't submitted a timesheet at noon GMT on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
-  .schedule("0 12 * * 2,3,4")
+  .schedule("0 8 * * 2,3,4")
+  .timeZone("America/Thunder_Bay")
   .onRun(async (context) => {
     const db = admin.firestore();
     const lastWeek = thisTimeLastWeekInTimeZone(nextSaturday(new Date()),"America/Thunder_Bay");
@@ -36,7 +37,8 @@ export const scheduledSubmitReminder = functions.pubsub
 
 // Send reminder emails to managers who have submitted expenses they must approve at noon GMT on Thu and Fri "0 12 * * 4,5"
 export const scheduledExpenseApprovalReminder = functions.pubsub
-  .schedule("0 12 * * 4,5")
+  .schedule("0 9 * * 4,5")
+  .timeZone("America/Thunder_Bay")
   .onRun(async (context) => {
     const db = admin.firestore();
     const pendingExpenses = await db.collection("Expenses")
@@ -45,8 +47,14 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
       .get();
     const managerUids = [...new Set(pendingExpenses.docs.map(x => x.get("managerUid")))];
     functions.logger.info("creating expense approval reminders");
-    for (const managerUid in managerUids) {
+    for (const managerUid of managerUids) {
       const profile = await db.collection("Profiles").doc(managerUid).get();
+      if (!profile.exists) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `The profile doesn't exist for managerUid ${managerUid}`
+        );
+      }
       await db.collection("Emails").add({
         toUids: [profile.id],
         message: {
@@ -69,6 +77,7 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
 // operations
 export const scheduledEmailCleanup = functions.pubsub
   .schedule("0 0 * * *")
+  .timeZone("America/Thunder_Bay")
   .onRun(async (context) => {
     const OLD_AGE_DAYS = 30;
     functions.logger.info(`Cleaning up emails older than ${OLD_AGE_DAYS} days`);
