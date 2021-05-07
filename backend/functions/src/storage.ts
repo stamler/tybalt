@@ -144,7 +144,6 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
   const bucket = admin.storage().bucket();
   // files = get list of file objects under Expenses/auth.uid/<filenames>
   const [files] = await bucket.getFiles({ prefix: `Expenses/${auth.uid}/` });
-  functions.logger.info(`FILES\n${files.map(x => x.name).join("\n")}`);
 
   // references = get all Expenses where uid = auth.uid orderBy attachment
   const expensesSnapshot = await db.collection("Expenses")
@@ -152,17 +151,17 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
     .orderBy("attachment")
     .get();
   const references = expensesSnapshot.docs.map(x => x.get("attachment"));
-  functions.logger.info(`REFERENCES\n${references.join("\n")}`);
 
   // unreferenced = files where references does not include the file name
   const unreferenced = files.filter(x => !references.includes(x.name));
 
   // delete unreferenced here (temporarily do nothing for testing)
-  functions.logger.info(`UNREFERENCED\n${unreferenced.map(x => x.name).join("\n")}`);
-  functions.logger.info(`deleting ${unreferenced.length} unreferenced files...`);
+  functions.logger.info(`deleting ${unreferenced.length} unreferenced files...\n${unreferenced.map(x => x.name).join("\n")}`);
   const deleteResults = [];
   for (const file of unreferenced) {
     deleteResults.push(file.delete());
   }
-  return Promise.all(deleteResults);
+  const result = await Promise.all(deleteResults);
+  functions.logger.info(result);
+  return
 };
