@@ -144,10 +144,7 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
   const bucket = admin.storage().bucket();
   // files = get list of file objects under Expenses/auth.uid/<filenames>
   const [files] = await bucket.getFiles({ prefix: `Expenses/${auth.uid}/` });
-  functions.logger.info("FILES");
-  files.forEach(file => {
-    functions.logger.info(file.name);
-  });
+  functions.logger.info(`FILES\n${files.map(x => x.name).join("\n")}`);
 
   // references = get all Expenses where uid = auth.uid orderBy attachment
   const expensesSnapshot = await db.collection("Expenses")
@@ -155,17 +152,11 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
     .orderBy("attachment")
     .get();
   const references = expensesSnapshot.docs.map(x => x.get("attachment"));
-  functions.logger.info("REFERENCES");
-  references.forEach(fileName => {
-    functions.logger.info(fileName);
-  });
+  functions.logger.info(`REFERENCES\n${references.join("\n")}`);
 
   // unreferenced = files - references
-  const unreferenced = files.filter(x => !references.includes(x));
+  const unreferenced = files.filter(x => !references.includes(x.name));
 
   // delete unreferenced here (temporarily do nothing for testing)
-  functions.logger.info("UNREFERENCED");
-  unreferenced.forEach(file => {
-    functions.logger.info(file.name);
-  });
+  functions.logger.info(`UNREFERENCED\n${unreferenced.map(x => x.name).join("\n")}`);
 };
