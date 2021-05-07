@@ -14,6 +14,7 @@ import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
+import { cleanUpUnusedAttachments } from "./storage";
 export { updateTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
@@ -34,6 +35,11 @@ exports.algoliaUpdateJobsIndex = functions.firestore
 exports.cleanUpOrphanedAttachment = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(cleanUpOrphanedAttachment);
+
+// immediately prior to attempting to upload an expense attachment,
+// clean up the existing attachments in case there are orphans from previous
+// uploads
+exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAttachments);
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing

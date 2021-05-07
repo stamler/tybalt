@@ -464,6 +464,16 @@ export default mixins.extend({
           id: `upload${this.newAttachment}`,
           message: "uploading",
         });
+
+        // clean up any existing orphaned attachments
+        const cleanup = firebase
+          .functions()
+          .httpsCallable("cleanUpUsersExpenseAttachments");
+        await cleanup().catch((error) => {
+          alert(`Attachment cleanup failed: ${error}`);
+        });
+
+        // upload the attachment
         try {
           await storage.ref(this.newAttachment).put(this.localFile);
           uploadFailed = false;

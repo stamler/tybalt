@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, createPersistentDownloadUrl } from "./utilities";
+import { isDocIdObject, createPersistentDownloadUrl, getAuthObject } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -137,3 +137,35 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     await archive.finalize();
   }
 
+export async function cleanUpUnusedAttachments(data: unknown, context: functions.https.CallableContext) {
+  const auth = getAuthObject(context, ["time"]);
+
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket();
+  // files = get list of file objects under Expenses/auth.uid/<filenames>
+  const [files] = await bucket.getFiles({ prefix: `Expenses/${auth.uid}/` });
+  functions.logger.info("FILES");
+  files.forEach(file => {
+    functions.logger.info(file.name);
+  });
+
+  // references = get all Expenses where uid = auth.uid orderBy attachment
+  const expensesSnapshot = await db.collection("Expenses")
+    .where("uid", "==", auth.uid)
+    .orderBy("attachment")
+    .get();
+  const references = expensesSnapshot.docs.map(x => x.get("attachment"));
+  functions.logger.info("REFERENCES");
+  references.forEach(fileName => {
+    functions.logger.info(fileName);
+  });
+
+  // unreferenced = files - references
+  const unreferenced = files.filter(x => !references.includes(x));
+
+  // delete unreferenced here (temporarily do nothing for testing)
+  functions.logger.info("UNREFERENCED");
+  unreferenced.forEach(file => {
+    functions.logger.info(file.name);
+  });
+};
