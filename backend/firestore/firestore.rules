@@ -25,8 +25,11 @@ service cloud.firestore {
     function newDoc() {
       return request.resource.data;
     }
+    function isPositiveMultipleOfPointFive(field) {
+      return request.resource.data[field] is number && int(request.resource.data[field] * 2) == (request.resource.data[field] * 2) && request.resource.data[field] > 0;
+    }
     function isPositiveMultipleOfPointFiveUnderEighteen(field) {
-      return request.resource.data[field] is number && int(request.resource.data[field] * 2) == (request.resource.data[field] * 2) && request.resource.data[field] > 0 && request.resource.data[field] <= 18;
+      return isPositiveMultipleOfPointFive(field) && request.resource.data[field] <= 18;
     }
     function hasValidWorkrecord() {
       return "workrecord" in newDoc() && newDoc().workrecord.matches('[FKQ][0-9]{2}-[0-9]{3,}(-[0-9]+)?');
@@ -195,10 +198,11 @@ service cloud.firestore {
             (newDoc().timetype != "R" && newDoc().timetype != "RT") )
         ) &&
 
-        // at least one hours type is provided OR the timetype is "OR" or "OTO"
+        // at least one hours type is provided OR the timetype is "OR" or "OTO" or "RB"
         (
           ( 
             newDoc().timetype != "OR" && 
+            newDoc().timetype != "RB" && 
             newDoc().timetype != "OTO" && 
             !(newDoc().keys().hasAll(["payoutRequestAmount"])) && // payoutRequestAmount is not defined
             (
@@ -208,7 +212,8 @@ service cloud.firestore {
             ) 
           ) ||
           (newDoc().timetype == "OR" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
-          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number && newDoc().payoutRequestAmount > 0)
+          (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number && newDoc().payoutRequestAmount > 0) ||
+          (newDoc().timetype == "RB" && isPositiveMultipleOfPointFive("hours"))
         ) &&
 
         // validate presence and length of description for Regular Hours and Training
@@ -223,7 +228,7 @@ service cloud.firestore {
 
         // if timetype is "RB", only hours is provided and is a positive number
         (
-          (isPositiveMultipleOfPointFiveUnderEighteen("hours") && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
+          (isPositiveMultipleOfPointFive("hours") && newDoc().timetype == "RB" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "hours"])) ||
           newDoc().timetype != "RB"
         ) &&
 

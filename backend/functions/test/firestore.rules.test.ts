@@ -789,6 +789,14 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: "duck"}));
     });
+    it("allows hours to be positive multiples of 0.5 over 18 if timetype is RB", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const entrySucceeds = { date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", uid: "alice", hours: 22 };
+      const entryFails = { date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", uid: "alice", hours: 22.25 };
+      await firebase.assertSucceeds(doc.set(entrySucceeds));
+      await firebase.assertFails(doc.set(entryFails));
+    });
+
     it("requires a referenced job to be valid", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { job, ...missingJob } = entryJobProperties;
