@@ -284,11 +284,21 @@ export default mixins.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
+    this.cleanup();
     //this.$bind("expensetypes", db.collection("ExpenseTypes"));
     this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.id);
   },
   methods: {
+    cleanup() {
+      // clean up any existing orphaned attachments
+      const cleanup = firebase
+        .functions()
+        .httpsCallable("cleanUpUsersExpenseAttachments");
+      return cleanup().catch((error) => {
+        alert(`Attachment cleanup failed: ${error}`);
+      });
+    },
     async updateAttachment(event: HTMLInputEvent) {
       this.attachmentPreviouslyUploaded = false;
       const allowedTypes: { [subtype: string]: string } = {
@@ -464,6 +474,8 @@ export default mixins.extend({
           id: `upload${this.newAttachment}`,
           message: "uploading",
         });
+
+        // upload the attachment
         try {
           await storage.ref(this.newAttachment).put(this.localFile);
           uploadFailed = false;

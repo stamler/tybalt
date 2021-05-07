@@ -117,6 +117,20 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "attachment",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "date",
           "order": "DESCENDING"
         }
