@@ -154,9 +154,15 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
   const references = expensesSnapshot.docs.map(x => x.get("attachment"));
   functions.logger.info(`REFERENCES\n${references.join("\n")}`);
 
-  // unreferenced = files - references
+  // unreferenced = files where references does not include the file name
   const unreferenced = files.filter(x => !references.includes(x.name));
 
   // delete unreferenced here (temporarily do nothing for testing)
   functions.logger.info(`UNREFERENCED\n${unreferenced.map(x => x.name).join("\n")}`);
+  functions.logger.info(`deleting ${unreferenced.length} unreferenced files...`);
+  const deleteResults = [];
+  for (const file of unreferenced) {
+    deleteResults.push(file.delete());
+  }
+  return Promise.all(deleteResults);
 };
