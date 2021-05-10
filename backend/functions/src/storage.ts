@@ -67,6 +67,8 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
         .getTime()}.zip`;
   
       destination = "PayrollExpenseExports/" + zipFilename;
+
+      functions.logger.info(`generating PayrollTracking attachment bundle for ${new Date(data.payPeriodEnding)}`);
     } else {
       throw new functions.https.HttpsError(
         "invalid-argument",
@@ -84,7 +86,7 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     // listen for all archive data to be written
     // 'close' event is fired only when a file descriptor is involved
     zipfile.on("close", function() {
-      console.log(archive.pointer() + " total bytes");
+      functions.logger.log(archive.pointer() + " total bytes");
 
       // upload the zip file
       const newToken = uuidv4();
@@ -118,13 +120,13 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     const archive = archiver('zip', {
       zlib: { level: 9 }, // Sets the compression level.
     });
-    console.log("initialized archiver");
+    functions.logger.log("initialized archiver");
     
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
     archive.on('warning', function(err) {
       if (err.code === 'ENOENT') {
-        console.log(`archiver error: ${err}`);
+        functions.logger.log(`archiver error: ${err}`);
       } else {
         throw err;
       }
@@ -137,7 +139,7 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
 
     // pipe archive data to the file
     archive.pipe(zipfile);
-    console.log(`configured archiver to pipe to ${tempLocalFileName}`);
+    functions.logger.log(`configured archiver to pipe to ${tempLocalFileName}`);
     
 
     // iterate over the documents with attachments, adding their
@@ -154,14 +156,14 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     });
 
     await Promise.all(downloadPromises);
-    console.log(contents);
+    functions.logger.log(contents);
     contents.forEach((file) => {
         archive.append(fs.createReadStream(file.tempLocalAttachmentName), { name: file.filename});
-        console.log(`${file.filename} appended to zip file`);
+        functions.logger.log(`${file.filename} appended to zip file`);
     });
 
     // close the archive which will trigger the "close" event handler
-    console.log("calling finalize");
+    functions.logger.log("calling finalize");
     await archive.finalize();
   }
 
