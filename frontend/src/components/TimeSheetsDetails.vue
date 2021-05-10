@@ -64,6 +64,7 @@
           <tr>
             <th rowspan="2" style="width: 5em">job #</th>
             <th rowspan="2" style="width: 3em">type</th>
+            <th rowspan="2" style="width: 3em">division</th>
             <th rowspan="2" style="width: 4em">date</th>
             <th colspan="3">hours</th>
             <th rowspan="2">request $</th>
@@ -81,6 +82,7 @@
           <tr v-for="(entry, index) in sortedEntries" v-bind:key="index">
             <td>{{ entry.job }}</td>
             <td>{{ entry.timetype }}</td>
+            <td>{{ entry.division }}</td>
             <td>
               {{ entry.date.toDate() | shortDate }}
             </td>
