@@ -104,8 +104,16 @@ interface DocIdObject {
   // the id of a document
   id: string;
 }
+interface PayPeriodEndingObject {
+  // the id of a document
+  payPeriodEnding: number;
+}
 export function isDocIdObject(data: any): data is DocIdObject {
   return typeof data.id === "string";
+}
+
+export function isPayPeriodEndingObject(data: any): data is PayPeriodEndingObject {
+  return typeof data.payPeriodEnding === "number" && isPayrollWeek2(new Date(data.payPeriodEnding));
 }
 
 export function createPersistentDownloadUrl(bucket: string, pathToFile: string, downloadToken: string) {

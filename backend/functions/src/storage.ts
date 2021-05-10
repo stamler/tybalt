@@ -23,6 +23,11 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
       );
     }
 
+    // IF data is a doc Id object, continue as normal. If it's a
+    // payrollWeekEnding, get the expenses that belong to that payroll
+    // week ending and then change the destination prefix to 
+    // PayrollExpenseExports/
+
     console.log(`generating attachment bundle for ${data.id}`);
 
     // Get the Expense tracking document
