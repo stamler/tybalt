@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isPayPeriodEndingObject, createPersistentDownloadUrl, getAuthObject } from "./utilities";
+import { isDocIdObject, isPayPeriodEndingObject, createPersistentDownloadUrl, getAuthObject, getTrackingDoc } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -19,12 +19,10 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     let zipFilename: string;
     let destination: string;
 
-    // Validate the data or throw
-    // use a User Defined Type Guard
-    // IF data is a doc Id object, continue as normal. If it's a
-    // payrollWeekEnding, get the expenses that belong to that payroll
-    // week ending and then change the destination prefix to 
-    // PayrollExpenseExports/
+    // Validate the data or throw with User Defined Type Guards
+    // If data is a doc Id object, continue as for ExpenseTracking. If it's a
+    // payrollWeekEnding, get the expenses that belong to that payPeriodEnding
+    // Throw if neither are true
     if (isDocIdObject(data)) {
       // Get the Expense tracking document
       trackingSnapshot = await db
@@ -49,10 +47,30 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
       destination = "ExpenseTrackingExports/" + zipFilename;
 
       functions.logger.info(`generating ExpenseTracking attachment bundle for ${data.id}`);
+    } else if (isPayPeriodEndingObject(data)) {
+      // Get the Payroll tracking document
+      const trackingDocRef = await getTrackingDoc(new Date(data.payPeriodEnding), "PayrollTracking", "payPeriodEnding");
+      trackingSnapshot = await trackingDocRef.get();
+
+      // get committed Expense documents with attachments for the pay period
+      expensesSnapshot = await db
+        .collection("Expenses")
+        .where("approved", "==", true)
+        .where("committed", "==", true)
+        .where("payPeriodEnding", "==", trackingSnapshot.get("payPeriodEnding"))
+        .orderBy("attachment") // only docs where attachment exists
+        .get();
+    
+      zipFilename = `attachmentsPayroll${trackingSnapshot
+        .get("payPeriodEnding")
+        .toDate()
+        .getTime()}.zip`;
+  
+      destination = "PayrollExpenseExports/" + zipFilename;
     } else {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "The provided data doesn't contain a document id"
+        "The provided data doesn't contain a document id or payPeriodEnding"
       );
     }
 
