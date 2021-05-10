@@ -274,7 +274,13 @@ export async function getPayPeriodExpenses(
   }
 
   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
-  
+
+  // call a function which generates the corresponding attachments here
+  // Argument is a list of attachments, a collection and doc ID and propertyName
+  // to store the results to. Put the function in storage.ts. Then refactor
+  // generateExpenseAttachmentArchive to use this function as well
+  // generateExpenseAttachmentArchive({})
+
   // convert commitTime, committedWeekEnding, and date to strings
   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
     e.date = e.date.toDate().toString();
