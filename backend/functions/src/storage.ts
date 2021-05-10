@@ -66,7 +66,7 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
         .toDate()
         .getTime()}.zip`;
   
-      destination = "PayrollExpenseExports/" + zipFilename;
+      destination = "PayrollExpenseExportsAttachmentCache/" + zipFilename;
 
       functions.logger.info(`generating PayrollTracking attachment bundle for ${new Date(data.payPeriodEnding)}`);
     } else {
