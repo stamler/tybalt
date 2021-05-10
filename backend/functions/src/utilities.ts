@@ -105,7 +105,7 @@ interface DocIdObject {
   id: string;
 }
 interface PayPeriodEndingObject {
-  // the id of a document
+  // integer result of payPeriodEnding.toDate().getTime()
   payPeriodEnding: number;
 }
 export function isDocIdObject(data: any): data is DocIdObject {
