@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, createPersistentDownloadUrl, getAuthObject } from "./utilities";
+import { isDocIdObject, isPayPeriodEndingObject, createPersistentDownloadUrl, getAuthObject } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -14,47 +14,53 @@ import { format } from "date-fns";
 export async function generateExpenseAttachmentArchive(data: unknown) {
     const db = admin.firestore();
     
+    let trackingSnapshot: admin.firestore.DocumentSnapshot;
+    let expensesSnapshot: admin.firestore.QuerySnapshot;
+    let zipFilename: string;
+    let destination: string;
+
     // Validate the data or throw
     // use a User Defined Type Guard
-    if (!isDocIdObject(data)) {
+    // IF data is a doc Id object, continue as normal. If it's a
+    // payrollWeekEnding, get the expenses that belong to that payroll
+    // week ending and then change the destination prefix to 
+    // PayrollExpenseExports/
+    if (isDocIdObject(data)) {
+      // Get the Expense tracking document
+      trackingSnapshot = await db
+        .collection("ExpenseTracking")
+        .doc(data.id)
+        .get();
+
+      // get committed Expense documents with attachments for the week
+      expensesSnapshot = await db
+        .collection("Expenses")
+        .where("approved", "==", true)
+        .where("committed", "==", true)
+        .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
+        .orderBy("attachment") // only docs where attachment exists
+        .get();
+
+      zipFilename = `attachments${trackingSnapshot
+        .get("weekEnding")
+        .toDate()
+        .getTime()}.zip`;
+    
+      destination = "ExpenseTrackingExports/" + zipFilename;
+
+      functions.logger.info(`generating ExpenseTracking attachment bundle for ${data.id}`);
+    } else {
       throw new functions.https.HttpsError(
         "invalid-argument",
         "The provided data doesn't contain a document id"
       );
     }
 
-    // IF data is a doc Id object, continue as normal. If it's a
-    // payrollWeekEnding, get the expenses that belong to that payroll
-    // week ending and then change the destination prefix to 
-    // PayrollExpenseExports/
-
-    console.log(`generating attachment bundle for ${data.id}`);
-
-    // Get the Expense tracking document
-    const trackingSnapshot = await db
-      .collection("ExpenseTracking")
-      .doc(data.id)
-      .get();
-
-    // get committed Expense documents with attachments for the week
-    const expensesSnapshot = await db
-      .collection("Expenses")
-      .where("approved", "==", true)
-      .where("committed", "==", true)
-      .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
-      .orderBy("attachment") // only docs where attachment exists
-      .get();
-
     // define the bucket containing the attachments
     const bucket = admin.storage().bucket();
 
     // create an empty archive in the working directory
-    const zipFilename = `attachments${trackingSnapshot
-      .get("weekEnding")
-      .toDate()
-      .getTime()}.zip`;
     const tempLocalFileName = path.join(os.tmpdir(), zipFilename);
-
     const zipfile = fs.createWriteStream(tempLocalFileName);
 
     // listen for all archive data to be written
@@ -63,7 +69,6 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
       console.log(archive.pointer() + " total bytes");
 
       // upload the zip file
-      const destination = "ExpenseTrackingExports/" + zipFilename;
       const newToken = uuidv4();
 
       // upload the file into the current firebase project default bucket
