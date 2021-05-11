@@ -108,6 +108,14 @@ export function isDocIdObject(data: any): data is DocIdObject {
   return typeof data.id === "string";
 }
 
+interface PayPeriodEndingObject {
+  // integer result of payPeriodEnding.toDate().getTime()
+  payPeriodEnding: number;
+}
+export function isPayPeriodEndingObject(data: any): data is PayPeriodEndingObject {
+  return typeof data.payPeriodEnding === "number" && isPayrollWeek2(new Date(data.payPeriodEnding));
+}
+
 export function createPersistentDownloadUrl(bucket: string, pathToFile: string, downloadToken: string) {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
     pathToFile

@@ -274,7 +274,15 @@ export async function getPayPeriodExpenses(
   }
 
   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
-  
+
+  // generate the corresponding attachments zip if it doesn't already exist
+  // NB. This file can be deleted as it will be regenerated here if it doesn't exist
+  const payrollTrackingDocRef = await getTrackingDoc(week2Ending,"PayrollTracking","payPeriodEnding");
+  const trackingSnapshot = await payrollTrackingDocRef.get();
+  if (trackingSnapshot.get("zip") === undefined) {
+    await generateExpenseAttachmentArchive({ payPeriodEnding: week2Ending.getTime() });
+  }
+
   // convert commitTime, committedWeekEnding, and date to strings
   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
     e.date = e.date.toDate().toString();

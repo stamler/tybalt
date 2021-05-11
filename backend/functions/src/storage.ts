@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, createPersistentDownloadUrl, getAuthObject } from "./utilities";
+import { isDocIdObject, isPayPeriodEndingObject, createPersistentDownloadUrl, getAuthObject, getTrackingDoc } from "./utilities";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -14,51 +14,81 @@ import { format } from "date-fns";
 export async function generateExpenseAttachmentArchive(data: unknown) {
     const db = admin.firestore();
     
-    // Validate the data or throw
-    // use a User Defined Type Guard
-    if (!isDocIdObject(data)) {
+    let trackingSnapshot: admin.firestore.DocumentSnapshot;
+    let expensesSnapshot: admin.firestore.QuerySnapshot;
+    let zipFilename: string;
+    let destination: string;
+
+    // Validate the data or throw with User Defined Type Guards
+    // If data is a doc Id object, continue as for ExpenseTracking. If it's a
+    // payrollWeekEnding, get the expenses that belong to that payPeriodEnding
+    // Throw if neither are true
+    if (isDocIdObject(data)) {
+      // Get the Expense tracking document
+      trackingSnapshot = await db
+        .collection("ExpenseTracking")
+        .doc(data.id)
+        .get();
+
+      // get committed Expense documents with attachments for the week
+      expensesSnapshot = await db
+        .collection("Expenses")
+        .where("approved", "==", true)
+        .where("committed", "==", true)
+        .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
+        .orderBy("attachment") // only docs where attachment exists
+        .get();
+
+      zipFilename = `attachments${trackingSnapshot
+        .get("weekEnding")
+        .toDate()
+        .getTime()}.zip`;
+    
+      destination = "ExpenseTrackingExports/" + zipFilename;
+
+      functions.logger.info(`generating ExpenseTracking attachment bundle for ${data.id}`);
+    } else if (isPayPeriodEndingObject(data)) {
+      // Get the Payroll tracking document
+      const trackingDocRef = await getTrackingDoc(new Date(data.payPeriodEnding), "PayrollTracking", "payPeriodEnding");
+      trackingSnapshot = await trackingDocRef.get();
+
+      // get committed Expense documents with attachments for the pay period
+      expensesSnapshot = await db
+        .collection("Expenses")
+        .where("approved", "==", true)
+        .where("committed", "==", true)
+        .where("payPeriodEnding", "==", trackingSnapshot.get("payPeriodEnding"))
+        .orderBy("attachment") // only docs where attachment exists
+        .get();
+    
+      zipFilename = `attachmentsPayroll${trackingSnapshot
+        .get("payPeriodEnding")
+        .toDate()
+        .getTime()}.zip`;
+  
+      destination = "PayrollExpenseExportsAttachmentCache/" + zipFilename;
+
+      functions.logger.info(`generating PayrollTracking attachment bundle for ${new Date(data.payPeriodEnding)}`);
+    } else {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "The provided data doesn't contain a document id"
+        "The provided data doesn't contain a document id or payPeriodEnding"
       );
     }
-
-    console.log(`generating attachment bundle for ${data.id}`);
-
-    // Get the Expense tracking document
-    const trackingSnapshot = await db
-      .collection("ExpenseTracking")
-      .doc(data.id)
-      .get();
-
-    // get committed Expense documents with attachments for the week
-    const expensesSnapshot = await db
-      .collection("Expenses")
-      .where("approved", "==", true)
-      .where("committed", "==", true)
-      .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
-      .orderBy("attachment") // only docs where attachment exists
-      .get();
 
     // define the bucket containing the attachments
     const bucket = admin.storage().bucket();
 
     // create an empty archive in the working directory
-    const zipFilename = `attachments${trackingSnapshot
-      .get("weekEnding")
-      .toDate()
-      .getTime()}.zip`;
     const tempLocalFileName = path.join(os.tmpdir(), zipFilename);
-
     const zipfile = fs.createWriteStream(tempLocalFileName);
 
     // listen for all archive data to be written
     // 'close' event is fired only when a file descriptor is involved
     zipfile.on("close", function() {
-      console.log(archive.pointer() + " total bytes");
+      functions.logger.log(archive.pointer() + " total bytes");
 
       // upload the zip file
-      const destination = "ExpenseTrackingExports/" + zipFilename;
       const newToken = uuidv4();
 
       // upload the file into the current firebase project default bucket
@@ -90,13 +120,13 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     const archive = archiver('zip', {
       zlib: { level: 9 }, // Sets the compression level.
     });
-    console.log("initialized archiver");
+    functions.logger.log("initialized archiver");
     
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
     archive.on('warning', function(err) {
       if (err.code === 'ENOENT') {
-        console.log(`archiver error: ${err}`);
+        functions.logger.log(`archiver error: ${err}`);
       } else {
         throw err;
       }
@@ -109,7 +139,7 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
 
     // pipe archive data to the file
     archive.pipe(zipfile);
-    console.log(`configured archiver to pipe to ${tempLocalFileName}`);
+    functions.logger.log(`configured archiver to pipe to ${tempLocalFileName}`);
     
 
     // iterate over the documents with attachments, adding their
@@ -126,14 +156,14 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     });
 
     await Promise.all(downloadPromises);
-    console.log(contents);
+    functions.logger.log(contents);
     contents.forEach((file) => {
         archive.append(fs.createReadStream(file.tempLocalAttachmentName), { name: file.filename});
-        console.log(`${file.filename} appended to zip file`);
+        functions.logger.log(`${file.filename} appended to zip file`);
     });
 
     // close the archive which will trigger the "close" event handler
-    console.log("calling finalize");
+    functions.logger.log("calling finalize");
     await archive.finalize();
   }
 

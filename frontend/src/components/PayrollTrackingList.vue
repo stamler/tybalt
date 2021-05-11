@@ -57,6 +57,7 @@
 <script lang="ts">
 import mixins from "./mixins";
 import { format } from "date-fns";
+import store from "../store";
 import { utcToZonedTime } from "date-fns-tz";
 import {
   PayrollReportRecord,
@@ -303,9 +304,14 @@ export default mixins.extend({
         .functions()
         .httpsCallable("getPayPeriodExpenses");
       try {
+        store.commit("startTask", {
+          id: `getExpenses${week.getTime()}`,
+          message: "Getting Expenses",
+        });
         const result = await getPayPeriodExpenses({
           weekEnding: week.getTime(),
         });
+        store.commit("endTask", { id: `getExpenses${week.getTime()}` });
         return result.data;
         /*
         const blob = new Blob([JSON.stringify(result.data)], {
@@ -314,6 +320,7 @@ export default mixins.extend({
         this.downloadBlob(blob, "expenses.json", true);
         */
       } catch (error) {
+        store.commit("endTask", { id: `getExpenses${week.getTime()}` });
         alert(`Error getting expenses: ${error}`);
       }
     },
