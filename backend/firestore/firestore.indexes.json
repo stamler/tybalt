@@ -49,6 +49,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "committed",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "payPeriodEnding",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "attachment",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "approved",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "managerUid",
           "order": "ASCENDING"
         },
