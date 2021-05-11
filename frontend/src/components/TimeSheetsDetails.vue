@@ -97,7 +97,7 @@
         </tbody>
         <tfoot v-if="item.workHoursTally !== undefined">
           <tr>
-            <td colspan="3">Totals</td>
+            <td colspan="4">Totals</td>
             <td>{{ item.workHoursTally.jobHours }}</td>
             <td>{{ item.workHoursTally.hours + offHoursSum }}</td>
             <td>{{ item.mealsHoursTally }}</td>
