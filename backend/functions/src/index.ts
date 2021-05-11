@@ -15,6 +15,7 @@ import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } fr
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments } from "./storage";
+import { emailOnReject } from "./email";
 export { updateTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
@@ -22,6 +23,16 @@ export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
+
+// send emails when timesheets are rejected
+exports.emailOnTimeSheetRejection = functions.firestore
+  .document("TimeSheets/{timesheetId}")
+  .onUpdate(emailOnReject);
+
+// send emails when expenses are rejected
+exports.emailOnTimeSheetRejection = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onUpdate(emailOnReject);
 
 // update algolia indexes
 exports.algoliaUpdateJobsIndex = functions.firestore

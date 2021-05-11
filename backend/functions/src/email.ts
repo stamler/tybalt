@@ -134,3 +134,21 @@ export const scheduledEmailCleanup = functions.pubsub
     }
     return Promise.all(batches);
 });
+
+// onUpdate or TimeSheets or Expenses document
+export async function emailOnReject(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+) {
+  const afterData = change.after?.data();
+  const beforeData = change.before?.data();
+
+  // Return with no action if the Document wasn't just rejected.
+  if (!(
+      afterData.rejected !== beforeData.rejected && 
+      afterData.rejected === true
+  )) { return; }
+
+  functions.logger.debug(`triggered on rejection of doc ${change.after.id}\n` +
+  `reason: ${afterData.rejectionReason}\n`);
+};
