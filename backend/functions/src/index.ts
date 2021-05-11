@@ -30,7 +30,7 @@ exports.emailOnTimeSheetRejection = functions.firestore
   .onUpdate(async (change, context) => { await emailOnReject(change, context, "TimeSheets") });
 
 // send emails when expenses are rejected
-exports.emailOnTimeSheetRejection = functions.firestore
+exports.emailOnExpenseRejection = functions.firestore
   .document("Expenses/{expenseId}")
   .onUpdate(async (change, context) => { await emailOnReject(change, context, "Expenses") });
 
