@@ -139,6 +139,7 @@ export const scheduledEmailCleanup = functions.pubsub
 export async function emailOnReject(
   change: functions.ChangeJson,
   context: functions.EventContext,
+  collection: "TimeSheets" | "Expenses",
 ) {
   const afterData = change.after?.data();
   const beforeData = change.before?.data();
@@ -149,6 +150,43 @@ export async function emailOnReject(
       afterData.rejected === true
   )) { return; }
 
-  functions.logger.debug(`triggered on rejection of doc ${change.after.id}\n` +
-  `reason: ${afterData.rejectionReason}\n`);
-};
+  const db = admin.firestore();
+  const profile = await db.collection("Profiles").doc(afterData.uid).get();
+  const managerProfile = await db.collection("Profiles").doc(afterData.managerUid).get();
+
+  if (collection === "TimeSheets") {
+    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+    
+    // generate the user email
+    functions.logger.debug(`Hi ${ profile.get("givenName")},\n\n` +
+    `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
+    profile.get("managerName") }. The following reason was provided: \n\n"${
+    afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
+    ` soon as possible.\n\n` +
+    "- Tybalt");
+
+    // generate the manager email
+    functions.logger.debug(`Hi ${ managerProfile.get("givenName")},\n\n` +
+    `You rejected ${profile.get("displayName")}'s time sheet for the week ` +
+    `ending ${weekEndingString}. You provided the following reason:\n\n"${
+    afterData.rejectionReason }"\n\n- Tybalt`);
+
+  } else if (collection === "Expenses") {
+    const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),"America/Thunder_Bay"), "MMMM d");
+
+    // generate the user email
+    functions.logger.debug(`Hi ${ profile.get("givenName")},\n\n` +
+    `Your expense with payment type ${afterData.paymentType} dated ${
+    expenseDateString } was rejected by ${ profile.get("managerName") }. ` +
+    `The following reason was provided: \n\n"${
+    afterData.rejectionReason }"\n\nPlease edit your expense as required.` +
+    "- Tybalt");
+
+    // generate the manager email
+    functions.logger.debug(`Hi ${ managerProfile.get("givenName")},\n\n` +
+    `You rejected ${profile.get("displayName")}'s expense with payment type ${
+    afterData.paymentType} dated ${expenseDateString }.` +
+    `You provided the following reason: \n\n"${afterData.rejectionReason 
+    }"\n\n- Tybalt`);    
+  }
+}

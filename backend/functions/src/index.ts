@@ -27,12 +27,12 @@ export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprova
 // send emails when timesheets are rejected
 exports.emailOnTimeSheetRejection = functions.firestore
   .document("TimeSheets/{timesheetId}")
-  .onUpdate(emailOnReject);
+  .onUpdate(async (change, context) => { await emailOnReject(change, context, "TimeSheets") });
 
 // send emails when expenses are rejected
 exports.emailOnTimeSheetRejection = functions.firestore
   .document("Expenses/{expenseId}")
-  .onUpdate(emailOnReject);
+  .onUpdate(async (change, context) => { await emailOnReject(change, context, "Expenses") });
 
 // update algolia indexes
 exports.algoliaUpdateJobsIndex = functions.firestore
