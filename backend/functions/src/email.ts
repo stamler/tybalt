@@ -158,18 +158,29 @@ export async function emailOnReject(
     const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
     
     // generate the user email
-    functions.logger.debug(`Hi ${ profile.get("givenName")},\n\n` +
-    `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
-    profile.get("managerName") }. The following reason was provided: \n\n"${
-    afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
-    ` soon as possible.\n\n` +
-    "- Tybalt");
+    await db.collection("Emails").add({
+      toUids: [profile.id],
+      message: {
+        subject: `Your time sheet was rejected`,
+        text: `Hi ${ profile.get("givenName")},\n\n` +
+        `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
+        profile.get("managerName") }. The following reason was provided: \n\n"${
+        afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
+        ` soon as possible.\n\n- Tybalt`,
+      },
+    });
 
     // generate the manager email
-    functions.logger.debug(`Hi ${ managerProfile.get("givenName")},\n\n` +
-    `You rejected ${profile.get("displayName")}'s time sheet for the week ` +
-    `ending ${weekEndingString}. You provided the following reason:\n\n"${
-    afterData.rejectionReason }"\n\n- Tybalt`);
+    await db.collection("Emails").add({
+      toUids: [managerProfile.id],
+      message: {
+        subject: `You rejected ${profile.get("displayName")}'s time sheet`,
+        text: `Hi ${ managerProfile.get("givenName")},\n\n` +
+        `You rejected ${profile.get("displayName")}'s time sheet for the week ` +
+        `ending ${weekEndingString}. You provided the following reason:\n\n"${
+        afterData.rejectionReason }"\n\n- Tybalt`,
+      },
+    });
 
   } else if (collection === "Expenses") {
     const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),"America/Thunder_Bay"), "MMMM d");
