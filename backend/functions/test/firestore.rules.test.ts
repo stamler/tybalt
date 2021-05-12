@@ -1199,11 +1199,13 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", total: 50.5, ...missingPaymentTypeAndTotal}));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", total: 50.5, ...missingPaymentTypeAndTotal}));
     });
-    it("requires attachment if paymentType is either CorporateCreditCard or FuelCard", async () => {
+    it("requires attachment if paymentType is either CorporateCreditCard, FuelCard, or FuelOnAccount", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, attachment, ...missingPaymentTypeAndAttachment } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentTypeAndAttachment}));
       await firebase.assertFails(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentTypeAndAttachment}));
       await firebase.assertFails(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", ...missingPaymentTypeAndAttachment}));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, attachment: "foo", ...missingPaymentTypeAndAttachment}));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", attachment: "foo", ...missingPaymentTypeAndAttachment}));
       await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", attachment: "foo", ...missingPaymentTypeAndAttachment}));
     });
