@@ -127,9 +127,9 @@ service cloud.firestore {
           !(newDoc().paymentType in ["FuelCard", "FuelOnAccount"])
         ) &&
 
-        // unitNumber and attachment must only be present for FuelOnAccount, and must be a positive integer
+        // unitNumber must only be present for FuelOnAccount, and must be a positive integer
         (
-          (newDoc().unitNumber is int && newDoc().unitNumber > 0 && !isMissing("attachment") && newDoc().paymentType == "FuelOnAccount") ||
+          (newDoc().unitNumber is int && newDoc().unitNumber > 0 && newDoc().paymentType == "FuelOnAccount") ||
           newDoc().paymentType != "FuelOnAccount" && isMissing("unitNumber")
         ) &&
         // when paymentType is not Mileage, total is positive number and distance is missing
