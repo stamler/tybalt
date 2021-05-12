@@ -186,18 +186,30 @@ export async function emailOnReject(
     const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),"America/Thunder_Bay"), "MMMM d");
 
     // generate the user email
-    functions.logger.debug(`Hi ${ profile.get("givenName")},\n\n` +
-    `Your expense with payment type ${afterData.paymentType} dated ${
-    expenseDateString } was rejected by ${ profile.get("managerName") }. ` +
-    `The following reason was provided: \n\n"${
-    afterData.rejectionReason }"\n\nPlease edit your expense as required.` +
-    "- Tybalt");
+    await db.collection("Emails").add({
+      toUids: [profile.id],
+      message: {
+        subject: `Your expense was rejected`,
+        text: `Hi ${ profile.get("givenName")},\n\n` +
+        `Your expense with payment type ${afterData.paymentType} dated ${
+        expenseDateString } was rejected by ${ profile.get("managerName") }. ` +
+        `The following reason was provided: \n\n"${
+        afterData.rejectionReason }"\n\nPlease edit your expense as required.` +
+        "\n\n- Tybalt",
+      },
+    });
 
     // generate the manager email
-    functions.logger.debug(`Hi ${ managerProfile.get("givenName")},\n\n` +
-    `You rejected ${profile.get("displayName")}'s expense with payment type ${
-    afterData.paymentType} dated ${expenseDateString }.` +
-    `You provided the following reason: \n\n"${afterData.rejectionReason 
-    }"\n\n- Tybalt`);    
+    await db.collection("Emails").add({
+      toUids: [managerProfile.id],
+      message: {
+        subject: `You rejected ${profile.get("displayName")}'s expense`,
+        text: `Hi ${ managerProfile.get("givenName")},\n\n` +
+        `You rejected ${profile.get("displayName")}'s expense with payment type ${
+        afterData.paymentType} dated ${expenseDateString }.` +
+        `You provided the following reason: \n\n"${afterData.rejectionReason 
+        }"\n\n- Tybalt`,
+      },
+    });
   }
 }
