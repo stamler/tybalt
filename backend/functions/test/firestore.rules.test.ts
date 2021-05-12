@@ -1215,7 +1215,30 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({paymentType: "Expense", ccLast4digits: "1234", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({paymentType: "Expense", ...missingPaymentType }));
     });
-    it("requires paymentType to be either CorporateCreditCard or Expense or Mileage or FuelCard", async () => {
+    it("requires po to be missing if paymentType FuelCard or FuelOnAccount", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, ...missingPaymentType } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "FuelCard", po: "5126", ccLast4digits: "1234", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", po: "5126", unitNumber: 25, ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentType }));
+    });
+    it("requires unitNumber to be missing if paymentType not FuelOnAccount", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, ...missingPaymentType } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", unitNumber: 25, ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
+    });
+    it("requires unitNumber to be positive integer if paymentType is FuelOnAccount", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, ...missingPaymentType } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", ...missingPaymentType }));
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: -25, ...missingPaymentType }));
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 0.5, ...missingPaymentType }));
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 0, ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentType }));
+    });
+    it("requires paymentType to be either CorporateCreditCard or Expense or Mileage or FuelCard or FuelOnAccount", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
@@ -1225,6 +1248,7 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ccLast4digits: "1234", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", unitNumber: 1234, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
