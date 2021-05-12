@@ -170,10 +170,11 @@ interface ExpenseCommon {
   jobDescription?: string;
 }
 interface ExpenseRegular extends ExpenseCommon {
-  paymentType: "Expense" | "CorporateCreditCard" | "FuelCard";
+  paymentType: "Expense" | "CorporateCreditCard" | "FuelCard" | "FuelOnAccount";
   total: number;
   vendorName?: string;
   attachment?: string;
+  unitNumber?: number;
   po?: string;
 }
 interface ExpenseMileage extends ExpenseCommon {

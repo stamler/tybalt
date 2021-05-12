@@ -36,6 +36,7 @@
       <select name="paymentType" v-model="item.paymentType">
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="FuelCard">Fuel Card</option>
+        <option value="FuelOnAccount">Fuel On Account</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">Personal Mileage</option>
       </select>
@@ -82,6 +83,17 @@
       />
     </span>
 
+    <span class="field" v-if="item.paymentType === 'FuelOnAccount'">
+      <label for="unitNumber">Unit Number</label>
+      <input
+        type="number"
+        name="unitNumber"
+        placeholder="00"
+        v-model.number="item.unitNumber"
+        step="1.0"
+        min="1"
+      />
+    </span>
     <span class="field">
       <label for="job">Job</label>
       <!-- TODO: Show job description/client in uneditable part of field -->
@@ -109,7 +121,12 @@
       </ul>
     </div>
 
-    <span class="field" v-if="item.paymentType !== 'Mileage'">
+    <span
+      class="field"
+      v-if="
+        !['Mileage', 'FuelOnAccount', 'FuelCard'].includes(item.paymentType)
+      "
+    >
       <input
         type="text"
         name="po"

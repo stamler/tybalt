@@ -41,6 +41,10 @@
           <span class="label" v-if="item.paymentType === 'FuelCard'">
             Fuel Card *{{ item.ccLast4digits }}
           </span>
+          <span class="label" v-if="item.paymentType === 'FuelOnAccount'">
+            Fuel on Account for unit {{ item.unitNumber }}
+          </span>
+
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
           </span>
@@ -102,6 +106,9 @@
           </span>
           <span class="label" v-if="item.paymentType === 'FuelCard'">
             Fuel Card *{{ item.ccLast4digits }}
+          </span>
+          <span class="label" v-if="item.paymentType === 'FuelOnAccount'">
+            Fuel on Account for unit {{ item.unitNumber }}
           </span>
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}

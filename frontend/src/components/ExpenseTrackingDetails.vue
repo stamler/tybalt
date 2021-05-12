@@ -46,6 +46,9 @@
             <span class="label" v-if="exp.paymentType === 'FuelCard'">
               Fuel Card *{{ exp.ccLast4digits }}
             </span>
+            <span class="label" v-if="item.paymentType === 'FuelOnAccount'">
+              Fuel on Account for unit {{ item.unitNumber }}
+            </span>
           </div>
         </div>
       </div>
