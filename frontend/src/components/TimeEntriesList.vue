@@ -123,11 +123,13 @@
               {{ tallies[week].mealsHoursTally }} hours meals
             </span>
           </div>
-          <div
-            class="secondline"
-            v-if="tallies[week].offRotationDates.length > 0"
-          >
-            {{ tallies[week].offRotationDates.length }} day(s) off rotation
+          <div class="secondline">
+            <span v-if="tallies[week].offRotationDates.length > 0">
+              {{ tallies[week].offRotationDates.length }} day(s) off rotation
+            </span>
+            <span v-if="tallies[week].offDates.length > 0">
+              {{ tallies[week].offDates.length }} full day(s) off
+            </span>
           </div>
           <div class="thirdline">
             <span v-if="tallies[week].bankEntries.length === 1">
@@ -327,6 +329,7 @@ export default mixins.extend({
         bankEntries: firebase.firestore.DocumentData[];
         payoutRequests: firebase.firestore.DocumentData[];
         offRotationDates: number[];
+        offDates: number[];
         nonWorkHoursTally: { [timetype: string]: number; total: number };
         mealsHoursTally: number;
         workHoursTally: { hours: number; jobHours: number; total: number };
@@ -348,6 +351,7 @@ export default mixins.extend({
               bankEntries: [],
               payoutRequests: [],
               offRotationDates: [],
+              offDates: [],
               nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
               mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0, total: 0 },
@@ -361,6 +365,11 @@ export default mixins.extend({
             // off rotation entries for a given date.
             const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
             tallyObject[key].offRotationDates.push(orDate.getTime());
+          } else if (item.timetype === "OD") {
+            // Count the off dates and ensure that there are not two
+            // off entries for a given date.
+            const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
+            tallyObject[key].offDates.push(orDate.getTime());
           } else if (item.timetype === "OTO") {
             // This is an request payout entry, store it in the payoutRequests
             // array for processing after completing the tallies.
