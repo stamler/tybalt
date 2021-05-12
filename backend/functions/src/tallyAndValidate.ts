@@ -17,6 +17,7 @@ export async function tallyAndValidate(
   const bankEntries: TimeEntry[] = [];
   const payoutRequests: TimeEntry[] = [];
   const offRotationDates: number[] = [];
+  const offDates: number[] = [];
   const nonWorkHoursTally: { [timetype: string]: number } = {}; // value is total
   let mealsHoursTally = 0;
   const workHoursTally = { hours: 0, jobHours: 0, noJobNumber: 0 };
@@ -43,6 +44,19 @@ export async function tallyAndValidate(
         );
       } else {
         offRotationDates.push(orDate.getTime());
+      }
+    } else if (item.timetype === "OD") {
+      // Count the off dates and ensure that there are not two
+      // off rotation entries for a given date.
+      const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
+      if (offDates.includes(orDate.getTime())) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "More than one Off entry exists for " +
+            format(orDate, "yyyy MMM dd")
+        );
+      } else {
+        offDates.push(orDate.getTime());
       }
     } else if (item.timetype === "OTO") {
       // This is an overtime payout request entry, store it in payoutRequests
@@ -184,6 +198,17 @@ export async function tallyAndValidate(
       "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
     );
   }
+
+  // prevent salaried employees from claiming days off (OD)
+  if (
+    profile.get("salary") === true &&
+    offDates.length > 0
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Salaried staff cannot claim Off (Full Day) time. Please use PPTO or vacation instead."
+    )
+  }
   
   // require salaried employees to have at least 40 hours on a timesheet
   const offRotationHours = offRotationDates.length * 8;
@@ -296,6 +321,7 @@ export async function tallyAndValidate(
     entries,
     nonWorkHoursTally,
     offRotationDaysTally: offRotationDates.length,
+    offDaysTally: offDates.length,
     workHoursTally,
     mealsHoursTally,
     divisionsTally,
