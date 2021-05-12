@@ -789,6 +789,14 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: "duck"}));
     });
+    it("requires sum of hours, jobHours, and mealsHours to be less than or equal to 18", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 12, hours: 5.5, mealsHours: 0.5 }));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 10, hours: 9, mealsHours: 0.5 }));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 10, hours: 7, mealsHours: 1.5 }));
+
+    });
     it("allows hours to be positive multiples of 0.5 over 18 if timetype is RB", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const entrySucceeds = { date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", uid: "alice", hours: 22 };
