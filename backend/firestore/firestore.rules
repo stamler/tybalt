@@ -25,6 +25,9 @@ service cloud.firestore {
     function newDoc() {
       return request.resource.data;
     }
+    function valueOrZero(field) {
+      return newDoc().get(field, 0)
+    }
     function isPositiveMultipleOfPointFive(field) {
       return request.resource.data[field] is number && int(request.resource.data[field] * 2) == (request.resource.data[field] * 2) && request.resource.data[field] > 0;
     }
@@ -261,6 +264,12 @@ service cloud.firestore {
           isMissing("mealsHours") 
         ) &&
 
+        // The total of jobHours and mealsHours and hours doesn't exceed 18 unless timetype is RB
+        (
+          newDoc().timetype != "RB" &&
+          valueOrZero("mealsHours") + valueOrZero("jobHours") + valueOrZero("hours") <= 18 ||
+          newDoc().timetype == "RB"
+        ) &&
         // when provided workrecord requires an existing job
         (
           ( hasValidWorkrecord() && isInCollection("job", "Jobs") ) ||

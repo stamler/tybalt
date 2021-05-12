@@ -134,3 +134,82 @@ export const scheduledEmailCleanup = functions.pubsub
     }
     return Promise.all(batches);
 });
+
+// onUpdate or TimeSheets or Expenses document
+export async function emailOnReject(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+  collection: "TimeSheets" | "Expenses",
+) {
+  const afterData = change.after?.data();
+  const beforeData = change.before?.data();
+
+  // Return with no action if the Document wasn't just rejected.
+  if (!(
+      afterData.rejected !== beforeData.rejected && 
+      afterData.rejected === true
+  )) { return; }
+
+  const db = admin.firestore();
+  const profile = await db.collection("Profiles").doc(afterData.uid).get();
+  const managerProfile = await db.collection("Profiles").doc(afterData.managerUid).get();
+
+  if (collection === "TimeSheets") {
+    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+    
+    // generate the user email
+    await db.collection("Emails").add({
+      toUids: [profile.id],
+      message: {
+        subject: `Your time sheet was rejected`,
+        text: `Hi ${ profile.get("givenName")},\n\n` +
+        `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
+        profile.get("managerName") }. The following reason was provided: \n\n"${
+        afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
+        ` soon as possible.\n\n- Tybalt`,
+      },
+    });
+
+    // generate the manager email
+    await db.collection("Emails").add({
+      toUids: [managerProfile.id],
+      message: {
+        subject: `You rejected ${profile.get("displayName")}'s time sheet`,
+        text: `Hi ${ managerProfile.get("givenName")},\n\n` +
+        `You rejected ${profile.get("displayName")}'s time sheet for the week ` +
+        `ending ${weekEndingString}. You provided the following reason:\n\n"${
+        afterData.rejectionReason }"\n\n- Tybalt`,
+      },
+    });
+
+  } else if (collection === "Expenses") {
+    const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),"America/Thunder_Bay"), "MMMM d");
+
+    // generate the user email
+    await db.collection("Emails").add({
+      toUids: [profile.id],
+      message: {
+        subject: `Your expense was rejected`,
+        text: `Hi ${ profile.get("givenName")},\n\n` +
+        `Your expense with payment type ${afterData.paymentType} dated ${
+        expenseDateString } was rejected by ${ profile.get("managerName") }. ` +
+        `The following reason was provided: \n\n"${
+        afterData.rejectionReason }"\n\nPlease edit your expense as required.` +
+        "\n\n- Tybalt",
+      },
+    });
+
+    // generate the manager email
+    await db.collection("Emails").add({
+      toUids: [managerProfile.id],
+      message: {
+        subject: `You rejected ${profile.get("displayName")}'s expense`,
+        text: `Hi ${ managerProfile.get("givenName")},\n\n` +
+        `You rejected ${profile.get("displayName")}'s expense with payment type ${
+        afterData.paymentType} dated ${expenseDateString }.` +
+        `You provided the following reason: \n\n"${afterData.rejectionReason 
+        }"\n\n- Tybalt`,
+      },
+    });
+  }
+}
