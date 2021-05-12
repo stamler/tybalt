@@ -96,10 +96,7 @@
       />
     </span>
 
-    <span
-      class="field"
-      v-if="item.timetype !== 'OR' && item.timetype !== 'OTO'"
-    >
+    <span class="field" v-if="!['OR', 'OD', 'OTO'].includes(item.timetype)">
       <label for="hours">
         {{
           item.job &&
@@ -155,11 +152,7 @@
 
     <span
       class="field"
-      v-if="
-        item.timetype !== 'OR' &&
-        item.timetype !== 'OTO' &&
-        item.timetype !== 'RB'
-      "
+      v-if="!['OR', 'OD', 'OTO', 'RB'].includes(item.timetype)"
     >
       <input
         type="text"
@@ -432,9 +425,9 @@ export default Vue.extend({
         }
       }
 
-      // if timetype is OR or OTO, delete hours and workDescription
+      // if timetype is OD, OR or OTO, delete hours and workDescription
       // (other properties already deleted in previous if/else statement)
-      if (this.item.timetype === "OR" || this.item.timetype === "OTO") {
+      if (["OR", "OD", "OTO"].includes(this.item.timetype)) {
         delete this.item.hours;
         delete this.item.workDescription;
       }
