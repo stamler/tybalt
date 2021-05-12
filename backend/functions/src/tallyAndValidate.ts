@@ -233,35 +233,6 @@ export async function tallyAndValidate(
     )
   }
 
-  /*
-  // Prevent users from entering more than 14 consecutive off-rotation days
-
-  if (offRotationDates.length > 0) {
-    // Check off roation tally of previous two weeks and reject if
-    // this timesheet pushes cumulative total over 14
-    const previousTimeSheets = await db
-      .collection("TimeSheets")
-      .where("uid", "==", auth.uid)
-      .where("weekEnding", ">=", subWeeks(weekEnding, 2))
-      .where("weekEnding", "<", weekEnding)
-      .get();
-    if (!previousTimeSheets.empty) {
-      // There are 1 or more timesheets in the previous 2 weeks.
-      // Check them for off rotation totals
-      let cumulativeOffRotationTally = 0;
-      previousTimeSheets.forEach(timeSheet => {
-        cumulativeOffRotationTally += timeSheet.get("offRotationDaysTally");
-      });
-      if (cumulativeOffRotationTally + offRotationDates.length > 14) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "There can not be more than consecutive 14 off-rotation days"
-        );
-      }
-    }
-  }
-  */
-
   // get the entire job document for each key in the jobsTally
   // and store it in the tally so the info is available for reports
   // jobsTally entries already have name, hours, jobHours properties
