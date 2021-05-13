@@ -127,9 +127,7 @@
             <span v-if="tallies[week].offRotationDates.length > 0">
               {{ tallies[week].offRotationDates.length }} day(s) off rotation
             </span>
-            <span v-if="tallies[week].offDates.length > 0">
-              {{ tallies[week].offDates.length }} full day(s) off
-            </span>
+            <span v-if="tallies[week].offWeek.length > 0">Full Week off</span>
           </div>
           <div class="thirdline">
             <span v-if="tallies[week].bankEntries.length === 1">
@@ -329,7 +327,7 @@ export default mixins.extend({
         bankEntries: firebase.firestore.DocumentData[];
         payoutRequests: firebase.firestore.DocumentData[];
         offRotationDates: number[];
-        offDates: number[];
+        offWeek: number[];
         nonWorkHoursTally: { [timetype: string]: number; total: number };
         mealsHoursTally: number;
         workHoursTally: { hours: number; jobHours: number; total: number };
@@ -351,7 +349,7 @@ export default mixins.extend({
               bankEntries: [],
               payoutRequests: [],
               offRotationDates: [],
-              offDates: [],
+              offWeek: [],
               nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
               mealsHoursTally: 0,
               workHoursTally: { hours: 0, jobHours: 0, total: 0 },
@@ -365,11 +363,11 @@ export default mixins.extend({
             // off rotation entries for a given date.
             const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
             tallyObject[key].offRotationDates.push(orDate.getTime());
-          } else if (item.timetype === "OD") {
+          } else if (item.timetype === "OW") {
             // Count the off dates and ensure that there are not two
             // off entries for a given date.
             const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
-            tallyObject[key].offDates.push(orDate.getTime());
+            tallyObject[key].offWeek.push(orDate.getTime());
           } else if (item.timetype === "OTO") {
             // This is an request payout entry, store it in the payoutRequests
             // array for processing after completing the tallies.
