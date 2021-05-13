@@ -34,9 +34,10 @@
     <span class="field">
       <label for="paymentType">Type:</label>
       <select name="paymentType" v-model="item.paymentType">
-        <option value="CorporateCreditCard">Corp Visa</option>
+        <option value="Meals">Meal Allowance</option>
         <option value="FuelCard">Fuel Card</option>
         <option value="FuelOnAccount">Fuel On Account</option>
+        <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">Personal Mileage</option>
       </select>
@@ -61,7 +62,7 @@
       contact HR to update your profile prior to submitting a personal mileage
       expense.
     </span>
-    <span class="field" v-if="item.paymentType !== 'Mileage'">
+    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
       <label for="total">Total $</label>
       <input
         type="number"
@@ -73,7 +74,7 @@
       />
     </span>
 
-    <span class="field" v-if="item.paymentType !== 'Mileage'">
+    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
       <label for="vendorName">Vendor Name</label>
       <input
         type="text"
@@ -93,6 +94,20 @@
         step="1.0"
         min="1"
       />
+    </span>
+    <span class="field" v-if="item.paymentType === 'Meals'">
+      <label for="breakfast">
+        Breakfast
+        <input type="checkbox" id="breakfast" v-model="item.breakfast" />
+      </label>
+      <label for="lunch">
+        Lunch
+        <input type="checkbox" id="lunch" v-model="item.lunch" />
+      </label>
+      <label for="dinner">
+        Dinner
+        <input type="checkbox" id="dinner" v-model="item.dinner" />
+      </label>
     </span>
     <span class="field">
       <label for="job">Job</label>
@@ -124,7 +139,9 @@
     <span
       class="field"
       v-if="
-        !['Mileage', 'FuelOnAccount', 'FuelCard'].includes(item.paymentType)
+        !['Mileage', 'FuelOnAccount', 'FuelCard', 'Meals'].includes(
+          item.paymentType
+        )
       "
     >
       <input
@@ -135,7 +152,7 @@
       />
     </span>
 
-    <span class="field">
+    <span class="field" v-if="item.paymentType !== 'Meals'">
       <input
         type="text"
         name="description"
@@ -148,7 +165,7 @@
       />
     </span>
 
-    <span class="field" v-if="item.paymentType !== 'Mileage'">
+    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
         <router-link to="#" v-on:click.native="downloadAttachment(item)">
@@ -267,10 +284,12 @@ export default mixins.extend({
     validItem(): boolean {
       // TODO: build out client-side validation
       const validDescription =
-        typeof this.item.description === "string" &&
-        this.item.description.length > 3;
+        (typeof this.item.description === "string" &&
+          this.item.description.length > 3) ||
+        this.item.paymentType === "Meals";
       const validTotal =
-        typeof this.item.total === "number" && this.item.total > 0;
+        (typeof this.item.total === "number" && this.item.total > 0) ||
+        this.item.paymentType === "Meals";
       const validDistance =
         typeof this.item.distance === "number" &&
         isInteger(this.item.distance) &&
@@ -392,7 +411,7 @@ export default mixins.extend({
           managerUid: this.profile.get("managerUid"),
           division: this.profile.get("defaultDivision"),
           tbtePayrollId: this.profile.get("tbtePayrollId"),
-          paymentType: "Expense",
+          paymentType: "Meals",
           submitted: false,
           approved: false,
         };
@@ -479,6 +498,18 @@ export default mixins.extend({
         throw "Division Missing";
       }
 
+      // if paymentType is meals, delete total and description and set
+      // unset meal types to false
+      if (this.item.paymentType === "Meals") {
+        _.defaults(this.item, {
+          breakfast: false,
+          lunch: false,
+          dinner: false,
+        });
+        delete this.item.description;
+        delete this.item.total;
+      }
+
       // TODO: catch the above throw and notify the user.
       // TODO: build more validation here to notify the user of errors
       // before hitting the backend.
@@ -515,6 +546,7 @@ export default mixins.extend({
             // a new attachment was successfully uploaded, save in document
             this.item.attachment = this.newAttachment;
           }
+          console.log(this.item);
           await doc.set(this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
