@@ -103,20 +103,26 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType",
-          "unitNumber",
+          "unitNumber", "breakfast", "lunch", "dinner",
           "vendorName", "distance", "ccLast4digits", "tbtePayrollId",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectionReason", "committed" ]) &&
         
         // required fields
-        newDoc().keys().hasAll(["date", "description", "uid", "displayName",
+        newDoc().keys().hasAll(["date", "uid", "displayName",
           "surname", "givenName", "submitted", "approved", "tbtePayrollId",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
+
+        // description is present except for Meals
+        (
+          newDoc().description.size() > 3 && newDoc().paymentType != "Meals" ||
+          isMissing("description") && newDoc().paymentType == "Meals"
+        ) &&
 
         // tbtePayrollId matches that on the profile
         get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc().tbtePayrollId &&
 
-        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount"] &&
+        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Meals"] &&
         isInCollection("division","Divisions") &&
 
         // requires attachment and valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
@@ -135,11 +141,12 @@ service cloud.firestore {
           (newDoc().unitNumber is int && newDoc().unitNumber > 0 && newDoc().paymentType == "FuelOnAccount") ||
           newDoc().paymentType != "FuelOnAccount" && isMissing("unitNumber")
         ) &&
-        // when paymentType is not Mileage, total is positive number and distance is missing
+        // when paymentType is not Mileage or Meals, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
+        // when paymentType is Meals, breakfast, lunch and dinner are booleans and total and distance are missing
         (
           (
-            newDoc().paymentType != "Mileage" &&
+            !(newDoc().paymentType in ["Mileage", "Meals"]) &&
             newDoc().total is number &&
             newDoc().total > 0 &&
             isMissing("distance")
@@ -153,6 +160,14 @@ service cloud.firestore {
             isMissing("attachment") &&
             isMissing("total") && 
             get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.personalVehicleInsuranceExpiry >= newDoc().date
+          ) ||
+          (
+            newDoc().paymentType == "Meals" &&
+            isMissing("total") &&
+            isMissing("distance") &&
+            newDoc().breakfast is bool &&
+            newDoc().lunch is bool &&
+            newDoc().dinner is bool
           )
         ) &&
 

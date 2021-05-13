@@ -1267,7 +1267,7 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", unitNumber: 1234, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "Meals", breakfast: true, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Meals", breakfast: true, lunch: true, dinner:true, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
     });
     it("requires Meals expenses to have boolean breakfast, lunch, and dinner properties", async () => {
       const doc = timeDb.collection("Expenses").doc();
