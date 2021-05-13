@@ -12,12 +12,18 @@
         </div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline">
+            <div class="headline" v-if="exp.paymentType !== 'Meals'">
               {{ exp.description }}
+            </div>
+            <div class="headline" v-else>
+              {{ exp.breakfast ? "Breakfast" : "" }}
+              {{ exp.lunch ? "Lunch" : "" }}
+              {{ exp.dinner ? "Dinner" : "" }}
             </div>
             <div class="byline" v-if="exp.paymentType === 'Mileage'">
               {{ exp.distance }} km
             </div>
+            <div class="byline" v-else-if="exp.paymentType === 'Meals'"></div>
             <div class="byline" v-else>
               ${{ exp.total }}
               <span v-if="exp.po">/PO:{{ exp.po }}</span>
@@ -30,6 +36,7 @@
                 <download-icon></download-icon>
               </router-link>
             </template>
+            <span v-else-if="exp.paymentType === 'Meals'"></span>
             <span v-else>[no attachment]</span>
             <template v-if="exp.job !== undefined">
               {{ exp.job }} {{ exp.jobDescription }} for {{ exp.client }}
