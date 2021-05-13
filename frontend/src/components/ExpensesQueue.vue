@@ -14,6 +14,11 @@
           <div class="byline" v-if="item.paymentType === 'Mileage'">
             {{ item.distance }} km
           </div>
+          <div class="byline" v-else-if="item.paymentType === 'Meals'">
+            {{ item.breakfast ? "Breakfast" : "" }}
+            {{ item.lunch ? "Lunch" : "" }}
+            {{ item.dinner ? "Dinner" : "" }}
+          </div>
           <div class="byline" v-else>
             ${{ item.total }}
             <span v-if="item.po">/PO:{{ item.po }}</span>

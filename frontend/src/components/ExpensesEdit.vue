@@ -546,7 +546,6 @@ export default mixins.extend({
             // a new attachment was successfully uploaded, save in document
             this.item.attachment = this.newAttachment;
           }
-          console.log(this.item);
           await doc.set(this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
