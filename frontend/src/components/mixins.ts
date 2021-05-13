@@ -4,12 +4,23 @@ import firebase from "../firebase";
 import store from "../store";
 import { format, subDays, differenceInDays } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
-import { TimeSheet, Amendment, Expense, isExpense } from "./types";
+import {
+  TimeSheet,
+  Amendment,
+  Expense,
+  ExpenseMeals,
+  isExpense,
+} from "./types";
 import { parse } from "json2csv";
 
 const db = firebase.firestore();
 const storage = firebase.storage();
 import _ from "lodash";
+
+const MILEAGE_RATE = 0.5; // dollars per km
+const BREAKFAST_RATE = 15; // dollars per meal
+const LUNCH_RATE = 20; // dollars per meal
+const DINNER_RATE = 20; // dollars per meal
 
 export default Vue.extend({
   computed: {
@@ -18,6 +29,13 @@ export default Vue.extend({
   methods: {
     calculatedOntarioHST(total: number): number {
       return Math.round((total * 1300) / 113) / 100;
+    },
+    calculatedMealAmount(row: ExpenseMeals) {
+      return (
+        (row.breakfast ? BREAKFAST_RATE : 0) +
+        (row.lunch ? LUNCH_RATE : 0) +
+        (row.dinner ? DINNER_RATE : 0)
+      );
     },
     bundle(week: Date) {
       store.commit("startTask", {
@@ -454,7 +472,6 @@ export default Vue.extend({
       // range of dates which are included in the report
       let payroll = false;
 
-      const MILEAGE_RATE = 0.5; // dollars per km
       let items;
       let weekEnding;
       if (typeof urlOrExpenseArrayPromise === "string") {
@@ -505,24 +522,48 @@ export default Vue.extend({
         },
         {
           label: "calculatedSubtotal",
-          value: (row: Expense) =>
-            row.paymentType !== "Mileage"
-              ? row.total - this.calculatedOntarioHST(row.total)
-              : "",
+          value: (row: Expense) => {
+            switch (row.paymentType) {
+              case "Mileage": {
+                const total = row.distance * MILEAGE_RATE;
+                return total - this.calculatedOntarioHST(total);
+              }
+              case "Meals": {
+                const total = this.calculatedMealAmount(row);
+                return total - this.calculatedOntarioHST(total);
+              }
+              default:
+                return row.total - this.calculatedOntarioHST(row.total);
+            }
+          },
         },
         {
           label: "calculatedOntarioHST",
-          value: (row: Expense) =>
-            row.paymentType !== "Mileage"
-              ? this.calculatedOntarioHST(row.total)
-              : "",
+          value: (row: Expense) => {
+            switch (row.paymentType) {
+              case "Mileage":
+                return this.calculatedOntarioHST(row.distance * MILEAGE_RATE);
+              case "Meals":
+                return this.calculatedOntarioHST(
+                  this.calculatedMealAmount(row)
+                );
+              default:
+                return this.calculatedOntarioHST(row.total);
+            }
+          },
         },
         {
           label: "Total",
-          value: (row: Expense) =>
-            row.paymentType !== "Mileage"
-              ? row.total
-              : row.distance * MILEAGE_RATE,
+          value: (row: Expense) => {
+            switch (row.paymentType) {
+              case "Mileage":
+                return row.distance * MILEAGE_RATE;
+              case "Meals":
+                return this.calculatedMealAmount(row);
+              default:
+                return row.total;
+            }
+          },
         },
         {
           label: "PO#",

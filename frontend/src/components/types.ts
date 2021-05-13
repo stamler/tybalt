@@ -160,7 +160,6 @@ interface ExpenseCommon {
   commitUid: string;
   managerName: string;
   managerUid: string;
-  description: string;
   date: string;
   division: string;
   divisionName: string;
@@ -172,6 +171,7 @@ interface ExpenseCommon {
 interface ExpenseRegular extends ExpenseCommon {
   paymentType: "Expense" | "CorporateCreditCard" | "FuelCard" | "FuelOnAccount";
   total: number;
+  description: string;
   vendorName?: string;
   attachment?: string;
   unitNumber?: number;
@@ -179,10 +179,18 @@ interface ExpenseRegular extends ExpenseCommon {
 }
 interface ExpenseMileage extends ExpenseCommon {
   paymentType: "Mileage";
+  description: string;
   distance: number;
 }
 
-export type Expense = ExpenseRegular | ExpenseMileage;
+export interface ExpenseMeals extends ExpenseCommon {
+  paymentType: "Meals";
+  breakfast: boolean;
+  lunch: boolean;
+  dinner: boolean;
+}
+
+export type Expense = ExpenseRegular | ExpenseMileage | ExpenseMeals;
 
 // Type Guards
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -209,7 +217,6 @@ function isExpenseCommon(data: unknown): data is ExpenseCommon {
     "commitUid",
     "managerName",
     "managerUid",
-    "description",
     "date",
     "division",
     "divisionName",
@@ -228,10 +235,17 @@ function isExpenseRegular(data: unknown): data is ExpenseRegular {
     data.paymentType === "FuelCard" ||
     data.paymentType === "CorporateCreditCard";
   const total = typeof data.total === "number" && data.total > 0;
+  const description = typeof data.description === "string";
   const optionalStringVals = ["vendorName", "attachment", "po"]
     .map((x) => data[x] === undefined || typeof data[x] === "string")
     .every((x) => x === true);
-  return isExpenseCommon(data) && paymentType && total && optionalStringVals;
+  return (
+    isExpenseCommon(data) &&
+    paymentType &&
+    total &&
+    optionalStringVals &&
+    description
+  );
 }
 
 function isExpenseMileage(data: unknown): data is ExpenseMileage {
@@ -243,9 +257,23 @@ function isExpenseMileage(data: unknown): data is ExpenseMileage {
     typeof data.distance === "number" &&
     data.distance > 0 &&
     Number.isInteger(data.distance);
-  return isExpenseCommon(data) && paymentType && distance;
+  const description = typeof data.description === "string";
+  return isExpenseCommon(data) && paymentType && distance && description;
 }
 
+function isExpenseMeals(data: unknown): data is ExpenseMeals {
+  if (!isObject(data)) {
+    return false;
+  }
+  const paymentType = data.paymentType === "Meals";
+  const meals =
+    typeof data.breakfast === "boolean" &&
+    typeof data.lunch === "boolean" &&
+    typeof data.dinner === "boolean";
+  return isExpenseCommon(data) && paymentType && meals;
+}
 export function isExpense(data: unknown): data is Expense {
-  return isExpenseRegular(data) || isExpenseMileage(data);
+  return (
+    isExpenseRegular(data) || isExpenseMileage(data) || isExpenseMeals(data)
+  );
 }
