@@ -678,7 +678,7 @@ describe("Firestore Rules", function () {
       await timetypes.doc("RT").set({ name: "Training" });
       await timetypes.doc("OH").set({ name: "Statutory Holiday" });
       await timetypes.doc("OP").set({ name: "PPTO" });
-      await timetypes.doc("OD").set({ name: "Off (Full Day)" });
+      await timetypes.doc("OW").set({ name: "Full Week Off)" });
       await timetypes.doc("RB").set({ name: "Add Overtime to Bank" });
       await timetypes.doc("OR").set({ name: "Off Rotation (Full Day)" });
       await timetypes.doc("OTO").set({ name: "Request Overtime Payout" });
@@ -720,11 +720,11 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({date: "foo", ...missingDate }));
       await firebase.assertSucceeds(doc.set(baseline));
     });
-    it("requires description to be missing if timetype is OR, OD, RB, or OTO", async () => {
+    it("requires description to be missing if timetype is OR, OW, RB, or OTO", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation", workDescription: "5char" }));
-      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off", workDescription: "5char" }));
-      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off" }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off", workDescription: "5char" }));
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off" }));
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation" }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, workDescription: "5char"  }));
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
@@ -852,16 +852,16 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "RB", timetypeName: "Add Overtime to Bank", hours: 5, division: "ABC"}));
     });
-    it("requires off-rotation entries (OR) and off entries (OD) to have only uid, date, timetype, timetypeName", async () => {
+    it("requires off-rotation entries (OR) and week off entries (OW) to have only uid, date, timetype, timetypeName", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation" }));
-      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off" }));
+      await firebase.assertSucceeds(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off" }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation", workDescription: "Valid Description" }));
-      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off", workDescription: "Valid Description" }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off", workDescription: "Valid Description" }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation", hours: 5 }));
-      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off", hours: 5 }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off", hours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation", jobHours: 5 }));
-      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OD", timetypeName: "Off", jobHours: 5 }));
+      await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OW", timetypeName: "Off", jobHours: 5 }));
       await firebase.assertFails(doc.set({ uid: "alice", date: new Date(), timetype: "OR", timetypeName: "Off Rotation", mealsHours: 5 }));
     });
     it("requires overtime payout entries (OTO) to have only uid, date, timetype, timetypeName, payoutRequestAmount", async () => {

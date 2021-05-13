@@ -108,8 +108,9 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.offRotationDaysTally,1, "offRotationDaysTally doesn't match");
     });
-    it("tallies and validates for hourly staff member with off days", async () => {
-      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OD", timetypeName: "Off (Full Day)" });
+    it("tallies and validates for hourly staff member with a Full Week Off Entry", async () => {
+      await cleanupFirestore(projectId);
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)
@@ -117,13 +118,13 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
-      assert.equal(timeEntries.size,5);
+      assert.equal(timeEntries.size,1);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
-      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.hours,0,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
-      assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
       assert.equal(tally.offRotationDaysTally,0, "offRotationDaysTally doesn't match");
-      assert.equal(tally.offDaysTally,1, "offDaysTally doesn't match");
+      assert.equal(tally.offWeekTally,1, "offWeekTally doesn't match");
     });
     it("rejects for salaried staff member with more than one off rotation entry on the same day", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
@@ -140,18 +141,51 @@ describe("tallyAndValidate", async () => {
         "More than one Off-Rotation entry exists for 2020 Jan 08"
       );
     });
-    it("rejects for salaried staff member with any off (OD) entries", async () => {
-      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OD", timetypeName: "Off (Full Day)" });
+    it("rejects for hourly staff with a Full Week Off (OW) entry and any other entry", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,5);
       await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "A Full Week Off entry must be the only entry in a week."
+      );
+    });
+    it("rejects for hourly staff with more than one Full Week Off (OW) entry", async () => {
+      await cleanupFirestore(projectId);
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,7), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      assert.equal(timeEntries.size,2);
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "Only one Full Week Off entry can be claimed per week."
+      );
+    });
+    it("rejects for salaried staff member with a Full Week Off (OW) entry", async () => {
+      await cleanupFirestore(projectId);
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,1);
+      await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
-        "Salaried staff cannot claim Off (Full Day) time. Please use PPTO or vacation instead."
+        "Salaried staff cannot claim a Full Week Off. Please use PPTO or vacation instead."
       );
     });
     it("rejects for salaried staff member with fewer than 40 regular hours", async () => {

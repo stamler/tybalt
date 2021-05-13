@@ -71,9 +71,9 @@ service cloud.firestore {
             newDoc().timetype != "R" )
         ) &&
 
-        // at least one hours type is provided AND the timetype is NOT "OD", "OR", "OTO", or "RB"
+        // at least one hours type is provided AND the timetype is NOT "OW", "OR", "OTO", or "RB"
         (
-          newDoc().timetype != "OD" &&
+          newDoc().timetype != "OW" &&
           newDoc().timetype != "OR" &&
           newDoc().timetype != "OTO" &&
           newDoc().timetype != "RB" &&
@@ -229,21 +229,21 @@ service cloud.firestore {
             (newDoc().timetype != "R" && newDoc().timetype != "RT") )
         ) &&
 
-        // at least one hours type is provided OR the timetype is "OR", "OD" or "OTO" or "RB"
+        // at least one hours type is provided OR the timetype is "OR", "OW" or "OTO" or "RB"
         (
           ( 
-            newDoc().timetype != "OD" && 
+            newDoc().timetype != "OW" && 
             newDoc().timetype != "OR" && 
             newDoc().timetype != "RB" && 
             newDoc().timetype != "OTO" && 
             !(newDoc().keys().hasAll(["payoutRequestAmount"])) && // payoutRequestAmount is not defined
             (
-              (isPositiveMultipleOfPointFiveUnderEighteen("jobHours") && !(newDoc().timetype in ["OR", "OD"])) ||
-              (isPositiveMultipleOfPointFiveUnderEighteen("hours") && !(newDoc().timetype in ["OR", "OD"])) ||
-              (isPositiveMultipleOfPointFiveUnderEighteen("mealsHours") && !(newDoc().timetype in ["OR", "OD"]))
+              (isPositiveMultipleOfPointFiveUnderEighteen("jobHours") && !(newDoc().timetype in ["OR", "OW"])) ||
+              (isPositiveMultipleOfPointFiveUnderEighteen("hours") && !(newDoc().timetype in ["OR", "OW"])) ||
+              (isPositiveMultipleOfPointFiveUnderEighteen("mealsHours") && !(newDoc().timetype in ["OR", "OW"]))
             ) 
           ) ||
-          (newDoc().timetype in ["OR", "OD"] && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
+          (newDoc().timetype in ["OR", "OW"] && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding"])) ||
           (newDoc().timetype == "OTO" && newDoc().keys().hasOnly(["date", "timetype", "timetypeName", "uid", "weekEnding", "payoutRequestAmount"]) && newDoc().payoutRequestAmount is number && newDoc().payoutRequestAmount > 0) ||
           (newDoc().timetype == "RB" && isPositiveMultipleOfPointFive("hours"))
         ) &&
@@ -255,7 +255,7 @@ service cloud.firestore {
 
         // ensure absence of description for Banking, Payout, Off and Off Rotation
         (
-          ( isMissing("workDescription") && newDoc().timetype in ["RB", "OTO", "OR", "OD"]) || !(newDoc().timetype in ["RB", "OTO", "OD", "OR"])
+          ( isMissing("workDescription") && newDoc().timetype in ["RB", "OTO", "OR", "OW"]) || !(newDoc().timetype in ["RB", "OTO", "OW", "OR"])
         ) &&
 
         // if timetype is "RB", only hours is provided and is a positive number

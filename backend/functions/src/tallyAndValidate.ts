@@ -17,7 +17,7 @@ export async function tallyAndValidate(
   const bankEntries: TimeEntry[] = [];
   const payoutRequests: TimeEntry[] = [];
   const offRotationDates: number[] = [];
-  const offDates: number[] = [];
+  const offWeek: number[] = [];
   const nonWorkHoursTally: { [timetype: string]: number } = {}; // value is total
   let mealsHoursTally = 0;
   const workHoursTally = { hours: 0, jobHours: 0, noJobNumber: 0 };
@@ -45,18 +45,18 @@ export async function tallyAndValidate(
       } else {
         offRotationDates.push(orDate.getTime());
       }
-    } else if (item.timetype === "OD") {
+    } else if (item.timetype === "OW") {
       // Count the off dates and ensure that there are not two
       // off rotation entries for a given date.
       const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
-      if (offDates.includes(orDate.getTime())) {
+      if (offWeek.includes(orDate.getTime())) {
         throw new functions.https.HttpsError(
           "failed-precondition",
           "More than one Off entry exists for " +
             format(orDate, "yyyy MMM dd")
         );
       } else {
-        offDates.push(orDate.getTime());
+        offWeek.push(orDate.getTime());
       }
     } else if (item.timetype === "OTO") {
       // This is an overtime payout request entry, store it in payoutRequests
@@ -199,17 +199,33 @@ export async function tallyAndValidate(
     );
   }
 
-  // prevent salaried employees from claiming days off (OD)
+  // prevent salaried employees from claiming full day off (OW)
   if (
     profile.get("salary") === true &&
-    offDates.length > 0
+    offWeek.length > 0
   ) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "Salaried staff cannot claim Off (Full Day) time. Please use PPTO or vacation instead."
+      "Salaried staff cannot claim a Full Week Off. Please use PPTO or vacation instead."
     )
   }
-  
+
+  // prevent hourly employees from more than one full week off entry (OW)
+  if (offWeek.length > 1) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Only one Full Week Off entry can be claimed per week."
+    )
+  }
+
+  // prevent hourly employees from claiming any other entry with one full week off entry (OW)
+  if (offWeek.length > 0 && timeEntries.size > 1) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "A Full Week Off entry must be the only entry in a week."
+    )
+  }
+
   // require salaried employees to have at least 40 hours on a timesheet
   const offRotationHours = offRotationDates.length * 8;
   if (
@@ -292,7 +308,7 @@ export async function tallyAndValidate(
     entries,
     nonWorkHoursTally,
     offRotationDaysTally: offRotationDates.length,
-    offDaysTally: offDates.length,
+    offWeekTally: offWeek.length,
     workHoursTally,
     mealsHoursTally,
     divisionsTally,
