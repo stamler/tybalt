@@ -1254,11 +1254,12 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 0, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentType }));
     });
-    it("requires paymentType to be either CorporateCreditCard or Expense or Mileage or FuelCard or FuelOnAccount", async () => {
+    it("requires paymentType to be one of CorporateCreditCard, Expense, Mileage, FuelCard, FuelOnAccount, Meals", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
       const { attachment, ...missingPaymentTypeAndTotalAndAttachment } = missingPaymentTypeAndTotal;
+      const { description, ...missingPaymentTypeAndTotalAndAttachmentAndDescription } = missingPaymentTypeAndTotalAndAttachment;
       await firebase.assertFails(doc.set(missingPaymentType));
       await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
@@ -1266,6 +1267,25 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", unitNumber: 1234, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Meals", breakfast: true, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
+    });
+    it("requires Meals expenses to have boolean breakfast, lunch, and dinner properties", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Meals", tbtePayrollId: 28 };
+      await firebase.assertFails(doc.set(skeleton));
+      await firebase.assertFails(doc.set({breakfast: true, ...skeleton}));
+      await firebase.assertFails(doc.set({breakfast: "true", lunch: 56, dinner:false, ...skeleton}));
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, ...skeleton}));
+    });
+    it("requires Meals expenses to not have description or total properties", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Meals", tbtePayrollId: 28 };
+      await firebase.assertFails(doc.set({ description: "Meals", breakfast: true, lunch: true, dinner:false, ...skeleton}));
+      await firebase.assertFails(doc.set({ total: 50, breakfast: true, lunch: true, dinner:false, ...skeleton}));
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, ...skeleton}));
+    });
+    it("allows Meals entries to have an associated job", async() => {
+      
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
