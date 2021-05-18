@@ -28,6 +28,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
 
 interface PendingTimeSheetSummary {
@@ -255,6 +256,27 @@ export const updateTimeTracking = functions.firestore
     return exportJson({ id: timeTrackingDocRef.id });
   });
 
+/*
+  If the viewerIds array has changed, update the viewers object
+*/
+export const updateViewers = functions.firestore
+  .document("TimeSheets/{timesheetId}")
+  .onUpdate(async (change, context) => {
+    const afterData = change.after?.data();
+    const beforeData = change.before?.data();
+    if (_.isEqual(afterData.viewerIds, beforeData.viewerIds)) {return ;}
+    const db = admin.firestore();
+    const managers = db.collection("ManagerNames");
+    const viewers: { [uid: string]: { displayName: string } } = {};
+    for (const uid of afterData.viewerIds) {
+      const displayName = (await managers.doc(uid).get()).get("displayName");
+      viewers[uid] = { displayName };
+    }
+    return db
+      .collection("TimeSheets")
+      .doc(context.params.timesheetId)
+      .update({ viewers });
+  });
 /*
   Given a document id, lock the corresponding approved TimeSheet document 
   then add it to the timeSheets property array of the TimeTracking doc. 

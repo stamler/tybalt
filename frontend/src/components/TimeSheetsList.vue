@@ -1,6 +1,7 @@
 <template>
   <div id="list">
-    <modal ref="rejectModal" collection="TimeSheets" />
+    <reject-modal ref="rejectModal" collection="TimeSheets" />
+    <share-modal ref="shareModal" collection="TimeSheets" />
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
@@ -10,7 +11,7 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
-            <template v-if="approved === undefined">
+            <template v-if="query === 'list'">
               {{ hoursWorked(item) }}
             </template>
             <template v-else>
@@ -18,7 +19,7 @@
             </template>
           </div>
           <div class="byline">
-            <template v-if="approved !== undefined">
+            <template v-if="query !== 'list'">
               {{ hoursWorked(item) }}
             </template>
             / {{ hoursOff(item) }} /
@@ -36,10 +37,30 @@
           <span v-if="item.rejected" style="color: red">
             Rejected: {{ item.rejectionReason }}
           </span>
+          <span v-if="Object.keys(unreviewed(item)).length > 0">
+            Viewers:
+            <span
+              class="label"
+              v-for="(value, uid) in unreviewed(item)"
+              v-bind:key="uid"
+            >
+              {{ value.displayName }}
+            </span>
+          </span>
+          <span v-if="Object.keys(reviewed(item)).length > 0">
+            Reviewed:
+            <span
+              class="label"
+              v-for="(value, uid) in reviewed(item)"
+              v-bind:key="uid"
+            >
+              {{ value.displayName }}
+            </span>
+          </span>
         </div>
       </div>
       <div class="rowactionsbox">
-        <template v-if="approved === undefined">
+        <template v-if="query === 'list'">
           <template v-if="!item.submitted">
             <router-link
               v-bind:to="{ name: 'Time Entries' }"
@@ -70,17 +91,16 @@
           </template>
         </template>
         <!-- The template for "pending" -->
-        <template v-if="approved === false">
+        <template v-if="query === 'pending'">
           <template v-if="!item.approved && !item.rejected">
-            <!--
             <router-link
-              v-if="!item.rejected"
               v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="approveTs(item.id)"
+              v-on:click.native="
+                $refs.shareModal.openModal(item.id, item.viewerIds)
+              "
             >
-              <check-circle-icon></check-circle-icon>
+              <share-icon></share-icon>
             </router-link>
-            -->
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
               v-on:click.native="$refs.rejectModal.openModal(item.id)"
@@ -94,7 +114,15 @@
         </template>
 
         <!-- The template for "approved" -->
-        <template v-if="approved === true">
+        <template v-if="query === 'approved'">
+          <router-link
+            v-bind:to="{ name: 'Time Sheets Approved' }"
+            v-on:click.native="
+              $refs.shareModal.openModal(item.id, item.viewerIds)
+            "
+          >
+            <share-icon></share-icon>
+          </router-link>
           <template v-if="!item.locked">
             <router-link
               v-bind:to="{ name: 'Time Sheets Pending' }"
@@ -113,16 +141,18 @@
 </template>
 
 <script lang="ts">
-import Modal from "./Modal.vue";
+import RejectModal from "./RejectModal.vue";
+import ShareModal from "./ShareModal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
+import _ from "lodash";
 import mixins from "./mixins";
 import { format } from "date-fns";
 import {
   EditIcon,
   SendIcon,
   RewindIcon,
-  //CheckCircleIcon,
+  ShareIcon,
   XCircleIcon,
 } from "vue-feather-icons";
 import store from "../store";
@@ -130,13 +160,19 @@ const db = firebase.firestore();
 
 export default Vue.extend({
   mixins: [mixins],
-  props: ["approved", "collection"],
+  props: ["query", "collection"],
+  computed: {
+    _() {
+      return _;
+    },
+  },
   components: {
-    Modal,
+    RejectModal,
+    ShareModal,
     EditIcon,
     SendIcon,
     RewindIcon,
-    //CheckCircleIcon,
+    ShareIcon,
     XCircleIcon,
   },
   filters: {
@@ -156,7 +192,7 @@ export default Vue.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$watch(
-      "approved",
+      "query",
       () => {
         if (this.collectionObject === null) {
           throw "There is no valid collection object";
@@ -165,25 +201,46 @@ export default Vue.extend({
         if (uid === undefined) {
           throw "There is no valid uid";
         }
-        if (typeof this.approved === "boolean") {
-          // approved prop is defined, show pending or approved TimeSheets
-          // belonging to users that this user manages
+        if (this.query === "approved") {
+          // show approved TimeSheets belonging to users that this user manages
           this.$bind(
             "items",
             this.collectionObject
               .where("managerUid", "==", uid)
-              .where("approved", "==", this.approved)
+              .where("approved", "==", true)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
           ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
-        } else {
-          // approved prop is not defined, show this user's own timesheets
+        } else if (this.query === "pending") {
+          // show pending TimeSheets belonging to users that this user manages
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("managerUid", "==", uid)
+              .where("approved", "==", false)
+              .where("submitted", "==", true)
+              .orderBy("weekEnding", "desc")
+          ).catch((error) => {
+            alert(`Can't load Time Sheets: ${error.message}`);
+          });
+        } else if (this.query === "list") {
+          // show this user's own timesheets
           this.$bind(
             "items",
             this.collectionObject
               .where("uid", "==", uid)
+              .orderBy("weekEnding", "desc")
+          ).catch((error) => {
+            alert(`Can't load Time Sheets: ${error.message}`);
+          });
+        } else if (this.query === "shared") {
+          this.$bind(
+            "items",
+            this.collectionObject
+              .where("viewerIds", "array-contains", uid)
+              .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
           ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
@@ -194,6 +251,20 @@ export default Vue.extend({
     );
   },
   methods: {
+    unreviewed(item: firebase.firestore.DocumentData) {
+      if (item.viewers) {
+        return _.omit(item.viewers, item.reviewedIds);
+      } else {
+        return {};
+      }
+    },
+    reviewed(item: firebase.firestore.DocumentData) {
+      if (item.viewers) {
+        return _.pick(item.viewers, item.reviewedIds);
+      } else {
+        return {};
+      }
+    },
     hoursWorked(item: firebase.firestore.DocumentData) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;

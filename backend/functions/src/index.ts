@@ -16,7 +16,7 @@ import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments } from "./storage";
 import { emailOnReject } from "./email";
-export { updateTimeTracking } from "./timesheets";
+export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";

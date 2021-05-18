@@ -199,6 +199,7 @@ body,
   color: #555555;
   background-color: #b6e1fc;
 }
+.label,
 .listentry .label,
 #editor .label {
   background: rgb(218, 252, 255);

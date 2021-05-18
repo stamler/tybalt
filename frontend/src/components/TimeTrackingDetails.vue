@@ -142,7 +142,7 @@
 </template>
 
 <script lang="ts">
-import Modal from "./Modal.vue";
+import Modal from "./RejectModal.vue";
 import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";

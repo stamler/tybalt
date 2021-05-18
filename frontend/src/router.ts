@@ -93,7 +93,7 @@ const router = new Router({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Sheets List",
-              props: { collection: "TimeSheets" },
+              props: { query: "list", collection: "TimeSheets" },
               component: TimeSheetsList,
             },
             {
@@ -104,7 +104,7 @@ const router = new Router({
               },
               path: "pending",
               name: "Time Sheets Pending",
-              props: { approved: false, collection: "TimeSheets" },
+              props: { query: "pending", collection: "TimeSheets" },
               component: TimeSheetsList,
             },
             {
@@ -115,7 +115,18 @@ const router = new Router({
               },
               path: "approved",
               name: "Time Sheets Approved",
-              props: { approved: true, collection: "TimeSheets" },
+              props: { query: "approved", collection: "TimeSheets" },
+              component: TimeSheetsList,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Shared",
+                requiredClaims: ["tapr"],
+              },
+              path: "shared",
+              name: "Time Sheets Shared",
+              props: { query: "shared", collection: "TimeSheets" },
               component: TimeSheetsList,
             },
             {

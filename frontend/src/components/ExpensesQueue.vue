@@ -140,7 +140,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import Modal from "./Modal.vue";
+import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";

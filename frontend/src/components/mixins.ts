@@ -178,6 +178,24 @@ export default Vue.extend({
           alert(`Error submitting timesheet: ${error}`);
         });
     },
+    reviewTs(timesheetId: string) {
+      store.commit("startTask", {
+        id: `review${timesheetId}`,
+        message: "marking reviewed",
+      });
+      db.collection("TimeSheets")
+        .doc(timesheetId)
+        .update({
+          reviewedIds: firebase.firestore.FieldValue.arrayUnion(this.user.uid),
+        })
+        .then(() => {
+          store.commit("endTask", { id: `review${timesheetId}` });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: `review${timesheetId}` });
+          alert(`Error marking timesheet as reviewed: ${error}`);
+        });
+    },
     approveTs(timesheetId: string) {
       store.commit("startTask", {
         id: `approve${timesheetId}`,

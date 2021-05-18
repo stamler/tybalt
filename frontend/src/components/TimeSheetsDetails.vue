@@ -1,12 +1,16 @@
 <template>
   <div>
-    <modal ref="rejectModal" collection="TimeSheets" />
+    <reject-modal ref="rejectModal" collection="TimeSheets" />
+    <share-modal ref="shareModal" collection="TimeSheets" />
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
+
+      <span class="label" v-if="isReviewedByMe(item)">reviewed</span>
+
       <!-- approve button -->
       <router-link
         v-if="
-          canApprove() &&
+          canApprove(item) &&
           item.submitted === true &&
           item.approved === false &&
           item.rejected === false
@@ -39,7 +43,7 @@
       <!-- reject button -->
       <router-link
         v-if="
-          canReject() &&
+          canReject(item) &&
           item.submitted === true &&
           item.locked === false &&
           item.rejected === false
@@ -48,6 +52,29 @@
         v-on:click.native="$refs.rejectModal.openModal(id)"
       >
         <x-circle-icon></x-circle-icon>
+      </router-link>
+      <!-- share button -->
+      <router-link
+        v-if="
+          canApprove(item) && item.submitted === true && item.locked === false
+        "
+        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        v-on:click.native="$refs.shareModal.openModal(id, item.viewerIds)"
+      >
+        <share-icon></share-icon>
+      </router-link>
+      <!-- review button -->
+      <router-link
+        v-if="
+          canReview(item) &&
+          !isReviewedByMe(item) &&
+          item.submitted === true &&
+          item.locked === false
+        "
+        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        v-on:click.native="reviewTs(id)"
+      >
+        <eye-icon></eye-icon>
       </router-link>
     </div>
     <div v-if="item.weekEnding">
@@ -110,7 +137,8 @@
 </template>
 
 <script lang="ts">
-import Modal from "./Modal.vue";
+import RejectModal from "./RejectModal.vue";
+import ShareModal from "./ShareModal.vue";
 import mixins from "./mixins";
 import { TimeEntry } from "./types";
 import { format, subWeeks, addMilliseconds } from "date-fns";
@@ -118,15 +146,20 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import {
   SendIcon,
+  EyeIcon,
   RewindIcon,
   CheckCircleIcon,
+  ShareIcon,
   XCircleIcon,
 } from "vue-feather-icons";
 const db = firebase.firestore();
 
 export default mixins.extend({
   components: {
-    Modal,
+    RejectModal,
+    ShareModal,
+    ShareIcon,
+    EyeIcon,
     SendIcon,
     RewindIcon,
     CheckCircleIcon,
@@ -191,18 +224,11 @@ export default mixins.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap) => {
-            if (snap.exists) {
-              this.item = snap.data();
-            } else {
-              // A document with this id doesn't exist in the database,
-              // list instead.  TODO: show a message to the user
-              this.$router.push(this.parentPath);
-            }
-          });
+        this.$bind("item", this.collectionObject.doc(id)).catch((error) => {
+          alert(
+            `Can't load ${this.collection} document ${id}: ${error.message}`
+          );
+        });
       } else {
         this.item = {};
       }
@@ -210,15 +236,27 @@ export default mixins.extend({
     belongsToMe(item: firebase.firestore.DocumentData) {
       return this.user.uid === item.uid;
     },
-    canApprove(): boolean {
+    canApprove(item: firebase.firestore.DocumentData): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
-        this.claims["tapr"] === true
+        this.claims["tapr"] === true &&
+        this.user.uid === item.managerUid
       );
     },
-    canReject(): boolean {
+    isReviewedByMe(item: firebase.firestore.DocumentData): boolean {
+      return item.reviewedIds && item.reviewedIds.includes(this.user.uid);
+    },
+    canReview(item: firebase.firestore.DocumentData): boolean {
       return (
-        this.canApprove() ||
+        Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
+        this.claims["tapr"] === true &&
+        item.viewerIds &&
+        item.viewerIds.includes(this.user.uid)
+      );
+    },
+    canReject(item: firebase.firestore.DocumentData): boolean {
+      return (
+        this.canApprove(item) ||
         (Object.prototype.hasOwnProperty.call(this.claims, "tsrej") &&
           this.claims["tsrej"] === true)
       );

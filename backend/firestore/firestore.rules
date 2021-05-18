@@ -16,8 +16,14 @@ service cloud.firestore {
     function managerUidMatches() {
       return request.auth.uid == resource.data.managerUid;
     }
+    function isViewer() {
+      return request.auth.uid in resource.data.viewerIds;
+    }
     function isInCollection(field, collection) {
       return exists(/databases/$(database)/documents/$(collection)/$(request.resource.data[field]))
+    }
+    function keyInCollection(key, collection) {
+      return exists(/databases/$(database)/documents/$(collection)/$(key))
     }
     function isMissing(field) {
       return !(field in newDoc())
@@ -446,7 +452,7 @@ service cloud.firestore {
     match /TimeSheets/{sheet} {
       allow read: if (
         hasClaim("time") && uidMatches() || 
-        hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
+        hasClaim("tapr") && (managerUidMatches() || isViewer()) && resource.data.submitted == true ||
         hasClaim("tsrej") && resource.data.approved == true ||
         hasClaim("tame") && resource.data.approved == true ||
         hasClaim("admin") && resource.data.submitted == true ||
@@ -475,6 +481,32 @@ service cloud.firestore {
         resource.data.rejected == false &&
         resource.data.submitted == true &&
         managerUidMatches()
+      ) || (
+        hasClaim("tapr") &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["viewerIds"]) &&
+        resource.data.submitted == true &&
+        (resource.data.locked == false || isMissing("locked")) &&
+        managerUidMatches() &&
+        newDoc().viewerIds.size() < 5 &&
+        (newDoc().viewerIds.size() < 1 || keyInCollection(newDoc().viewerIds[0],"ManagerNames")) &&
+        (newDoc().viewerIds.size() < 2 || keyInCollection(newDoc().viewerIds[1],"ManagerNames")) &&
+        (newDoc().viewerIds.size() < 3 || keyInCollection(newDoc().viewerIds[2],"ManagerNames")) &&
+        (newDoc().viewerIds.size() < 4 || keyInCollection(newDoc().viewerIds[3],"ManagerNames"))
+      ) || (
+        hasClaim("tapr") &&
+        isViewer() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["reviewedIds"]) &&
+        resource.data.submitted == true &&
+        (resource.data.locked == false || isMissing("locked")) &&
+        (
+          newDoc().reviewedIds.size() == 1 ||
+          newDoc().reviewedIds.size() - resource.data.reviewedIds.size() == 1
+        ) &&
+        request.auth.uid in newDoc().reviewedIds &&
+        (
+          !("reviewedIds" in resource.data) ||
+          !(request.auth.uid in resource.data.reviewedIds)
+        )
       ) || (
         ((hasClaim("tapr") && managerUidMatches()) || hasClaim("tsrej")) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&

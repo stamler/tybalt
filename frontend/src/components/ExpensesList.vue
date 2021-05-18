@@ -168,7 +168,7 @@
 </template>
 
 <script lang="ts">
-import Modal from "./Modal.vue";
+import Modal from "./RejectModal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";

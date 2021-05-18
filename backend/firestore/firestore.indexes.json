@@ -331,6 +331,24 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "viewerIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
