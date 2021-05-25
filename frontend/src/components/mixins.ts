@@ -487,6 +487,7 @@ export default Vue.extend({
           weekEnding = new Date(items[0].payPeriodEnding);
           payroll = true;
         } else {
+          console.log(result);
           throw new Error(
             "The provided promise doesn't resolve an array or a string"
           );
