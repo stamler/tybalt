@@ -215,6 +215,7 @@ export default Vue.extend({
               .where("approved", "==", true)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
+              .orderBy("displayName", "asc")
           ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
@@ -227,6 +228,7 @@ export default Vue.extend({
               .where("approved", "==", false)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
+              .orderBy("displayName", "asc")
           ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });
@@ -247,6 +249,7 @@ export default Vue.extend({
               .where("viewerIds", "array-contains", uid)
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
+              .orderBy("displayName", "asc")
           ).catch((error) => {
             alert(`Can't load Time Sheets: ${error.message}`);
           });

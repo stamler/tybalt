@@ -281,6 +281,32 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "displayName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "approved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "managerUid",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "weekEnding",
           "order": "DESCENDING"
         }
@@ -347,6 +373,28 @@
         {
           "fieldPath": "weekEnding",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TimeSheets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "viewerIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weekEnding",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "displayName",
+          "order": "ASCENDING"
         }
       ]
     }
