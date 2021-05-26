@@ -3,6 +3,7 @@ import * as functions from "firebase-functions";
 import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
 import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
+import * as _ from "lodash";
 
 // Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
@@ -135,7 +136,7 @@ export const scheduledEmailCleanup = functions.pubsub
     return Promise.all(batches);
 });
 
-// onUpdate or TimeSheets or Expenses document
+// onUpdate of TimeSheets or Expenses document
 export async function emailOnReject(
   change: functions.ChangeJson,
   context: functions.EventContext,
@@ -209,6 +210,55 @@ export async function emailOnReject(
         afterData.paymentType} dated ${expenseDateString }.` +
         `You provided the following reason: \n\n"${afterData.rejectionReason 
         }"\n\n- Tybalt`,
+      },
+    });
+  }
+}
+
+// onUpdate of TimeSheets document
+export async function emailOnShare(
+  change: functions.ChangeJson,
+  context: functions.EventContext,
+  collection: "TimeSheets",
+) {
+  const afterData = change.after?.data();
+  const beforeData = change.before?.data();
+
+  const afterViewerIds = Array.isArray(afterData.viewerIds) ? afterData.viewerIds : [];
+  const beforeViewerIds = Array.isArray(beforeData.viewerIds) ? beforeData.viewerIds : [];
+  const difference: string[] = _.difference(afterViewerIds, beforeViewerIds);
+
+  // Return with no action if viewerIds weren't just modified.
+  if (
+    afterViewerIds.length === beforeViewerIds.length &&
+    difference.length === 0
+    ) {
+    return;
+  }
+
+  if (difference.length > 1) {
+    throw new Error(
+      `More than one entry was added to ${collection} document ${change.after.id}`
+    );
+  }
+  
+  const db = admin.firestore();
+  const profile = await db.collection("Profiles").doc(afterData.uid).get();
+  const viewerProfile = await db.collection("Profiles").doc(difference[0]).get();
+
+  if (collection === "TimeSheets") {
+    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+    
+    // generate the user email
+    await db.collection("Emails").add({
+      toUids: [viewerProfile.id],
+      message: {
+        subject: `${profile.get("displayName")}'s time sheet was shared with you`,
+        text: `Hi ${ viewerProfile.get("givenName")},\n\n` +
+        `${profile.get("displayName")}'s time sheet for the week ending ${ 
+        weekEndingString } has been shared with you by ${ profile.get("managerName") 
+        }. You can review timesheets that have been shared with you by` +
+        ` visiting https://tybalt.tbte.ca/time/sheets/shared\n\n- Tybalt`,
       },
     });
   }

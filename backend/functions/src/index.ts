@@ -15,7 +15,7 @@ import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } fr
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments } from "./storage";
-import { emailOnReject } from "./email";
+import { emailOnReject, emailOnShare } from "./email";
 export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
@@ -23,6 +23,11 @@ export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
+
+// send emails when timesheets are shared
+exports.emailOnTimeSheetShare = functions.firestore
+  .document("TimeSheets/{timesheetId}")
+  .onUpdate(async (change, context) => { await emailOnShare(change, context, "TimeSheets") });
 
 // send emails when timesheets are rejected
 exports.emailOnTimeSheetRejection = functions.firestore
