@@ -284,8 +284,8 @@ select {
 }
 #searchbox {
   width: 100%;
-  width: -moz-available;          /* For Mozzila */
-  width: -webkit-fill-available;  /* For Chrome */
+  width: -moz-available; /* For Mozzila */
+  width: -webkit-fill-available; /* For Chrome */
   padding-left: 0.3em;
   border-bottom: 1px solid #e6e6e6;
 }

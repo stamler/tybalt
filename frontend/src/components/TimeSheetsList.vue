@@ -2,7 +2,12 @@
   <div id="list">
     <reject-modal ref="rejectModal" collection="TimeSheets" />
     <share-modal ref="shareModal" collection="TimeSheets" />
-    <div class="listentry" v-for="item in items" v-bind:key="item.id">
+    <div
+      class="listentry"
+      v-for="item in items"
+      v-bind:key="item.id"
+      v-bind:class="{ week2: isPayrollWeek2(item.weekEnding.toDate()) }"
+    >
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
           {{ item.weekEnding.toDate() | shortDate }}
@@ -305,3 +310,9 @@ export default Vue.extend({
   },
 });
 </script>
+<style scoped>
+/* week2 gets different background colour */
+.week2 {
+  background-color: beige;
+}
+</style>
