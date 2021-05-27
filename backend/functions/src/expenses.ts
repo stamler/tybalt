@@ -144,6 +144,8 @@ export async function exportJson(data: unknown) {
     delete docData.approved;
     delete docData.committed;
     delete docData.rejected;
+    delete docData.rejectorId;
+    delete docData.rejectorName;
     delete docData.rejectionReason;
     docData.date = docData.date.toDate();
     docData.commitTime = docData.commitTime.toDate();

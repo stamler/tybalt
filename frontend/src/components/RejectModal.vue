@@ -33,12 +33,14 @@
 import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
+import { mapState } from "vuex";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
   name: "Modal",
   props: ["collection"],
+  computed: mapState(["user"]),
   data() {
     return {
       parentPath: "",
@@ -71,7 +73,7 @@ export default Vue.extend({
       });
       const docRef = db.collection(collection).doc(docId);
       return db
-        .runTransaction(function (transaction) {
+        .runTransaction((transaction) => {
           return transaction
             .get(docRef)
             .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
@@ -92,6 +94,8 @@ export default Vue.extend({
                   approved: false,
                   submitted: false,
                   rejected: true,
+                  rejectorId: this.user.uid,
+                  rejectorName: this.user.displayName,
                   rejectionReason: reason,
                 });
               } else {
@@ -102,7 +106,7 @@ export default Vue.extend({
         .then(() => {
           store.commit("endTask", { id: `reject${docId}` });
         })
-        .catch(function (error) {
+        .catch((error) => {
           store.commit("endTask", { id: `reject${docId}` });
           alert(`Rejection failed: ${error}`);
         });

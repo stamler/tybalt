@@ -8,6 +8,7 @@ const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "
 const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
+const profiles = adminDb.collection("Profiles");
 
 const collections = [
   "Computers",
@@ -174,7 +175,6 @@ describe("Firestore Rules", function () {
 
   describe("Profiles", () => {
     const division = { name: "Playtime" };
-    const profiles = adminDb.collection("Profiles");
     const divisions = adminDb.collection("Divisions");
 
     beforeEach("reset data", async () => {
@@ -542,6 +542,8 @@ describe("Firestore Rules", function () {
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
       await timesheets.doc("IG022A64Lein7bRiC5HG").set(timesheet);
+      await profiles.doc("alice").set(alice);
+      await profiles.doc("bob").set(bob);
     });
 
     it("allows owner to submit timesheets", async () => {
@@ -589,7 +591,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows manager (tapr) to reject approved timesheets they manage", async () => {
@@ -597,7 +599,21 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+    });
+    it("requires timesheet rejections to include rejectorId and rejectorName", async () => {
+      await adminDb.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG").update({ submitted: true });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
+      const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectorId: "alice", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectorName: "Alice Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows manager (tapr) to share with up to 4 other managers (tapr) by adding them to the viewerIds array", async () => {
@@ -663,7 +679,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, tsrej: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("prevents manager (tapr) from rejecting locked timesheets they manage", async () => {
@@ -671,7 +687,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars", approved: false }, { merge: true })
       );
     });
     it("prevents rejected timesheets from being submitted", async () => {
@@ -739,7 +755,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars" }, { merge: true })
       );
     });
     it("prevents manager (tapr) from rejecting timesheets they do not manage", async () => {
@@ -747,7 +763,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example",  rejectionReason: "6chars" }, { merge: true })
       );
     });
     it("prevents non-managers (no tapr) from approving timesheets even if they're listed as manager", async () => {
@@ -763,7 +779,7 @@ describe("Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
       const doc = db.collection("TimeSheets").doc("IG022A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars" }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars" }, { merge: true })
       );
     });
   });
@@ -773,7 +789,6 @@ describe("Firestore Rules", function () {
     const timetypes = adminDb.collection("TimeTypes");
     const timeentries = adminDb.collection("TimeEntries");
     const jobs = adminDb.collection("Jobs");
-    const profiles = adminDb.collection("Profiles");
     const baseline = { uid: "alice", date: new Date(), timetype: "R", timetypeName: "Hours Worked", division: "ABC", hours: 5, workDescription: "5char" };
     const entryJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
 
@@ -1061,7 +1076,6 @@ describe("Firestore Rules", function () {
   describe("Expenses", () => {
     const expenses = adminDb.collection("Expenses");
     const divisions = adminDb.collection("Divisions");
-    const profiles = adminDb.collection("Profiles");
     const jobs = adminDb.collection("Jobs");
     const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense", attachment: "foo", tbtePayrollId: 28 };
     const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
@@ -1073,6 +1087,7 @@ describe("Firestore Rules", function () {
       await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
       await divisions.doc("ABC").set(division);
       await profiles.doc("alice").set(alice);
+      await profiles.doc("bob").set(bob);
     });
 
     it("allows owner to read their own Expenses if they have time claim", async () => {
@@ -1215,15 +1230,15 @@ describe("Firestore Rules", function () {
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: false, approved: false, committed: false });
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, committed: false });
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("prevents owner from deleting their own Expenses if they are submitted", async () => {
@@ -1427,12 +1442,26 @@ describe("Firestore Rules", function () {
       let db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...bob, tapr: true } }).firestore();
       let doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "alice", rejectorName: "Alice Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
       db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
       doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+    });
+    it("requires expense rejections to include rejectorId and rejectorName", async () => {
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false });
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
+      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectorId: "bob",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+      await firebase.assertFails(
+        doc.set({ rejected: true, rejectorName: "Bob Example",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
+      );
+      await firebase.assertSucceeds(
+        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
       );
     });
     it("allows manager (eapr) to commit approved expenses", async () => {
@@ -1490,6 +1519,8 @@ describe("Firestore Rules", function () {
         approved: false,
         submitted: false,
         rejected: true,
+        rejectorId: "bob",
+        rejectorName: "Bob Example", 
         rejectionReason: "no reason given",
       }));
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
@@ -1497,6 +1528,8 @@ describe("Firestore Rules", function () {
         approved: false,
         submitted: false,
         rejected: true,
+        rejectorId: "bob",
+        rejectorName: "Bob Example",
         rejectionReason: "no reason given",
       }));
     });

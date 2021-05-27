@@ -112,7 +112,7 @@ service cloud.firestore {
           "unitNumber", "breakfast", "lunch", "dinner",
           "vendorName", "distance", "ccLast4digits", "tbtePayrollId",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
-          "rejected", "rejectionReason", "committed" ]) &&
+          "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed" ]) &&
         
         // required fields
         newDoc().keys().hasAll(["date", "uid", "displayName",
@@ -401,37 +401,43 @@ service cloud.firestore {
         // erej can reject any approved uncommitted expenses
         ( 
           hasClaim("erej") &&
-          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectorId", "rejectorName", "rejectionReason"]) &&
           (newDoc().committed == false || isMissing("committed")) &&
           newDoc().submitted == false &&
           newDoc().approved == false &&
           resource.data.submitted == true &&
           resource.data.approved == true &&
-          newDoc().rejected == true
+          newDoc().rejected == true &&
+          newDoc().rejectorId == request.auth.uid &&
+          get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
         ) ||
         // tapr can reject submitted uncommitted expenses they manage
         (
           (
             hasClaim("tapr") && managerUidMatches()
           ) && 
-          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectorId", "rejectorName", "rejectionReason"]) &&
           (newDoc().committed == false || isMissing("committed")) &&
           newDoc().submitted == false &&
           newDoc().approved == false &&
           resource.data.submitted == true &&
-          newDoc().rejected == true
+          newDoc().rejected == true &&
+          newDoc().rejectorId == request.auth.uid &&
+          get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
         ) ||
         // eapr can only commit or reject approved expenses
         (
           hasClaim("eapr") && 
           (
             (
-              newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+              newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectorId", "rejectorName", "rejectionReason"]) &&
               newDoc().rejected == true &&
               newDoc().approved == false &&
               resource.data.approved == true &&
               newDoc().submitted == false &&
-              resource.data.submitted == true
+              resource.data.submitted == true &&
+              newDoc().rejectorId == request.auth.uid &&
+              get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
             ) ||
             (
               newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) &&
@@ -513,13 +519,15 @@ service cloud.firestore {
         )
       ) || (
         ((hasClaim("tapr") && managerUidMatches()) || hasClaim("tsrej")) &&
-        newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectionReason"]) &&
+        newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectorId", "rejectorName", "rejectionReason"]) &&
         newDoc().rejected == true &&
         newDoc().approved == false &&
         newDoc().submitted == false &&
         newDoc().rejectionReason.size() > 5 &&
         resource.data.submitted == true &&
-        resource.data.locked == false
+        resource.data.locked == false &&
+        newDoc().rejectorId == request.auth.uid &&
+        get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
       );
     }
     match /TimeTypes/{timetype} {

@@ -356,6 +356,8 @@ export async function exportJson(data: unknown) {
       delete docData.approved;
       delete docData.locked;
       delete docData.rejected;
+      delete docData.rejectorId;
+      delete docData.rejectorName;
       delete docData.rejectionReason;
       docData.weekEnding = docData.weekEnding.toDate();
       docData.entries.map((entry: TimeEntry) => {

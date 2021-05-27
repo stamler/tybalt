@@ -480,6 +480,8 @@ export default mixins.extend({
       */
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
       delete this.item.rejected;
+      delete this.item.rejectorId;
+      delete this.item.rejectorName;
       delete this.item.rejectionReason;
 
       if (this.item.job && this.item.job.length < 6) {
