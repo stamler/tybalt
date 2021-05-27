@@ -321,8 +321,11 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected"
+          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
         ]) &&
+        (
+          newDoc().offRotation is bool || isMissing("offRotation")
+        ) &&
         (
           (newDoc().tbtePayrollId is int &&
           newDoc().tbtePayrollId > 0) ||
