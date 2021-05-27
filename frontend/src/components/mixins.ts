@@ -257,6 +257,7 @@ export default Vue.extend({
         })
         .then(() => {
           store.commit("endTask", { id: `recall${timesheetId}` });
+          return this.unbundle(timesheetId);
         })
         .catch(function (error) {
           store.commit("endTask", { id: `recall${timesheetId}` });
