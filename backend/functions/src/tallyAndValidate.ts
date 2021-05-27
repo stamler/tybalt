@@ -210,6 +210,18 @@ export async function tallyAndValidate(
     )
   }
 
+  // prevent salaried employees from claiming off rotation (OR) unless permitted
+  if (
+    profile.get("salary") === true &&
+    offRotationDates.length > 0 &&
+    (profile.get("offRotation") === undefined || profile.get("offRotation") === false)
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Salaried staff need permission to claim Off Rotation Entries. Speak with your manager."
+    )
+  }
+  
   // prevent hourly employees from more than one full week off entry (OW)
   if (offWeek.length > 1) {
     throw new functions.https.HttpsError(

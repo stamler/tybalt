@@ -93,7 +93,7 @@ describe("tallyAndValidate", async () => {
         "The TimeEntry is missing an hours field"
       )
     });
-    it("tallies and validates for salaried staff member with off rotation days", async () => {
+    it("tallies and validates for salaried staff member with off rotation days (OR) if their profile has offRotation: true", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -102,11 +102,32 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       assert.equal(timeEntries.size,5);
-      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: true, salary: true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.offRotationDaysTally,1, "offRotationDaysTally doesn't match");
+    });
+    it("rejects for salaried staff member with off rotation days (OR) if their profile has offRotation missing or false", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OR", timetypeName: "Off Rotation (Full Day)" });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "Salaried staff need permission to claim Off Rotation Entries. Speak with your manager."
+      );
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: false, salary: true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "Salaried staff need permission to claim Off Rotation Entries. Speak with your manager."
+      );
+
     });
     it("tallies and validates for hourly staff member with a Full Week Off Entry", async () => {
       await cleanupFirestore(projectId);
