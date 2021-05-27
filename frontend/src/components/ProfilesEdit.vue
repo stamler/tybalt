@@ -17,6 +17,10 @@
       <input type="checkbox" name="salary" v-model="item.salary" />
     </span>
     <span class="field">
+      <label for="offRotation">Off Rotation</label>
+      <input type="checkbox" name="offRotation" v-model="item.offRotation" />
+    </span>
+    <span class="field">
       <label for="timeSheetExpected">Time Sheet Expected</label>
       <input
         type="checkbox"
@@ -172,6 +176,7 @@ export default Vue.extend({
           customClaims: { [x: string]: boolean };
           defaultDivision: string;
           salary: boolean;
+          offRotation?: boolean;
           timeSheetExpected: boolean;
           tbtePayrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
@@ -181,6 +186,7 @@ export default Vue.extend({
           email: this.item.email,
           customClaims: this.item.customClaims,
           salary: this.item.salary ?? false,
+          offRotation: this.item.offRotation ?? false,
           timeSheetExpected: this.item.timeSheetExpected ?? true,
           defaultDivision: this.item.defaultDivision,
         };
