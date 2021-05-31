@@ -188,7 +188,6 @@
 
 <script lang="ts">
 import Modal from "./RejectModal.vue";
-import Vue from "vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
 import { format } from "date-fns";
@@ -205,8 +204,7 @@ import {
 import store from "../store";
 const db = firebase.firestore();
 
-export default Vue.extend({
-  mixins: [mixins],
+export default mixins.extend({
   props: ["approved", "collection"],
   computed: {
     processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
