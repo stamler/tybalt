@@ -1078,12 +1078,12 @@ describe("Firestore Rules", function () {
     const divisions = adminDb.collection("Divisions");
     const jobs = adminDb.collection("Jobs");
     const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense", attachment: "foo", tbtePayrollId: 28 };
-    const expenseJobProperties = { job: "19-333", jobDescription: "A basic job", client: "A special client" };
+    const expenseJobProperties = { job: "19-333", jobDescription: "Big job for a client", client: "A special client" };
     const division = { name: "Playtime" };
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
-      await jobs.doc("19-333").set({ description: "Big job for a client" });
+      await jobs.doc("19-333").set({ description: "Big job for a client", client: "A special client" });
       await expenses.doc("F3312A64Lein7bRiC5HG").set(baseline);
       await divisions.doc("ABC").set(division);
       await profiles.doc("alice").set(alice);
@@ -1307,8 +1307,8 @@ describe("Firestore Rules", function () {
     it("requires any referenced job to be valid", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { job, ...missingJob } = expenseJobProperties;
-      await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
-      await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
+      await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333", description: "Big job for a client", client: "A special client" }));
+      await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333", description: "Big job for a client", client: "A special client" }));
     });
     it("requires division to be present and valid", async () => {
       const doc = timeDb.collection("Expenses").doc();
@@ -1375,7 +1375,7 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 0, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentType }));
     });
-    it("requires paymentType to be one of CorporateCreditCard, Expense, Mileage, FuelCard, FuelOnAccount, Meals", async () => {
+    it("requires paymentType to be one of CorporateCreditCard, Expense, Mileage, FuelCard, FuelOnAccount, Allowance", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
@@ -1388,25 +1388,28 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", unitNumber: 1234, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "Meals", breakfast: true, lunch: true, dinner:true, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Allowance", breakfast: true, lunch: true, dinner:true, lodging:false, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
     });
-    it("requires Meals expenses to have boolean breakfast, lunch, and dinner properties", async () => {
+    it("requires Allowance expenses to have boolean breakfast, lunch, dinner, and lodging properties", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Meals", tbtePayrollId: 28 };
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Allowance", tbtePayrollId: 28 };
       await firebase.assertFails(doc.set(skeleton));
       await firebase.assertFails(doc.set({breakfast: true, ...skeleton}));
-      await firebase.assertFails(doc.set({breakfast: "true", lunch: 56, dinner:false, ...skeleton}));
-      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, ...skeleton}));
+      await firebase.assertFails(doc.set({breakfast: "true", lunch: 56, dinner:false, lodging: false, ...skeleton}));
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, lodging: false, ...skeleton}));
     });
-    it("requires Meals expenses to not have description or total properties", async () => {
+    it("requires Allowance expenses to not have description or total properties", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Meals", tbtePayrollId: 28 };
-      await firebase.assertFails(doc.set({ description: "Meals", breakfast: true, lunch: true, dinner:false, ...skeleton}));
-      await firebase.assertFails(doc.set({ total: 50, breakfast: true, lunch: true, dinner:false, ...skeleton}));
-      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, ...skeleton}));
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Allowance", tbtePayrollId: 28 };
+      await firebase.assertFails(doc.set({ description: "Meals", breakfast: true, lunch: true, dinner:false, lodging: false, ...skeleton}));
+      await firebase.assertFails(doc.set({ total: 50, breakfast: true, lunch: true, dinner:false, lodging: true, ...skeleton}));
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, lodging: true, ...skeleton}));
     });
-    it("allows Meals entries to have an associated job", async() => {
-      
+    it("allows Allowance entries to have an associated job that exists", async() => {
+      const doc = timeDb.collection("Expenses").doc();
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Allowance", tbtePayrollId: 28 };
+      await firebase.assertFails(doc.set({breakfast: true, lunch: true, dinner:true, lodging: true, job:"19-332", jobDescription: "Big job for a client", client: "A special client", ...skeleton}));      
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:true, lodging: true, job:"19-333", jobDescription: "Big job for a client", client: "A special client", ...skeleton}));      
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();

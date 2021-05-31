@@ -109,7 +109,7 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType",
-          "unitNumber", "breakfast", "lunch", "dinner",
+          "unitNumber", "breakfast", "lunch", "dinner", "lodging",
           "vendorName", "distance", "ccLast4digits", "tbtePayrollId",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed" ]) &&
@@ -119,16 +119,16 @@ service cloud.firestore {
           "surname", "givenName", "submitted", "approved", "tbtePayrollId",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
-        // description is present except for Meals
+        // description is present except for Allowance
         (
-          newDoc().description.size() > 3 && newDoc().paymentType != "Meals" ||
-          isMissing("description") && newDoc().paymentType == "Meals"
+          newDoc().description.size() > 3 && newDoc().paymentType != "Allowance" ||
+          isMissing("description") && newDoc().paymentType == "Allowance"
         ) &&
 
         // tbtePayrollId matches that on the profile
         get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc().tbtePayrollId &&
 
-        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Meals"] &&
+        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Allowance"] &&
         isInCollection("division","Divisions") &&
 
         // requires attachment and valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
@@ -147,12 +147,12 @@ service cloud.firestore {
           (newDoc().unitNumber is int && newDoc().unitNumber > 0 && newDoc().paymentType == "FuelOnAccount") ||
           newDoc().paymentType != "FuelOnAccount" && isMissing("unitNumber")
         ) &&
-        // when paymentType is not Mileage or Meals, total is positive number and distance is missing
+        // when paymentType is not Mileage or Allowance, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
-        // when paymentType is Meals, breakfast, lunch and dinner are booleans and total and distance are missing
+        // when paymentType is Allowance, breakfast, lunch, dinner and lodging are booleans and total and distance are missing
         (
           (
-            !(newDoc().paymentType in ["Mileage", "Meals"]) &&
+            !(newDoc().paymentType in ["Mileage", "Allowance"]) &&
             newDoc().total is number &&
             newDoc().total > 0 &&
             isMissing("distance")
@@ -168,12 +168,13 @@ service cloud.firestore {
             get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.personalVehicleInsuranceExpiry >= newDoc().date
           ) ||
           (
-            newDoc().paymentType == "Meals" &&
+            newDoc().paymentType == "Allowance" &&
             isMissing("total") &&
             isMissing("distance") &&
             newDoc().breakfast is bool &&
             newDoc().lunch is bool &&
-            newDoc().dinner is bool
+            newDoc().dinner is bool &&
+            newDoc().lodging is bool
           )
         ) &&
 
@@ -181,7 +182,9 @@ service cloud.firestore {
         // jobDescription and client are present
         (
           ( isInCollection("job","Jobs") && 
-            newDoc().keys().hasAll(["jobDescription", "client"])
+            newDoc().keys().hasAll(["jobDescription", "client"]) &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.description == newDoc().jobDescription &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.client == newDoc().client
           ) || 
           isMissing("job")
         )
