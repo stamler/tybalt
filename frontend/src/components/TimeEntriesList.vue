@@ -79,7 +79,6 @@
           </template>
           <template v-else>
             <router-link
-              v-if="isMtoTh(item)"
               :to="{ name: 'Time Entries List' }"
               v-on:click.native="copyEntry(item)"
               title="copy to tomorrow"
@@ -256,11 +255,6 @@ export default mixins.extend({
         return true;
       }
       return false;
-    },
-    isMtoTh(item: firebase.firestore.DocumentData) {
-      const dayOfWeek = item.date.toDate().getDay();
-      // prevent copying to or from weekends in UI
-      return dayOfWeek < 5 && dayOfWeek > 0;
     },
     copyEntry(item: firebase.firestore.DocumentData) {
       if (confirm("Want to copy this entry to tomorrow?")) {
