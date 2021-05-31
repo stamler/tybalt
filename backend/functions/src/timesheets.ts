@@ -214,11 +214,12 @@ export const updateTimeTracking = functions.firestore
       afterData.approved === false &&
       afterData.locked === false
     ) {
-      // just recalled
+      // just recalled or rejected after being approved
       // remove the document from submitted
       return timeTrackingDocRef.update(
         {
           [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else if (
