@@ -190,7 +190,19 @@ export interface ExpenseMeals extends ExpenseCommon {
   dinner: boolean;
 }
 
-export type Expense = ExpenseRegular | ExpenseMileage | ExpenseMeals;
+export interface ExpenseAllowance extends ExpenseCommon {
+  paymentType: "Allowance";
+  breakfast: boolean;
+  lunch: boolean;
+  dinner: boolean;
+  lodging: boolean;
+}
+
+export type Expense =
+  | ExpenseRegular
+  | ExpenseMileage
+  | ExpenseMeals
+  | ExpenseAllowance;
 
 // Type Guards
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -261,7 +273,7 @@ function isExpenseMileage(data: unknown): data is ExpenseMileage {
   return isExpenseCommon(data) && paymentType && distance && description;
 }
 
-function isExpenseMeals(data: unknown): data is ExpenseMeals {
+export function isExpenseMeals(data: unknown): data is ExpenseMeals {
   if (!isObject(data)) {
     return false;
   }
@@ -272,8 +284,24 @@ function isExpenseMeals(data: unknown): data is ExpenseMeals {
     typeof data.dinner === "boolean";
   return isExpenseCommon(data) && paymentType && meals;
 }
+function isExpenseAllowance(data: unknown): data is ExpenseAllowance {
+  if (!isObject(data)) {
+    return false;
+  }
+  const paymentType =
+    data.paymentType === "Allowance" || data.paymentType === "Meals";
+  const allowance =
+    typeof data.breakfast === "boolean" &&
+    typeof data.lunch === "boolean" &&
+    typeof data.dinner === "boolean" &&
+    typeof data.lodging === "boolean";
+  return isExpenseCommon(data) && paymentType && allowance;
+}
 export function isExpense(data: unknown): data is Expense {
   return (
-    isExpenseRegular(data) || isExpenseMileage(data) || isExpenseMeals(data)
+    isExpenseRegular(data) ||
+    isExpenseMileage(data) ||
+    isExpenseMeals(data) ||
+    isExpenseAllowance(data)
   );
 }

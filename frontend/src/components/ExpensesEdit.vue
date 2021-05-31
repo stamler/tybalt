@@ -25,7 +25,7 @@
     <span class="field">
       <label for="paymentType">Type:</label>
       <select class="grow" name="paymentType" v-model="item.paymentType">
-        <option value="Meals">Meal Allowance</option>
+        <option value="Allowance">Daily Allowance</option>
         <option value="FuelCard">Fuel Card</option>
         <option value="FuelOnAccount">Fuel On Account</option>
         <option value="CorporateCreditCard">Corp Visa</option>
@@ -54,7 +54,10 @@
       contact HR to update your profile prior to submitting a personal mileage
       expense.
     </span>
-    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
+    <span
+      class="field"
+      v-if="!['Mileage', 'Allowance'].includes(item.paymentType)"
+    >
       <label for="total">Total $</label>
       <input
         class="grow"
@@ -67,7 +70,10 @@
       />
     </span>
 
-    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
+    <span
+      class="field"
+      v-if="!['Mileage', 'Allowance'].includes(item.paymentType)"
+    >
       <label for="vendorName">Vendor Name</label>
       <input
         class="grow"
@@ -90,7 +96,7 @@
         min="1"
       />
     </span>
-    <span class="field" v-if="item.paymentType === 'Meals'">
+    <span class="field" v-if="item.paymentType === 'Allowance'">
       <label for="breakfast">
         Breakfast
         <input
@@ -107,6 +113,15 @@
       <label for="dinner">
         Dinner
         <input class="grow" type="checkbox" id="dinner" v-model="item.dinner" />
+      </label>
+      <label for="lodging">
+        Personal Accommodation
+        <input
+          class="grow"
+          type="checkbox"
+          id="lodging"
+          v-model="item.lodging"
+        />
       </label>
     </span>
     <span class="field">
@@ -140,7 +155,7 @@
     <span
       class="field"
       v-if="
-        !['Mileage', 'FuelOnAccount', 'FuelCard', 'Meals'].includes(
+        !['Mileage', 'FuelOnAccount', 'FuelCard', 'Allowance'].includes(
           item.paymentType
         )
       "
@@ -154,7 +169,7 @@
       />
     </span>
 
-    <span class="field" v-if="item.paymentType !== 'Meals'">
+    <span class="field" v-if="item.paymentType !== 'Allowance'">
       <input
         class="grow"
         type="text"
@@ -168,7 +183,10 @@
       />
     </span>
 
-    <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
+    <span
+      class="field"
+      v-if="!['Mileage', 'Allowance'].includes(item.paymentType)"
+    >
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
         <router-link to="#" v-on:click.native="downloadAttachment(item)">
@@ -295,10 +313,10 @@ export default mixins.extend({
       const validDescription =
         (typeof this.item.description === "string" &&
           this.item.description.length > 3) ||
-        this.item.paymentType === "Meals";
+        this.item.paymentType === "Allowance";
       const validTotal =
         (typeof this.item.total === "number" && this.item.total > 0) ||
-        this.item.paymentType === "Meals";
+        this.item.paymentType === "Allowance";
       const validDistance =
         typeof this.item.distance === "number" &&
         isInteger(this.item.distance) &&
@@ -420,7 +438,7 @@ export default mixins.extend({
           managerUid: this.profile.get("managerUid"),
           division: this.profile.get("defaultDivision"),
           tbtePayrollId: this.profile.get("tbtePayrollId"),
-          paymentType: "Meals",
+          paymentType: "Allowance",
           submitted: false,
           approved: false,
         };
@@ -509,13 +527,14 @@ export default mixins.extend({
         throw "Division Missing";
       }
 
-      // if paymentType is meals, delete total and description and set
+      // if paymentType is Allowance, delete total and description and set
       // unset meal types to false
-      if (this.item.paymentType === "Meals") {
+      if (this.item.paymentType === "Allowance") {
         _.defaults(this.item, {
           breakfast: false,
           lunch: false,
           dinner: false,
+          lodging: false,
         });
         delete this.item.description;
         delete this.item.total;

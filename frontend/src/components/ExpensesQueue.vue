@@ -11,18 +11,23 @@
           <div class="headline">
             {{ item.displayName }}
           </div>
-          <div class="byline" v-if="item.paymentType === 'Mileage'">
-            {{ item.distance }} km
-          </div>
-          <div class="byline" v-else-if="item.paymentType === 'Meals'">
-            {{ item.breakfast ? "Breakfast" : "" }}
-            {{ item.lunch ? "Lunch" : "" }}
-            {{ item.dinner ? "Dinner" : "" }}
-          </div>
-          <div class="byline" v-else>
-            ${{ item.total }}
-            <span v-if="item.po">/PO:{{ item.po }}</span>
-            <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
+          <div class="byline">
+            <template v-if="item.paymentType === 'Mileage'">
+              {{ item.distance }} km
+            </template>
+            <template
+              v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
+            >
+              {{ item.breakfast ? "Breakfast" : "" }}
+              {{ item.lunch ? "Lunch" : "" }}
+              {{ item.dinner ? "Dinner" : "" }}
+              {{ item.lodging ? "Personal Accommodation" : "" }}
+            </template>
+            <template v-else>
+              ${{ item.total }}
+              <span v-if="item.po">/PO:{{ item.po }}</span>
+              <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
+            </template>
           </div>
         </div>
         <div class="firstline">
@@ -82,13 +87,23 @@
           <div class="headline">
             {{ item.displayName }}
           </div>
-          <div class="byline" v-if="item.paymentType === 'Mileage'">
-            {{ item.distance }} km
-          </div>
-          <div class="byline" v-else>
-            ${{ item.total }}
-            <span v-if="item.po">/PO:{{ item.po }}</span>
-            <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
+          <div class="byline">
+            <template v-if="item.paymentType === 'Mileage'">
+              {{ item.distance }} km
+            </template>
+            <template
+              v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
+            >
+              {{ item.breakfast ? "Breakfast" : "" }}
+              {{ item.lunch ? "Lunch" : "" }}
+              {{ item.dinner ? "Dinner" : "" }}
+              {{ item.lodging ? "Personal Accommodation" : "" }}
+            </template>
+            <template v-else>
+              ${{ item.total }}
+              <span v-if="item.po">/PO:{{ item.po }}</span>
+              <span v-if="item.vendorName">/vendor: {{ item.vendorName }}</span>
+            </template>
           </div>
         </div>
         <div class="firstline">

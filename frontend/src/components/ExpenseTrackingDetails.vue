@@ -12,13 +12,17 @@
         </div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline" v-if="exp.paymentType !== 'Meals'">
+            <div
+              class="headline"
+              v-if="!['Meals', 'Allowance'].includes(exp.paymentType)"
+            >
               {{ exp.description }}
             </div>
             <div class="headline" v-else>
               {{ exp.breakfast ? "Breakfast" : "" }}
               {{ exp.lunch ? "Lunch" : "" }}
               {{ exp.dinner ? "Dinner" : "" }}
+              {{ exp.lodging ? "Personal Accommodation" : "" }}
             </div>
             <div class="byline" v-if="exp.paymentType === 'Mileage'">
               {{ exp.distance }} km

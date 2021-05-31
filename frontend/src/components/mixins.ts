@@ -8,6 +8,8 @@ import {
   TimeSheet,
   Amendment,
   Expense,
+  ExpenseAllowance,
+  isExpenseMeals,
   ExpenseMeals,
   isExpense,
 } from "./types";
@@ -21,6 +23,7 @@ const MILEAGE_RATE = 0.5; // dollars per km
 const BREAKFAST_RATE = 15; // dollars per meal
 const LUNCH_RATE = 20; // dollars per meal
 const DINNER_RATE = 20; // dollars per meal
+const LODGING_RATE = 50; // dollars for personal lodging reimbursement
 
 export default Vue.extend({
   computed: {
@@ -55,11 +58,19 @@ export default Vue.extend({
     calculatedOntarioHST(total: number): number {
       return Math.round((total * 1300) / 113) / 100;
     },
-    calculatedMealAmount(row: ExpenseMeals) {
+    calculatedAllowanceAmount(row: ExpenseAllowance | ExpenseMeals) {
+      if (isExpenseMeals(row)) {
+        return (
+          (row.breakfast ? BREAKFAST_RATE : 0) +
+          (row.lunch ? LUNCH_RATE : 0) +
+          (row.dinner ? DINNER_RATE : 0)
+        );
+      }
       return (
         (row.breakfast ? BREAKFAST_RATE : 0) +
         (row.lunch ? LUNCH_RATE : 0) +
-        (row.dinner ? DINNER_RATE : 0)
+        (row.dinner ? DINNER_RATE : 0) +
+        (row.lodging ? LODGING_RATE : 0)
       );
     },
     bundle(week: Date) {
@@ -572,8 +583,9 @@ export default Vue.extend({
                 const total = row.distance * MILEAGE_RATE;
                 return total - this.calculatedOntarioHST(total);
               }
+              case "Allowance":
               case "Meals": {
-                const total = this.calculatedMealAmount(row);
+                const total = this.calculatedAllowanceAmount(row);
                 return total - this.calculatedOntarioHST(total);
               }
               default:
@@ -587,9 +599,10 @@ export default Vue.extend({
             switch (row.paymentType) {
               case "Mileage":
                 return this.calculatedOntarioHST(row.distance * MILEAGE_RATE);
+              case "Allowance":
               case "Meals":
                 return this.calculatedOntarioHST(
-                  this.calculatedMealAmount(row)
+                  this.calculatedAllowanceAmount(row)
                 );
               default:
                 return this.calculatedOntarioHST(row.total);
@@ -602,8 +615,9 @@ export default Vue.extend({
             switch (row.paymentType) {
               case "Mileage":
                 return row.distance * MILEAGE_RATE;
+              case "Allowance":
               case "Meals":
-                return this.calculatedMealAmount(row);
+                return this.calculatedAllowanceAmount(row);
               default:
                 return row.total;
             }

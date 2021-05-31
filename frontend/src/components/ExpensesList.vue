@@ -11,13 +11,16 @@
             <template
               v-if="approved === undefined && commitqueue === undefined"
             >
-              <template v-if="item.paymentType !== 'Meals'">
+              <template
+                v-if="!['Meals', 'Allowance'].includes(item.paymentType)"
+              >
                 {{ item.description }}
               </template>
               <template v-else>
                 {{ item.breakfast ? "Breakfast" : "" }}
                 {{ item.lunch ? "Lunch" : "" }}
                 {{ item.dinner ? "Dinner" : "" }}
+                {{ item.lodging ? "Personal Accommodation" : "" }}
               </template>
             </template>
             <template v-else>
@@ -27,13 +30,17 @@
           <div class="byline" v-if="item.paymentType === 'Mileage'">
             {{ item.distance }} km
           </div>
-          <div class="byline" v-else-if="item.paymentType === 'Meals'">
+          <div
+            class="byline"
+            v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
+          >
             <template
               v-if="typeof approved === 'boolean' && commitqueue === undefined"
             >
               {{ item.breakfast ? "Breakfast" : "" }}
               {{ item.lunch ? "Lunch" : "" }}
               {{ item.dinner ? "Dinner" : "" }}
+              {{ item.lodging ? "Personal Accommodation" : "" }}
             </template>
           </div>
           <div class="byline" v-else>
