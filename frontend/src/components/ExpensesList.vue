@@ -8,9 +8,7 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
-            <template
-              v-if="approved === undefined && commitqueue === undefined"
-            >
+            <template v-if="approved === undefined">
               <template
                 v-if="!['Meals', 'Allowance'].includes(item.paymentType)"
               >
@@ -34,9 +32,7 @@
             class="byline"
             v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
           >
-            <template
-              v-if="typeof approved === 'boolean' && commitqueue === undefined"
-            >
+            <template v-if="typeof approved === 'boolean'">
               {{ item.breakfast ? "Breakfast" : "" }}
               {{ item.lunch ? "Lunch" : "" }}
               {{ item.dinner ? "Dinner" : "" }}
@@ -50,7 +46,7 @@
           </div>
         </div>
         <div class="firstline">
-          <template v-if="approved !== undefined || commitqueue === true">
+          <template v-if="approved !== undefined">
             {{ item.description }}
           </template>
         </div>
@@ -63,7 +59,7 @@
               <download-icon></download-icon>
             </router-link>
           </template>
-          <template v-if="approved === true || commitqueue === true">
+          <template v-if="approved === true">
             approved by {{ item.managerName }}
           </template>
         </div>
@@ -84,7 +80,7 @@
       </div>
       <div class="rowactionsbox">
         <!-- The template for users -->
-        <template v-if="approved === undefined && commitqueue === undefined">
+        <template v-if="approved === undefined">
           <template v-if="item.submitted === false">
             <router-link
               v-if="!item.attachment"
@@ -127,7 +123,7 @@
         </template>
 
         <!-- The template for "pending" -->
-        <template v-if="approved === false && commitqueue === undefined">
+        <template v-if="approved === false">
           <template v-if="!item.approved && !item.rejected">
             <router-link
               v-bind:to="{ name: 'Expenses Pending' }"
@@ -149,7 +145,7 @@
         </template>
 
         <!-- The template for "approved" -->
-        <template v-if="approved === true && commitqueue === undefined">
+        <template v-if="approved === true">
           <template v-if="!item.committed">
             <router-link
               v-bind:to="{ name: 'Expenses Pending' }"
@@ -161,21 +157,6 @@
           <template v-if="item.committed">
             <span class="label">committed</span>
           </template>
-        </template>
-        <!-- The template for commit queue -->
-        <template v-if="commitqueue === true">
-          <router-link
-            v-bind:to="{ name: 'Expenses Pending' }"
-            v-on:click.native="$refs.rejectModal.openModal(item.id)"
-          >
-            <x-circle-icon></x-circle-icon>
-          </router-link>
-          <router-link
-            v-bind:to="{ name: 'Expenses Approved' }"
-            v-on:click.native="commitItem(item, collectionObject)"
-          >
-            <lock-icon></lock-icon>
-          </router-link>
         </template>
       </div>
     </div>
@@ -191,7 +172,6 @@ import { format } from "date-fns";
 import {
   EditIcon,
   CopyIcon,
-  LockIcon,
   DownloadIcon,
   SendIcon,
   RewindIcon,
@@ -203,12 +183,11 @@ const db = firebase.firestore();
 
 export default Vue.extend({
   mixins: [mixins],
-  props: ["approved", "commitqueue", "collection"],
+  props: ["approved", "collection"],
   components: {
     Modal,
     EditIcon,
     CopyIcon,
-    LockIcon,
     SendIcon,
     DownloadIcon,
     RewindIcon,
@@ -255,10 +234,7 @@ export default Vue.extend({
       if (uid === undefined) {
         throw "There is no valid uid";
       }
-      if (
-        typeof this.approved === "boolean" &&
-        this.commitqueue === undefined
-      ) {
+      if (typeof this.approved === "boolean") {
         // approved prop is defined, show pending or approved TimeSheets
         // belonging to users that this user manages
         this.$bind(
@@ -273,29 +249,12 @@ export default Vue.extend({
         });
       } else {
         // approved prop not defined, get user's own expenses
-        // or commit queue
-        if (typeof this.commitqueue !== "boolean") {
-          // populate with the user's own expenses
-          this.$bind(
-            "items",
-            this.collectionObject
-              .where("uid", "==", uid)
-              .orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Expenses: ${error.message}`);
-          });
-        } else if (this.commitqueue === true) {
-          // populate with the commit queue
-          this.$bind(
-            "items",
-            this.collectionObject
-              .where("approved", "==", true)
-              .where("committed", "==", false)
-              .orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Expenses: ${error.message}`);
-          });
-        }
+        this.$bind(
+          "items",
+          this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
+        ).catch((error) => {
+          alert(`Can't load Expenses: ${error.message}`);
+        });
       }
     },
   },
@@ -304,7 +263,6 @@ export default Vue.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$watch("approved", this.updateItems, { immediate: true });
-    this.$watch("commitqueue", this.updateItems, { immediate: true });
   },
 });
 </script>
