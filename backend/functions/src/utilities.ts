@@ -294,8 +294,8 @@ export async function writeExpensePayPeriodEnding(
 // assuming input is in America/Thunder_Bay timezone as well.
 export function nextSaturday(date: Date): Date {
   let calculatedSaturday;
-    const zonedTime = utcToZonedTime(date, "America/Thunder_Bay"); 
-    if (zonedTime.getDay() === 6) {
+  const zonedTime = utcToZonedTime(date, "America/Thunder_Bay"); 
+  if (zonedTime.getDay() === 6) {
     calculatedSaturday = zonedTimeToUtc(
       new Date(
         zonedTime.getFullYear(),
