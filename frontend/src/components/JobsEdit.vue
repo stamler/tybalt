@@ -3,19 +3,24 @@
     <span class="field">
       <label for="job">Project/Proposal #</label>
       <span v-if="editing">{{ id }}</span>
-      <input v-else type="text" name="job" v-model="item.id" />
+      <input class="grow" v-else type="text" name="job" v-model="item.id" />
     </span>
     <span class="field">
       <label for="manager">Manager</label>
-      <input type="text" name="manager" v-model="item.manager" />
+      <input class="grow" type="text" name="manager" v-model="item.manager" />
     </span>
     <span class="field">
       <label for="client">Client</label>
-      <input type="text" name="client" v-model="item.client" />
+      <input class="grow" type="text" name="client" v-model="item.client" />
     </span>
     <span class="field">
       <label for="clientContact">Client Contact</label>
-      <input type="text" name="clientContact" v-model="item.clientContact" />
+      <input
+        class="grow"
+        type="text"
+        name="clientContact"
+        v-model="item.clientContact"
+      />
     </span>
     <span
       class="field"
@@ -27,14 +32,14 @@
       <!-- Hide if id is proposal (starts with 'P') -->
       <!-- TODO: Restrict to existing proposals -->
       <label for="proposal">Proposal</label>
-      <input type="text" name="proposal" v-model="item.proposal" />
+      <input class="grow" type="text" name="proposal" v-model="item.proposal" />
     </span>
     <span class="field">
-      <label for="description">Description</label>
+      <label class="grow" for="description">Description</label>
       <input type="text" name="code" v-model="item.description" />
     </span>
     <span class="field">
-      <select name="status" v-model="item.status">
+      <select class="grow" name="status" v-model="item.status">
         <option disabled selected value="">-- choose status --</option>
         <option value="Active">Active</option>
         <option value="Cancelled">Cancelled</option>

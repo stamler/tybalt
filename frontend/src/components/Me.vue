@@ -12,7 +12,7 @@
         <h4>Time Sheets</h4>
         <span class="field">
           <label for="manager">Manager</label>
-          <select name="manager" v-model="item.managerUid">
+          <select class="grow" name="manager" v-model="item.managerUid">
             <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
               {{ m.displayName }}
             </option>
@@ -20,7 +20,11 @@
         </span>
         <span class="field">
           <label for="defaultDivision">Default Division</label>
-          <select name="defaultDivision" v-model="item.defaultDivision">
+          <select
+            class="grow"
+            name="defaultDivision"
+            v-model="item.defaultDivision"
+          >
             <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
               {{ d.name }}
             </option>

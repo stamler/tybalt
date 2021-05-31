@@ -13,17 +13,8 @@
       />
     </span>
 
-    <!--
     <span class="field">
-      <select name="expensetype" v-model="item.expensetype">
-        <option v-for="e in expensetypes" :value="e.id" v-bind:key="e.id">
-          {{ e.name }}
-        </option>
-      </select>
-    </span>
-    -->
-    <span class="field">
-      <select name="division" v-model="item.division">
+      <select class="grow" name="division" v-model="item.division">
         <option disabled selected value="">-- choose division --</option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
           {{ d.name }}
@@ -33,7 +24,7 @@
 
     <span class="field">
       <label for="paymentType">Type:</label>
-      <select name="paymentType" v-model="item.paymentType">
+      <select class="grow" name="paymentType" v-model="item.paymentType">
         <option value="Meals">Meal Allowance</option>
         <option value="FuelCard">Fuel Card</option>
         <option value="FuelOnAccount">Fuel On Account</option>
@@ -51,6 +42,7 @@
     >
       <label for="ccLast4digits">Last 4 digits of Card</label>
       <input
+        class="grow"
         type="text"
         name="ccLast4digits"
         v-model="item.ccLast4digits"
@@ -65,6 +57,7 @@
     <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
       <label for="total">Total $</label>
       <input
+        class="grow"
         type="number"
         name="total"
         v-model.number="item.total"
@@ -77,6 +70,7 @@
     <span class="field" v-if="!['Mileage', 'Meals'].includes(item.paymentType)">
       <label for="vendorName">Vendor Name</label>
       <input
+        class="grow"
         type="text"
         name="vendorName"
         v-model.trim="item.vendorName"
@@ -87,6 +81,7 @@
     <span class="field" v-if="item.paymentType === 'FuelOnAccount'">
       <label for="unitNumber">Unit Number</label>
       <input
+        class="grow"
         type="number"
         name="unitNumber"
         placeholder="00"
@@ -98,21 +93,27 @@
     <span class="field" v-if="item.paymentType === 'Meals'">
       <label for="breakfast">
         Breakfast
-        <input type="checkbox" id="breakfast" v-model="item.breakfast" />
+        <input
+          class="grow"
+          type="checkbox"
+          id="breakfast"
+          v-model="item.breakfast"
+        />
       </label>
       <label for="lunch">
         Lunch
-        <input type="checkbox" id="lunch" v-model="item.lunch" />
+        <input class="grow" type="checkbox" id="lunch" v-model="item.lunch" />
       </label>
       <label for="dinner">
         Dinner
-        <input type="checkbox" id="dinner" v-model="item.dinner" />
+        <input class="grow" type="checkbox" id="dinner" v-model="item.dinner" />
       </label>
     </span>
     <span class="field">
       <label for="job">Job</label>
       <!-- TODO: Show job description/client in uneditable part of field -->
       <input
+        class="grow"
         type="text"
         name="job"
         placeholder="Project or Proposal number"
@@ -145,6 +146,7 @@
       "
     >
       <input
+        class="grow"
         type="text"
         name="po"
         placeholder="Purchase Order Number"
@@ -154,6 +156,7 @@
 
     <span class="field" v-if="item.paymentType !== 'Meals'">
       <input
+        class="grow"
         type="text"
         name="description"
         v-bind:placeholder="
@@ -176,7 +179,12 @@
         </router-link>
       </span>
       <span v-else>
-        <input type="file" name="attachment" v-on:change="updateAttachment" />
+        <input
+          class="grow"
+          type="file"
+          name="attachment"
+          v-on:change="updateAttachment"
+        />
         <span v-if="attachmentPreviouslyUploaded" class="attention">
           Previously uploaded
         </span>
@@ -188,6 +196,7 @@
 
     <span class="field" v-if="item.paymentType === 'Mileage'">
       <input
+        class="grow"
         type="number"
         name="distance"
         v-model.number="item.distance"

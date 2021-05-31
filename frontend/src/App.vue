@@ -300,8 +300,7 @@ button {
   background: rgb(255, 204, 0);
 }
 #editor .calendar-input,
-#editor .field input,
-#editor .field select {
+#editor .field .grow {
   flex-grow: 1;
   font-size: 1em;
   border-radius: 0;
@@ -309,6 +308,15 @@ button {
   -webkit-appearance: none;
   border-bottom: 1px solid #e6e6e6;
 }
+#editor .field .jobNumberInput {
+  width: 5em;
+  font-size: 1em;
+  border-radius: 0;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  border-bottom: 1px solid #e6e6e6;
+}
+
 #editor .field input[type="checkbox"] {
   -moz-appearance: checkbox;
   -webkit-appearance: checkbox;

@@ -7,6 +7,7 @@
     <span class="field">
       <label for="tbtePayrollId">Payroll ID</label>
       <input
+        class="grow"
         type="number"
         name="tbtePayrollId"
         v-model.number="item.tbtePayrollId"
@@ -14,15 +15,21 @@
     </span>
     <span class="field">
       <label for="salary">Salary</label>
-      <input type="checkbox" name="salary" v-model="item.salary" />
+      <input class="grow" type="checkbox" name="salary" v-model="item.salary" />
     </span>
     <span class="field">
       <label for="offRotation">Off Rotation</label>
-      <input type="checkbox" name="offRotation" v-model="item.offRotation" />
+      <input
+        class="grow"
+        type="checkbox"
+        name="offRotation"
+        v-model="item.offRotation"
+      />
     </span>
     <span class="field">
       <label for="timeSheetExpected">Time Sheet Expected</label>
       <input
+        class="grow"
         type="checkbox"
         name="timeSheetExpected"
         v-model="item.timeSheetExpected"
@@ -30,15 +37,20 @@
     </span>
     <span class="field">
       <label for="displayName">Name</label>
-      <input type="text" name="displayName" v-model="item.displayName" />
+      <input
+        class="grow"
+        type="text"
+        name="displayName"
+        v-model="item.displayName"
+      />
     </span>
     <span class="field">
       <label for="email">Email</label>
-      <input type="text" name="email" v-model="item.email" />
+      <input class="grow" type="text" name="email" v-model="item.email" />
     </span>
     <span class="field">
       <label for="manager">Manager</label>
-      <select name="manager" v-model="item.managerUid">
+      <select class="grow" name="manager" v-model="item.managerUid">
         <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
           {{ m.displayName }}
         </option>
@@ -63,7 +75,11 @@
     </span>
     <span class="field">
       <label for="defaultDivision">Default Division</label>
-      <select name="defaultDivision" v-model="item.defaultDivision">
+      <select
+        class="grow"
+        name="defaultDivision"
+        v-model="item.defaultDivision"
+      >
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
           {{ d.name }}
         </option>

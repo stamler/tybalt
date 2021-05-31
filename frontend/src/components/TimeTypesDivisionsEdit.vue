@@ -3,15 +3,15 @@
     <span class="field">
       <label for="code">Code</label>
       <span v-if="editing">{{ id }}</span>
-      <input v-else type="text" name="code" v-model="item.id" />
+      <input class="grow" v-else type="text" name="code" v-model="item.id" />
     </span>
     <span class="field">
       <label for="name">Name</label>
-      <input type="text" name="name" v-model="item.name" />
+      <input class="grow" type="text" name="name" v-model="item.name" />
     </span>
     <span class="field">
       <label for="description">Description</label>
-      <input type="text" name="code" v-model="item.description" />
+      <input class="grow" type="text" name="code" v-model="item.description" />
     </span>
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>

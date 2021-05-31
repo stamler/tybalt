@@ -1,7 +1,7 @@
 <template>
   <form id="editor">
     <span class="field" v-if="collection === 'TimeAmendments'">
-      <select name="uid" v-model="item.uid">
+      <select class="grow" name="uid" v-model="item.uid">
         <option disabled selected value="">-- choose an employee --</option>
         <option v-for="p in profiles" :value="p.id" v-bind:key="p.id">
           {{ p.displayName }}
@@ -21,7 +21,7 @@
       />
     </span>
     <span class="field">
-      <select name="timetype" v-model="item.timetype">
+      <select class="grow" name="timetype" v-model="item.timetype">
         <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
           {{ t.name }}
         </option>
@@ -32,7 +32,7 @@
     </span>
 
     <span class="field" v-if="['R', 'RT'].includes(item.timetype)">
-      <select name="division" v-model="item.division">
+      <select class="grow" name="division" v-model="item.division">
         <option disabled selected value="">-- choose division --</option>
         <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
           {{ d.id }} - {{ d.name }}
@@ -49,12 +49,11 @@
       "
     >
       <label for="job">Job</label>
-      <!-- TODO: Show job description/client in uneditable part of field -->
       <input
         type="text"
         name="job"
         class="jobNumberInput"
-        placeholder="Project or Proposal number"
+        placeholder="Proj/Prop"
         v-bind:value="item.job"
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
@@ -87,6 +86,7 @@
     >
       <label for="jobHours">Chargeable Hours</label>
       <input
+        class="grow"
         type="number"
         name="jobHours"
         v-model.number="item.jobHours"
@@ -108,6 +108,7 @@
         }}Hours
       </label>
       <input
+        class="grow"
         type="number"
         name="hours"
         v-model.number="item.hours"
@@ -123,6 +124,7 @@
     >
       <label for="mealsHours">Meals Hours</label>
       <input
+        class="grow"
         type="number"
         name="mealsHours"
         v-model.number="item.mealsHours"
@@ -143,6 +145,7 @@
     >
       <label for="workrecord">Work Record</label>
       <input
+        class="grow"
         type="text"
         name="workrecord"
         placeholder="Work Record"
@@ -155,6 +158,7 @@
       v-if="!['OR', 'OW', 'OTO', 'RB'].includes(item.timetype)"
     >
       <input
+        class="grow"
         type="text"
         name="workDescription"
         placeholder="Work Description (5 char minimum)"
@@ -163,6 +167,7 @@
     </span>
     <span class="field" v-if="item.timetype === 'OTO'">
       $<input
+        class="grow"
         type="number"
         name="payoutRequestAmount"
         placeholder="Amount"
@@ -170,23 +175,6 @@
         step="0.01"
       />
     </span>
-
-    <!-- This field is for testing only since weekEnding should be 
-    automatically assigned with a trigger cloud function -->
-    <!--
-    <span class="field">
-      <datepicker
-        name="datepicker"
-        input-class="calendar-input"
-        wrapper-class="calendar-wrapper"
-        placeholder="WEEK ENDING FOR TESTING"
-        :inline="false"
-        :disabledDates="dps.disabled"
-        :highlighted="dps.highlighted"
-        v-model="item.weekEnding"
-      />
-    </span>
-      -->
 
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>
@@ -506,10 +494,6 @@ export default Vue.extend({
 });
 </script>
 <style>
-.jobNumberInput {
-  flex-shrink: 0;
-  width: 5em;
-}
 #suggestions {
   padding: 0.25em;
   border-radius: 0em 0em 1em 1em;
