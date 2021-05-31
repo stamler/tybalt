@@ -79,6 +79,14 @@
         <!-- The template for users -->
         <template v-if="approved === undefined && commitqueue === undefined">
           <template v-if="item.submitted === false">
+            <router-link
+              v-if="!item.attachment"
+              :to="{ name: 'Expenses' }"
+              v-on:click.native="copyEntry(item, collectionObject)"
+              title="copy to tomorrow"
+            >
+              <copy-icon></copy-icon>
+            </router-link>
             <router-link to="#" v-on:click.native="del(item, collectionObject)">
               <x-circle-icon></x-circle-icon>
             </router-link>
@@ -175,6 +183,7 @@ import mixins from "./mixins";
 import { format } from "date-fns";
 import {
   EditIcon,
+  CopyIcon,
   LockIcon,
   DownloadIcon,
   SendIcon,
@@ -191,6 +200,7 @@ export default Vue.extend({
   components: {
     Modal,
     EditIcon,
+    CopyIcon,
     LockIcon,
     SendIcon,
     DownloadIcon,

@@ -80,7 +80,7 @@
           <template v-else>
             <router-link
               :to="{ name: 'Time Entries List' }"
-              v-on:click.native="copyEntry(item)"
+              v-on:click.native="copyEntry(item, collectionObject)"
               title="copy to tomorrow"
             >
               <copy-icon></copy-icon>
@@ -166,7 +166,7 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import { format, addDays, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import {
   EditIcon,
   XCircleIcon,
@@ -255,28 +255,6 @@ export default mixins.extend({
         return true;
       }
       return false;
-    },
-    copyEntry(item: firebase.firestore.DocumentData) {
-      if (confirm("Want to copy this entry to tomorrow?")) {
-        const { date, ...newItem } = item;
-        newItem.date = addDays(item.date.toDate(), 1);
-        store.commit("startTask", {
-          id: `copy${item.id}`,
-          message: "copying",
-        });
-        if (this.collectionObject === null) {
-          throw "There is no valid collection object";
-        }
-        return this.collectionObject
-          .add(newItem)
-          .then(() => {
-            store.commit("endTask", { id: `copy${item.id}` });
-          })
-          .catch((error) => {
-            store.commit("endTask", { id: `copy${item.id}` });
-            alert(`Error copying: ${error.message}`);
-          });
-      }
     },
     commit(item: firebase.firestore.DocumentData) {
       const commitTimeAmendment = firebase

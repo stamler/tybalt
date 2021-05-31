@@ -2,7 +2,7 @@ import Vue from "vue";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
-import { format, subDays, differenceInDays } from "date-fns";
+import { format, subDays, addDays, differenceInDays } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import {
   TimeSheet,
@@ -27,6 +27,31 @@ export default Vue.extend({
     ...mapState(["claims", "user"]),
   },
   methods: {
+    copyEntry(
+      item: firebase.firestore.DocumentData,
+      collection: firebase.firestore.CollectionReference
+    ) {
+      if (confirm("Want to copy this entry to tomorrow?")) {
+        const { date, ...newItem } = item;
+        newItem.date = addDays(item.date.toDate(), 1);
+        store.commit("startTask", {
+          id: `copy${item.id}`,
+          message: "copying",
+        });
+        if (collection === null) {
+          throw "There is no valid collection object";
+        }
+        return collection
+          .add(newItem)
+          .then(() => {
+            store.commit("endTask", { id: `copy${item.id}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `copy${item.id}` });
+            alert(`Error copying: ${error.message}`);
+          });
+      }
+    },
     calculatedOntarioHST(total: number): number {
       return Math.round((total * 1300) / 113) / 100;
     },

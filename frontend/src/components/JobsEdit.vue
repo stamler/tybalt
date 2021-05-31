@@ -35,8 +35,8 @@
       <input class="grow" type="text" name="proposal" v-model="item.proposal" />
     </span>
     <span class="field">
-      <label class="grow" for="description">Description</label>
-      <input type="text" name="code" v-model="item.description" />
+      <label for="description">Description</label>
+      <input class="grow" type="text" name="code" v-model="item.description" />
     </span>
     <span class="field">
       <select class="grow" name="status" v-model="item.status">
