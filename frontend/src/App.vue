@@ -188,6 +188,10 @@ body,
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
 }
+/* week2 gets different background colour */
+.week2 {
+  background-color: beige;
+}
 .listsummary {
   border-bottom: none;
   margin-bottom: 1em;

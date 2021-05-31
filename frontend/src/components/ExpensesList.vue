@@ -1,7 +1,14 @@
 <template>
   <div id="list">
     <modal ref="rejectModal" collection="Expenses" />
-    <div class="listentry" v-for="item in items" v-bind:key="item.id">
+    <div
+      class="listentry"
+      v-for="item in items"
+      v-bind:key="item.id"
+      v-bind:class="{
+        week2: isPayrollWeek2(item.committedWeekEnding.toDate()),
+      }"
+    >
       <div class="anchorbox">
         {{ item.date.toDate() | shortDate }}
       </div>

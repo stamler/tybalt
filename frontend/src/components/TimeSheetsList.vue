@@ -313,9 +313,3 @@ export default Vue.extend({
   },
 });
 </script>
-<style scoped>
-/* week2 gets different background colour */
-.week2 {
-  background-color: beige;
-}
-</style>
