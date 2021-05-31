@@ -60,7 +60,7 @@
         v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
         v-on:input="updateJobCandidates"
       />
-      <span>{{ item.jobDescription }}</span>
+      <span class="jobDescription">{{ item.jobDescription }}</span>
     </span>
     <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
       <ul>

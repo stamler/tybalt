@@ -316,7 +316,11 @@ button {
   -webkit-appearance: none;
   border-bottom: 1px solid #e6e6e6;
 }
-
+#editor .field .jobDescription {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 #editor .field input[type="checkbox"] {
   -moz-appearance: checkbox;
   -webkit-appearance: checkbox;
