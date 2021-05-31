@@ -111,18 +111,18 @@
     </span>
     <span class="field">
       <label for="job">Job</label>
-      <!-- TODO: Show job description/client in uneditable part of field -->
       <input
-        class="grow"
+        class="jobNumberInput"
         type="text"
         name="job"
-        placeholder="Project or Proposal number"
+        placeholder="Proj/Prop"
         v-bind:value="item.job"
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
         v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
         v-on:input="updateJobCandidates"
       />
+      <span class="jobDescription">{{ item.jobDescription }}</span>
     </span>
     <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
       <ul>
