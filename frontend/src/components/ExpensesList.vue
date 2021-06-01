@@ -5,17 +5,16 @@
       v-for="(expenses, weekEnding) in processedItems"
       v-bind:key="weekEnding"
     >
-      <!-- There must be a first item so get committedWeekEnding from it -->
       <span class="listheader">
         Week Ending
-        {{ nextSaturday(expenses[0].date.toDate()) | shortDate }}
+        {{ new Date(parseInt(weekEnding, 10)) | shortDate }}
       </span>
       <div
         class="listentry"
         v-for="item in expenses"
         v-bind:key="item.id"
         v-bind:class="{
-          week2: isPayrollWeek2(item.committedWeekEnding.toDate()),
+          week2: isPayrollWeek2(new Date(parseInt(weekEnding, 10))),
         }"
       >
         <div class="anchorbox">
@@ -208,7 +207,9 @@ export default mixins.extend({
   props: ["approved", "collection"],
   computed: {
     processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
-      return _.groupBy(this.items, (x) => this.nextSaturday(x.date.toDate()));
+      return _.groupBy(this.items, (x) =>
+        this.nextSaturday(x.date.toDate()).getTime()
+      );
     },
   },
   components: {
@@ -230,7 +231,7 @@ export default mixins.extend({
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [],
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   methods: {
