@@ -3,7 +3,7 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
 import { format, subDays, addDays, differenceInDays } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import {
   TimeSheet,
   Amendment,
@@ -30,6 +30,45 @@ export default Vue.extend({
     ...mapState(["claims", "user"]),
   },
   methods: {
+    // return the same time 7 days ago in the given time zone
+    thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
+      const zone_time = utcToZonedTime(datetime, timezone);
+      return zonedTimeToUtc(addDays(zone_time, 7), timezone);
+    },
+    nextSaturday(date: Date): Date {
+      let calculatedSaturday;
+      const zonedTime = utcToZonedTime(date, "America/Thunder_Bay");
+      if (zonedTime.getDay() === 6) {
+        calculatedSaturday = zonedTimeToUtc(
+          new Date(
+            zonedTime.getFullYear(),
+            zonedTime.getMonth(),
+            zonedTime.getDate(),
+            23,
+            59,
+            59,
+            999
+          ),
+          "America/Thunder_Bay"
+        );
+      } else {
+        const nextsat = new Date(zonedTime.getTime());
+        nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
+        calculatedSaturday = zonedTimeToUtc(
+          new Date(
+            nextsat.getFullYear(),
+            nextsat.getMonth(),
+            nextsat.getDate(),
+            23,
+            59,
+            59,
+            999
+          ),
+          "America/Thunder_Bay"
+        );
+      }
+      return calculatedSaturday;
+    },
     copyEntry(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference
