@@ -29,7 +29,7 @@ export const scheduledSubmitReminder = functions.pubsub
             `Hi ${ profile.get("givenName")},\n\n` +
             `Your time sheet for the week ending ${
               format(utcToZonedTime(lastWeek,"America/Thunder_Bay"), "MMMM d")
-            } is due. Please submit one as soon as possible.\n\n` +
+            } is due. Please submit one as soon as possible by visiting https://tybalt.tbte.ca/time/entries/list\n\n` +
             "- Tybalt",
         },
       });
@@ -165,7 +165,7 @@ export async function emailOnReject(
         `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
         afterData.rejectorName }. The following reason was provided: \n\n"${
         afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
-        ` soon as possible.\n\n- Tybalt`,
+        ` soon as possible by visiting https://tybalt.tbte.ca/time/sheets/list\n\n- Tybalt`,
       },
     });
 
@@ -208,7 +208,7 @@ export async function emailOnReject(
         `Your expense with payment type ${afterData.paymentType} dated ${
         expenseDateString } was rejected by ${ afterData.rejectorName }. ` +
         `The following reason was provided: \n\n"${
-        afterData.rejectionReason }"\n\nPlease edit your expense as required.` +
+        afterData.rejectionReason }"\n\nPlease edit your expense as required by visiting https://tybalt.tbte.ca/expense/entries/list` +
         "\n\n- Tybalt",
       },
     });
