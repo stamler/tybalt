@@ -37,25 +37,26 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(entry, tsId) in this.item.pending" v-bind:key="tsId">
+              <tr v-for="tsId of pendingTsIdsSortedByName" v-bind:key="tsId">
                 <td>
                   <router-link
                     v-bind:to="{
                       name: 'Time Sheet Details',
                       params: { id: tsId },
                     }"
-                    >{{ entry.displayName }}</router-link
                   >
+                    {{ item.pending[tsId].displayName }}
+                  </router-link>
                 </td>
-                <td>{{ entry.hoursWorked }}</td>
-                <td>{{ entry.OH }}</td>
-                <td>{{ entry.OP }}</td>
-                <td>{{ entry.OV }}</td>
-                <td>{{ entry.OS }}</td>
-                <td>{{ entry.RB }}</td>
-                <td>{{ entry.payoutRequest }}</td>
-                <td>{{ entry.OB }}</td>
-                <td>{{ entry.offRotationDaysTally }}</td>
+                <td>{{ item.pending[tsId].hoursWorked }}</td>
+                <td>{{ item.pending[tsId].OH }}</td>
+                <td>{{ item.pending[tsId].OP }}</td>
+                <td>{{ item.pending[tsId].OV }}</td>
+                <td>{{ item.pending[tsId].OS }}</td>
+                <td>{{ item.pending[tsId].RB }}</td>
+                <td>{{ item.pending[tsId].payoutRequest }}</td>
+                <td>{{ item.pending[tsId].OB }}</td>
+                <td>{{ item.pending[tsId].offRotationDaysTally }}</td>
                 <td>
                   <router-link
                     v-bind:to="{
@@ -163,6 +164,15 @@ export default mixins.extend({
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
+    pendingTsIdsSortedByName(): string[] {
+      const pending = this?.item?.pending;
+      if (pending === undefined) {
+        return [];
+      }
+      return Object.keys(pending).sort((a, b) =>
+        pending[a].displayName.localeCompare(pending[b].displayName)
+      );
+    },
     submittedProfiles(): firebase.firestore.DocumentData[] {
       if (this?.item === undefined) {
         return [];
