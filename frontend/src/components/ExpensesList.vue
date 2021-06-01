@@ -14,7 +14,9 @@
         v-for="item in expenses"
         v-bind:key="item.id"
         v-bind:class="{
-          week2: isPayrollWeek2(new Date(parseInt(weekEnding, 10))),
+          reimbursable: ['Mileage', 'Allowance', 'Expense'].includes(
+            item.paymentType
+          ),
         }"
       >
         <div class="anchorbox">
@@ -97,6 +99,31 @@
           </div>
         </div>
         <div class="rowactionsbox">
+          <template
+            v-if="
+              item.committed === true &&
+              ['Mileage', 'Allowance', 'Expense'].includes(item.paymentType)
+            "
+          >
+            <span
+              v-if="
+                item.payPeriodEnding &&
+                item.payPeriodEnding.toDate().getTime() >
+                  originalPayPeriod(item)
+              "
+              v-bind:title="lateCommitMessage(item)"
+              class="attention"
+            >
+              <clock-icon></clock-icon>
+            </span>
+            <span
+              v-else
+              style="color: rgba(16, 200, 214, 1)"
+              v-bind:title="commitMessage(item)"
+            >
+              <dollar-sign-icon></dollar-sign-icon>
+            </span>
+          </template>
           <!-- The template for users -->
           <template v-if="approved === undefined">
             <template v-if="item.submitted === false">
@@ -194,6 +221,8 @@ import _ from "lodash";
 import {
   EditIcon,
   CopyIcon,
+  ClockIcon,
+  DollarSignIcon,
   DownloadIcon,
   SendIcon,
   RewindIcon,
@@ -216,7 +245,9 @@ export default mixins.extend({
     Modal,
     EditIcon,
     CopyIcon,
+    ClockIcon,
     SendIcon,
+    DollarSignIcon,
     DownloadIcon,
     RewindIcon,
     CheckCircleIcon,
@@ -235,6 +266,33 @@ export default mixins.extend({
     };
   },
   methods: {
+    commitMessage(item: firebase.firestore.DocumentData) {
+      if (item.payPeriodEnding) {
+        return `Reimbursed in pay period ending ${format(
+          item.payPeriodEnding.toDate(),
+          "MMM dd"
+        )}`;
+      } else {
+        return "Reimbused on payroll";
+      }
+    },
+    lateCommitMessage(item: firebase.firestore.DocumentData) {
+      return `Committed ${format(
+        item.commitTime.toDate(),
+        "MMM dd"
+      )}, reimbursed in pay period ending ${format(
+        item.payPeriodEnding.toDate(),
+        "MMM dd"
+      )}`;
+    },
+    originalPayPeriod(item: firebase.firestore.DocumentData) {
+      const date = this.nextSaturday(item.date.toDate());
+      if (this.isPayrollWeek2(date)) {
+        return date;
+      } else {
+        return this.thisTimeNextWeekInTimeZone(date, "America/Thunder_Bay");
+      }
+    },
     commitItem(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference
@@ -294,3 +352,8 @@ export default mixins.extend({
   },
 });
 </script>
+<style scoped>
+.reimbursable {
+  background-color: rgb(232, 255, 232);
+}
+</style>

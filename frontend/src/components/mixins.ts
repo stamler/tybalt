@@ -30,6 +30,11 @@ export default Vue.extend({
     ...mapState(["claims", "user"]),
   },
   methods: {
+    // return the same time 7 days ago in the given time zone
+    thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
+      const zone_time = utcToZonedTime(datetime, timezone);
+      return zonedTimeToUtc(addDays(zone_time, 7), timezone);
+    },
     nextSaturday(date: Date): Date {
       let calculatedSaturday;
       const zonedTime = utcToZonedTime(date, "America/Thunder_Bay");
