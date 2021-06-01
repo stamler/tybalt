@@ -239,15 +239,18 @@ export async function tallyAndValidate(
   }
 
   // require salaried employees to have at least 40 hours on a timesheet
+  const bypass40hour = profile.get("skipMinTimeCheckOnNextBundle");
   const offRotationHours = offRotationDates.length * 8;
-  if (
-    profile.get("salary") === true &&
-    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
-  ) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "Salaried staff must have a minimum of 40 hours on each time sheet."
-    )
+  if (bypass40hour !== true) {
+    if (
+      profile.get("salary") === true &&
+      workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
+    ) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Salaried staff must have a minimum of 40 hours on each time sheet."
+      )
+    }
   }
 
   // prevent salaried employees from claiming sick time
@@ -303,6 +306,7 @@ export async function tallyAndValidate(
   }
 
   return {
+    bypass40hour, // remove this from the result before adding to database
     uid: auth.uid,
     surname: profile.get("surname"),
     givenName: profile.get("givenName"),

@@ -36,6 +36,17 @@
       />
     </span>
     <span class="field">
+      <label for="skipMinTimeCheckOnNextBundle">
+        Skip 40-hour check next bundle
+      </label>
+      <input
+        class="grow"
+        type="checkbox"
+        name="skipMinTimeCheckOnNextBundle"
+        v-model="item.skipMinTimeCheckOnNextBundle"
+      />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input
         class="grow"
@@ -192,6 +203,7 @@ export default Vue.extend({
           customClaims: { [x: string]: boolean };
           defaultDivision: string;
           salary: boolean;
+          skipMinTimeCheckOnNextBundle?: boolean;
           offRotation?: boolean;
           timeSheetExpected: boolean;
           tbtePayrollId?: number;
@@ -206,6 +218,9 @@ export default Vue.extend({
           timeSheetExpected: this.item.timeSheetExpected ?? true,
           defaultDivision: this.item.defaultDivision,
         };
+        if (this.item.skipMinTimeCheckOnNextBundle) {
+          obj.skipMinTimeCheckOnNextBundle = this.item.skipMinTimeCheckOnNextBundle;
+        }
         if (this.item.tbtePayrollId) {
           obj.tbtePayrollId = this.item.tbtePayrollId;
         }

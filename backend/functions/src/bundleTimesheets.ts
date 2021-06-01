@@ -129,6 +129,12 @@ export async function bundleTimesheet(
   if (claims && claims["tapr"] === true) {
     // The profile contains a valid manager, build the TimeSheet document
     const tsRef = db.collection("TimeSheets").doc();
+    if (timesheetData.bypass40hour === true) {
+      // the flag was previously set, clear it
+      batch.update(profile.ref,{ skipMinTimeCheckOnNextBundle: admin.firestore.FieldValue.delete() })
+    }
+    // delete the flag from the return value of tallyAndValidate(), the new timesheet
+    delete timesheetData.bypass40hour;
     batch.set(tsRef, timesheetData);
     return batch.commit();
   } else {

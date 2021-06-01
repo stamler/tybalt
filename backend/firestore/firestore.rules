@@ -326,7 +326,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
+          "managerUid","displayName","email","customClaims", "skipMinTimeCheckOnNextBundle", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
         ]) &&
         (
           newDoc().offRotation is bool || isMissing("offRotation")
@@ -339,6 +339,9 @@ service cloud.firestore {
         ) && 
         (
           newDoc().personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
+        ) &&
+        (
+          newDoc().skipMinTimeCheckOnNextBundle is bool || isMissing("skipMinTimeCheckOnNextBundle")
         ) &&
         newDoc().salary is bool &&
         newDoc().timeSheetExpected is bool &&
