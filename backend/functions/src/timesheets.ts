@@ -237,6 +237,10 @@ export const updateTimeTracking = functions.firestore
           [`timeSheets.${change.after.ref.id}`]: buildPendingObj(afterData),
         }
       );
+    } else if (!_.isEqual(afterData?.viewerIds, beforeData?.viewerIds)) {
+      // viewerIds changed from UI, so that must have been the only change
+      // per the firestore rules. Do nothing to time tracking.
+      return ;
     } else {
       // rejected or deleted or manually unapproved (without rejection)
       // remove the TimeSheet from pending
