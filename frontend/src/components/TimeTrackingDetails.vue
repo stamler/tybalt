@@ -110,6 +110,16 @@
           >
             {{ profile.surname }}, {{ profile.givenName }}
           </a>
+          <router-link
+            v-bind:to="{
+              name: 'Time Tracking Details',
+              params: { id },
+            }"
+            v-bind:title="`Ignore ${profile.displayName} this week`"
+            v-on:click.native="ignore(profile.id)"
+          >
+            <user-minus-icon></user-minus-icon>
+          </router-link>
         </p>
         <br />
       </div>
@@ -127,6 +137,25 @@
         >
           {{ profile.surname }}, {{ profile.givenName }}<br />
         </router-link>
+        <br />
+      </div>
+
+      <!-- Show users marked as ignore for this week -->
+      <div v-if="ignoredProfiles.length > 0">
+        <h5>Ignored this week</h5>
+        <p v-for="profile in ignoredProfiles" v-bind:key="profile.id">
+          {{ profile.surname }}, {{ profile.givenName }}
+          <router-link
+            v-bind:to="{
+              name: 'Time Tracking Details',
+              params: { id },
+            }"
+            v-bind:title="`Expect ${profile.displayName} this week`"
+            v-on:click.native="restore(profile.id)"
+          >
+            <user-plus-icon></user-plus-icon>
+          </router-link>
+        </p>
         <br />
       </div>
 
@@ -151,7 +180,12 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
-import { LockIcon, XCircleIcon } from "vue-feather-icons";
+import {
+  LockIcon,
+  XCircleIcon,
+  UserMinusIcon,
+  UserPlusIcon,
+} from "vue-feather-icons";
 import _ from "lodash";
 
 const db = firebase.firestore();
@@ -163,7 +197,7 @@ interface TimeSheetTrackingPayload {
 }
 
 export default mixins.extend({
-  components: { XCircleIcon, LockIcon, Modal },
+  components: { XCircleIcon, LockIcon, UserMinusIcon, UserPlusIcon, Modal },
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
@@ -194,6 +228,18 @@ export default mixins.extend({
         .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
         .sort((a, b) => a.surname.localeCompare(b.surname));
     },
+    ignoredProfiles(): firebase.firestore.DocumentData[] {
+      if (this?.item === undefined) {
+        return [];
+      }
+      return this.profiles
+        .filter((p) => !this.pendingUserKeys.includes(p.id))
+        .filter((l) => !this.lockedUserKeys.includes(l.id))
+        .filter((s) => !this.submittedUserKeys.includes(s.id))
+        .filter((t) => this.item?.notMissingUids?.includes(t.id))
+        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a, b) => a.surname.localeCompare(b.surname));
+    },
     missingProfiles(): firebase.firestore.DocumentData[] {
       if (this?.item === undefined) {
         return [];
@@ -202,6 +248,7 @@ export default mixins.extend({
         .filter((p) => !this.pendingUserKeys.includes(p.id))
         .filter((l) => !this.lockedUserKeys.includes(l.id))
         .filter((s) => !this.submittedUserKeys.includes(s.id))
+        .filter((t) => !this.item?.notMissingUids?.includes(t.id))
         .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
         .sort((a, b) => a.surname.localeCompare(b.surname));
     },
@@ -274,6 +321,34 @@ export default mixins.extend({
     });
   },
   methods: {
+    ignore(uid: string) {
+      // add uid to notMissingUids property
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      return this.collectionObject
+        .doc(this.id)
+        .update({
+          notMissingUids: firebase.firestore.FieldValue.arrayUnion(uid),
+        })
+        .catch((error) => {
+          alert(`Error ignoring ${uid}: ${error.message}`);
+        });
+    },
+    restore(uid: string) {
+      // remove uid from notMissingUids property
+      if (this.collectionObject === null) {
+        throw "There is no valid collection object";
+      }
+      return this.collectionObject
+        .doc(this.id)
+        .update({
+          notMissingUids: firebase.firestore.FieldValue.arrayRemove(uid),
+        })
+        .catch((error) => {
+          alert(`Error restoring ${uid}: ${error.message}`);
+        });
+    },
     tsIdForUid(uid: string, tsObj: Record<string, TimeSheetTrackingPayload>) {
       const keys = Object.keys(_.pickBy(tsObj, (i) => i.uid === uid));
       if (keys.length === 1) {

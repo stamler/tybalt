@@ -463,6 +463,21 @@ service cloud.firestore {
     }
     match /TimeTracking/{entry} {
       allow read: if hasClaim("report") || hasClaim("admin");
+      allow update: if (
+        hasClaim("report") &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["notMissingUids"]) &&
+        newDoc().notMissingUids.size() < 11 &&
+        (newDoc().notMissingUids.size() < 1 || keyInCollection(newDoc().notMissingUids[0],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 2 || keyInCollection(newDoc().notMissingUids[1],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 3 || keyInCollection(newDoc().notMissingUids[2],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 4 || keyInCollection(newDoc().notMissingUids[3],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 5 || keyInCollection(newDoc().notMissingUids[4],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 6 || keyInCollection(newDoc().notMissingUids[5],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 7 || keyInCollection(newDoc().notMissingUids[6],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 8 || keyInCollection(newDoc().notMissingUids[7],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 9 || keyInCollection(newDoc().notMissingUids[8],"Profiles")) &&
+        (newDoc().notMissingUids.size() < 10 || keyInCollection(newDoc().notMissingUids[9],"Profiles"))
+      );
     }
     match /ExpenseTracking/{entry} {
       allow read: if hasClaim("report") || hasClaim("admin");

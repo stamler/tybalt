@@ -6,6 +6,7 @@ const projectId = "test-app-id";
 
 const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7), salary: false, tbtePayrollId: 28 };
 const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
+const chuck = { displayName: "Chuck Example", email: "chuck@example.com", timeSheetExpected: true };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
 const profiles = adminDb.collection("Profiles");
@@ -134,6 +135,38 @@ describe("Firestore Rules", function () {
     });
     ["Computers", "Config", "ProfileSecrets", "RawLogins"].forEach((collection) => {
       denyAdminWrite(collection);
+    });
+  });
+
+  describe("TimeTracking", () => {
+    beforeEach("reset data", async () => {
+      await firebase.clearFirestoreData({ projectId });
+      await profiles.doc("alice").set(alice);
+      await profiles.doc("bob").set(bob);
+    });
+
+    it("allows report claim holders (report) to mark uids as not missing for this date range", async () => {
+      await adminDb.collection("TimeTracking").doc("asdf1").set({ created: new Date("2021-01-08T13:00:00.000-05:00"), weekEnding: new Date("2021-01-09T23:59:59.999-05:00"), pending: {}, submitted: {}, timeSheets: {} });
+      await profiles.doc("chuck").set(chuck);
+      await profiles.doc("fred").set(chuck);
+      await profiles.doc("lucy").set(chuck);
+      await profiles.doc("linus").set(chuck);
+      await profiles.doc("marcie").set(chuck);
+      await profiles.doc("kyle").set(chuck);
+      await profiles.doc("persephone").set(chuck);
+      await profiles.doc("olaf").set(chuck);
+      await profiles.doc("sven").set(chuck);
+      await profiles.doc("lars").set(chuck);
+      await profiles.doc("marlies").set(chuck);
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...bob, report: true } }).firestore();
+      const doc = db.collection("TimeTracking").doc("asdf1");
+      await firebase.assertFails(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayUnion("fidel")}));
+      await firebase.assertSucceeds(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayUnion("chuck")}));
+      await firebase.assertSucceeds(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayRemove("chuck")}));
+      await firebase.assertSucceeds(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayUnion("chuck", "fred", "lucy", "linus", "marcie", "kyle", "persephone", "olaf", "sven", "lars")}));
+      await firebase.assertSucceeds(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayUnion("chuck", "fred", "lucy", "linus", "marcie", "kyle", "persephone", "olaf", "sven", "lars")}));
+      // can't accept more than 10
+      await firebase.assertFails(doc.update({ notMissingUids: firebase.firestore.FieldValue.arrayUnion("chuck", "fred", "lucy", "linus", "marcie", "kyle", "persephone", "olaf", "sven", "lars", "marlies")}));
     });
   });
 
