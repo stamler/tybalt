@@ -36,6 +36,17 @@
       />
     </span>
     <span class="field">
+      <label for="allowPersonalReimbursement">
+        Allow Personal Reimbursement
+      </label>
+      <input
+        class="grow"
+        type="checkbox"
+        name="allowPersonalReimbursement"
+        v-model="item.allowPersonalReimbursement"
+      />
+    </span>
+    <span class="field">
       <label for="skipMinTimeCheckOnNextBundle">
         Skip 40-hour check next bundle
       </label>
@@ -216,6 +227,7 @@ export default Vue.extend({
           doNotAcceptSubmissions?: boolean;
           offRotation?: boolean;
           timeSheetExpected: boolean;
+          allowPersonalReimbursement?: boolean;
           tbtePayrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
@@ -228,6 +240,9 @@ export default Vue.extend({
           timeSheetExpected: this.item.timeSheetExpected ?? true,
           defaultDivision: this.item.defaultDivision,
         };
+        if (typeof this.item.allowPersonalReimbursement === "boolean") {
+          obj.allowPersonalReimbursement = this.item.allowPersonalReimbursement;
+        }
         if (typeof this.item.doNotAcceptSubmissions === "boolean") {
           obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
         }

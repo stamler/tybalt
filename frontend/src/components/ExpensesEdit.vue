@@ -31,6 +31,9 @@
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">Personal Mileage</option>
+        <option v-if="allowPersonalReimbursement" value="PersonalReimbursement">
+          Personal Reimbursement
+        </option>
       </select>
     </span>
     <span v-if="mileageTokensInDescWhileOtherPaymentType" class="attention">
@@ -72,7 +75,11 @@
 
     <span
       class="field"
-      v-if="!['Mileage', 'Allowance'].includes(item.paymentType)"
+      v-if="
+        !['Mileage', 'Allowance', 'PersonalReimbursement'].includes(
+          item.paymentType
+        )
+      "
     >
       <label for="vendorName">Vendor Name</label>
       <input
@@ -124,7 +131,10 @@
         />
       </label>
     </span>
-    <span class="field">
+    <span
+      class="field"
+      v-if="!['PersonalReimbursement'].includes(item.paymentType)"
+    >
       <label for="job">Job</label>
       <input
         class="jobNumberInput"
@@ -155,9 +165,13 @@
     <span
       class="field"
       v-if="
-        !['Mileage', 'FuelOnAccount', 'FuelCard', 'Allowance'].includes(
-          item.paymentType
-        )
+        ![
+          'Mileage',
+          'FuelOnAccount',
+          'FuelCard',
+          'Allowance',
+          'PersonalReimbursement',
+        ].includes(item.paymentType)
       "
     >
       <input
@@ -185,7 +199,11 @@
 
     <span
       class="field"
-      v-if="!['Mileage', 'Allowance'].includes(item.paymentType)"
+      v-if="
+        !['Mileage', 'Allowance', 'PersonalReimbursement'].includes(
+          item.paymentType
+        )
+      "
     >
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
@@ -273,6 +291,7 @@ export default mixins.extend({
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
       profile: {} as firebase.firestore.DocumentData,
+      allowPersonalReimbursement: false,
       //expensetypes: [] as firebase.firestore.DocumentData[],
       attachmentPreviouslyUploaded: false,
       validAttachmentType: true,
@@ -310,6 +329,15 @@ export default mixins.extend({
     },
     validItem(): boolean {
       // TODO: build out client-side validation
+      const validVendor =
+        (typeof this.item.vendorName === "string" &&
+          this.item.vendorName.length > 2) ||
+        ![
+          "Expense",
+          "FuelCard",
+          "FuelOnAccount",
+          "CorporateCreditCard",
+        ].includes(this.item.paymentType);
       const validDescription =
         (typeof this.item.description === "string" &&
           this.item.description.length > 3) ||
@@ -324,6 +352,7 @@ export default mixins.extend({
       return (
         (validTotal || validDistance) &&
         validDescription &&
+        validVendor &&
         !this.attachmentPreviouslyUploaded &&
         this.validAttachmentType
       );
@@ -409,6 +438,8 @@ export default mixins.extend({
         throw "There is no valid collection object";
       }
       this.profile = await db.collection("Profiles").doc(this.user.uid).get();
+      this.allowPersonalReimbursement =
+        this.profile.get("allowPersonalReimbursement") || false;
       if (id) {
         this.collectionObject
           .doc(id)

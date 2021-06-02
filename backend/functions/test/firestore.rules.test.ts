@@ -419,6 +419,57 @@ describe("Firestore Rules", function () {
         })
       );
     });
+    it("requires allowPersonalReimbursement to be boolean or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          allowPersonalReimbursement: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          allowPersonalReimbursement: false,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          allowPersonalReimbursement: "true",
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+    });
     it("requires personalVehicleInsuranceExpiry to be Timestamp or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
@@ -1246,7 +1297,7 @@ describe("Firestore Rules", function () {
     const expenses = adminDb.collection("Expenses");
     const divisions = adminDb.collection("Divisions");
     const jobs = adminDb.collection("Jobs");
-    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense", attachment: "foo", tbtePayrollId: 28 };
+    const baseline = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), total: 50, description: "Monthly recurring expense", submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Expense", vendorName: "Super vendor", attachment: "foo", tbtePayrollId: 28 };
     const expenseJobProperties = { job: "19-333", jobDescription: "Big job for a client", client: "A special client" };
     const division = { name: "Playtime" };
 
@@ -1467,7 +1518,7 @@ describe("Firestore Rules", function () {
     });
     it("rejects Mileage Expenses where the user doesn't have valid personal car insurance on their profile", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, attachment, total,...missingPaymentTypeAndAttachmentAndTotal } = baseline;
+      const {vendorName, paymentType, attachment, total,...missingPaymentTypeAndAttachmentAndTotal } = baseline;
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndAttachmentAndTotal }));
       const { personalVehicleInsuranceExpiry, ...missingPersonalVehicleInsuranceExpiry } = alice;
       await profiles.doc("alice").set({personalVehicleInsuranceExpiry: subDays(new Date(), 7), ...missingPersonalVehicleInsuranceExpiry});
@@ -1497,9 +1548,23 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", total: 50.5, ...missingPaymentTypeAndTotal}));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", total: 50.5, ...missingPaymentTypeAndTotal}));
     });
-    it("requires attachment if paymentType is either CorporateCreditCard or FuelCard, but FuelOnAccount does not require attachment", async () => {
+    it("requires vendor if paymentType is CorporateCreditCard, FuelCard, Expense, or FuelOnAccount", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const { paymentType, vendorName, ...missingPaymentTypeAndVendor } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "Expense", ...missingPaymentTypeAndVendor}));
+      await firebase.assertSucceeds(doc.set({paymentType: "Expense", vendorName: "foo", ...missingPaymentTypeAndVendor}));
+      await firebase.assertFails(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", ...missingPaymentTypeAndVendor}));
+      await firebase.assertSucceeds(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", vendorName: "foo", ...missingPaymentTypeAndVendor}));
+      await firebase.assertFails(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentTypeAndVendor}));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", vendorName: "foo", ...missingPaymentTypeAndVendor}));
+      await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 10, ...missingPaymentTypeAndVendor}));
+      await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 10, vendorName: "foo", ...missingPaymentTypeAndVendor}));
+    });
+    it("requires attachment if paymentType is CorporateCreditCard, FuelCard or Expense, but FuelOnAccount does not require attachment", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const { paymentType, attachment, ...missingPaymentTypeAndAttachment } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "Expense", ...missingPaymentTypeAndAttachment}));
+      await firebase.assertSucceeds(doc.set({paymentType: "Expense", attachment: "foo", ...missingPaymentTypeAndAttachment}));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentTypeAndAttachment}));
       await firebase.assertFails(doc.set({paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentTypeAndAttachment}));
       await firebase.assertFails(doc.set({paymentType: "CorporateCreditCard", ccLast4digits: "1234", ...missingPaymentTypeAndAttachment}));
@@ -1544,20 +1609,42 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({paymentType: "FuelOnAccount", unitNumber: 0, ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({paymentType: "FuelOnAccount", unitNumber: 25, ...missingPaymentType }));
     });
-    it("requires paymentType to be one of CorporateCreditCard, Expense, Mileage, FuelCard, FuelOnAccount, Allowance", async () => {
+    it("requires paymentType to be one of CorporateCreditCard, Expense, Mileage, FuelCard, FuelOnAccount, Allowance, PersonalReimbursement", async () => {
+      await profiles.doc("alice").update({allowPersonalReimbursement: true});
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, ...missingPaymentType } = baseline;
+      const { paymentType, vendorName, ...missingPaymentType } = baseline;
       const { total, ...missingPaymentTypeAndTotal } = missingPaymentType;
       const { attachment, ...missingPaymentTypeAndTotalAndAttachment } = missingPaymentTypeAndTotal;
       const { description, ...missingPaymentTypeAndTotalAndAttachmentAndDescription } = missingPaymentTypeAndTotalAndAttachment;
       await firebase.assertFails(doc.set(missingPaymentType));
       await firebase.assertFails(doc.set({ paymentType: "DEF", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", ccLast4digits: "1234", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", ccLast4digits: "1234", ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", unitNumber: 1234, ...missingPaymentType }));
-      await firebase.assertSucceeds(doc.set({ paymentType: "Expense", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "CorporateCreditCard", vendorName: "foo", ccLast4digits: "1234", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "FuelCard", vendorName: "foo", ccLast4digits: "1234", ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "FuelOnAccount", vendorName: "foo", unitNumber: 1234, ...missingPaymentType }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "Expense", vendorName: "foo", ...missingPaymentType }));
       await firebase.assertSucceeds(doc.set({ paymentType: "Allowance", breakfast: true, lunch: true, dinner:true, lodging:false, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
+      await firebase.assertSucceeds(doc.set({ paymentType: "PersonalReimbursement", total: 100, ...missingPaymentTypeAndTotalAndAttachment}));
+    });
+    it("requires PersonalReimbursement expenses to have only total and description", async () => {
+      await profiles.doc("alice").update({allowPersonalReimbursement: true});
+      const doc = timeDb.collection("Expenses").doc();
+      const {vendorName, paymentType, attachment, ...prbase } = baseline;
+      await firebase.assertSucceeds(doc.set({paymentType: "PersonalReimbursement",...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", breakfast: true,...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", vendorName: "Some vendor",...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", ccLast4digits: "1234",...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", unitNumber: 12,...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", attachment: "asdf",...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", distance: 5,...prbase}));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", po: "235",...prbase}));
+    });
+    it("requires PersonalReimbursement expenses to have proper flag on profile", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      const {vendorName, paymentType, attachment, ...prbase } = baseline;
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement",...prbase}));
+      await profiles.doc("alice").update({allowPersonalReimbursement: true});
+      await firebase.assertSucceeds(doc.set({paymentType: "PersonalReimbursement",...prbase}));
     });
     it("requires Allowance expenses to have boolean breakfast, lunch, dinner, and lodging properties", async () => {
       const doc = timeDb.collection("Expenses").doc();
@@ -1582,7 +1669,7 @@ describe("Firestore Rules", function () {
     });
     it("requires distance to be integer > 0 if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
+      const { vendorName, paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: -1, ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 0.5, ...missingPaymentTypeAndTotalAndAttachment }));
@@ -1591,7 +1678,7 @@ describe("Firestore Rules", function () {
     });
     it("requires po, vendorName, attachment, total to be missing if paymentType is Mileage", async () => {
       const doc = timeDb.collection("Expenses").doc();
-      const { paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
+      const { vendorName, paymentType, total, attachment, ...missingPaymentTypeAndTotalAndAttachment } = baseline;
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, po: "foo", ...missingPaymentTypeAndTotalAndAttachment }));
       await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, vendorName: "foo", ...missingPaymentTypeAndTotalAndAttachment }));

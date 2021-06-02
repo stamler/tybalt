@@ -130,13 +130,25 @@ service cloud.firestore {
         // tbtePayrollId matches that on the profile
         get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc().tbtePayrollId &&
 
-        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Allowance"] &&
+        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Allowance", "PersonalReimbursement"] &&
         isInCollection("division","Divisions") &&
 
-        // requires attachment and valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
+        // requires valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
         (
-          newDoc().paymentType in ["CorporateCreditCard","FuelCard"] && !isMissing("attachment") && newDoc().ccLast4digits.matches('[0-9]{4}') ||
+          newDoc().paymentType in ["CorporateCreditCard","FuelCard"] && newDoc().ccLast4digits.matches('[0-9]{4}') ||
           !(newDoc().paymentType in ["CorporateCreditCard","FuelCard"]) && isMissing("ccLast4digits")
+        ) &&
+
+        // requires vendorName if paymentType is "Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"
+        (
+          newDoc().paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"] && !isMissing("vendorName") ||
+          !(newDoc().paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"])
+        ) &&
+
+        // requires attachment if paymentType is "CorporateCreditCard", "FuelCard" or "Expense"
+        (
+          newDoc().paymentType in ["CorporateCreditCard", "FuelCard", "Expense"] && !isMissing("attachment") ||
+          !(newDoc().paymentType in ["CorporateCreditCard", "FuelCard", "Expense"])
         ) &&
         // po must be missing if paymentType is FuelCard or FuelOnAccount
         (
@@ -152,9 +164,10 @@ service cloud.firestore {
         // when paymentType is not Mileage or Allowance, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
         // when paymentType is Allowance, breakfast, lunch, dinner and lodging are booleans and total and distance are missing
+        // when paymentType is PersonalReimbursement, po, vendorName, attachment, breakfast, lunch, dinner, lodging are missing
         (
           (
-            !(newDoc().paymentType in ["Mileage", "Allowance"]) &&
+            !(newDoc().paymentType in ["Mileage", "Allowance", "PersonalReimbursement"]) &&
             newDoc().total is number &&
             newDoc().total > 0 &&
             isMissing("distance")
@@ -171,12 +184,29 @@ service cloud.firestore {
           ) ||
           (
             newDoc().paymentType == "Allowance" &&
+            isMissing("po") &&
             isMissing("total") &&
             isMissing("distance") &&
             newDoc().breakfast is bool &&
             newDoc().lunch is bool &&
             newDoc().dinner is bool &&
             newDoc().lodging is bool
+          ) ||
+          (
+            newDoc().paymentType == "PersonalReimbursement" &&
+            newDoc().total is number &&
+            newDoc().total > 0 &&
+            isMissing("breakfast") &&
+            isMissing("lunch") &&
+            isMissing("dinner") &&
+            isMissing("lodging") &&
+            isMissing("vendorName") &&
+            isMissing("ccLast4digits") &&
+            isMissing("unitNumber") &&
+            isMissing("attachment") &&
+            isMissing("distance") &&
+            isMissing("po") &&
+            get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.allowPersonalReimbursement
           )
         ) &&
 
@@ -329,7 +359,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
+          "managerUid","displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
         ]) &&
         (
           newDoc().offRotation is bool || isMissing("offRotation")
@@ -345,6 +375,9 @@ service cloud.firestore {
         ) &&
         (
           newDoc().skipMinTimeCheckOnNextBundle is bool || isMissing("skipMinTimeCheckOnNextBundle")
+        ) &&
+        (
+          newDoc().allowPersonalReimbursement is bool || isMissing("allowPersonalReimbursement")
         ) &&
         (
           newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
