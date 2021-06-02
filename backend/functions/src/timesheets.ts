@@ -241,6 +241,13 @@ export const updateTimeTracking = functions.firestore
       // viewerIds changed from UI, so that must have been the only change
       // per the firestore rules. Do nothing to time tracking.
       return ;
+    } else if (!_.isEqual(afterData?.viewers, beforeData?.viewers)) {
+      // viewers updated from function, do nothing to time tracking.
+      return ;
+    } else if (!_.isEqual(afterData?.reviewedIds, beforeData?.reviewedIds)) {
+      // The timesheet was reviewed from UI, so that must have been the only change
+      // per the firestore rules. Do nothing to time tracking.
+      return ;
     } else {
       // rejected or deleted or manually unapproved (without rejection)
       // remove the TimeSheet from pending
