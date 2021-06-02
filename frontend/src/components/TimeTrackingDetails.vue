@@ -10,7 +10,9 @@
         <h5>Submitted ({{ submittedProfiles.length }})</h5>
         <p v-for="profile in submittedProfiles" v-bind:key="profile.id">
           {{ profile.surname }}, {{ profile.givenName }} awaiting approval by
-          {{ profile.managerName }}
+          {{
+            item.submitted[tsIdForUid(profile.id, item.submitted)].managerName
+          }}
         </p>
         <br />
       </div>
@@ -120,7 +122,7 @@
           v-bind:key="profile.id"
           v-bind:to="{
             name: 'Time Sheet Details',
-            params: { id: tsIdForUid(profile.id) },
+            params: { id: tsIdForUid(profile.id, item.timeSheets) },
           }"
         >
           {{ profile.surname }}, {{ profile.givenName }}<br />
@@ -156,6 +158,7 @@ const db = firebase.firestore();
 
 interface TimeSheetTrackingPayload {
   displayName: string;
+  managerName: string;
   uid: string;
 }
 
@@ -271,11 +274,7 @@ export default mixins.extend({
     });
   },
   methods: {
-    tsIdForUid(uid: string) {
-      const tsObj = this?.item?.timeSheets;
-      if (tsObj === undefined) {
-        return null;
-      }
+    tsIdForUid(uid: string, tsObj: Record<string, TimeSheetTrackingPayload>) {
       const keys = Object.keys(_.pickBy(tsObj, (i) => i.uid === uid));
       if (keys.length === 1) {
         return keys[0];
