@@ -245,7 +245,8 @@ function isExpenseRegular(data: unknown): data is ExpenseRegular {
   const paymentType =
     data.paymentType === "Expense" ||
     data.paymentType === "FuelCard" ||
-    data.paymentType === "CorporateCreditCard";
+    data.paymentType === "CorporateCreditCard" ||
+    data.paymentType === "FuelOnAccount";
   const total = typeof data.total === "number" && data.total > 0;
   const description = typeof data.description === "string";
   const optionalStringVals = ["vendorName", "attachment", "po"]
