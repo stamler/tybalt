@@ -296,6 +296,78 @@ describe("Firestore Rules", function () {
         })
       );
     });
+    it("allows only admin and owner to change doNotAcceptSubmissions", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("Profiles").doc("bob"); // admin alice updating bob's profile
+      const doc2 = db2.collection("Profiles").doc("bob"); // regular alice updating bob's profile
+      const doc3 = db2.collection("Profiles").doc("alice"); // regular alice updating her own profile
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc2.update({
+          managerUid: "alice",
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+        })
+      );
+      await firebase.assertSucceeds(
+        doc3.update({
+          managerUid: "alice",
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+        })
+      );
+    });
+    it("requires doNotAcceptSubmissions to be boolean or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          doNotAcceptSubmissions: "true",
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+    });
     it("requires skipMinTimeCheckOnNextBundle to be boolean or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

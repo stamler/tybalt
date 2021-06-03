@@ -47,6 +47,14 @@
             </template>
             <span v-else class="attention"> /vehicle insurance expired</span>
           </span>
+          <span
+            v-if="
+              item.doNotAcceptSubmissions && item.customClaims['tapr'] === true
+            "
+            class="attention"
+          >
+            /Not Accepting Submissions
+          </span>
         </div>
       </div>
       <div class="rowactionsbox">

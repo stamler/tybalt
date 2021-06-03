@@ -294,3 +294,65 @@ export async function getPayPeriodExpenses(
     return e
   });
 }
+
+export async function submitExpense(
+  data: unknown, 
+  context: functions.https.CallableContext
+) {
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
+  
+  const db = admin.firestore();
+  const expense = await db.collection("Expenses").doc(data.id).get();
+  const uid = expense.get("uid");
+
+  // check that caller owns the expense
+  if (uid !== context.auth?.uid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You are not authorized to submit this expense"
+    );
+  }
+
+  // check that a manager uid is on the expense
+  const managerUid = expense.get("managerUid");
+  if (managerUid === undefined) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The expense has no manager information"
+    );
+  }
+
+  const managerProfile = await db.collection("Profiles").doc(managerUid).get();
+
+  // check that the manager is a tapr
+  if (managerProfile.get("customClaims")?.tapr !== true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `${managerProfile.get("displayName")} is not a time approver`
+    );
+  }
+
+  // check that the manager is accepting submissions
+  if (managerProfile.get("doNotAcceptSubmissions") === true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `${managerProfile.get("displayName")} is not accepting submissions`
+    );
+  }
+
+  return db.collection("Expenses").doc(data.id).set(
+    {
+      submitted: true,
+      approved: managerUid === context.auth?.uid,
+      committed: false,
+    },
+    { merge: true }
+  );
+}

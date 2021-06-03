@@ -12,7 +12,7 @@ import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment, getPayPeriodExpenses } from "./expenses";
+import { cleanUpOrphanedAttachment, getPayPeriodExpenses, submitExpense } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
@@ -146,3 +146,5 @@ exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);
 
 // update a profile from the MS Graph
 exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);
+
+exports.submitExpense = functions.https.onCall(submitExpense);

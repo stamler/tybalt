@@ -326,7 +326,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "skipMinTimeCheckOnNextBundle", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
+          "managerUid","displayName","email","customClaims", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
         ]) &&
         (
           newDoc().offRotation is bool || isMissing("offRotation")
@@ -343,6 +343,9 @@ service cloud.firestore {
         (
           newDoc().skipMinTimeCheckOnNextBundle is bool || isMissing("skipMinTimeCheckOnNextBundle")
         ) &&
+        (
+          newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
+        ) &&
         newDoc().salary is bool &&
         newDoc().timeSheetExpected is bool &&
         isInCollection("managerUid","Profiles") && 
@@ -353,9 +356,12 @@ service cloud.firestore {
       ) ||
       (
         request.auth.uid == resource.id &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision"]) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision", "doNotAcceptSubmissions"]) &&
         isInCollection("managerUid","Profiles") && // tapr validated in buildTimesheets function
-        isInCollection("defaultDivision", "Divisions")
+        isInCollection("defaultDivision", "Divisions") &&
+        (
+          newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
+        )
       )
     }
     match /Jobs/{jobId} {

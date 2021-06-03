@@ -117,9 +117,10 @@ export async function bundleTimesheet(
   timeEntries.forEach((entry) => {batch.delete(entry.ref)});
 
   // Verify that the auth user with managerUid exists
-  let manager;
+  let manager, managerProfile;
   try {
     manager = await admin.auth().getUser(profile.get("managerUid"));
+    managerProfile = await db.collection("Profiles").doc(profile.get("managerUid")).get();
   } catch (error) {
     // The Profile for this user likely specifies an identifier
     // (managerUid) that doesn't correspond to valid User Record.
@@ -127,20 +128,28 @@ export async function bundleTimesheet(
   }
   const claims = manager.customClaims;
   if (claims && claims["tapr"] === true) {
-    // The profile contains a valid manager, build the TimeSheet document
-    const tsRef = db.collection("TimeSheets").doc();
     if (timesheetData.bypass40hour === true) {
       // the flag was previously set, clear it
       batch.update(profile.ref,{ skipMinTimeCheckOnNextBundle: admin.firestore.FieldValue.delete() })
     }
     // delete the flag from the return value of tallyAndValidate(), the new timesheet
     delete timesheetData.bypass40hour;
+
+    if (managerProfile.get("doNotAcceptSubmissions") === true) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `${managerProfile.get("displayName")} is not accepting submissions. Please choose another manager.`
+      )
+    }
+
+    // The profile contains a valid manager, build the TimeSheet document
+    const tsRef = db.collection("TimeSheets").doc();
     batch.set(tsRef, timesheetData);
     return batch.commit();
   } else {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "The manager specified in the Profile doesn't have required permissions"
+      `${managerProfile.get("displayName")} doesn't have required permissions`
     );
   }
 };

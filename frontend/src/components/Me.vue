@@ -30,6 +30,15 @@
             </option>
           </select>
         </span>
+        <span class="field" v-if="isManager">
+          <label for="doNotAcceptSubmissions">Block Submissions</label>
+          <input
+            class="grow"
+            type="checkbox"
+            name="doNotAcceptSubmissions"
+            v-model="item.doNotAcceptSubmissions"
+          />
+        </span>
         <span class="field">
           <button type="button" v-on:click="save()">Save and sign out</button>
         </span>
@@ -58,7 +67,12 @@ export default Vue.extend({
       divisions: [] as firebase.firestore.DocumentData[],
     };
   },
-  computed: mapState(["user"]),
+  computed: {
+    ...mapState(["user"]),
+    isManager(): boolean {
+      return this.item?.customClaims?.tapr === true;
+    },
+  },
   created() {
     this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
@@ -88,18 +102,23 @@ export default Vue.extend({
         this.item = {};
       }
     },
-    save() {
+    save(): void {
       // Editing an existing item
       // Since the UI binds existing id to the key field, no need to delete
+      const obj: {
+        defaultDivision: string;
+        managerUid: string;
+        doNotAcceptSubmissions?: boolean;
+      } = {
+        defaultDivision: this.item.defaultDivision,
+        managerUid: this.item.managerUid,
+      };
+      if (typeof this.item.doNotAcceptSubmissions === "boolean") {
+        obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
+      }
       db.collection("Profiles")
         .doc(this.user.uid)
-        .set(
-          {
-            defaultDivision: this.item.defaultDivision,
-            managerUid: this.item.managerUid,
-          },
-          { merge: true }
-        )
+        .set(obj, { merge: true })
         .then(signOut);
     },
   },

@@ -209,7 +209,25 @@ describe("tallyAndValidate", async () => {
         "Salaried staff cannot claim a Full Week Off. Please use PPTO or vacation instead."
       );
     });
-    it("rejects for salaried staff member with fewer than 40 regular hours", async () => {
+    it("tallies and validates for salaried staff member with fewer than 40 hours if skipMinTimeCheckOnNextBundle flag is set", async () => {
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,4);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "Salaried staff must have a minimum of 40 hours on each time sheet."
+      );
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, skipMinTimeCheckOnNextBundle: true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      assert.equal(timeEntries.size,4);
+      const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
+    });
+    it("rejects for salaried staff member with fewer than 40 hours", async () => {
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)

@@ -144,30 +144,18 @@ export default Vue.extend({
         });
     },
     submitExpense(expenseId: string) {
+      const submitExpense = firebase.functions().httpsCallable("submitExpense");
       store.commit("startTask", {
         id: `submit${expenseId}`,
         message: "submitting",
       });
-      db.collection("Expenses")
-        .doc(expenseId)
-        .get()
-        .then((docSnap) => {
-          docSnap.ref
-            .set(
-              {
-                submitted: true,
-                approved: docSnap.get("managerUid") === this.user.uid,
-                committed: false,
-              },
-              { merge: true }
-            )
-            .then(() => {
-              store.commit("endTask", { id: `submit${expenseId}` });
-            })
-            .catch((error) => {
-              store.commit("endTask", { id: `submit${expenseId}` });
-              alert(`Error submitting expense: ${error}`);
-            });
+      return submitExpense({ id: expenseId })
+        .then(() => {
+          store.commit("endTask", { id: `submit${expenseId}` });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: `submit${expenseId}` });
+          alert(`Error submitting expense: ${error}`);
         });
     },
     approveExpense(itemId: string) {

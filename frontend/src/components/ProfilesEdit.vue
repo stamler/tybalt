@@ -47,6 +47,15 @@
       />
     </span>
     <span class="field">
+      <label for="doNotAcceptSubmissions">Block Submissions</label>
+      <input
+        class="grow"
+        type="checkbox"
+        name="doNotAcceptSubmissions"
+        v-model="item.doNotAcceptSubmissions"
+      />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input
         class="grow"
@@ -204,6 +213,7 @@ export default Vue.extend({
           defaultDivision: string;
           salary: boolean;
           skipMinTimeCheckOnNextBundle?: boolean;
+          doNotAcceptSubmissions?: boolean;
           offRotation?: boolean;
           timeSheetExpected: boolean;
           tbtePayrollId?: number;
@@ -218,7 +228,10 @@ export default Vue.extend({
           timeSheetExpected: this.item.timeSheetExpected ?? true,
           defaultDivision: this.item.defaultDivision,
         };
-        if (this.item.skipMinTimeCheckOnNextBundle) {
+        if (typeof this.item.doNotAcceptSubmissions === "boolean") {
+          obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
+        }
+        if (typeof this.item.skipMinTimeCheckOnNextBundle === "boolean") {
           obj.skipMinTimeCheckOnNextBundle = this.item.skipMinTimeCheckOnNextBundle;
         }
         if (this.item.tbtePayrollId) {
