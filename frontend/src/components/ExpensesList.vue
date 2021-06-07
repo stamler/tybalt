@@ -102,7 +102,9 @@
           <template
             v-if="
               item.committed === true &&
-              ['Mileage', 'Allowance', 'Expense'].includes(item.paymentType)
+              ['Mileage', 'Allowance', 'Expense', 'Meals'].includes(
+                item.paymentType
+              )
             "
           >
             <span
