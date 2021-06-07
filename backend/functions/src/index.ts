@@ -74,7 +74,7 @@ exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 
 // return expense documents associated with a pay period
-exports.getPayPeriodExpenses = functions.runWith({memory: "512MB", timeoutSeconds: 120}).https.onCall(getPayPeriodExpenses);
+exports.getPayPeriodExpenses = functions.runWith({memory: "1GB", timeoutSeconds: 120}).https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
