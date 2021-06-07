@@ -41,7 +41,7 @@
           v-on:click.native="
             generatePayablesCSV(
               getPayPeriodExpenses(item.payPeriodEnding.toDate())
-            )
+            ).then(() => generateAttachmentZip(item))
           "
         >
           expenses<download-icon></download-icon>
@@ -298,6 +298,27 @@ export default mixins.extend({
           weekEnding
         )}.csv`
       );
+    },
+    async generateAttachmentZip(item: firebase.firestore.DocumentData) {
+      const generateExpenseAttachmentArchive = firebase
+        .functions()
+        .httpsCallable("generateExpenseAttachmentArchive");
+      const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
+      if (item.zip !== undefined) {
+        return;
+      }
+      store.commit("startTask", {
+        id: `generateAttachments${payPeriodEnding}`,
+        message: "Generating Attachments",
+      });
+      try {
+        await generateExpenseAttachmentArchive({ payPeriodEnding });
+      } catch (error) {
+        alert(error);
+      }
+      store.commit("endTask", {
+        id: `generateAttachments${payPeriodEnding}`,
+      });
     },
     async getPayPeriodExpenses(week: Date) {
       const getPayPeriodExpenses = firebase

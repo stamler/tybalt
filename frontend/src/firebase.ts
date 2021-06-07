@@ -14,7 +14,7 @@ firebase.initializeApp({
   messagingSenderId: "1033101603088",
 });
 
-const USE_EMULATORS = true;
+const USE_EMULATORS = false;
 const db = firebase.firestore();
 if (location.hostname === "localhost" && USE_EMULATORS) {
   db.settings({

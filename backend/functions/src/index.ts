@@ -14,7 +14,7 @@ import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses, submitExpense } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
-import { cleanUpUnusedAttachments } from "./storage";
+import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
 export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
@@ -57,6 +57,9 @@ exports.cleanUpOrphanedAttachment = functions.firestore
 // uploads
 exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAttachments);
 
+// call from client to generate a zip file of expense attachments for a given document ID or payPeriodEnding
+exports.generateExpenseAttachmentArchive = functions.runWith({memory: "1GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
+
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
@@ -74,7 +77,7 @@ exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 
 // return expense documents associated with a pay period
-exports.getPayPeriodExpenses = functions.runWith({memory: "1GB", timeoutSeconds: 120}).https.onCall(getPayPeriodExpenses);
+exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,

@@ -54,7 +54,7 @@ export async function cleanUpOrphanedAttachment(
   If an expense is manually uncommitted, remove it from the expenses property 
   of the ExpenseTracking document for the corresponding weekEnding.
  */
-export const updateExpenseTracking = functions.firestore
+export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSeconds: 180}).firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => {
     const beforeData = change.before.data();
@@ -276,14 +276,6 @@ export async function getPayPeriodExpenses(
   }
 
   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
-
-  // generate the corresponding attachments zip if it doesn't already exist
-  // NB. This file can be deleted as it will be regenerated here if it doesn't exist
-  const payrollTrackingDocRef = await getTrackingDoc(week2Ending,"PayrollTracking","payPeriodEnding");
-  const trackingSnapshot = await payrollTrackingDocRef.get();
-  if (trackingSnapshot.get("zip") === undefined) {
-    await generateExpenseAttachmentArchive({ payPeriodEnding: week2Ending.getTime() });
-  }
 
   // convert commitTime, committedWeekEnding, and date to strings
   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {

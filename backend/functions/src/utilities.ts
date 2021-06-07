@@ -137,7 +137,15 @@ export const writeFileLinks = functions.storage
       throw new Error("The object metadata is missing information");
     }
     const parsed = path.parse(objMeta.name);
-    const weekEnding = new Date(Number(parsed.name));
+
+    // attachments and json are stored under in the same prefix to remove
+    // the attachments word from beginning if it's there
+    let weekEnding
+    if (parsed.name.startsWith("attachments")) {
+      weekEnding = new Date(Number(parsed.name.substring(11)));
+    } else {
+      weekEnding = new Date(Number(parsed.name));
+    }
 
     // set the collection based on the last prefix on the directory path,
     // stripping out the "Exports" substring at the end. so for example
@@ -148,9 +156,9 @@ export const writeFileLinks = functions.storage
     const collection = candidate.substring(0, candidate.indexOf("Exports"));
 
     if (isNaN(weekEnding.getTime())) {
-      throw new Error(
-        `filename ${parsed.name} cannot be converted to a date object`
-      );
+      const message = `filename ${parsed.name} cannot be converted to a date object`;
+      functions.logger.error(message);
+      throw new Error(message);
     }
 
     const trackingDocRef = await getTrackingDoc(weekEnding,collection,"weekEnding");

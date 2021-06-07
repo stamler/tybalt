@@ -11,6 +11,10 @@ import { format } from "date-fns";
 // Given an ExpenseTracking id, create a zip archive of all attachments
 // from Google storage for the corresponding week
 // with the committed expenses. Store zip under ExpenseTrackingExports prefix
+
+// TODO: rework without using temp storage and upload
+//https://stackoverflow.com/questions/51563883/can-i-zip-files-in-firebase-storage-via-firebase-cloud-functions
+
 export async function generateExpenseAttachmentArchive(data: unknown) {
     const db = admin.firestore();
     
@@ -79,41 +83,21 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     // define the bucket containing the attachments
     const bucket = admin.storage().bucket();
 
-    // create an empty archive in the working directory
-    const tempLocalFileName = path.join(os.tmpdir(), zipFilename);
-    const zipfile = fs.createWriteStream(tempLocalFileName);
+    // upload the zip file
+    const newToken = uuidv4();
 
-    // listen for all archive data to be written
-    // 'close' event is fired only when a file descriptor is involved
-    zipfile.on("close", function() {
-      functions.logger.log(archive.pointer() + " total bytes");
-
-      // upload the zip file
-      const newToken = uuidv4();
-
-      // upload the file into the current firebase project default bucket
-      return bucket
-        .upload(tempLocalFileName, {
-          destination,
-          // Workaround: firebase console not generating token for files
-          // uploaded via Firebase Admin SDK
-          // https://github.com/firebase/firebase-admin-node/issues/694
-          metadata: {
-            metadata: {
-              firebaseStorageDownloadTokens: newToken,
-            },
-          },
-        })
-        .then(async (uploadResponse) => {
-          // put the path to the new file into the TimeTracking document
-          await trackingSnapshot.ref.update({
-            zip: createPersistentDownloadUrl(
-              admin.storage().bucket().name,
-              destination,
-              newToken
-            ),
-          });
-        });
+    // create the outputStreamBuffer
+    const outputStreamBuffer = bucket.file(destination).createWriteStream({
+      gzip: true,
+      contentType: 'application/zip',
+      // Workaround: firebase console not generating token for files
+      // uploaded via Firebase Admin SDK
+      // https://github.com/firebase/firebase-admin-node/issues/694
+      metadata: {
+        metadata: {
+          firebaseStorageDownloadTokens: newToken,
+        },
+      },
     });
 
     // initialize the archiver
@@ -122,6 +106,20 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     });
     functions.logger.log("initialized archiver");
     
+    // listen for all archive data to be written
+    // 'close' event is fired only when a file descriptor is involved
+    archive.on("finish", async () => {
+      functions.logger.log(archive.pointer() + " total bytes");
+
+      // put the path to the new file into the TimeTracking document
+      await trackingSnapshot.ref.update({
+        zip: createPersistentDownloadUrl(
+          admin.storage().bucket().name,
+          destination,
+          newToken
+        ),
+      });
+    });
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
     archive.on('warning', function(err) {
@@ -138,8 +136,8 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     });
 
     // pipe archive data to the file
-    archive.pipe(zipfile);
-    functions.logger.log(`configured archiver to pipe to ${tempLocalFileName}`);
+    archive.pipe(outputStreamBuffer);
+    functions.logger.log("configured archiver to pipe to Cloud Storage");
     
 
     // iterate over the documents with attachments, adding their

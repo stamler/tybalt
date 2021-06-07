@@ -20,6 +20,13 @@
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<download-icon></download-icon>
         </a>
+        <router-link
+          v-if="canRefresh"
+          v-bind:to="{ name: 'Expense Tracking' }"
+          v-on:click.native="generateAttachmentZip(item)"
+        >
+          <refresh-cw-icon></refresh-cw-icon>
+        </router-link>
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
@@ -38,6 +45,7 @@
 <script lang="ts">
 import firebase from "../firebase";
 import mixins from "./mixins";
+import store from "../store";
 import { format } from "date-fns";
 import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
 
@@ -46,6 +54,14 @@ const db = firebase.firestore();
 export default mixins.extend({
   props: ["collection"],
   components: { DownloadIcon, RefreshCwIcon },
+  computed: {
+    canRefresh(): boolean {
+      return (
+        Object.prototype.hasOwnProperty.call(this.claims, "admin") &&
+        this.claims["admin"] === true
+      );
+    },
+  },
   filters: {
     exportDate(date: Date) {
       return format(date, "yyyy MMM dd");
@@ -64,6 +80,23 @@ export default mixins.extend({
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
       );
+    },
+    async generateAttachmentZip(item: firebase.firestore.DocumentData) {
+      const generateExpenseAttachmentArchive = firebase
+        .functions()
+        .httpsCallable("generateExpenseAttachmentArchive");
+      store.commit("startTask", {
+        id: `generateAttachments${item.id}`,
+        message: "Generating Attachments",
+      });
+      try {
+        await generateExpenseAttachmentArchive({ id: item.id });
+      } catch (error) {
+        console.log(error);
+      }
+      store.commit("endTask", {
+        id: `generateAttachments${item.id}`,
+      });
     },
   },
   created() {
