@@ -442,7 +442,7 @@ export default Vue.extend({
             // record the week ending of this amendment
             destination.hasAmendmentsForWeeksEnding.push(item.weekEnding);
             if (
-              item.timetype === "R" &&
+              ["R", "RT"].includes(item.timetype) &&
               item.division &&
               item.divisionName &&
               (item.hours || item.jobHours)
