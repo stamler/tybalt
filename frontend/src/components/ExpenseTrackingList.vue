@@ -92,7 +92,7 @@ export default mixins.extend({
       try {
         await generateExpenseAttachmentArchive({ id: item.id });
       } catch (error) {
-        console.log(error);
+        alert(error);
       }
       store.commit("endTask", {
         id: `generateAttachments${item.id}`,
