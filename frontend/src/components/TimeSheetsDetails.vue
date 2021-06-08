@@ -20,6 +20,17 @@
       >
         <check-circle-icon></check-circle-icon>
       </router-link>
+      <!-- download button -->
+      <router-link
+        v-bind:to="{
+          name: 'Time Sheet Details',
+          params: { id: id, collection: 'TimeSheets' },
+        }"
+        v-on:click.native="generateTimeReportCSV(item)"
+      >
+        <download-icon></download-icon>
+      </router-link>
+
       <!-- submit button -->
       <router-link
         v-if="!item.rejected && belongsToMe(item) && item.submitted === false"
@@ -150,6 +161,7 @@ import {
   RewindIcon,
   CheckCircleIcon,
   ShareIcon,
+  DownloadIcon,
   XCircleIcon,
 } from "vue-feather-icons";
 const db = firebase.firestore();
@@ -159,6 +171,7 @@ export default mixins.extend({
     RejectModal,
     ShareModal,
     ShareIcon,
+    DownloadIcon,
     EyeIcon,
     SendIcon,
     RewindIcon,

@@ -731,17 +731,40 @@ export default Vue.extend({
         );
       }
     },
-    async generateTimeReportCSV(url: string) {
-      const response = await fetch(url);
-      const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
-      const { timesheets: items, amendments } = this.foldAmendments(
-        inputObject
-      );
+    async generateTimeReportCSV(
+      urlOrFirestoreTimeSheet: string | firebase.firestore.DocumentData
+    ) {
+      let items: (TimeSheet | Amendment)[];
+      let amendments: Amendment[];
+      let firestoreDoc = false;
+      if (typeof urlOrFirestoreTimeSheet === "string") {
+        // the arg is a url for a json document
+        const response = await fetch(urlOrFirestoreTimeSheet);
+        const inputObject = (await response.json()) as (
+          | TimeSheet
+          | Amendment
+        )[];
+        const { timesheets, amendments: amendmentsInIf } = this.foldAmendments(
+          inputObject
+        );
+        items = timesheets;
+        amendments = amendmentsInIf;
+      } else {
+        // the arg is firestore DocumentData. Convert timestamps to JS dates
+        firestoreDoc = true;
+        if (!isTimeSheet(urlOrFirestoreTimeSheet)) {
+          throw new Error("There was an error validating the timesheet");
+        }
+        items = [urlOrFirestoreTimeSheet];
+        amendments = [];
+      }
 
       // since all entries have the same week ending, pull from the first entry
       let weekEnding;
       if (items.length > 0) {
-        weekEnding = new Date(items[0].weekEnding);
+        weekEnding = new Date(
+          firestoreDoc ? items[0].weekEnding.toDate() : items[0].weekEnding
+        );
       } else {
         weekEnding = new Date(amendments[0].committedWeekEnding);
       }
@@ -776,7 +799,9 @@ export default Vue.extend({
         for (const entry of item.entries) {
           //if (!["R", "RT"].includes(entry.timetype)) continue;
           // TODO: verify that time zone conversion isn't needed here
-          const date = new Date(entry.date);
+          const date = new Date(
+            firestoreDoc ? entry.date.toDate() : entry.date
+          );
           const line = {
             client: "TBTE",
             job: "", // the job number
@@ -845,11 +870,12 @@ export default Vue.extend({
 
       const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
       const blob = new Blob([csv], { type: "text/csv" });
+      const filename = `time_report_${this.exportDateWeekStart(
+        weekEnding
+      )}-${this.exportDate(weekEnding)}.csv`;
       this.downloadBlob(
         blob,
-        `time_report_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
-          weekEnding
-        )}.csv`
+        firestoreDoc ? items[0].displayName + "-" + filename : filename
       );
     },
   },
