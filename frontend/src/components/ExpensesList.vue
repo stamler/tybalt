@@ -218,7 +218,7 @@
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
 import mixins from "./mixins";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import _ from "lodash";
 import {
   EditIcon,
@@ -270,7 +270,10 @@ export default mixins.extend({
   methods: {
     commitMessage(item: firebase.firestore.DocumentData) {
       if (item.payPeriodEnding) {
-        return `Reimbursed in pay period ending ${format(
+        return `Reimbursed on ${format(
+          addDays(item.payPeriodEnding.toDate(), 13),
+          "MMM dd"
+        )} for pay period ending ${format(
           item.payPeriodEnding.toDate(),
           "MMM dd"
         )}`;
@@ -282,7 +285,10 @@ export default mixins.extend({
       return `Committed ${format(
         item.commitTime.toDate(),
         "MMM dd"
-      )}, reimbursed in pay period ending ${format(
+      )}, reimbursed on ${format(
+        addDays(item.payPeriodEnding.toDate(), 13),
+        "MMM dd"
+      )} for pay period ending ${format(
         item.payPeriodEnding.toDate(),
         "MMM dd"
       )}`;
