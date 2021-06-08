@@ -586,6 +586,14 @@ export default Vue.extend({
           value: "job",
         },
         {
+          label: "Client",
+          value: "client",
+        },
+        {
+          label: "Job Description",
+          value: "jobDescription",
+        },
+        {
           label: "Div",
           value: "division",
         },
