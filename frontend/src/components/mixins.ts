@@ -656,7 +656,26 @@ export default Vue.extend({
         },
         {
           label: "Description",
-          value: "description",
+          value: (row: Expense) => {
+            const description = "";
+            switch (row.paymentType) {
+              case "Allowance":
+                return description.concat(
+                  row.breakfast === true ? "Breakfast " : "",
+                  row.lunch === true ? "Lunch " : "",
+                  row.dinner === true ? "Dinner " : "",
+                  row.lodging === true ? "Lodging " : ""
+                );
+              case "Meals":
+                return description.concat(
+                  row.breakfast === true ? "Breakfast " : "",
+                  row.lunch === true ? "Lunch " : "",
+                  row.dinner === true ? "Dinner " : ""
+                );
+              default:
+                return row.description;
+            }
+          },
         },
         {
           label: "Company",
