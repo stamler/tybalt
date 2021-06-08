@@ -7,6 +7,7 @@ import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import {
   TimeSheet,
   Amendment,
+  isTimeSheet,
   Expense,
   ExpenseAllowance,
   isExpenseMeals,
@@ -729,6 +730,127 @@ export default Vue.extend({
           )}.csv`
         );
       }
+    },
+    async generateTimeReportCSV(url: string) {
+      const response = await fetch(url);
+      const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
+      const { timesheets: items, amendments } = this.foldAmendments(
+        inputObject
+      );
+
+      // since all entries have the same week ending, pull from the first entry
+      let weekEnding;
+      if (items.length > 0) {
+        weekEnding = new Date(items[0].weekEnding);
+      } else {
+        weekEnding = new Date(amendments[0].committedWeekEnding);
+      }
+      const fields = [
+        "client",
+        "job",
+        "division",
+        "timetype",
+        "date",
+        "month",
+        "year",
+        "qty",
+        "unit",
+        "nc",
+        "meals",
+        "ref",
+        "project",
+        "description",
+        "comments",
+        "employee",
+        "surname",
+        "givenName",
+        "amended",
+      ];
+      const opts = { fields, withBOM: true };
+
+      const timesheetRecords = [];
+      for (const item of items) {
+        if (!isTimeSheet(item)) {
+          throw new Error("There was an error validating the timesheet");
+        }
+        for (const entry of item.entries) {
+          //if (!["R", "RT"].includes(entry.timetype)) continue;
+          // TODO: verify that time zone conversion isn't needed here
+          const date = new Date(entry.date);
+          const line = {
+            client: "TBTE",
+            job: "", // the job number
+            division: entry.division,
+            timetype: entry.timetype,
+            date: date.getDate(),
+            month: format(date, "MMM"),
+            year: date.getFullYear(),
+            qty: entry.jobHours || 0,
+            unit: "hours",
+            nc: entry.hours || 0,
+            meals: entry.mealsHours || 0,
+            ref: entry.workrecord || "",
+            project: "",
+            description: entry.workDescription, // consolidate comments and description
+            comments: "",
+            employee: item.displayName,
+            surname: item.surname,
+            givenName: item.givenName,
+            amended: entry.amendment,
+          };
+          if (entry.job !== undefined) {
+            // There is a job number, populate client, job, description
+            line.client = item.jobsTally[entry.job].client;
+            line.job = entry.job;
+            line.project = item.jobsTally[entry.job].description;
+          }
+          timesheetRecords.push(line);
+        }
+      }
+
+      const amendmentRecords = [];
+      for (const entry of amendments) {
+        if (entry.timetype !== "R") continue;
+        // TODO: verify that time zone conversion isn't needed here
+        const date = new Date(entry.date);
+        const line = {
+          client: "TBTE",
+          job: "", // the job number
+          division: entry.division,
+          timetype: entry.timetype,
+          date: date.getDate(),
+          month: format(date, "MMM"),
+          year: date.getFullYear(),
+          qty: entry.jobHours || 0,
+          unit: "hours",
+          nc: entry.hours || 0,
+          meals: entry.mealsHours || 0,
+          ref: entry.workrecord || "",
+          project: "",
+          description: entry.workDescription, // consolidate comments and description
+          comments: "",
+          employee: entry.displayName,
+          surname: entry.surname,
+          givenName: entry.givenName,
+          amended: true,
+        };
+        if (entry.job !== undefined) {
+          // There is a job number, populate client, job, description
+          line.client = entry.client || "";
+          line.job = entry.job;
+          line.project = entry.jobDescription || "";
+        }
+        amendmentRecords.push(line);
+      }
+
+      const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
+      const blob = new Blob([csv], { type: "text/csv" });
+      this.downloadBlob(
+        blob,
+        `time_report_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+          weekEnding
+        )}.csv`
+      );
     },
   },
 });
