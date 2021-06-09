@@ -84,7 +84,7 @@
         ['R', 'RT'].includes(item.timetype)
       "
     >
-      <label for="jobHours">Chargeable Hours</label>
+      <label for="jobHours">Job Hours</label>
       <input
         class="grow"
         type="number"
