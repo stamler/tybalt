@@ -23,7 +23,7 @@
     <span class="field">
       <select class="grow" name="timetype" v-model="item.timetype">
         <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
-          {{ t.name }}
+          {{ t.id }} - {{ t.name }}
         </option>
       </select>
     </span>
