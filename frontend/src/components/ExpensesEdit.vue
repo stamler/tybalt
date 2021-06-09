@@ -177,7 +177,7 @@
         v-bind:placeholder="
           item.paymentType === 'Mileage'
             ? 'Where did you go & why?'
-            : 'Expense Description'
+            : 'Expense Description (4 char minimum)'
         "
         v-model.trim="item.description"
       />
