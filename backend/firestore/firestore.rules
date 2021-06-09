@@ -221,13 +221,16 @@ service cloud.firestore {
 
         // when job provided, job & division exist in db,
         // jobDescription and client are present, timetype is 'R' or 'RT'
+        // hours field is missing
         (
           ( isInCollection("job","Jobs") && 
             isInCollection("division","Divisions") &&
             newDoc().keys().hasAll(["jobDescription", "client"]) &&
             get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.description == newDoc().jobDescription &&
             get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.client == newDoc().client &&
-            (newDoc().timetype == "R" || newDoc().timetype == "RT") ) || 
+            (newDoc().timetype == "R" || newDoc().timetype == "RT") &&
+            isMissing("hours")
+          ) || 
           isMissing("job")
         ) &&
 

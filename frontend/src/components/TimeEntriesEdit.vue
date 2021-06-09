@@ -96,7 +96,12 @@
       />
     </span>
 
-    <span class="field" v-if="!['OR', 'OW', 'OTO'].includes(item.timetype)">
+    <span
+      class="field"
+      v-if="
+        !['OR', 'OW', 'OTO'].includes(item.timetype) && item.job === undefined
+      "
+    >
       <label for="hours">
         {{
           item.job &&

@@ -1027,10 +1027,11 @@ describe("Firestore Rules", function () {
     });
     it("requires documents with workrecord key to reference a valid job", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
-      await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "K20-420" }) );
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds( doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties, workrecord: "K20-420" }) );
       const { job, ...missingJob } = entryJobProperties;
-      await firebase.assertFails( doc.set({ ...baseline, ...missingJob, job: "notjob", workrecord: "K20-420" }) );
-      await firebase.assertFails( doc.set({ ...baseline, ...missingJob, workrecord: "K20-420" }) );
+      await firebase.assertFails( doc.set({ ...missingHours, jobHours: 5, ...missingJob, job: "notjob", workrecord: "K20-420" }) );
+      await firebase.assertFails( doc.set({ ...missingHours, jobHours: 5, ...missingJob, workrecord: "K20-420" }) );
     });
     it("requires documents with jobHours key to reference a valid job", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
@@ -1044,7 +1045,7 @@ describe("Firestore Rules", function () {
       const doc = timeDb.collection("TimeEntries").doc();
       const { hours, ...missingHours } = baseline;
       await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 5}));
-      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 0.5, hours: 5}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, mealsHours: 0.5, jobHours: 5}));
     });
     it("requires hours, jobHours, and mealsHours to be positive multiples of 0.5 under 18", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
@@ -1061,19 +1062,20 @@ describe("Firestore Rules", function () {
       await firebase.assertFails(doc.set({ ...missingHours, hours: 19}));
       await firebase.assertFails(doc.set({ ...missingHours, hours: -1}));
       await firebase.assertFails(doc.set({ ...missingHours, hours: "duck"}));
-      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: 1}));
-      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: 0.5}));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: 0.6}));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: 19}));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: -1}));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, hours:4, mealsHours: "duck"}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: 1}));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: 0.5}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: 0.6}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: 19}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: -1}));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours:4, mealsHours: "duck"}));
     });
     it("requires sum of hours, jobHours, and mealsHours to be less than or equal to 18", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { hours, ...missingHours } = baseline;
-      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 12, hours: 5.5, mealsHours: 0.5 }));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 10, hours: 9, mealsHours: 0.5 }));
-      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 10, hours: 7, mealsHours: 1.5 }));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 12, mealsHours: 0.5 }));
+      await firebase.assertFails(doc.set({ ...missingHours, ...entryJobProperties, jobHours: 18, mealsHours: 0.5 }));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, hours: 16, mealsHours: 1.5 }));
+      await firebase.assertFails(doc.set({ ...missingHours, hours: 17, mealsHours: 1.5 }));
 
     });
     it("allows hours to be positive multiples of 0.5 over 18 if timetype is RB", async () => {
@@ -1087,28 +1089,39 @@ describe("Firestore Rules", function () {
     it("requires a referenced job to be valid", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { job, ...missingJob } = entryJobProperties;
-      await firebase.assertSucceeds(doc.set({ ...baseline, ...missingJob, job:"19-333" }));
-      await firebase.assertFails(doc.set({ ...baseline, ...missingJob, job:"20-333" }));
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds(doc.set({ ...missingHours, jobHours: 5, ...missingJob, job:"19-333" }));
+      await firebase.assertFails(doc.set({ ...missingHours, jobHours: 5, ...missingJob, job:"20-333" }));
     });
     it("requires jobDescription and client to match a referenced job's respective properties", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { jobDescription, ...missingJobDescription } = entryJobProperties;
       const { client, ...missingClient } = entryJobProperties;
-      await firebase.assertFails(doc.set({ ...baseline, ...missingJobDescription, jobDescription:"Non-matching description" }));
-      await firebase.assertFails(doc.set({ ...baseline, ...missingClient, client:"Non-matching client" }));
-      await firebase.assertSucceeds(doc.set({ ...baseline, ...entryJobProperties }));
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertFails(doc.set({ ...missingHours, jobHours: 5, ...missingJobDescription, jobDescription:"Non-matching description" }));
+      await firebase.assertFails(doc.set({ ...missingHours, jobHours: 5, ...missingClient, client:"Non-matching client" }));
+      await firebase.assertSucceeds(doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties }));
     });
     it("requires workrecords to match the correct format", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
-      await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "Q20-423" }) );
-      await firebase.assertSucceeds( doc.set({ ...baseline, ...entryJobProperties, workrecord: "K20-423-1" }) );
-      await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "F18-33-1" }) );
-      await firebase.assertFails( doc.set({ ...baseline, ...entryJobProperties, workrecord: "asdf" }) );
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds( doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties, workrecord: "Q20-423" }) );
+      await firebase.assertSucceeds( doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties, workrecord: "K20-423-1" }) );
+      await firebase.assertFails( doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties, workrecord: "F18-33-1" }) );
+      await firebase.assertFails( doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties, workrecord: "asdf" }) );
     });
     it("requires jobHours not be present if there is no job", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
-      await firebase.assertSucceeds(doc.set({ ...baseline, ...entryJobProperties, jobHours: 5 }));
-      await firebase.assertFails(doc.set({ ...baseline, jobHours: 5 }));
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds(doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties }));
+      await firebase.assertFails(doc.set({ ...missingHours, jobHours: 5 }));
+    });
+    it("requires hours not be present if there is a job", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      const { hours, ...missingHours } = baseline;
+      await firebase.assertSucceeds(doc.set({ ...missingHours, jobHours: 5, ...entryJobProperties }));
+      await firebase.assertFails(doc.set({ ...missingHours, hours: 5,  jobHours: 5, ...entryJobProperties }));
+      await firebase.assertFails(doc.set({ ...missingHours, hours: 5, ...entryJobProperties }));
     });
     it("allows owner to read their own Time Entries if they have time claim", async () => {
       const doc = timeDb.collection("TimeEntries").doc("EF312A64Lein7bRiC5HG");
