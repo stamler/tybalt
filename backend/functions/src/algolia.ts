@@ -25,6 +25,10 @@ export async function updateAlgoliaIndex(
   // The document was either created or updated
   // Add an 'objectID' field required by Algolia then save to index
   afterData.objectID = change.after.ref.id;
+
+  // create a searchKeys field that is an array of derived values including
+  // just the numbers from the ID
+  afterData.searchKeys = [change.after.ref.id.replace(/[-P ]/g,"")];
   functions.logger.log(`${change.after.ref.id} was updated. Saving data to Algolia`)
   return index.saveObject(afterData);
 }
