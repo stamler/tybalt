@@ -54,7 +54,7 @@
           </div>
           <div v-if="item.workDescription" class="thirdline">
             <span v-if="item.workrecord !== undefined">
-              workrecord: {{ item.workrecord }} /
+              Work Record: {{ item.workrecord }} /
             </span>
             {{ item.workDescription }}
           </div>
