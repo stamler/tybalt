@@ -104,31 +104,26 @@
       />
     </span>
     <span class="field" v-if="item.paymentType === 'Allowance'">
-      <label for="breakfast">
+      <label for="breakfast" class="checkoption">
+        <input type="checkbox" id="breakfast" v-model="item.breakfast" />
         Breakfast
-        <input
-          class="grow"
-          type="checkbox"
-          id="breakfast"
-          v-model="item.breakfast"
-        />
       </label>
-      <label for="lunch">
-        Lunch
+      <label for="lunch" class="checkoption">
         <input class="grow" type="checkbox" id="lunch" v-model="item.lunch" />
+        Lunch
       </label>
-      <label for="dinner">
-        Dinner
+      <label for="dinner" class="checkoption">
         <input class="grow" type="checkbox" id="dinner" v-model="item.dinner" />
+        Dinner
       </label>
-      <label for="lodging">
-        Personal Accommodation
+      <label for="lodging" class="checkoption">
         <input
           class="grow"
           type="checkbox"
           id="lodging"
           v-model="item.lodging"
         />
+        Personal Accommodation
       </label>
     </span>
     <span
@@ -620,6 +615,12 @@ export default mixins.extend({
 });
 </script>
 <style>
+.checkoption {
+  border-radius: 0.2em;
+  background-color: rgb(240, 228, 255);
+  padding-left: 0.2em;
+  margin-right: 0.2em;
+}
 #suggestions {
   padding: 0.25em;
   border-radius: 0em 0em 1em 1em;
