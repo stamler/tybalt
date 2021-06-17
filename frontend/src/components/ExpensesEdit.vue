@@ -92,7 +92,7 @@
     </span>
 
     <span class="field" v-if="item.paymentType === 'FuelOnAccount'">
-      <label for="unitNumber">Unit Number</label>
+      <label for="unitNumber">Unit #</label>
       <input
         class="grow"
         type="number"
