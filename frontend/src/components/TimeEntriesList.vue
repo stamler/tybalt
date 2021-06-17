@@ -46,7 +46,10 @@
               ${{ item.payoutRequestAmount }}
             </div>
           </div>
-          <div v-if="item.timetype === 'R' && item.job" class="firstline">
+          <div
+            v-if="['R', 'RT'].includes(item.timetype) && item.job"
+            class="firstline"
+          >
             {{ item.job }} {{ item.client }}: {{ item.jobDescription }}
           </div>
           <div class="secondline">
