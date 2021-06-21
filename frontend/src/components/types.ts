@@ -177,6 +177,11 @@ interface ExpenseRegular extends ExpenseCommon {
   unitNumber?: number;
   po?: string;
 }
+interface ExpensePersonal extends ExpenseCommon {
+  paymentType: "PersonalReimbursement";
+  total: number;
+  description: string;
+}
 interface ExpenseMileage extends ExpenseCommon {
   paymentType: "Mileage";
   description: string;
@@ -202,6 +207,7 @@ export type Expense =
   | ExpenseRegular
   | ExpenseMileage
   | ExpenseMeals
+  | ExpensePersonal
   | ExpenseAllowance;
 
 // Type Guards
@@ -260,7 +266,19 @@ function isExpenseRegular(data: unknown): data is ExpenseRegular {
     description
   );
 }
+function isExpensePersonal(data: unknown): data is ExpensePersonal {
+  if (!isObject(data)) {
+    return false;
+  }
+  const total = typeof data.total === "number" && data.total > 0;
 
+  return (
+    isExpenseCommon(data) &&
+    data.paymentType === "PersonalReimbursement" &&
+    total &&
+    typeof data.description === "string"
+  );
+}
 function isExpenseMileage(data: unknown): data is ExpenseMileage {
   if (!isObject(data)) {
     return false;
@@ -302,6 +320,7 @@ export function isExpense(data: unknown): data is Expense {
   return (
     isExpenseRegular(data) ||
     isExpenseMileage(data) ||
+    isExpensePersonal(data) ||
     isExpenseMeals(data) ||
     isExpenseAllowance(data)
   );
