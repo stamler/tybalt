@@ -178,7 +178,10 @@
       />
     </span>
 
-    <span class="field" v-if="item.paymentType !== 'Allowance'">
+    <span
+      class="field"
+      v-if="!['Allowance', 'FuelOnAccount'].includes(item.paymentType)"
+    >
       <input
         class="grow"
         type="text"
@@ -336,7 +339,7 @@ export default mixins.extend({
       const validDescription =
         (typeof this.item.description === "string" &&
           this.item.description.length > 3) ||
-        this.item.paymentType === "Allowance";
+        ["Allowance", "FuelOnAccount"].includes(this.item.paymentType);
       const validTotal =
         (typeof this.item.total === "number" && this.item.total > 0) ||
         this.item.paymentType === "Allowance";

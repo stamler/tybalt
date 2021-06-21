@@ -123,8 +123,8 @@ service cloud.firestore {
 
         // description is present except for Allowance
         (
-          newDoc().description.size() > 3 && newDoc().paymentType != "Allowance" ||
-          isMissing("description") && newDoc().paymentType == "Allowance"
+          newDoc().description.size() > 3 && !(newDoc().paymentType in ["Allowance", "FuelOnAccount"]) ||
+          isMissing("description") && newDoc().paymentType in ["Allowance", "FuelOnAccount"]
         ) &&
 
         // tbtePayrollId matches that on the profile
