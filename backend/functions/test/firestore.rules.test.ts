@@ -1629,11 +1629,13 @@ describe("Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "Allowance", breakfast: true, lunch: true, dinner:true, lodging:false, ...missingPaymentTypeAndTotalAndAttachmentAndDescription }));
       await firebase.assertSucceeds(doc.set({ paymentType: "PersonalReimbursement", total: 100, ...missingPaymentTypeAndTotalAndAttachment}));
     });
-    it("requires PersonalReimbursement expenses to have only total and description", async () => {
+    it("requires PersonalReimbursement expenses to have only total and description with optional job", async () => {
       await profiles.doc("alice").update({allowPersonalReimbursement: true});
       const doc = timeDb.collection("Expenses").doc();
       const {vendorName, paymentType, attachment, ...prbase } = baseline;
       await firebase.assertSucceeds(doc.set({paymentType: "PersonalReimbursement",...prbase}));
+      await firebase.assertSucceeds(doc.set({paymentType: "PersonalReimbursement",...prbase, job:"19-333", jobDescription: "Big job for a client", client: "A special client" }));
+      await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement",...prbase, job:"19-333", client: "A special client" }));
       await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", breakfast: true,...prbase}));
       await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", vendorName: "Some vendor",...prbase}));
       await firebase.assertFails(doc.set({paymentType: "PersonalReimbursement", ccLast4digits: "1234",...prbase}));

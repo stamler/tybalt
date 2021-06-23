@@ -126,10 +126,7 @@
         Personal Accommodation
       </label>
     </span>
-    <span
-      class="field"
-      v-if="!['PersonalReimbursement'].includes(item.paymentType)"
-    >
+    <span class="field">
       <label for="job">Job</label>
       <input
         class="jobNumberInput"
