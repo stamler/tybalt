@@ -539,5 +539,31 @@ describe("tallyAndValidate", async () => {
         "failed to open 25-003: Job status isn't Active. Ask a job admin to mark it Active then resubmit."
       );
     });
+    it("rejects if a specific workrecord appears in more than one entry", async () => {
+      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, mealsHours: 0.5, workrecord:"K20-123", ...jobPartial2 }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
+      let timeEntries = await db
+      .collection("TimeEntries")
+      .where("uid", "==", alice.uid)
+      .where("weekEnding", "==", weekEnding)
+      .orderBy("date", "asc")
+      .get();
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert(_.isEqual(tally.timetypes, ["R"]));
+      const fullDay3 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, mealsHours: 0.5, workrecord:"K20-123", ...jobPartial }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullDay3 });
+      timeEntries = await db
+      .collection("TimeEntries")
+      .where("uid", "==", alice.uid)
+      .where("weekEnding", "==", weekEnding)
+      .orderBy("date", "asc")
+      .get();
+      assert.equal(timeEntries.size,6);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "The same work record appears in multiple entries"
+      );
+    });
   });
 });

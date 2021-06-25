@@ -14,6 +14,7 @@ export async function tallyAndValidate(
 
   // Put the existing timeEntries into an array then delete from Collection
   const entries: TimeEntry[] = [];
+  const workrecords: string[] = [];
   const bankEntries: TimeEntry[] = [];
   const payoutRequests: TimeEntry[] = [];
   const offRotationDates: number[] = [];
@@ -31,6 +32,9 @@ export async function tallyAndValidate(
     // simplify below code. For example RegularTimeEntry, BankTimeEntry,
     // NonWorkTimeEntry, OffRotationTimeEntry with corresponding type guards
 
+    if (item.workrecord) {
+      workrecords.push(item.workrecord);
+    }
     timetypes.add(item.timetype);
     if (item.timetype === "OR") {
       // Count the off rotation dates and ensure that there are not two
@@ -133,6 +137,14 @@ export async function tallyAndValidate(
 
   // TimeEntries are done being enumerated, now work on summaries
   // and validation of the TimeSheet as a whole
+
+  // validate that a workrecord wasn't used in more than one entry
+  if (new Set(workrecords).size !== workrecords.length) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The same work record appears in multiple entries"
+    );
+  }
 
   // validate and tally bankedHours
   let bankedHours = 0;
