@@ -8,6 +8,13 @@
       <span class="listheader">
         Week Ending
         {{ new Date(parseInt(weekEnding, 10)) | shortDate }}
+        <router-link
+          v-if="unsubmittedExpenseIds(expenses).length > 0"
+          v-bind:to="{ name: 'Expenses' }"
+          v-on:click.native="submitExpenses(unsubmittedExpenseIds(expenses))"
+        >
+          <send-icon></send-icon>
+        </router-link>
       </span>
       <div
         class="listentry"
@@ -268,6 +275,14 @@ export default mixins.extend({
     };
   },
   methods: {
+    unsubmittedExpenseIds(expenses: any[]) {
+      return expenses.filter((x) => x.submitted !== true).map((x) => x.id);
+    },
+    async submitExpenses(expenses: string[]) {
+      for (const id of expenses) {
+        await this.submitExpense(id);
+      }
+    },
     commitMessage(item: firebase.firestore.DocumentData) {
       if (item.payPeriodEnding) {
         return `Reimbursed on ${format(

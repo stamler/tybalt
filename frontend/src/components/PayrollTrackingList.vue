@@ -129,9 +129,8 @@ export default mixins.extend({
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
       const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
-      const { timesheets: items, amendments } = this.foldAmendments(
-        inputObject
-      );
+      const { timesheets: items, amendments } =
+        this.foldAmendments(inputObject);
 
       // since all entries have the same week ending, pull from the first entry
       let weekEnding;
