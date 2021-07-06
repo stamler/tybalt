@@ -254,17 +254,10 @@ function isExpenseRegular(data: unknown): data is ExpenseRegular {
     data.paymentType === "CorporateCreditCard" ||
     data.paymentType === "FuelOnAccount";
   const total = typeof data.total === "number" && data.total > 0;
-  const description = typeof data.description === "string";
-  const optionalStringVals = ["vendorName", "attachment", "po"]
+  const optionalStringVals = ["description", "vendorName", "attachment", "po"]
     .map((x) => data[x] === undefined || typeof data[x] === "string")
     .every((x) => x === true);
-  return (
-    isExpenseCommon(data) &&
-    paymentType &&
-    total &&
-    optionalStringVals &&
-    description
-  );
+  return isExpenseCommon(data) && paymentType && total && optionalStringVals;
 }
 function isExpensePersonal(data: unknown): data is ExpensePersonal {
   if (!isObject(data)) {
