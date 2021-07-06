@@ -21,9 +21,12 @@
         v-for="item in expenses"
         v-bind:key="item.id"
         v-bind:class="{
-          reimbursable: ['Mileage', 'Allowance', 'Expense'].includes(
-            item.paymentType
-          ),
+          reimbursable: [
+            'Mileage',
+            'Allowance',
+            'Expense',
+            'PersonalReimbursement',
+          ].includes(item.paymentType),
         }"
       >
         <div class="anchorbox">
@@ -109,9 +112,13 @@
           <template
             v-if="
               item.committed === true &&
-              ['Mileage', 'Allowance', 'Expense', 'Meals'].includes(
-                item.paymentType
-              )
+              [
+                'Mileage',
+                'Allowance',
+                'Expense',
+                'Meals',
+                'PersonalReimbursement',
+              ].includes(item.paymentType)
             "
           >
             <span
