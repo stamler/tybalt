@@ -20,13 +20,17 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 import _ from "lodash";
 
-const MILEAGE_RATE = 0.5; // dollars per km
-const BREAKFAST_RATE = 15; // dollars per meal
-const LUNCH_RATE = 20; // dollars per meal
-const DINNER_RATE = 20; // dollars per meal
-const LODGING_RATE = 50; // dollars for personal lodging reimbursement
 
 export default Vue.extend({
+  data() {
+    return {
+      MILEAGE_RATE: 0.5, // dollars per km
+      BREAKFAST_RATE: 15, // dollars per meal
+      LUNCH_RATE: 20, // dollars per meal
+      DINNER_RATE: 20, // dollars per meal
+      LODGING_RATE: 50, // dollars for personal lodging reimbursement
+    };
+  },
   computed: {
     ...mapState(["claims", "user"]),
   },
@@ -101,16 +105,16 @@ export default Vue.extend({
     calculatedAllowanceAmount(row: ExpenseAllowance | ExpenseMeals) {
       if (isExpenseMeals(row)) {
         return (
-          (row.breakfast ? BREAKFAST_RATE : 0) +
-          (row.lunch ? LUNCH_RATE : 0) +
-          (row.dinner ? DINNER_RATE : 0)
+          (row.breakfast ? this.BREAKFAST_RATE : 0) +
+          (row.lunch ? this.LUNCH_RATE : 0) +
+          (row.dinner ? this.DINNER_RATE : 0)
         );
       }
       return (
-        (row.breakfast ? BREAKFAST_RATE : 0) +
-        (row.lunch ? LUNCH_RATE : 0) +
-        (row.dinner ? DINNER_RATE : 0) +
-        (row.lodging ? LODGING_RATE : 0)
+        (row.breakfast ? this.BREAKFAST_RATE : 0) +
+        (row.lunch ? this.LUNCH_RATE : 0) +
+        (row.dinner ? this.DINNER_RATE : 0) +
+        (row.lodging ? this.LODGING_RATE : 0)
       );
     },
     bundle(week: Date) {
@@ -616,7 +620,7 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage": {
-                const total = row.distance * MILEAGE_RATE;
+                const total = row.distance * this.MILEAGE_RATE;
                 return total - this.calculatedOntarioHST(total);
               }
               case "Allowance":
@@ -634,7 +638,9 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage":
-                return this.calculatedOntarioHST(row.distance * MILEAGE_RATE);
+                return this.calculatedOntarioHST(
+                  row.distance * this.MILEAGE_RATE
+                );
               case "Allowance":
               case "Meals":
                 return this.calculatedOntarioHST(
@@ -650,7 +656,7 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage":
-                return row.distance * MILEAGE_RATE;
+                return row.distance * this.MILEAGE_RATE;
               case "Allowance":
               case "Meals":
                 return this.calculatedAllowanceAmount(row);

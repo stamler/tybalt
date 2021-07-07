@@ -25,9 +25,12 @@
               {{ exp.lodging ? "Personal Accommodation" : "" }}
             </div>
             <div class="byline" v-if="exp.paymentType === 'Mileage'">
-              {{ exp.distance }} km
+              {{ exp.distance }} km - ${{ exp.distance * MILEAGE_RATE }}
             </div>
-            <div class="byline" v-else-if="exp.paymentType === 'Meals'"></div>
+            <div
+              class="byline"
+              v-else-if="['Meals', 'Allowance'].includes(exp.paymentType)"
+            ></div>
             <div class="byline" v-else>
               ${{ exp.total }}
               <span v-if="exp.po">/PO:{{ exp.po }}</span>
@@ -40,7 +43,9 @@
                 <download-icon></download-icon>
               </router-link>
             </template>
-            <span v-else-if="exp.paymentType === 'Meals'"></span>
+            <span
+              v-else-if="['Meals', 'Allowance'].includes(exp.paymentType)"
+            ></span>
             <span v-else>[no attachment]</span>
             <template v-if="exp.job !== undefined">
               {{ exp.job }} {{ exp.jobDescription }} for {{ exp.client }}

@@ -53,7 +53,7 @@
               </template>
             </div>
             <div class="byline" v-if="item.paymentType === 'Mileage'">
-              {{ item.distance }} km
+              {{ item.distance }} km - ${{ item.distance * MILEAGE_RATE }}
             </div>
             <div
               class="byline"

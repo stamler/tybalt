@@ -30,7 +30,7 @@
         <!--<option value="FuelOnAccount">Fuel On Account</option> -->
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
-        <option value="Mileage">Personal Mileage</option>
+        <option value="Mileage">Personal Mileage ${{ MILEAGE_RATE }}/km</option>
         <option v-if="allowPersonalReimbursement" value="PersonalReimbursement">
           Personal Reimbursement
         </option>
@@ -106,15 +106,15 @@
     <span class="field" v-if="item.paymentType === 'Allowance'">
       <label for="breakfast" class="checkoption">
         <input type="checkbox" id="breakfast" v-model="item.breakfast" />
-        Breakfast
+        Breakfast (${{ BREAKFAST_RATE }})
       </label>
       <label for="lunch" class="checkoption">
         <input class="grow" type="checkbox" id="lunch" v-model="item.lunch" />
-        Lunch
+        Lunch (${{ LUNCH_RATE }})
       </label>
       <label for="dinner" class="checkoption">
         <input class="grow" type="checkbox" id="dinner" v-model="item.dinner" />
-        Dinner
+        Dinner (${{ DINNER_RATE }})
       </label>
       <label for="lodging" class="checkoption">
         <input
@@ -123,7 +123,7 @@
           id="lodging"
           v-model="item.lodging"
         />
-        Personal Accommodation
+        Personal Accommodation (${{ LODGING_RATE }})
       </label>
     </span>
     <span class="field">
