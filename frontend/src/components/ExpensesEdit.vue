@@ -27,7 +27,7 @@
       <select class="grow" name="paymentType" v-model="item.paymentType">
         <option value="Allowance">Daily Allowance</option>
         <option value="FuelCard">Fuel Card</option>
-        <option value="FuelOnAccount">Fuel On Account</option>
+        <!--<option value="FuelOnAccount">Fuel On Account</option> -->
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">Personal Mileage</option>
