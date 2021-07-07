@@ -130,7 +130,8 @@ service cloud.firestore {
         // tbtePayrollId matches that on the profile
         get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc().tbtePayrollId &&
 
-        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "FuelOnAccount", "Allowance", "PersonalReimbursement"] &&
+        // the following list has "FuelOnAccount" removed to disable it
+        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "Allowance", "PersonalReimbursement"] &&
         isInCollection("division","Divisions") &&
 
         // requires valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
