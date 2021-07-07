@@ -10,7 +10,7 @@
       <form id="editor">
         <h3>Settings</h3>
         <h4>Time Sheets</h4>
-        <span class="field">
+        <span class="field" title="The manager who will approve your timesheet">
           <label for="manager">Manager</label>
           <select class="grow" name="manager" v-model="item.managerUid">
             <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
@@ -18,7 +18,10 @@
             </option>
           </select>
         </span>
-        <span class="field">
+        <span
+          class="field"
+          title="New Time Entries will be use this division by default"
+        >
           <label for="defaultDivision">Default Division</label>
           <select
             class="grow"
@@ -30,7 +33,11 @@
             </option>
           </select>
         </span>
-        <span class="field" v-if="isManager">
+        <span
+          class="field"
+          v-if="isManager"
+          title="Prevent staff from submitting timesheets and expenses to you"
+        >
           <label for="doNotAcceptSubmissions">Block Submissions</label>
           <input
             class="grow"
@@ -38,6 +45,22 @@
             name="doNotAcceptSubmissions"
             v-model="item.doNotAcceptSubmissions"
           />
+        </span>
+        <span
+          class="field"
+          v-if="isManager"
+          title="Who should receive time and expenses when you're not available?"
+        >
+          <label for="alternateManager">Alternate Manager</label>
+          <select
+            class="grow"
+            name="alternateManager"
+            v-model="item.alternateManager"
+          >
+            <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
+              {{ m.displayName }}
+            </option>
+          </select>
         </span>
         <span class="field">
           <button type="button" v-on:click="save()">Save and sign out</button>
@@ -109,12 +132,16 @@ export default Vue.extend({
         defaultDivision: string;
         managerUid: string;
         doNotAcceptSubmissions?: boolean;
+        alternateManager?: string;
       } = {
         defaultDivision: this.item.defaultDivision,
         managerUid: this.item.managerUid,
       };
       if (typeof this.item.doNotAcceptSubmissions === "boolean") {
         obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
+      }
+      if (typeof this.item.alternateManager === "string") {
+        obj.alternateManager = this.item.alternateManager;
       }
       db.collection("Profiles")
         .doc(this.user.uid)

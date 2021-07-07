@@ -362,7 +362,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid","displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
+          "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
         ]) &&
         (
           newDoc().offRotation is bool || isMissing("offRotation")
@@ -391,15 +391,23 @@ service cloud.firestore {
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager
         // The bundling function handles this by validating that the manager has tapr permissions
-        isInCollection("defaultDivision", "Divisions")
+        isInCollection("defaultDivision", "Divisions") &&
+        (
+          isInCollection("alternateManager", "ManagerNames") ||
+          isMissing("alternateManager") 
+        )
       ) ||
       (
         request.auth.uid == resource.id &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "defaultDivision", "doNotAcceptSubmissions"]) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "alternateManager", "defaultDivision", "doNotAcceptSubmissions"]) &&
         isInCollection("managerUid","Profiles") && // tapr validated in buildTimesheets function
         isInCollection("defaultDivision", "Divisions") &&
         (
           newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
+        ) &&
+        (
+          isInCollection("alternateManager", "ManagerNames") ||
+          isMissing("alternateManager") 
         )
       )
     }

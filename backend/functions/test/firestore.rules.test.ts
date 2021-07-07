@@ -10,6 +10,7 @@ const chuck = { displayName: "Chuck Example", email: "chuck@example.com", timeSh
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();
 const profiles = adminDb.collection("Profiles");
+const managerNames = adminDb.collection("ManagerNames");
 
 const collections = [
   "Computers",
@@ -214,6 +215,7 @@ describe("Other Firestore Rules", function () {
       await firebase.clearFirestoreData({ projectId });
       await profiles.doc("alice").set(alice);
       await profiles.doc("bob").set(bob);
+      await managerNames.doc("alice").set(alice);
       await divisions.doc("ABC").set(division);
     });
 
@@ -293,6 +295,101 @@ describe("Other Firestore Rules", function () {
           defaultDivision: "ABC",
           salary: true,
           offRotation: "not a boolean",
+        })
+      );
+    });
+    it("requires alternateManager to be string referencing ID in ManagerNames collection or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: "alice"
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: "franklin"
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: firebase.firestore.FieldValue.delete(),
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: true,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: 66,
+        })
+      );
+    });
+    it("allows only admin and owner to change alternateManager", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("Profiles").doc("bob"); // admin alice updating bob's profile
+      const doc2 = db2.collection("Profiles").doc("bob"); // regular alice updating bob's profile
+      const doc3 = db2.collection("Profiles").doc("alice"); // regular alice updating her own profile
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: "alice"
+        })
+      );
+      await firebase.assertFails(
+        doc2.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          alternateManager: "alice"
+        })
+      );
+      await firebase.assertSucceeds(
+        doc3.update({
+          managerUid: "alice",
+          defaultDivision: "ABC",
+          alternateManager: "alice"
         })
       );
     });

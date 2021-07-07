@@ -67,6 +67,18 @@
       />
     </span>
     <span class="field">
+      <label for="alternateManager">Alternate Manager</label>
+      <select
+        class="grow"
+        name="alternateManager"
+        v-model="item.alternateManager"
+      >
+        <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
+          {{ m.displayName }}
+        </option>
+      </select>
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input
         class="grow"
@@ -225,6 +237,7 @@ export default Vue.extend({
           salary: boolean;
           skipMinTimeCheckOnNextBundle?: boolean;
           doNotAcceptSubmissions?: boolean;
+          alternateManager?: string;
           offRotation?: boolean;
           timeSheetExpected: boolean;
           allowPersonalReimbursement?: boolean;
@@ -245,6 +258,9 @@ export default Vue.extend({
         }
         if (typeof this.item.doNotAcceptSubmissions === "boolean") {
           obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
+        }
+        if (typeof this.item.alternateManager === "string") {
+          obj.alternateManager = this.item.alternateManager;
         }
         if (typeof this.item.skipMinTimeCheckOnNextBundle === "boolean") {
           obj.skipMinTimeCheckOnNextBundle = this.item.skipMinTimeCheckOnNextBundle;

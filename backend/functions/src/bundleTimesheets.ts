@@ -136,6 +136,17 @@ export async function bundleTimesheet(
     delete timesheetData.bypass40hour;
 
     if (managerProfile.get("doNotAcceptSubmissions") === true) {
+      const alternate = managerProfile.get("alternateManager");
+      if (alternate !== undefined) {
+        const alternateProfile = await db.collection("ManagerNames").doc(alternate).get();
+        const displayName = alternateProfile.get("displayName")
+        if (displayName !== undefined) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `${managerProfile.get("displayName")} is not accepting submissions but has specified ${displayName} as their alternate manager. Please choose another manager.`
+          )
+        }
+      }
       throw new functions.https.HttpsError(
         "failed-precondition",
         `${managerProfile.get("displayName")} is not accepting submissions. Please choose another manager.`
