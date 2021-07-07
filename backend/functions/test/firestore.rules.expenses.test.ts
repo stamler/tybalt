@@ -378,6 +378,12 @@ describe("Firestore Rules (Expenses)", function () {
       await firebase.assertFails(doc.set({breakfast: "true", lunch: 56, dinner:false, lodging: false, ...skeleton}));
       await firebase.assertSucceeds(doc.set({breakfast: true, lunch: true, dinner:false, lodging: false, ...skeleton}));
     });
+    it("requires Allowance expenses to have true value for at least one of breakfast, lunch, dinner, and lodging properties", async() => {
+      const doc = timeDb.collection("Expenses").doc();
+      const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Allowance", tbtePayrollId: 28 };
+      await firebase.assertFails(doc.set({breakfast: false, lunch: false, dinner:false, lodging: false, ...skeleton}));
+      await firebase.assertSucceeds(doc.set({breakfast: true, lunch: false, dinner:false, lodging: false, ...skeleton}));
+    });
     it("requires Allowance expenses to not have description or total properties", async () => {
       const doc = timeDb.collection("Expenses").doc();
       const skeleton = { uid: "alice", displayName: "Alice Example", surname: "Example", givenName: "Alice", date: new Date(), submitted: false, approved: false, managerUid: "bob", managerName: "Bob Example", division: "ABC", divisionName: "Playtime", paymentType: "Allowance", tbtePayrollId: 28 };

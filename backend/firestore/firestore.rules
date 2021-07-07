@@ -164,6 +164,7 @@ service cloud.firestore {
         // when paymentType is not Mileage or Allowance, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
         // when paymentType is Allowance, breakfast, lunch, dinner and lodging are booleans and total and distance are missing
+        // when paymentType is Allowance, at least one of breakfast, lunch, dinner and lodging must be true
         // when paymentType is PersonalReimbursement, po, vendorName, attachment, breakfast, lunch, dinner, lodging are missing
         (
           (
@@ -190,7 +191,8 @@ service cloud.firestore {
             newDoc().breakfast is bool &&
             newDoc().lunch is bool &&
             newDoc().dinner is bool &&
-            newDoc().lodging is bool
+            newDoc().lodging is bool &&
+            ( newDoc().breakfast || newDoc().lunch || newDoc().dinner || newDoc().lodging )
           ) ||
           (
             newDoc().paymentType == "PersonalReimbursement" &&
