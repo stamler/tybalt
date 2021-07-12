@@ -195,11 +195,13 @@ export default mixins.extend({
           },
         },
         {
-          label: "overtime",
+          label: "overtime hours to pay",
           value: (row: PayrollReportRecord) => {
             if (!row.salary) {
               const reg = row.R || 0;
-              return reg > 44 ? reg - 44 : 0;
+              const ot = reg > 44 ? reg - 44 : 0;
+              const rb = row.RB || 0;
+              return rb > 0 ? ot - rb : ot;
             }
             return 0;
           },
