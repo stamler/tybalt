@@ -234,7 +234,21 @@ export default mixins.extend({
           label: "Overtime Payout Requested",
           value: "payoutRequest",
         },
-        "hasAmendmentsForWeeksEnding",
+        {
+          label: "hasAmendmentsForWeeksEnding",
+          value: (row: PayrollReportRecord) => {
+            if (Array.isArray(row.hasAmendmentsForWeeksEnding)) {
+              const deduplicated = Array.from(
+                new Set(row.hasAmendmentsForWeeksEnding)
+              );
+              const dates = deduplicated.map((x) =>
+                format(new Date(x), "yyyy MMM dd")
+              );
+              return dates;
+            }
+            return "";
+          },
+        },
         "salary",
       ];
       const opts = { fields, withBOM: true };
@@ -278,12 +292,13 @@ export default mixins.extend({
           salary: x.salary,
           tbtePayrollId: x.tbtePayrollId,
         };
-        if (x.timetype === "R") {
+        if (["R", "RT"].includes(x.timetype)) {
           item["R"] = (x.hours || 0) + (x.jobHours || 0);
         } else {
           if (!x.hours) {
+            console.log(x);
             throw new Error(
-              "The Amendment is of type nonWorkHours but no hours are present"
+              "generatePayrollCSV: The Amendment is of type nonWorkHours but no hours are present"
             );
           }
           item[x.timetype as TimeOffTypes] = x.hours;

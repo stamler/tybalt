@@ -496,13 +496,13 @@ export default Vue.extend({
                 workHoursTally["noJobNumber"] += item.hours;
               } else {
                 throw new Error(
-                  "The TimeEntry is of type Regular hours but no job or hours are present"
+                  "foldAmendments: The TimeEntry is of type Regular hours but no job or hours are present"
                 );
               }
             } else {
               if (!item.hours) {
                 throw new Error(
-                  "The Amendment is of type nonWorkHours but no hours are present"
+                  "foldAmendments: The Amendment is of type nonWorkHours but no hours are present"
                 );
               }
               // Tally the non-work hours
