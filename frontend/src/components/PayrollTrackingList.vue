@@ -242,7 +242,10 @@ export default mixins.extend({
                 new Set(row.hasAmendmentsForWeeksEnding)
               );
               const dates = deduplicated.map((x) =>
-                format(new Date(x), "yyyy MMM dd")
+                format(
+                  utcToZonedTime(new Date(x), "America/Thunder_Bay"),
+                  "yyyy MMM dd"
+                )
               );
               return dates;
             }
