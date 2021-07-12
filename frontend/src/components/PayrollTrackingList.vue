@@ -296,7 +296,6 @@ export default mixins.extend({
           item["R"] = (x.hours || 0) + (x.jobHours || 0);
         } else {
           if (!x.hours) {
-            console.log(x);
             throw new Error(
               "generatePayrollCSV: The Amendment is of type nonWorkHours but no hours are present"
             );
