@@ -407,7 +407,8 @@ export default Vue.extend({
 
         delete this.item.payoutRequestAmount;
 
-        // Clear the Job if it's empty or too short
+        // Clear the Job if it's empty or too short, otherwise clear hours
+        // since we don't allow non-chargeable time with a job number
         // The back end will actually validate that it exists
         if (!this.item.job || this.item.job.length < 6) {
           // Clear
@@ -415,6 +416,8 @@ export default Vue.extend({
           delete this.item.jobDescription;
           delete this.item.jobHours;
           delete this.item.workorder;
+        } else {
+          delete this.item.hours;
         }
       }
 
