@@ -195,7 +195,7 @@ export default mixins.extend({
           },
         },
         {
-          label: "overtime",
+          label: "total overtime hours",
           value: (row: PayrollReportRecord) => {
             if (!row.salary) {
               const reg = row.R || 0;
