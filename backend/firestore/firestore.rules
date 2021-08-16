@@ -106,9 +106,10 @@ service cloud.firestore {
         );
     }
     function validExpenseEntry() {
+      let newDoc = newDoc();
       return
         // allowed fields
-        newDoc().keys().hasOnly([ "date", "description", "uid", "displayName", 
+        newDoc.keys().hasOnly([ "date", "description", "uid", "displayName", 
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType",
           "unitNumber", "breakfast", "lunch", "dinner", "lodging",
@@ -117,50 +118,50 @@ service cloud.firestore {
           "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed" ]) &&
         
         // required fields
-        newDoc().keys().hasAll(["date", "uid", "displayName",
+        newDoc.keys().hasAll(["date", "uid", "displayName",
           "surname", "givenName", "submitted", "approved", "tbtePayrollId",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
         // description is present except for Allowance
         (
-          newDoc().description.size() > 3 && !(newDoc().paymentType in ["Allowance", "FuelOnAccount"]) ||
-          isMissing("description") && newDoc().paymentType in ["Allowance", "FuelOnAccount"]
+          newDoc.description.size() > 3 && !(newDoc.paymentType in ["Allowance", "FuelOnAccount"]) ||
+          isMissing("description") && newDoc.paymentType in ["Allowance", "FuelOnAccount"]
         ) &&
 
         // tbtePayrollId matches that on the profile
-        get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc().tbtePayrollId &&
+        get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc.tbtePayrollId &&
 
         // the following list has "FuelOnAccount" removed to disable it
-        newDoc().paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "Allowance", "PersonalReimbursement"] &&
+        newDoc.paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "Allowance", "PersonalReimbursement"] &&
         isInCollection("division","Divisions") &&
 
         // requires valid ccLast4digits if paymentType is "CorporateCreditCard" or "FuelCard"
         (
-          newDoc().paymentType in ["CorporateCreditCard","FuelCard"] && newDoc().ccLast4digits.matches('[0-9]{4}') ||
-          !(newDoc().paymentType in ["CorporateCreditCard","FuelCard"]) && isMissing("ccLast4digits")
+          newDoc.paymentType in ["CorporateCreditCard","FuelCard"] && newDoc().ccLast4digits.matches('[0-9]{4}') ||
+          !(newDoc.paymentType in ["CorporateCreditCard","FuelCard"]) && isMissing("ccLast4digits")
         ) &&
 
         // requires vendorName if paymentType is "Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"
         (
-          newDoc().paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"] && !isMissing("vendorName") ||
-          !(newDoc().paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"])
+          newDoc.paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"] && !isMissing("vendorName") ||
+          !(newDoc.paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"])
         ) &&
 
         // requires attachment if paymentType is "CorporateCreditCard", "FuelCard" or "Expense"
         (
-          newDoc().paymentType in ["CorporateCreditCard", "FuelCard", "Expense"] && !isMissing("attachment") ||
-          !(newDoc().paymentType in ["CorporateCreditCard", "FuelCard", "Expense"])
+          newDoc.paymentType in ["CorporateCreditCard", "FuelCard", "Expense"] && !isMissing("attachment") ||
+          !(newDoc.paymentType in ["CorporateCreditCard", "FuelCard", "Expense"])
         ) &&
         // po must be missing if paymentType is FuelCard or FuelOnAccount
         (
-          newDoc().paymentType in ["FuelCard", "FuelOnAccount"] && isMissing("po") ||
-          !(newDoc().paymentType in ["FuelCard", "FuelOnAccount"])
+          newDoc.paymentType in ["FuelCard", "FuelOnAccount"] && isMissing("po") ||
+          !(newDoc.paymentType in ["FuelCard", "FuelOnAccount"])
         ) &&
 
         // unitNumber must only be present for FuelOnAccount, and must be a positive integer
         (
-          (newDoc().unitNumber is int && newDoc().unitNumber > 0 && newDoc().paymentType == "FuelOnAccount") ||
-          newDoc().paymentType != "FuelOnAccount" && isMissing("unitNumber")
+          (newDoc.unitNumber is int && newDoc().unitNumber > 0 && newDoc.paymentType == "FuelOnAccount") ||
+          newDoc.paymentType != "FuelOnAccount" && isMissing("unitNumber")
         ) &&
         // when paymentType is not Mileage or Allowance, total is positive number and distance is missing
         // when paymentType is Mileage, distance is positive integer & po, vendorName, attachment, total are missing
@@ -169,36 +170,36 @@ service cloud.firestore {
         // when paymentType is PersonalReimbursement, po, vendorName, attachment, breakfast, lunch, dinner, lodging are missing
         (
           (
-            !(newDoc().paymentType in ["Mileage", "Allowance", "PersonalReimbursement"]) &&
-            newDoc().total is number &&
-            newDoc().total > 0 &&
+            !(newDoc.paymentType in ["Mileage", "Allowance", "PersonalReimbursement"]) &&
+            newDoc.total is number &&
+            newDoc.total > 0 &&
             isMissing("distance")
           ) ||
           (
-            newDoc().paymentType == "Mileage" &&
-            newDoc().distance is int &&
-            newDoc().distance > 0 &&
+            newDoc.paymentType == "Mileage" &&
+            newDoc.distance is int &&
+            newDoc.distance > 0 &&
             isMissing("po") &&
             isMissing("vendorName") &&
             isMissing("attachment") &&
             isMissing("total") && 
-            get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.personalVehicleInsuranceExpiry >= newDoc().date
+            get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.personalVehicleInsuranceExpiry >= newDoc.date
           ) ||
           (
-            newDoc().paymentType == "Allowance" &&
+            newDoc.paymentType == "Allowance" &&
             isMissing("po") &&
             isMissing("total") &&
             isMissing("distance") &&
-            newDoc().breakfast is bool &&
-            newDoc().lunch is bool &&
-            newDoc().dinner is bool &&
-            newDoc().lodging is bool &&
-            ( newDoc().breakfast || newDoc().lunch || newDoc().dinner || newDoc().lodging )
+            newDoc.breakfast is bool &&
+            newDoc.lunch is bool &&
+            newDoc.dinner is bool &&
+            newDoc.lodging is bool &&
+            ( newDoc.breakfast || newDoc.lunch || newDoc.dinner || newDoc.lodging )
           ) ||
           (
-            newDoc().paymentType == "PersonalReimbursement" &&
-            newDoc().total is number &&
-            newDoc().total > 0 &&
+            newDoc.paymentType == "PersonalReimbursement" &&
+            newDoc.total is number &&
+            newDoc.total > 0 &&
             isMissing("breakfast") &&
             isMissing("lunch") &&
             isMissing("dinner") &&
@@ -217,9 +218,9 @@ service cloud.firestore {
         // jobDescription and client are present
         (
           ( isInCollection("job","Jobs") && 
-            newDoc().keys().hasAll(["jobDescription", "client"]) &&
-            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.description == newDoc().jobDescription &&
-            get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.client == newDoc().client
+            newDoc.keys().hasAll(["jobDescription", "client"]) &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc.job)).data.description == newDoc.jobDescription &&
+            get(/databases/$(database)/documents/Jobs/$(newDoc.job)).data.client == newDoc.client
           ) || 
           isMissing("job")
         )
@@ -443,7 +444,6 @@ service cloud.firestore {
       allow read: if (
         hasClaim("time") && uidMatches() ||
         hasClaim("tapr") && managerUidMatches() && resource.data.submitted == true ||
-        hasClaim("erej") && resource.data.approved == true ||
         hasClaim("eapr") && (resource.data.approved == true || resource.data.committed == true) ||
         hasClaim("report") && (resource.data.submitted == true || resource.data.approved == true || resource.data.committed == true)
       )
@@ -455,23 +455,12 @@ service cloud.firestore {
       allow update: if 
         // owner can edit
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason") && (newDoc().committed == false || isMissing("committed")) && newDoc().approved == false) ||
+        // owner can recall unapproved
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted"]) && newDoc().submitted == false) ||
         // tapr can approve submitted expenses if they are manager
         (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["approved", "committed"]) && newDoc().committed == false && newDoc().approved == true && resource.data.submitted == true) ||
         // tapr can submit and simultaneously approve expenses if they are their own manager
         (hasClaim("tapr") && managerUidMatches() && newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "committed"]) && newDoc().submitted == true && newDoc().approved == true && newDoc().committed == false) ||
-        // erej can reject any approved uncommitted expenses
-        ( 
-          hasClaim("erej") &&
-          newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted", "approved", "rejected", "rejectorId", "rejectorName", "rejectionReason"]) &&
-          (newDoc().committed == false || isMissing("committed")) &&
-          newDoc().submitted == false &&
-          newDoc().approved == false &&
-          resource.data.submitted == true &&
-          resource.data.approved == true &&
-          newDoc().rejected == true &&
-          newDoc().rejectorId == request.auth.uid &&
-          get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
-        ) ||
         // tapr can reject submitted uncommitted expenses they manage
         (
           (

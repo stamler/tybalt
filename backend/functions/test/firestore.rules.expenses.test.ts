@@ -106,7 +106,12 @@ describe("Firestore Rules (Expenses)", function () {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true });
       await firebase.assertFails(doc.update({ submitted: false }));
     });
-
+    it("allows owner to recall rejected Expenses", async () => {
+      // rejected
+      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, rejected: true, rejectionReason: "A specific reason" });
+      const doc = timeDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
+      await firebase.assertSucceeds(doc.update({ submitted: false }));
+    });
     it("allows manager (tapr) to read submitted Expenses they manage", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, tapr: true } }).firestore();
@@ -157,28 +162,6 @@ describe("Firestore Rules (Expenses)", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, report: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertSucceeds(doc.get());
-    });
-    it("allows expense rejector (erej) to read any approved Expenses", async () => {
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, erej: true } }).firestore();
-      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
-      await firebase.assertSucceeds(doc.get());
-    });
-    it("allows expense rejector (erej) to reject any approved Expense, but not unapproved", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...alice, erej: true } }).firestore();
-      const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: false, approved: false, committed: false });
-      await firebase.assertFails(
-        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
-      );
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: false, committed: false });
-      await firebase.assertFails(
-        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example",  rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
-      );
-      await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, committed: false });
-      await firebase.assertSucceeds(
-        doc.set({ rejected: true, rejectorId: "bob", rejectorName: "Bob Example", rejectionReason: "6chars", approved: false, submitted: false }, { merge: true })
-      );
     });
     it("prevents owner from deleting their own Expenses if they are submitted", async () => {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true });
@@ -241,7 +224,7 @@ describe("Firestore Rules (Expenses)", function () {
       await firebase.assertSucceeds(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndAttachmentAndTotal }));
       const { personalVehicleInsuranceExpiry, ...missingPersonalVehicleInsuranceExpiry } = alice;
       await profiles.doc("alice").set({personalVehicleInsuranceExpiry: subDays(new Date(), 7), ...missingPersonalVehicleInsuranceExpiry});
-      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 5, ...missingPaymentTypeAndAttachmentAndTotal }));
+      await firebase.assertFails(doc.set({ paymentType: "Mileage", distance: 6, ...missingPaymentTypeAndAttachmentAndTotal }));
     });
     it("requires any referenced job to be valid", async () => {
       const doc = timeDb.collection("Expenses").doc();

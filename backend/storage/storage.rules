@@ -25,7 +25,6 @@ service firebase.storage {
       allow read: if (
         hasClaim("time") && request.auth.uid == userId ||
         hasClaim("tapr") ||
-        hasClaim("erej") ||
         hasClaim("eapr") ||
         hasClaim("report")
       )
