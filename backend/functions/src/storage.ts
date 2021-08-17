@@ -147,7 +147,8 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     await expensesSnapshot.forEach( (expenseDoc) => {
       // download the attachment to the working directory
       const attachment = expenseDoc.get("attachment");
-      const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${format(expenseDoc.get("date").toDate(), "yyyy_MMM_dd")}-${expenseDoc.get("total")}${path.extname(attachment)}`;
+      const first8 = path.basename(attachment).substr(0,8);
+      const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${format(expenseDoc.get("date").toDate(), "yyyy_MMM_dd")}-${expenseDoc.get("total")}-${first8}${path.extname(attachment)}`;
       const tempLocalAttachmentName = path.join(os.tmpdir(), filename);
       downloadPromises.push(bucket.file(attachment).download({destination: tempLocalAttachmentName}))
       contents.push({filename, tempLocalAttachmentName});
