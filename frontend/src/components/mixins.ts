@@ -6,6 +6,7 @@ import { format, subDays, addDays, differenceInDays } from "date-fns";
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import {
   TimeSheet,
+  UnwoundTimeSheet,
   Amendment,
   isTimeSheet,
   Expense,
@@ -15,11 +16,11 @@ import {
   isExpense,
 } from "./types";
 import { parse } from "json2csv";
+import { transforms } from "json2csv";
 
 const db = firebase.firestore();
 const storage = firebase.storage();
 import _ from "lodash";
-
 
 export default Vue.extend({
   data() {
@@ -551,6 +552,98 @@ export default Vue.extend({
 
       return difference % 14 === 0 ? true : false;
     },
+    async generateJobSummaryCSV(job: string, timeSheets: TimeSheet[]) {
+      // Filter entries without specified job
+      const relevantJobsOnly = timeSheets.map((x: TimeSheet) => {
+        x.entries = x.entries.filter((e) => e.job === job);
+        // This type conversion is a kludge because I can't figure out how
+        // to handle the conversion of TimeSheet to UnwoundTimeSheet within
+        // the unwind() transform inside json2csv so I'm doing it beforehand
+        return x as unknown as UnwoundTimeSheet;
+      });
+
+      const fields = [
+        {
+          label: "client",
+          value: (row: UnwoundTimeSheet) => row.jobsTally[job].client,
+        },
+        {
+          label: "job",
+          value: (row: UnwoundTimeSheet) => row.entries.job,
+        },
+        {
+          label: "division",
+          value: (row: UnwoundTimeSheet) => row.entries.division,
+        },
+        {
+          label: "timetype",
+          value: (row: UnwoundTimeSheet) => row.entries.timetype,
+        },
+        {
+          label: "date",
+          value: (row: UnwoundTimeSheet) => row.entries.date.toDate().getDate(),
+        },
+        {
+          label: "Month",
+          value: (row: UnwoundTimeSheet) =>
+            row.entries.date
+              .toDate()
+              .toLocaleString("en-US", { month: "short" }),
+        },
+        {
+          label: "Year",
+          value: (row: UnwoundTimeSheet) =>
+            row.entries.date.toDate().getFullYear(),
+        },
+        {
+          label: "qty",
+          value: (row: UnwoundTimeSheet) => row.entries.jobHours,
+          default: "0",
+        },
+        {
+          label: "unit",
+          value: "unit",
+          default: "hours",
+        },
+        {
+          label: "nc",
+          value: (row: UnwoundTimeSheet) => row.entries.hours,
+          default: "0",
+        },
+        {
+          label: "meals",
+          value: (row: UnwoundTimeSheet) => row.entries.mealsHours,
+          default: "0",
+        },
+        {
+          label: "ref",
+          value: (row: UnwoundTimeSheet) => row.entries.workrecord,
+        },
+        {
+          label: "project",
+          value: (row: UnwoundTimeSheet) => row.entries.jobDescription,
+        },
+        {
+          label: "description",
+          value: (row: UnwoundTimeSheet) => row.entries.workDescription,
+        },
+        "comments",
+        {
+          label: "employee",
+          value: "displayName",
+        },
+        "surname",
+        "givenName",
+      ];
+      const opts = {
+        fields,
+        withBOM: true,
+        transforms: [transforms.unwind({ paths: ["entries"] })],
+      };
+      const csv = parse(relevantJobsOnly, opts);
+      const blob = new Blob([csv], { type: "text/csv" });
+      this.downloadBlob(blob, `${job}_JobSummary.csv`);
+    },
     async generatePayablesCSV(
       urlOrExpenseArrayPromise: string | Promise<Expense[]>
     ) {
@@ -750,9 +843,8 @@ export default Vue.extend({
           | TimeSheet
           | Amendment
         )[];
-        const { timesheets, amendments: amendmentsInIf } = this.foldAmendments(
-          inputObject
-        );
+        const { timesheets, amendments: amendmentsInIf } =
+          this.foldAmendments(inputObject);
         items = timesheets;
         amendments = amendmentsInIf;
       } else {

@@ -52,6 +52,21 @@ export interface TimeSheet {
   [x: string]: any;
 }
 
+export interface UnwoundTimeSheet extends Omit<TimeSheet, "entries"> {
+  entries: {
+    division: string;
+    timetype: string;
+    client?: string;
+    job?: string;
+    jobHours?: number;
+    hours?: number;
+    mealsHours?: number;
+    workrecord?: string;
+    jobDescription?: string;
+    workDescription?: string;
+    [x: string]: any;
+  };
+}
 export interface Amendment {
   // required properties always
   date: string;

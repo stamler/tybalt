@@ -8,7 +8,16 @@
     <div>status: {{ item.status }}</div>
 
     <br />
-    <h4>Work History</h4>
+    <h4>
+      Work History
+      <router-link
+        v-if="timeSheets.length > 0"
+        v-bind:to="{ name: 'Job Details' }"
+        v-on:click.native="generateJobSummaryCSV(id, timeSheets)"
+      >
+        <download-icon></download-icon>
+      </router-link>
+    </h4>
     <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
       {{ timeSheet.weekEnding.toDate() | relativeTime }} -
       <router-link
@@ -25,13 +34,15 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import mixins from "./mixins";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { format, formatDistanceToNow } from "date-fns";
+import { DownloadIcon } from "vue-feather-icons";
 
-export default Vue.extend({
+export default mixins.extend({
   props: ["id", "collection"],
+  components: { DownloadIcon },
   data() {
     return {
       parentPath: "",
