@@ -2,7 +2,8 @@
   <div id="list">
     <h4 v-if="item.weekEnding">
       {{ weekStart | shortDate }} to
-      {{ item.weekEnding.toDate() | shortDate }} ({{ this.expenses.length }})
+      {{ item.weekEnding.toDate() | shortDate }} ({{ this.expenses.length }},
+      {{ countOfExpensesWithAttachments }} with attachments)
     </h4>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
       <!-- There must be a first item so get displayName from it -->
@@ -99,6 +100,11 @@ export default mixins.extend({
     },
     processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
       return _.groupBy(this.expenses, "uid");
+    },
+    countOfExpensesWithAttachments(): number {
+      return this.expenses.filter((x) =>
+        Object.prototype.hasOwnProperty.call(x, "attachment")
+      ).length;
     },
   },
   data() {
