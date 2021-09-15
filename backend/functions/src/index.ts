@@ -58,7 +58,7 @@ exports.cleanUpOrphanedAttachment = functions.firestore
 exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAttachments);
 
 // call from client to generate a zip file of expense attachments for a given document ID or payPeriodEnding
-exports.generateExpenseAttachmentArchive = functions.runWith({memory: "1GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
+exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
