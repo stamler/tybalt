@@ -1,11 +1,14 @@
 <template>
   <div id="list">
     <h4 v-if="item.weekEnding">
-      {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
+      {{ weekStart | shortDate }} to
+      {{ item.weekEnding.toDate() | shortDate }} ({{ this.expenses.length }})
     </h4>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
       <!-- There must be a first item so get displayName from it -->
-      <span class="listheader">{{ expenses[0].displayName }}</span>
+      <span class="listheader"
+        >{{ expenses[0].displayName }} ({{ expenses.length }})
+      </span>
       <div class="listentry" v-for="exp in expenses" v-bind:key="exp.id">
         <div class="anchorbox">
           {{ exp.date.toDate() | shortDate }}
