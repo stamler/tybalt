@@ -46,7 +46,9 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
       .where("submitted","==", true)
       .where("approved", "==", false)
       .get();
-    const managerUids = [...new Set(pendingDocuments.docs.map(x => x.get("managerUid")))];
+    // filter out the pendingDocuments where rejected === true
+    const pendingNoRejected = pendingDocuments.docs.filter(x => x.get("rejected") !== true);
+    const managerUids = [...new Set(pendingNoRejected.map(x => x.get("managerUid")))];
     functions.logger.info("creating expense approval reminders");
     for (const managerUid of managerUids) {
       const profile = await db.collection("Profiles").doc(managerUid).get();
