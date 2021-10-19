@@ -48,32 +48,35 @@
         item.division !== ''
       "
     >
-      <label for="job">Job</label>
-      <input
-        type="text"
-        name="job"
-        class="jobNumberInput"
-        placeholder="Proj/Prop"
-        v-bind:value="item.job"
+      <span v-if="item.job === undefined && searchClientLoaded">
+        <ais-instant-search
+          v-bind:search-function="searchFunction"
+          v-bind:search-client="searchClient"
+          index-name="tybalt_jobs"
+        >
+          <ais-configure :hits-per-page.camel="4" />
+          <ais-search-box id="searchbox" placeholder="search for job..." />
+<!--          <ais-state-results>
+            <template v-slot="{ state: { query } }">
+              <ais-hits v-if="query.length > 0" />
+            </template>
+          </ais-state-results>
+-->
+          <ais-hits id="jobSearchResults" style="display: none">
+            <div slot="item" slot-scope="{ item }">
+              {{ item.objectID }} - {{ item.client }}: {{ item.description }}
+            </div>
+          </ais-hits>
+        </ais-instant-search>
+      </span>
+      <span v-else>{{ item.job }}-{{ item.jobDescription }}</span>
+      <!-- 
         v-on:keydown.arrow-down="onArrowDown"
         v-on:keydown.arrow-up="onArrowUp"
         v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
         v-on:input="updateJobCandidates"
-      />
-      <span class="jobDescription">{{ item.jobDescription }}</span>
+      -->
     </span>
-    <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
-      <ul>
-        <li
-          v-for="(c, index) in jobCandidates"
-          v-bind:class="{ selected: index === selectedIndex }"
-          v-bind:key="c.id"
-          v-on:click="setJob(c.id)"
-        >
-          {{ c.id }} - {{ c.client }}: {{ c.description }}
-        </li>
-      </ul>
-    </div>
 
     <span
       class="field"
@@ -198,6 +201,8 @@ import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
+import algoliasearch from "algoliasearch/lite";
+import { SearchClient } from "algoliasearch/lite";
 
 export default Vue.extend({
   components: { Datepicker },
@@ -223,6 +228,9 @@ export default Vue.extend({
       selectedIndex: null as number | null,
       jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
+      profileSecrets: {} as firebase.firestore.DocumentData,
+      searchClient: {} as SearchClient,
+      searchClientLoaded: false,
     };
   },
   computed: {
@@ -274,8 +282,30 @@ export default Vue.extend({
     this.$bind("timetypes", db.collection("TimeTypes"));
     this.$bind("profiles", db.collection("Profiles"));
     this.setItem(this.id);
+    this.setup();
   },
   methods: {
+    searchFunction(helper) {
+      console.log("called searchFunction()");
+      const container = document.getElementById("jobSearchResults");
+      if (["", undefined].includes(helper.state.query)) {
+        if (container !== null) {
+          container.style.display = "none";
+        }
+      } else {
+        container.style.display = "inline-block";
+      }
+      helper.search();
+    },
+    async setup() {
+      this.profileSecrets = await db
+        .collection("ProfileSecrets")
+        .doc(this.user.uid)
+        .get();
+      const searchkey = this.profileSecrets.get("algoliaSearchKey");
+      this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
+      this.searchClientLoaded = true;
+    },
     async setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
