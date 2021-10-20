@@ -50,23 +50,25 @@
     >
       <span v-if="item.job === undefined && searchClientLoaded">
         <ais-instant-search
-          v-bind:search-function="searchFunction"
           v-bind:search-client="searchClient"
           index-name="tybalt_jobs"
         >
           <ais-configure :hits-per-page.camel="4" />
           <ais-search-box id="searchbox" placeholder="search for job..." />
-<!--          <ais-state-results>
-            <template v-slot="{ state: { query } }">
-              <ais-hits v-if="query.length > 0" />
+          <ais-state-results>
+            <template v-slot="{ state: { query }, results: { hits } }">
+              <ais-hits v-if="query.length > 0 && hits.length > 0">
+                <div slot="item" slot-scope="{ item }">
+                  {{ item.objectID }} - {{ item.client }}:
+                  {{ item.description }}
+                </div>
+              </ais-hits>
+              <div v-else-if="query.length > 0 && hits.length === 0">
+                No results found
+              </div>
+              <span v-else></span>
             </template>
           </ais-state-results>
--->
-          <ais-hits id="jobSearchResults" style="display: none">
-            <div slot="item" slot-scope="{ item }">
-              {{ item.objectID }} - {{ item.client }}: {{ item.description }}
-            </div>
-          </ais-hits>
         </ais-instant-search>
       </span>
       <span v-else>{{ item.job }}-{{ item.jobDescription }}</span>
@@ -285,18 +287,6 @@ export default Vue.extend({
     this.setup();
   },
   methods: {
-    searchFunction(helper) {
-      console.log("called searchFunction()");
-      const container = document.getElementById("jobSearchResults");
-      if (["", undefined].includes(helper.state.query)) {
-        if (container !== null) {
-          container.style.display = "none";
-        }
-      } else {
-        container.style.display = "inline-block";
-      }
-      helper.search();
-    },
     async setup() {
       this.profileSecrets = await db
         .collection("ProfileSecrets")
