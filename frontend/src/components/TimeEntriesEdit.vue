@@ -48,36 +48,12 @@
         item.division !== ''
       "
     >
-      <span v-if="item.job === undefined && searchClientLoaded">
-        <ais-instant-search
-          v-bind:search-client="searchClient"
-          index-name="tybalt_jobs"
-        >
-          <ais-configure :hits-per-page.camel="4" />
-          <ais-search-box id="searchbox" placeholder="search for job..." />
-          <ais-state-results>
-            <template v-slot="{ state: { query }, results: { hits } }">
-              <ais-hits v-if="query.length > 0 && hits.length > 0">
-                <div slot="item" slot-scope="{ item }">
-                  {{ item.objectID }} - {{ item.client }}:
-                  {{ item.description }}
-                </div>
-              </ais-hits>
-              <div v-else-if="query.length > 0 && hits.length === 0">
-                No results found
-              </div>
-              <span v-else></span>
-            </template>
-          </ais-state-results>
-        </ais-instant-search>
+      <span v-show="item.job === undefined">
+        <div id="jobAutocomplete" />
       </span>
-      <span v-else>{{ item.job }}-{{ item.jobDescription }}</span>
-      <!-- 
-        v-on:keydown.arrow-down="onArrowDown"
-        v-on:keydown.arrow-up="onArrowUp"
-        v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
-        v-on:input="updateJobCandidates"
-      -->
+      <span v-show="item.job !== undefined">
+        {{ item.job }}-{{ item.jobDescription }}
+      </span>
     </span>
 
     <span
@@ -204,7 +180,8 @@ import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
-import { SearchClient } from "algoliasearch/lite";
+import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
+import "@algolia/autocomplete-theme-classic";
 
 export default Vue.extend({
   components: { Datepicker },
@@ -226,13 +203,8 @@ export default Vue.extend({
       divisions: [] as firebase.firestore.DocumentData[],
       timetypes: [] as firebase.firestore.DocumentData[],
       profiles: [] as firebase.firestore.DocumentData[],
-      showSuggestions: false,
-      selectedIndex: null as number | null,
-      jobCandidates: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
       profileSecrets: {} as firebase.firestore.DocumentData,
-      searchClient: {} as SearchClient,
-      searchClientLoaded: false,
     };
   },
   computed: {
@@ -293,8 +265,37 @@ export default Vue.extend({
         .doc(this.user.uid)
         .get();
       const searchkey = this.profileSecrets.get("algoliaSearchKey");
-      this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
-      this.searchClientLoaded = true;
+      const searchClient = algoliasearch("F7IPMZB3IW", searchkey);
+      autocomplete({
+        container: "#jobAutocomplete",
+        placeholder: "search jobs...",
+        getSources() {
+          return [
+            {
+              sourceId: "jobs",
+              onSelect({ item }) {
+                console.log(item.objectID);
+              },
+              templates: {
+                item({ item }) {
+                  return `${item.objectID} - ${item.client}:${item.description}`;
+                },
+              },
+              getItems({ query }) {
+                return getAlgoliaResults({
+                  searchClient,
+                  queries: [
+                    {
+                      indexName: "tybalt_jobs",
+                      query,
+                    },
+                  ],
+                });
+              },
+            },
+          ];
+        },
+      });
     },
     async setItem(id: string) {
       if (this.collectionObject === null) {
@@ -335,50 +336,11 @@ export default Vue.extend({
         }
       }
     },
-    setJob(id: string) {
+    setJob(id: string, description: string, client: string) {
       this.item.job = id;
-      this.showSuggestions = false;
-      const job = this.jobCandidates.filter((i) => i.id === id)[0];
-      this.item.jobDescription = job.description;
-      this.item.client = job.client;
+      this.item.jobDescription = description;
+      this.item.client = client;
     },
-    onArrowUp() {
-      const count = this.jobCandidates.length;
-      this.selectedIndex =
-        this.selectedIndex === null
-          ? count - 1
-          : (this.selectedIndex + count - 1) % count;
-      this.item.job = this.jobCandidates[this.selectedIndex].id;
-    },
-    onArrowDown() {
-      const count = this.jobCandidates.length;
-      this.selectedIndex =
-        this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
-      this.item.job = this.jobCandidates[this.selectedIndex].id;
-    },
-    // any annotation in next line due to the following:
-    // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
-    updateJobCandidates: _.debounce(function (this: any, e: Event) {
-      // TODO: possibly use full text search like
-      // https://www.npmjs.com/package/adv-firestore-functions
-      this.showSuggestions = true;
-      const loBound = (e.target as HTMLInputElement).value.trim();
-      if (loBound.length > 0) {
-        const hiBound = (e.target as HTMLInputElement).value.trim() + "\uf8ff";
-        this.item.job = loBound; // preserve the value in the input field
-        this.$bind(
-          "jobCandidates",
-          db
-            .collection("Jobs")
-            .where(firebase.firestore.FieldPath.documentId(), ">=", loBound)
-            .where(firebase.firestore.FieldPath.documentId(), "<=", hiBound)
-            .limit(5)
-        );
-      } else {
-        this.jobCandidates = [];
-        delete this.item.job;
-      }
-    }, 650),
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
