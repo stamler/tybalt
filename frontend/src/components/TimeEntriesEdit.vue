@@ -48,19 +48,19 @@
         item.division !== ''
       "
     >
-      <span v-show="item.job === undefined">
+      <span v-show="job === undefined">
         <div id="jobAutocomplete" />
       </span>
-      <span v-show="item.job !== undefined">
-        {{ item.job }}-{{ item.jobDescription }}
+      <span v-show="job !== undefined">
+        {{ job }}-{{ item.jobDescription }}
       </span>
     </span>
 
     <span
       class="field"
       v-if="
-        item.job &&
-        item.job !== '' &&
+        job &&
+        job !== '' &&
         item.division &&
         ['R', 'RT'].includes(item.timetype)
       "
@@ -79,14 +79,12 @@
 
     <span
       class="field"
-      v-if="
-        !['OR', 'OW', 'OTO'].includes(item.timetype) && item.job === undefined
-      "
+      v-if="!['OR', 'OW', 'OTO'].includes(item.timetype) && job === undefined"
     >
       <label for="hours">
         {{
-          item.job &&
-          item.job !== "" &&
+          job &&
+          job !== "" &&
           item.division &&
           ["R", "RT"].includes(item.timetype)
             ? "Non-Chargeable "
@@ -123,8 +121,8 @@
     <span
       class="field"
       v-if="
-        item.job &&
-        item.job !== '' &&
+        job &&
+        job !== '' &&
         item.division &&
         ['R', 'RT'].includes(item.timetype)
       "
@@ -204,6 +202,7 @@ export default Vue.extend({
       timetypes: [] as firebase.firestore.DocumentData[],
       profiles: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
+      job: undefined as string | undefined,
       profileSecrets: {} as firebase.firestore.DocumentData,
     };
   },
@@ -266,6 +265,14 @@ export default Vue.extend({
         .get();
       const searchkey = this.profileSecrets.get("algoliaSearchKey");
       const searchClient = algoliasearch("F7IPMZB3IW", searchkey);
+      const setItem = (values: any) => {
+        this.job = values.objectID;
+        this.item.jobDescription = values.description;
+        this.item.client = values.client;
+      };
+      /* TODO: autocomplete needs to be reinstantiated each time it is shown after being hidden
+      For example after the time type changes. Thus we need to put this into a function and call it
+      in multiple places (I THINK) */
       autocomplete({
         container: "#jobAutocomplete",
         placeholder: "search jobs...",
@@ -274,7 +281,7 @@ export default Vue.extend({
             {
               sourceId: "jobs",
               onSelect({ item }) {
-                console.log(item.objectID);
+                setItem(item);
               },
               templates: {
                 item({ item }) {
@@ -336,11 +343,6 @@ export default Vue.extend({
         }
       }
     },
-    setJob(id: string, description: string, client: string) {
-      this.item.job = id;
-      this.item.jobDescription = description;
-      this.item.client = client;
-    },
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
@@ -392,7 +394,7 @@ export default Vue.extend({
         // Clear the Job if it's empty or too short, otherwise clear hours
         // since we don't allow non-chargeable time with a job number
         // The back end will actually validate that it exists
-        if (!this.item.job || this.item.job.length < 6) {
+        if (!this.job || this.job.length < 6) {
           // Clear
           delete this.item.client;
           delete this.item.jobDescription;
@@ -463,7 +465,6 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch((error) => {
-            //console.log(this.item);
             alert(`Failed to edit Time Entry: ${error.message}`);
           });
       } else {
@@ -475,7 +476,6 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           })
           .catch((error) => {
-            //console.log(this.item);
             alert(`Failed to create Time Entry: ${error.message}`);
           });
       }
