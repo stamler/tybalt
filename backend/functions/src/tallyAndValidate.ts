@@ -291,10 +291,11 @@ export async function tallyAndValidate(
       }
       // fold in existing data
       Object.assign(jobsTally[job], jobData);
-    } catch (error) {
+    } catch (error: unknown) {
+      const typedError = error as functions.https.HttpsError;
       throw new functions.https.HttpsError(
         "internal",
-        `failed to open ${job}: ${error.message}`
+        `failed to open ${job}: ${typedError.message}`
       );
     }
   }
