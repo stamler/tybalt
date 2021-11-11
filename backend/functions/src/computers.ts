@@ -36,7 +36,7 @@ export async function assignComputerToUser(
     const db = admin.firestore();
 
     // throw if the caller isn't authenticated & authorized
-    const auth = getAuthObject(context,["computers"]);
+    const auth = getAuthObject(context,["assignComputer"]);
 
     // Validate the data or throw
     // use a User Defined Type Guard

@@ -340,7 +340,7 @@ service cloud.firestore {
         );
     }
     match /Computers/{computer} {
-      allow read: if hasClaim("admin");
+      allow read: if hasClaim("admin") || hasClaim("computers");
     }
     match /ProfileSecrets/{profileId} {
       allow read: if request.auth.uid == profileId;
