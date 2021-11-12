@@ -2,7 +2,7 @@ import { admin, projectId } from "./index.test";
 
 import "mocha";
 
-import * as chai from "chai";    
+import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const assert = chai.assert;
