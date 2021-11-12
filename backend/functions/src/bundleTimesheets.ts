@@ -121,10 +121,12 @@ export async function bundleTimesheet(
   try {
     manager = await admin.auth().getUser(profile.get("managerUid"));
     managerProfile = await db.collection("Profiles").doc(profile.get("managerUid")).get();
-  } catch (error) {
+  } catch (error: unknown) {
+    const typedError = error as Error;
+
     // The Profile for this user likely specifies an identifier
     // (managerUid) that doesn't correspond to valid User Record.
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new functions.https.HttpsError("internal", typedError.message);
   }
   const claims = manager.customClaims;
   if (claims && claims["tapr"] === true) {

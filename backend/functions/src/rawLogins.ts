@@ -146,8 +146,9 @@ export async function handler(req: functions.https.Request, res: functions.Respo
       await storeValidLogin(d);
     }
     return res.status(202).send();
-  } catch (error) {
-    console.log(error.message);
+  } catch (error: unknown) {
+    const typedError = error as Error;
+    console.log(typedError.message);
     return res.status(500).send();
   }
 };
@@ -162,8 +163,9 @@ async function storeValidLogin(d: ValidLogin) {
     // try to match existing user, otherwise make a new one. If database
     // inconsistencies are found (i.e. multiple matches) store RawLogin
     userRef = await getUserRef(d);
-  } catch (error) {
-    return db.collection("RawLogins").doc().set({...d, error: error.message});
+  } catch (error: unknown) {
+    const typedError = error as Error;
+    return db.collection("RawLogins").doc().set({...d, error: typedError.message});
   }
 
   // TODO: delete all RawLogins where the serial matches this one since
@@ -283,8 +285,9 @@ export async function cleanup(
       return `Deleted ${old_items_snapshot.size} entries of ${
         data.computerName
       } prior to ${latest_item_snapshot.docs[0].data().created.toDate()}`;
-    } catch (error) {
-      return error.message;
+    } catch (error: unknown) {
+      const typedError = error as Error;
+      return typedError.message;
     }
   } else {
     return `No items to cleanup for computerName ${data.computerName}`;

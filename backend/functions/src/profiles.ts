@@ -254,7 +254,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   }
   
   // get the list of unique indices mapped by the profiles customClaims
-  const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims))) as string[];
+  const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims)));
 
   // Generate a secured api key using the search-only API key secret stored in functions.config().algolia.searchkey
   // specify userToken to match the profile id (which in turn matches the firebase auth uid)
