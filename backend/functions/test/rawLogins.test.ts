@@ -19,10 +19,32 @@ import { handler } from "../src/rawLogins";
 
 describe("rawLogins module", () => {
   const db = admin.firestore();
-  const makeDb = shared.makeFirestoreStub;
   const Req = shared.makeReqObject; // Stub request object
   const Res = shared.makeResObject; // Stub response object
 
+  async function resultAsExpected(result: any) {
+    // verify the response was 202
+    assert.equal(result.status.args[0][0], 202);
+
+    // verify only one computer exists and that the serial matches
+    const computers = await db.collection("Computers").get();
+    assert.equal(computers.size, 1);
+    assert.equal(computers.docs[0].get("serial"), expected.serial);
+    assert.equal(computers.docs[0].get("osSku"), expected.osSku);
+
+    // verify only one user exists and that the email matches
+    const users = await db.collection("Users").get();
+    assert.equal(users.size, 1);
+    assert.equal(users.docs[0].get("email"), expected.email);
+    assert.equal(users.docs[0].get("lastComputer"), "SN123,manufac");
+
+    // verify only one login exists and that the userSourceAnchor matches
+    const logins = await db.collection("Logins").get()
+    assert.equal(logins.size, 1);
+    assert.equal(logins.docs[0].get("userSourceAnchor"), expected.userSourceAnchor);
+    
+    return;
+  }
   // Use object rather than string for body since requests w/ JSON Content-Type
   // are parsed with a JSON body parser in express / firebase functions.
   const data = {
@@ -53,8 +75,7 @@ describe("rawLogins module", () => {
     userGivenName: "Testy",
     userSurname: "Testerson",
   };
-
-  const sts = shared.stripTimestamps; // utility function to strip timestamp props
+/*
   const userObjArg = {
     givenName: undefined,
     surname: undefined,
@@ -69,7 +90,7 @@ describe("rawLogins module", () => {
     surname: undefined,
     userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25",
   };
-
+*/
   describe("handler() responses", async () => {
     let sandbox: sinon.SinonSandbox;
 
@@ -119,63 +140,32 @@ describe("rawLogins module", () => {
       assert.equal(result.status.args[0][0], 400);
     });
     it("(202 Accepted) if a valid JSON login is POSTed, neither computer nor user exists", async () => {
-      let result = await handler(
+      resultAsExpected( await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
-      );
-      // verify the response was 202
-      assert.equal(result.status.args[0][0], 202);
-
-      // verify only one computer exists and that the serial matches
-      const computers = await db.collection("Computers").get();
-      assert.equal(computers.size, 1);
-      assert.equal(computers.docs[0].get("serial"), expected.serial);
-
-      // verify only one user exists and that the email matches
-      const users = await db.collection("Users").get();
-      assert.equal(users.size, 1);
-      assert.equal(users.docs[0].get("email"), expected.email);
-
-      // verify only one login exists and that the userSourceAnchor matches
-      const logins = await db.collection("Logins").get()
-      assert.equal(logins.size, 1);
-      assert.equal(logins.docs[0].get("userSourceAnchor"), expected.userSourceAnchor);
+      ));
     });
     it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
-      const db = makeDb({ userMatches: 1 });
-      let result = await handler(
+      await db.collection("Users").add({ givenName: data.userGivenName, lastComputer: "SN325,hp", surname: data.userSurname, updated: new Date(), upn: data.upn, userSourceAnchor: data.userSourceAnchor });
+      resultAsExpected( await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
-      );
-      assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
-      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
-      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
-      sinon.assert.calledOnce(db.batchStubs.commit);
+      ));
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
-      const db = makeDb({ computerExists: true });
-      let result = await handler(
+      await db.collection("Computers").add({ serial: data.serial, computerName: data.computerName, mfg: data.mfg, osSku: 69, systemType: data.systemType, networkConfig: data.networkConfig });
+      resultAsExpected( await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
-      );
-      assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
-      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
-      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
-      sinon.assert.calledOnce(db.batchStubs.commit);
+      ));
     });
     it("(202 Accepted) if a valid JSON login is POSTed, both computer and user exist", async () => {
-      const db = makeDb({ computerExists: true, userMatches: 1 });
-      let result = await handler(
+      await db.collection("Users").add({ givenName: data.userGivenName, lastComputer: "SN325,hp", surname: data.userSurname, updated: new Date(), upn: data.upn, userSourceAnchor: data.userSourceAnchor });
+      await db.collection("Computers").add({ serial: data.serial, computerName: data.computerName, mfg: data.mfg, osSku: 69, systemType: data.systemType, networkConfig: data.networkConfig });
+      resultAsExpected( await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
-      );
-      assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
-      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
-      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
-      sinon.assert.calledOnce(db.batchStubs.commit);
+      ));
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists, multiple users match", async () => {
       let result = await handler(
