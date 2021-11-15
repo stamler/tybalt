@@ -1,3 +1,4 @@
+import { admin, projectId } from "./index.test";
 import * as chai from "chai";    
 import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
@@ -7,17 +8,17 @@ import "mocha";
 const assert = chai.assert;
 
 import * as sinon from "sinon";
+import { cleanupFirestore } from "./helpers";
 const shared = require("./shared.helpers.test.js");
 import * as test from "firebase-functions-test";
 const functionsTest = test();
 
 functionsTest.mockConfig({ tybalt: { radiator: { secret: "asdf" } } });
 
-const functions = require("firebase-functions");
-
 import { handler } from "../src/rawLogins";
 
 describe("rawLogins module", () => {
+  const db = admin.firestore();
   const makeDb = shared.makeFirestoreStub;
   const Req = shared.makeReqObject; // Stub request object
   const Res = shared.makeResObject; // Stub response object
@@ -35,10 +36,12 @@ describe("rawLogins module", () => {
     systemType: " 5.",
     osSku: "48",
     computerName: "Tromsø",
+    userGivenName: "Testy",
+    userSurname: "Testerson",
   };
   const expected = {
-    upn: "TTesterson@testco.co",
-    email: "TTesterson@testco.co",
+    upn: "ttesterson@testco.co",
+    email: "ttesterson@testco.co",
     serial: "SN123",
     mfg: "manufac",
     userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25",
@@ -47,6 +50,8 @@ describe("rawLogins module", () => {
     systemType: 5,
     osSku: 48,
     computerName: "Tromsø",
+    userGivenName: "Testy",
+    userSurname: "Testerson",
   };
 
   const sts = shared.stripTimestamps; // utility function to strip timestamp props
@@ -65,11 +70,13 @@ describe("rawLogins module", () => {
     userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25",
   };
 
-  describe("handler() responses", () => {
+  describe("handler() responses", async () => {
     let sandbox: sinon.SinonSandbox;
 
     // eslint-disable-next-line prefer-arrow-callback
-    beforeEach(function () {
+    beforeEach("reset data", async function () {
+      functionsTest.mockConfig({ tybalt: { radiator: { secret: "asdf" } } });
+      await cleanupFirestore(projectId);
       sandbox = sinon.createSandbox();
     });
 
@@ -85,10 +92,8 @@ describe("rawLogins module", () => {
       assert.equal(result.status.args[0][0], 401);
     });
     it("(202 Accepted) if request header doesn't include the env secret and environment variable isn't set", async () => {
-      sandbox.restore();
-      sandbox = sinon.createSandbox();
-      sandbox.stub(functions, "config").returns({ tybalt: { radiator: {} } });
-      let result = await handler(Req({ body: { ...data } }), Res());
+      functionsTest.mockConfig({ tybalt: { radiator: { } } });
+      let result = await handler(Req({ body: { ...data } }), Res());      
       assert.equal(result.status.args[0][0], 202);
     });
     it("(405 Method Not Allowed) if request method isn't POST", async () => {
@@ -106,17 +111,35 @@ describe("rawLogins module", () => {
       );
       assert.equal(result.status.args[0][0], 415);
     });
+    it("(400 Bad Request) if an empty JSON login is POSTed", async () => {
+      let result = await handler(
+        Req({ body: {}, authType: "TYBALT", token: "asdf" }),
+        Res()
+      );
+      assert.equal(result.status.args[0][0], 400);
+    });
     it("(202 Accepted) if a valid JSON login is POSTed, neither computer nor user exists", async () => {
-      const db = makeDb();
       let result = await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
       );
+      // verify the response was 202
       assert.equal(result.status.args[0][0], 202);
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expected); // batch.set() called with computer
-      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
-      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
-      sinon.assert.calledOnce(db.batchStubs.commit);
+
+      // verify only one computer exists and that the serial matches
+      const computers = await db.collection("Computers").get();
+      assert.equal(computers.size, 1);
+      assert.equal(computers.docs[0].get("serial"), expected.serial);
+
+      // verify only one user exists and that the email matches
+      const users = await db.collection("Users").get();
+      assert.equal(users.size, 1);
+      assert.equal(users.docs[0].get("email"), expected.email);
+
+      // verify only one login exists and that the userSourceAnchor matches
+      const logins = await db.collection("Logins").get()
+      assert.equal(logins.size, 1);
+      assert.equal(logins.docs[0].get("userSourceAnchor"), expected.userSourceAnchor);
     });
     it("(202 Accepted) if a valid JSON login is POSTed, user exists", async () => {
       const db = makeDb({ userMatches: 1 });
@@ -129,16 +152,6 @@ describe("rawLogins module", () => {
       assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userObjArg); // batch.set() called with user
       assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
       sinon.assert.calledOnce(db.batchStubs.commit);
-    });
-    it("(400 Bad Request) if an empty JSON login is POSTed", async () => {
-      const db = makeDb();
-      //sandbox.stub(console, "log"); // stub out console
-      let result = await handler(
-        Req({ body: {}, authType: "TYBALT", token: "asdf" }),
-        Res()
-      );
-      assert.equal(result.status.args[0][0], 400);
-      sinon.assert.notCalled(db.batchStubs.set);
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists", async () => {
       const db = makeDb({ computerExists: true });
