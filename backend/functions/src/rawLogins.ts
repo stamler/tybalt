@@ -111,10 +111,9 @@ export async function handler(req: functions.https.Request, res: functions.Respo
       reqSecret = authHeader.replace("TYBALT ", "").trim();
     }
     if (reqSecret !== appSecret) {
-      console.log(
-        `${reqSecret} from ${authHeader} doesn't match expected ${appSecret}`
+      return res.status(401).send(
+        `request secret doesn't match expected`
       );
-      return res.status(401).send();
     }
   }
 
@@ -132,14 +131,11 @@ export async function handler(req: functions.https.Request, res: functions.Respo
 
   try {
     if (!isValidLogin(d)) {
-      // Invalid submission, store RawLogin for later processing
-      console.log("rawLogins: submission doesn't validate");
-      console.log(validate.errors);
       if (_.isEmpty(d)) {
-        console.log("empty submission, not saving");
-        return res.status(400).send();
+        return res.status(400).send("empty submission, not saving");
       } else {
-        await db.collection("RawLogins").doc().set(d);
+        // write a rawlogin with submitted data and include the error field
+        await db.collection("RawLogins").doc().set({...d, error: validate.errors });
       }
     } else {
       // write valid object to database
@@ -148,8 +144,7 @@ export async function handler(req: functions.https.Request, res: functions.Respo
     return res.status(202).send();
   } catch (error: unknown) {
     const typedError = error as Error;
-    console.log(typedError.message);
-    return res.status(500).send();
+    return res.status(500).send(typedError.message);
   }
 };
 
@@ -250,7 +245,7 @@ export async function cleanup(
     throw new Error("cleanup() failed because the DocumentSnapshot is undefined");
   }
 
-  console.log(`cleanup ${data.computerName}`);
+  functions.logger.info(`cleanup ${data.computerName}`);
   // Get the latest rawLogin with specified computerName
   const latest_item_snapshot = await db
     .collection("RawLogins")

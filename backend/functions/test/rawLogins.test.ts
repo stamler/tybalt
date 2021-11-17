@@ -36,7 +36,7 @@ describe("rawLogins module", () => {
     const users = await db.collection("Users").get();
     assert.equal(users.size, 1);
     assert.equal(users.docs[0].get("email"), expected.email);
-    assert.equal(users.docs[0].get("lastComputer"), "SN123,manufac");
+    assert.equal(users.docs[0].get("lastComputer"), expected.lastComputer);
 
     // verify only one login exists and that the userSourceAnchor matches
     const logins = await db.collection("Logins").get()
@@ -71,26 +71,11 @@ describe("rawLogins module", () => {
     radiatorVersion: 7,
     systemType: 5,
     osSku: 48,
+    lastComputer: "SN123,manufac",
     computerName: "Tromsø",
     userGivenName: "Testy",
     userSurname: "Testerson",
   };
-/*
-  const userObjArg = {
-    givenName: undefined,
-    surname: undefined,
-    upn: "ttesterson@testco.co",
-    email: "ttesterson@testco.co",
-    lastComputer: "SN123,manufac",
-    userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25",
-  };
-  const loginObjArg = {
-    computer: "SN123,manufac",
-    givenName: undefined,
-    surname: undefined,
-    userSourceAnchor: "f25d2a25f25d2a25f25d2a25f25d2a25",
-  };
-*/
   describe("handler() responses", async () => {
     let sandbox: sinon.SinonSandbox;
 
@@ -107,10 +92,9 @@ describe("rawLogins module", () => {
     });
 
     it("(401 Unauthorized) if request header doesn't include the env secret", async () => {
-      const constub = sandbox.stub(console, "log");
       let result = await handler(Req({ body: { ...data } }), Res());
-      sinon.assert.calledOnce(constub);
       assert.equal(result.status.args[0][0], 401);
+      assert.equal(result.send.args[0][0], "request secret doesn't match expected");
     });
     it("(202 Accepted) if request header doesn't include the env secret and environment variable isn't set", async () => {
       functionsTest.mockConfig({ tybalt: { radiator: { } } });
@@ -168,20 +152,27 @@ describe("rawLogins module", () => {
       ));
     });
     it("(202 Accepted) if a valid JSON login is POSTed, computer exists, multiple users match", async () => {
+      const user1 = { givenName: data.userGivenName, lastComputer: "SN325,hp", surname: data.userSurname, updated: new Date(), upn: data.upn, userSourceAnchor: data.userSourceAnchor };
+      const user2 = { givenName: "FirstDuplicate", lastComputer: "SN325,hp", surname: "LastDuplicate", updated: new Date(), upn: "different@upn.com", userSourceAnchor: data.userSourceAnchor };
+      await db.collection("Users").add(user1);
+      await db.collection("Users").add(user2);
       let result = await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
       );
       assert.equal(result.status.args[0][0], 202);
 
-      // TODO:
-      // assert batch.set() WASN'T CALLED with args for user
-      // assert batch.set() was called once with args for login
-      // assert batch.set() was called once with args for data
-      // assert batch.commit() was called once
+      // check that an entry in raw logins was created due to duplicate users
+      const rawlogins = await db.collection("RawLogins").get(); 
+      assert.equal(rawlogins.size, 1);
+      assert.equal(rawlogins.docs[0].get("error"),`Multiple users have userSourceAnchor: ${data.userSourceAnchor}`);
+      
+      // check that no entry was created in computers
+      const computers = await db.collection("Computers").get();
+      assert.equal(computers.size, 0);
+
     });
     it("(202 Accepted) if an invalid JSON login is POSTed", async () => {
-      const constub = sandbox.stub(console, "log");
       let result = await handler(
         Req({
           body: { ...data, networkConfig: {} },
@@ -190,13 +181,13 @@ describe("rawLogins module", () => {
         }),
         Res()
       );
-      sinon.assert.calledTwice(constub);
       assert.equal(result.status.args[0][0], 202);
-      // assert set() was called once with args {} outside of batch
-      // confirm RawLogin
-      // assert batch.set() wasn't called
-      // assert batch.commit() wasn't called
-    });
+
+      // check that an entry in raw logins was created due to invalid JSON
+      const rawlogins = await db.collection("RawLogins").get(); 
+      assert.equal(rawlogins.size, 1);
+      assert.isArray(rawlogins.docs[0].get("error"));
+     });
     it("(500 Internal Server Error) if database write fails", async () => {
       const constub = sandbox.stub(console, "log");
       let result = await handler(
