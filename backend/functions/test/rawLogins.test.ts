@@ -13,8 +13,6 @@ const shared = require("./shared.helpers.test.js");
 import * as test from "firebase-functions-test";
 const functionsTest = test();
 
-functionsTest.mockConfig({ tybalt: { radiator: { secret: "asdf" } } });
-
 import { handler } from "../src/rawLogins";
 
 describe("rawLogins module", () => {
@@ -77,13 +75,12 @@ describe("rawLogins module", () => {
     userSurname: "Testerson",
   };
   describe("handler() responses", async () => {
-    let sandbox: sinon.SinonSandbox;
+    const sandbox = sinon.createSandbox();
 
     // eslint-disable-next-line prefer-arrow-callback
     beforeEach("reset data", async function () {
       functionsTest.mockConfig({ tybalt: { radiator: { secret: "asdf" } } });
       await cleanupFirestore(projectId);
-      sandbox = sinon.createSandbox();
     });
 
     // eslint-disable-next-line prefer-arrow-callback
@@ -188,35 +185,39 @@ describe("rawLogins module", () => {
       assert.equal(rawlogins.size, 1);
       assert.isArray(rawlogins.docs[0].get("error"));
      });
+    /*
+    // There's no way to simulate this error in the emulator
+    // so it has been commented out
     it("(500 Internal Server Error) if database write fails", async () => {
-      const constub = sandbox.stub(console, "log");
       let result = await handler(
         Req({ body: { ...data }, authType: "TYBALT", token: "asdf" }),
         Res()
       );
-      constub.calledWith("commit to firestore failed");
       assert.equal(result.status.args[0][0], 500);
     });
+    */
   });
   describe("removeIfFails keyword", () => {
+
+    // eslint-disable-next-line prefer-arrow-callback
+    beforeEach("reset data", async function () {
+      functionsTest.mockConfig({ tybalt: { radiator: { secret: "asdf" } } });
+      await cleanupFirestore(projectId);
+    });
+    
     it("strips the empty email property and accepts as valid from an otherwise valid login", async () => {
-      let result = await handler(
+      resultAsExpected(await handler(
         Req({
           body: { ...data, email: "" },
           authType: "TYBALT",
           token: "asdf",
         }),
         Res()
-      );
-      assert.equal(result.status.args[0][0], 202);
-      /*
-      const { email: _, ...expectedNoEmail } = expected;
-      const { email: _2, ...userNoEmail } = userObjArg;
-      assert.deepEqual(sts(db.batchStubs.set.args[0][1]), expectedNoEmail); // batch.set() called with computer
-      assert.deepEqual(sts(db.batchStubs.set.args[1][1]), userNoEmail); // batch.set() called with user
-      assert.deepEqual(sts(db.batchStubs.set.args[2][1]), loginObjArg); // batch.set() was called with login
-      sinon.assert.calledOnce(db.batchStubs.commit);
-      */
+      ))
+      // verify only one user exists and that the email matches
+      const users = await db.collection("Users").get();
+      assert.equal(users.size, 1);
+      assert.isUndefined(users.docs[0].get("email"));
     });
   });
 });
