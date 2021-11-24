@@ -48,12 +48,18 @@
         item.division !== ''
       "
     >
-      <span v-show="job === undefined">
-        <div id="jobAutocomplete" />
-      </span>
-      <span v-show="job !== undefined">
-        {{ job }}-{{ item.jobDescription }}
-      </span>
+    </span>
+    <span v-show="['R', 'RT'].includes(item.timetype) && job === undefined">
+      <div id="jobAutocomplete" />
+    </span>
+    <span
+      class="field"
+      v-show="['R', 'RT'].includes(item.timetype) && job !== undefined"
+    >
+      <button type="button" v-on:click="job = undefined">
+        <x-circle-icon></x-circle-icon>
+      </button>
+      {{ job }} / {{ item.client }}:{{ item.jobDescription }}
     </span>
 
     <span
@@ -180,9 +186,10 @@ import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
 import "@algolia/autocomplete-theme-classic";
+import { XCircleIcon } from "vue-feather-icons";
 
 export default Vue.extend({
-  components: { Datepicker },
+  components: { Datepicker, XCircleIcon },
   props: ["id", "collection"],
   data() {
     return {
@@ -203,7 +210,6 @@ export default Vue.extend({
       profiles: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
       job: undefined as string | undefined,
-      profileSecrets: {} as firebase.firestore.DocumentData,
     };
   },
   computed: {
@@ -238,12 +244,12 @@ export default Vue.extend({
       this.setItem(id);
     }, // first arg is newVal, second is oldVal
     "item.timetype": function (newVal, oldVal) {
-      if (
-        newVal === "R" &&
-        oldVal !== "R" &&
-        this.item.division === undefined
-      ) {
-        this.item.division = "";
+      if (["R", "RT"].includes(newVal) && !["R", "RT"].includes(oldVal)) {
+        // The time type has just been changed to R or RT, verify division is
+        // set and instantiate the autocomplete function
+        if (this.item.division === undefined) {
+          this.item.division = "";
+        }
       }
     },
   },
@@ -259,20 +265,19 @@ export default Vue.extend({
   },
   methods: {
     async setup() {
-      this.profileSecrets = await db
+      const profileSecrets = await db
         .collection("ProfileSecrets")
         .doc(this.user.uid)
         .get();
-      const searchkey = this.profileSecrets.get("algoliaSearchKey");
-      const searchClient = algoliasearch("F7IPMZB3IW", searchkey);
-      const setItem = (values: any) => {
+      const writeJobToItem = (values: any) => {
         this.job = values.objectID;
         this.item.jobDescription = values.description;
         this.item.client = values.client;
       };
-      /* TODO: autocomplete needs to be reinstantiated each time it is shown after being hidden
-      For example after the time type changes. Thus we need to put this into a function and call it
-      in multiple places (I THINK) */
+      const searchClient = algoliasearch(
+        "F7IPMZB3IW",
+        profileSecrets.get("algoliaSearchKey")
+      );
       autocomplete({
         container: "#jobAutocomplete",
         placeholder: "search jobs...",
@@ -281,7 +286,7 @@ export default Vue.extend({
             {
               sourceId: "jobs",
               onSelect({ item }) {
-                setItem(item);
+                writeJobToItem(item);
               },
               templates: {
                 item({ item }) {
@@ -320,6 +325,7 @@ export default Vue.extend({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
+              this.job = this.item.job;
               this.item.date = result.date.toDate();
             }
           })
@@ -396,11 +402,14 @@ export default Vue.extend({
         // The back end will actually validate that it exists
         if (!this.job || this.job.length < 6) {
           // Clear
+          delete this.item.job;
           delete this.item.client;
           delete this.item.jobDescription;
           delete this.item.jobHours;
           delete this.item.workorder;
         } else {
+          // set the job in the item
+          this.item.job = this.job;
           delete this.item.hours;
         }
       }
