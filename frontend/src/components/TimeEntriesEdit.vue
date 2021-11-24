@@ -185,7 +185,6 @@ import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
-import "@algolia/autocomplete-theme-classic";
 import { XCircleIcon } from "vue-feather-icons";
 
 export default Vue.extend({
@@ -492,24 +491,6 @@ export default Vue.extend({
   },
 });
 </script>
-<style>
-#suggestions {
-  padding: 0.25em;
-  border-radius: 0em 0em 1em 1em;
-  border-bottom: 1px solid #ccc;
-  border-left: 1px solid #ccc;
-  border-right: 1px solid #ccc;
-}
-#suggestions ul,
-#suggestions li {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  list-style-type: none;
-}
-#suggestions li.selected,
-#suggestions li:hover {
-  background-color: #ddd;
-}
-/* https://www.digitalocean.com/community/tutorials/vuejs-vue-autocomplete-component#async-loading */
+<style lang="scss">
+@import "./algolia-autocomplete-classic-fork.scss";
 </style>
