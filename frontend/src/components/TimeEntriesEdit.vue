@@ -61,10 +61,12 @@
       class="field"
       v-show="['R', 'RT'].includes(item.timetype) && job !== undefined"
     >
-      <button type="button" v-on:click="job = undefined">
-        <x-circle-icon></x-circle-icon>
-      </button>
-      {{ job }} / {{ item.client }}:{{ item.jobDescription }}
+      <span class="grow">
+        <router-link to="#" v-on:click.native="job = undefined">
+          <x-circle-icon></x-circle-icon>
+        </router-link>
+        {{ job }} / {{ item.client }}:{{ item.jobDescription }}
+      </span>
     </span>
 
     <span
