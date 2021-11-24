@@ -49,8 +49,13 @@
       "
     >
     </span>
-    <span v-show="['R', 'RT'].includes(item.timetype) && job === undefined">
-      <div id="jobAutocomplete" />
+    <span
+      class="field"
+      v-show="['R', 'RT'].includes(item.timetype) && job === undefined"
+    >
+      <span class="grow">
+        <div id="jobAutocomplete" />
+      </span>
     </span>
     <span
       class="field"

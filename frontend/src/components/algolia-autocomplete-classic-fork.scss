@@ -21,11 +21,11 @@
 // ----------------
 :root {
   // Input
-  --aa-search-input-height: 44px;
+  --aa-search-input-height: 32px;
   --aa-input-icon-size: 20px;
 
   // Size and spacing
-  --aa-base-unit: 16;
+  --aa-base-unit: 20;
   --aa-spacing-factor: 1;
   --aa-spacing: calc(var(--aa-base-unit) * var(--aa-spacing-factor) * 1px);
   --aa-spacing-half: calc(var(--aa-spacing) / 2);
@@ -36,7 +36,7 @@
 
   // Font
   --aa-font-size: calc(var(--aa-base-unit) * 1px);
-  --aa-font-family: inherit;
+  --aa-font-family: "Avenir", Helvetica, Arial, sans-serif;
   --aa-font-weight-medium: 500;
   --aa-font-weight-semibold: 600;
   --aa-font-weight-bold: 700;
@@ -152,6 +152,10 @@ body {
 // ----------------
 // 3. Autocomplete
 // ----------------
+
+.aa-InputWrapperPrefix {
+  display: none;
+}
 .aa-Autocomplete,
 .aa-DetachedFormContainer {
   @extend %init;
@@ -165,13 +169,12 @@ body {
       var(--aa-input-background-color-rgb),
       var(--aa-input-background-color-alpha)
     );
-    border-bottom: 1px solid
-      rgba(var(--aa-input-border-color-rgb), var(--aa-input-border-color-alpha));
     display: flex;
     line-height: 1em;
     margin: 0;
     position: relative;
     width: 100%;
+    /*
     &:focus-within {
       border-color: rgba(var(--aa-primary-color-rgb), 1);
       box-shadow: rgba(
@@ -182,55 +185,7 @@ body {
         inset rgba(var(--aa-primary-color-rgb), var(--aa-primary-color-alpha)) 0
           0 0 2px;
       outline: currentColor none medium;
-    }
-    @at-root .aa-InputWrapperPrefix {
-      align-items: center;
-      display: flex;
-      flex-shrink: 0;
-      height: var(--aa-search-input-height);
-      order: 1;
-      // Container for search and loading icons
-      @at-root .aa-Label,
-        .aa-LoadingIndicator {
-        cursor: initial;
-        flex-shrink: 0;
-        height: 100%;
-        padding: 0;
-        text-align: left;
-        svg {
-          color: rgba(var(--aa-primary-color-rgb), 1);
-          height: auto;
-          max-height: var(--aa-input-icon-size);
-          stroke-width: var(--aa-icon-stroke-width);
-          width: var(--aa-input-icon-size);
-        }
-      }
-      @at-root .aa-SubmitButton,
-        .aa-LoadingIndicator {
-        height: 100%;
-        padding-left: calc(var(--aa-spacing) * 0.75 - 1px);
-        padding-right: var(--aa-spacing-half);
-        width: calc(var(--aa-spacing) * 1.75 + var(--aa-icon-size) - 1px);
-        @media (hover: none) and (pointer: coarse) {
-          padding-left: calc(var(--aa-spacing-half) / 2 - 1px);
-          width: calc(var(--aa-icon-size) + (var(--aa-spacing) * 1.25) - 1px);
-        }
-      }
-      @at-root .aa-SubmitButton {
-        appearance: none;
-        background: none;
-        border: 0;
-        margin: 0;
-      }
-      @at-root .aa-LoadingIndicator {
-        align-items: center;
-        display: flex;
-        justify-content: center;
-        &[hidden] {
-          display: none;
-        }
-      }
-    }
+    } */
     @at-root .aa-InputWrapper {
       order: 3;
       position: relative;
@@ -241,7 +196,7 @@ body {
         background: none;
         border: 0;
         color: rgba(var(--aa-text-color-rgb), var(--aa-text-color-alpha));
-        font: inherit;
+//        font: inherit;
         height: var(--aa-search-input-height);
         padding: 0;
         width: 100%;
