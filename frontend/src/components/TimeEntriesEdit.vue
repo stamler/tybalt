@@ -255,6 +255,13 @@ export default Vue.extend({
           this.item.division = "";
         }
       }
+      if (!["R", "RT"].includes(newVal) && ["R", "RT"].includes(oldVal)) {
+        // The time type has just been changed from R or RT, set division
+        // and job to undefined
+        this.item.division = undefined;
+        this.item.job = undefined;
+        this.job = undefined;
+      }
     },
   },
   created() {
