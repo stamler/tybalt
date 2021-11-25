@@ -196,7 +196,7 @@ body {
         background: none;
         border: 0;
         color: rgba(var(--aa-text-color-rgb), var(--aa-text-color-alpha));
-//        font: inherit;
+        font-size: 1.2em;
         height: var(--aa-search-input-height);
         padding: 0;
         width: 100%;
@@ -856,15 +856,12 @@ body {
     var(--aa-input-background-color-rgb),
     var(--aa-input-background-color-alpha)
   );
-  border: 1px solid
-    rgba(var(--aa-input-border-color-rgb), var(--aa-input-border-color-alpha));
-  border-radius: 3px;
   color: rgba(var(--aa-muted-color-rgb), var(--aa-muted-color-alpha));
   cursor: pointer;
   display: flex;
   font: inherit;
   font-family: var(--aa-font-family);
-  font-size: var(--aa-font-size);
+  font-size: 1.2em;
   height: var(--aa-search-input-height);
   margin: 0;
   padding: 0 calc(var(--aa-search-input-height) / 8);
@@ -883,7 +880,7 @@ body {
     align-items: center;
     color: rgba(var(--aa-primary-color-rgb), 1);
     cursor: initial;
-    display: flex;
+    display: none;
     height: 100%;
     justify-content: center;
     width: calc(var(--aa-icon-size) + var(--aa-spacing));

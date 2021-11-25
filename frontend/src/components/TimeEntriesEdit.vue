@@ -31,64 +31,50 @@
       ^Should you choose training instead?
     </span>
 
-    <span class="field" v-if="['R', 'RT'].includes(item.timetype)">
-      <select class="grow" name="division" v-model="item.division">
-        <option disabled selected value="">-- choose division --</option>
-        <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
-          {{ d.id }} - {{ d.name }}
-        </option>
-      </select>
-    </span>
+    <!----------------------------------------------->
+    <!-- FIELDS VISIBLE ONLY FOR R or RT TimeTypes -->
+    <!----------------------------------------------->
+    <span v-show="['R', 'RT'].includes(item.timetype)">
+      <span class="field">
+        <select class="grow" name="division" v-model="item.division">
+          <option disabled selected value="">-- choose division --</option>
+          <option v-for="d in divisions" :value="d.id" v-bind:key="d.id">
+            {{ d.id }} - {{ d.name }}
+          </option>
+        </select>
+      </span>
 
-    <span
-      class="field"
-      v-if="
-        ['R', 'RT'].includes(item.timetype) &&
-        item.division &&
-        item.division !== ''
-      "
-    >
-    </span>
-    <span
-      class="field"
-      v-show="['R', 'RT'].includes(item.timetype) && job === undefined"
-    >
-      <span class="grow">
-        <div id="jobAutocomplete" />
+      <span class="field" v-show="job === undefined">
+        <span class="grow">
+          <div id="jobAutocomplete" />
+        </span>
+      </span>
+      <span class="field" v-show="job !== undefined">
+        <span class="grow">
+          <router-link to="#" v-on:click.native="job = undefined">
+            <x-circle-icon></x-circle-icon>
+          </router-link>
+          {{ job }} / {{ item.client }}:{{ item.jobDescription }}
+        </span>
+      </span>
+
+      <span class="field" v-if="job && job !== '' && item.division">
+        <label for="jobHours">Job Hours</label>
+        <input
+          class="grow"
+          type="number"
+          name="jobHours"
+          v-model.number="item.jobHours"
+          step="0.5"
+          min="0"
+          max="18"
+        />
       </span>
     </span>
-    <span
-      class="field"
-      v-show="['R', 'RT'].includes(item.timetype) && job !== undefined"
-    >
-      <span class="grow">
-        <router-link to="#" v-on:click.native="job = undefined">
-          <x-circle-icon></x-circle-icon>
-        </router-link>
-        {{ job }} / {{ item.client }}:{{ item.jobDescription }}
-      </span>
-    </span>
 
-    <span
-      class="field"
-      v-if="
-        job &&
-        job !== '' &&
-        item.division &&
-        ['R', 'RT'].includes(item.timetype)
-      "
-    >
-      <label for="jobHours">Job Hours</label>
-      <input
-        class="grow"
-        type="number"
-        name="jobHours"
-        v-model.number="item.jobHours"
-        step="0.5"
-        min="0"
-        max="18"
-      />
-    </span>
+    <!--------------------------------------------------->
+    <!-- END FIELDS VISIBLE ONLY FOR R or RT TimeTypes -->
+    <!--------------------------------------------------->
 
     <span
       class="field"
@@ -251,8 +237,7 @@ export default Vue.extend({
     }, // first arg is newVal, second is oldVal
     "item.timetype": function (newVal, oldVal) {
       if (["R", "RT"].includes(newVal) && !["R", "RT"].includes(oldVal)) {
-        // The time type has just been changed to R or RT, verify division is
-        // set and instantiate the autocomplete function
+        // The time type has just been changed to R or RT, verify division set
         if (this.item.division === undefined) {
           this.item.division = "";
         }
