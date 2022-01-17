@@ -22,6 +22,8 @@ export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
+export { syncTime } from "./sync";
+export { auditExportStatus } from "./audit";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
 
 // send emails when timesheets are shared

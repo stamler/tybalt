@@ -6,29 +6,39 @@ const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json"
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 async function addFieldToCollection(fieldname: string, collection: string) {
-  console.log(`Adding field ${fieldname} to all documents in collection ${collection} ...`);
+  console.log(`Adding field ${fieldname} to documents in collection ${collection} ...`);
   const batches = [];
-  let moreRemaining = true;
+  let runCount = 0;
+  let last = null;
+  let querySnap: FirebaseFirestore.QuerySnapshot;
   const db = admin.firestore();
-  while (moreRemaining) {
+  do {
     // eslint-disable-next-line no-await-in-loop
-    const querySnap = await db
-      .collection(collection)
-      .orderBy("divisionsTally")  // CUSTOMIZATION POINT
-      .limit(500) // limit 500 writes per batch request
-      .get();
+    querySnap = runCount > 0 ?
+      await db
+        .collection(collection)
+        .where("locked", "==", true) // CUSTOMIZATION POINT
+        .startAfter(last)
+        .limit(500) // limit 500 writes per batch request
+        .get() :
+      await db
+        .collection(collection)
+        .where("locked", "==", true) // CUSTOMIZATION POINT
+        .limit(500) // limit 500 writes per batch request
+        .get();
     const batch = db.batch();
 
     querySnap.forEach((docSnap) => {
       batch.update(docSnap.ref, {
-        [fieldname]: Object.keys(docSnap.get("divisionsTally")), // CUSTOMIZATION POINT
+        [fieldname]: false, // CUSTOMIZATION POINT
       });
     });
+    last = querySnap.docs[querySnap.docs.length - 1];
 
-    moreRemaining = querySnap.size > 500;
     console.log(`committing ${querySnap.size} documents`);
     batches.push(batch.commit());
-  }
+    runCount += 1;
+  } while (querySnap.size > 499);
   return Promise.all(batches);
 }
 
