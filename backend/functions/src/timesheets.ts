@@ -322,8 +322,15 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
         snapData.approved === true &&
         snapData.locked === false
       ) {
-        // timesheet is lockable, lock it
-        return transaction.update(timeSheet, { locked: true });
+        // if exported is already true, set requiresReExport:true,
+        // set locked:true, and don't update the value of exported
+        if (snapData.exported === true) {
+          functions.logger.info(`${tsSnap.id} was locked and requires re-export`);
+          return transaction.update(timeSheet, { locked: true, requiresReExport: true });
+        }
+        
+        // timesheet is lockable, lock it and set the exported flag to false
+        return transaction.update(timeSheet, { locked: true, exported: false });
       } else {
         throw new Error(
           "The timesheet has either not been submitted and approved " +
