@@ -16,8 +16,20 @@ Corporate time and expense tracking, computer asset management, and reporting in
 
     ``` bash
     firebase functions:config:set tybalt.radiator.secret="tybalt secret"
+    
     firebase functions:config:set algolia.apikey="algolia key with addObject and deleteObject permission"
     firebase functions:config:set algolia.appid="algolia app id"
+
+    firebase functions:config:set mysql.host="mysql hostname"
+    firebase functions:config:set mysql.port="mysql port number"
+    firebase functions:config:set mysql.user="mysql username"
+    firebase functions:config:set mysql.pass="mysql password"
+    firebase functions:config:set mysql.db="mysql database"
+
+    firebase functions:config:set mysqlSSH.host="mysql ssh tunnel hostname"
+    firebase functions:config:set mysqlSSH.port="mysql ssh tunnel port number"
+    firebase functions:config:set mysqlSSH.user="mysql ssh tunnel username"
+    firebase functions:config:set mysqlSSH.pass="mysql ssh tunnel password"
     ```
 
 3. Setup the "Trigger Email" extension in firebase. The email documents collection is `Emails` and the users collection is `Profiles`. Also set an appropriate FROM address and SMTP connection URI.  
