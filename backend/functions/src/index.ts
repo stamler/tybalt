@@ -9,7 +9,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import * as rawLoginsModule from "./rawLogins";
 import { assignComputerToUser } from "./computers";
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
-import { unbundleTimesheet, lockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
+import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment, getPayPeriodExpenses, submitExpense } from "./expenses";
@@ -75,6 +75,9 @@ exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
 
 // lock approved timesheets individually by TimeSheet doc id
 exports.lockTimesheet = functions.https.onCall(lockTimesheet);
+
+// unlock approved timesheets individually by TimeSheet doc id
+exports.unlockTimesheet = functions.https.onCall(unlockTimesheet);
 
 // return expense documents associated with a pay period
 exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);

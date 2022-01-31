@@ -289,6 +289,66 @@ export const updateViewers = functions.firestore
       .doc(context.params.timesheetId)
       .update({ viewers });
   });
+
+
+/*
+  NB: TimeSheets MUST NEVER BE unlocked, manually or otherwise, if they have
+  a property exportInProgress set to true. TODO: write a highly privileged 
+  "unlockTimesheet" function that gets called by only permitted users and 
+  uses a transaction that verifies no exportInProgress flag exists prior to
+  unlocking
+*/
+export async function unlockTimesheet(data: unknown, context: functions.https.CallableContext) {
+  getAuthObject(context, ["tsunlock"])
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid document reference"
+    );
+  }
+
+  // run transaction to read the timesheet and if it exists check that
+  // it is locked and an export is not in progress. Then unlock it.
+  const db = admin.firestore();
+  const timeSheet = db.collection("TimeSheets").doc(data.id);
+  await db.runTransaction(async (transaction) => {
+    return transaction.get(timeSheet).then(async (tsSnap) => {
+      const snapData = tsSnap.data();
+      if (!snapData) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "The TimeSheets document is empty so cannot be unlocked"
+        );
+      }
+      if (snapData.locked !== true) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "The TimeSheets document can't be unlocked because it is not locked"
+        );
+      }
+      if (snapData.exportInProgress === true) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "The TimeSheets document can't be unlocked because it is" + 
+          " currently being exported"
+        );
+      }
+      // if exported is already true, set requiresReExport:true,
+      // set locked:false, and don't update the value of exported
+      if (snapData.exported === true) {
+        functions.logger.info(`${tsSnap.id} was already exported and must be removed from the destination`);
+        return transaction.update(timeSheet, { locked: false, requiresReExport: true });
+      }
+      
+      // timesheet is lockable, lock it and set the exported flag to false
+      return transaction.update(timeSheet, { locked: false });
+    });
+  });
+}
+
 /*
   Given a document id, lock the corresponding approved TimeSheet document 
   then add it to the timeSheets property array of the TimeTracking doc. 
@@ -322,11 +382,13 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
         snapData.approved === true &&
         snapData.locked === false
       ) {
-        // if exported is already true, set requiresReExport:true,
-        // set locked:true, and don't update the value of exported
+        // if exported is already true, it was previously unlocked so
+        // requiresReExport:true will have already be set by unlockTimesheet()
+        // These will be handled by the sync cleanup
+        // set locked:true, and leave exported:true
         if (snapData.exported === true) {
-          functions.logger.info(`${tsSnap.id} was locked and requires re-export`);
-          return transaction.update(timeSheet, { locked: true, requiresReExport: true });
+          functions.logger.info(`${tsSnap.id} was previously exported and requires re-export`);
+          return transaction.update(timeSheet, { locked: true });
         }
         
         // timesheet is lockable, lock it and set the exported flag to false
