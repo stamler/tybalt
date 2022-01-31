@@ -127,17 +127,27 @@
       <!-- Show locked TimeSheets -->
       <div v-if="lockedProfiles.length > 0">
         <h5>Locked ({{ lockedProfiles.length }})</h5>
-        <router-link
-          v-for="profile in lockedProfiles"
-          v-bind:key="profile.id"
-          v-bind:to="{
-            name: 'Time Sheet Details',
-            params: { id: tsIdForUid(profile.id, item.timeSheets) },
-          }"
-        >
-          {{ profile.surname }}, {{ profile.givenName }}<br />
-        </router-link>
-        <br />
+        <p v-for="profile in lockedProfiles" v-bind:key="profile.id">
+          <router-link
+            v-bind:to="{
+              name: 'Time Sheet Details',
+              params: { id: tsIdForUid(profile.id, item.timeSheets) },
+            }"
+          >
+            {{ profile.surname }}, {{ profile.givenName }}
+          </router-link>
+          <router-link
+            v-bind:to="{
+              name: 'Time Tracking Details',
+              params: { id },
+            }"
+            v-on:click.native="
+              unlockTimesheet(tsIdForUid(profile.id, item.timeSheets))
+            "
+          >
+            <unlock-icon></unlock-icon>
+          </router-link>
+        </p>
       </div>
 
       <!-- Show users marked as ignore for this week -->
@@ -182,6 +192,7 @@ import firebase from "../firebase";
 import store from "../store";
 import {
   LockIcon,
+  UnlockIcon,
   XCircleIcon,
   UserMinusIcon,
   UserPlusIcon,
@@ -197,7 +208,14 @@ interface TimeSheetTrackingPayload {
 }
 
 export default mixins.extend({
-  components: { XCircleIcon, LockIcon, UserMinusIcon, UserPlusIcon, Modal },
+  components: {
+    XCircleIcon,
+    LockIcon,
+    UnlockIcon,
+    UserMinusIcon,
+    UserPlusIcon,
+    Modal,
+  },
   props: ["id", "collection"],
   computed: {
     ...mapState(["user", "claims"]),
@@ -381,6 +399,29 @@ export default mixins.extend({
           .catch((error) => {
             store.commit("endTask", { id: `lock${id}` });
             alert(`Error exporting timesheets: ${error.message}`);
+          });
+      }
+    },
+    unlockTimesheet(id: string) {
+      const unlockTimesheet = firebase
+        .functions()
+        .httpsCallable("unlockTimesheet");
+      if (
+        confirm(
+          "You must check with accounting prior to unlocking. Do you want to proceed?"
+        )
+      ) {
+        store.commit("startTask", {
+          id: `unlock${id}`,
+          message: "unlocking",
+        });
+        return unlockTimesheet({ id })
+          .then(() => {
+            store.commit("endTask", { id: `unlock${id}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `unlock${id}` });
+            alert(`Error unlocking timesheet: ${error.message}`);
           });
       }
     },
