@@ -339,7 +339,8 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
       // if exported is already true, set requiresReExport:true,
       // set locked:false, and don't update the value of exported
       if (snapData.exported === true) {
-        functions.logger.info(`${tsSnap.id} was already exported and must be removed from the destination`);
+        functions.logger.info(`${tsSnap.id} was unlocked. Since it was " +
+          "previously exported, it has been flagged for re-export`);
         return transaction.update(timeSheet, { locked: false, requiresReExport: true });
       }
       
