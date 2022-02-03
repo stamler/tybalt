@@ -22,16 +22,16 @@ export const syncTime = functions
 
 /*
 exportTime():
-For locked unexported docs where the requiresReExport:true flag isn't set, 
-flatten the TimeEntries then export. If the destination is verified correct, set 
-exported:true on the local document, otherwise rollback the changes on the
-external source and make no changes to the local document. Since the local
-documents could potentially be unlocked during write to the destination, flag
-the local documents as exportInProgress:true at the beginning using a
-transaction. unlockTimesheet() must respect this flag by NEVER UNLOCKING A
-DOCUMENT THAT HAS THIS FLAG SET. The final batch update will delete this flag. 
-This is a manual document-locking mechanism that can span a longer time than a 
-transaction during the exportTime() function call */
+For locked unexported docs, flatten the TimeEntries then export. If the
+destination is verified correct, set exported:true on the local document,
+otherwise rollback the changes on the external source and make no changes to the
+local document. Since the local documents could potentially be unlocked during
+write to the destination, flag the local documents as exportInProgress:true at
+the beginning using a transaction. unlockTimesheet() must respect this flag by
+NEVER UNLOCKING A DOCUMENT THAT HAS THIS FLAG SET. The final batch update will
+delete this flag. This is a manual document-locking mechanism that can span a
+longer time than a transaction during the exportTime() function call 
+*/
 export async function exportTime() {
   const start = process.hrtime.bigint();
   const mysqlConnection = await createSSHMySQLConnection();
@@ -47,11 +47,20 @@ export async function exportTime() {
     .where("exported", "==", false)
     .limit(batchSize);
 
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+
   // Run the query and set the flag exportInProgress:true. At the same time
   // create a batch to delete the exportInProgress:true flag that will be run
-  // only if the export fails. Skip docs with have requiresReExport:true flag
+  // only if the export fails.
   const [tsdocsnaps, exportFailBatch] = await db.runTransaction(async t => {
     const rollbackBatch = db.batch();
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "exportTime(): exportTime() or cleanupTime() are already running"
+      );
+    }
     const tsSnaps = await t.get(pendingExportQuery);
     const docs:admin.firestore.QueryDocumentSnapshot[] = [];
     tsSnaps.forEach(tsSnap => {
@@ -59,8 +68,7 @@ export async function exportTime() {
       if (
         tsSnap.get("exportInProgress") === true || // another export is running
         tsSnap.get("locked") !== true || // the TimeSheet isn't locked
-        tsSnap.get("exported") === true || // the TimeSheet is already exported
-        tsSnap.get("requiresReExport") === true // existing export is dirty
+        tsSnap.get("exported") === true // the TimeSheet is already exported
       ) {
         // skip this TimeSheets document
         return;
@@ -71,17 +79,17 @@ export async function exportTime() {
       });
       t.update(tsSnap.ref, { exportInProgress: true });
     });
+    t.set(exportLocksDoc,{ message: "exportTime() transaction created this " +
+      "doc to prevent other instances of exportTime() or cleanupTime() from " +
+      "running simultaneously."})
     return [docs, rollbackBatch];
   });
-
   //  MySQL doesn't support deferred constraints per the SQL standard like
   //  PostgreSQL does. This means we cannot insert both the parent and child rows
   //  in the same transaction because the child will fail due to missing parent.
-
   //  The workaround is disabling FOREIGN_KEY_CHECKS on this transaction
   //  because we are using the same value within this function for the fields
   //  and failure of any query should fail the entire transaction.
-    
   //  multipleStatements is disabled by default in mysql2 hence 2 queries
 
   await query(mysqlConnection, "SET FOREIGN_KEY_CHECKS=0;");
@@ -151,25 +159,41 @@ export async function exportTime() {
     console.log(`Export failed ${error}`);
   }
 
-  return query(mysqlConnection, "SET FOREIGN_KEY_CHECKS=1;");
+  await query(mysqlConnection, "SET FOREIGN_KEY_CHECKS=1;");
+  return exportLocksDoc.delete();
 };
 
 /*
 cleanupTime();
-For each document where requiresReExport:true, find corresponding entries in
+For each document where exportInProgress:true, find corresponding entries in
 MySQL under TimeSheets and TimeEntries and delete them. Then once successful
-deletion is confirmed, delete the requiresReExport property and set 
+deletion is confirmed, delete the exportInProgress property and set 
 exported:false. The next time exportTime() runs, this document will be
 exported fresh. */
 export async function cleanupTime() {
   const mysqlConnection = await createSSHMySQLConnection();
 
-  // Get the documents where requiresReExport:true. They may locked or
-  // unlocked but exported WILL BE true
+  // Get the documents where exportInProgress:true. They may locked or
+  // unlocked, exported or not exported
   const tsSnaps = await db.collection("TimeSheets")
-    .where("requiresReExport", "==", true)
+    .where("exportInProgress", "==", true)
     .get();
-  
+
+  // Check to make sure another operation isn't already running
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+  await db.runTransaction(async t => {
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "cleanupTime(): exportTime() or cleanupTime() are already running"
+      );
+    }
+    return t.set(exportLocksDoc,{ message: "cleanupTime() transaction created "+
+    "this doc to prevent other instances of exportTime() or cleanupTime() " + 
+    "from running simultaneously."})
+  });
+
   await query(mysqlConnection, "START TRANSACTION;");
 
   // create the batch that will be run only if the export MySQL COMMIT succeeds
@@ -185,21 +209,21 @@ export async function cleanupTime() {
     // DELETEs were successful for this doc, mark it in success batch
     return cleanupSuccessBatch.update(tsSnap.ref, {
       exported: false,
-      requiresReExport: admin.firestore.FieldValue.delete(),
+      exportInProgress: admin.firestore.FieldValue.delete(),
     });
   });
 
   try {
     await Promise.all(tsresults);
     await query(mysqlConnection, "COMMIT;");
-    // delete requiresReExport property and set exported:false on local docs
+    // delete exportInProgress property and set exported:false on local docs
     console.log(`Cleaned up ${tsresults.length} previous TimeSheets exports`);    
-    return cleanupSuccessBatch.commit();
+    await cleanupSuccessBatch.commit();
   } catch (error) {
     console.log(`Cleanup failed ${error}`);
-    return query(mysqlConnection, "ROLLBACK;");
+    await query(mysqlConnection, "ROLLBACK;");
   }
-
+  return exportLocksDoc.delete();
 }
 
 /*

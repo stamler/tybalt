@@ -30,6 +30,7 @@ import * as path from "path";
 import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
+import { createSSHMySQLConnection, query } from "./sshMysql";
 
 interface PendingTimeSheetSummary {
   displayName: string;
@@ -292,13 +293,15 @@ export const updateViewers = functions.firestore
 
 
 /*
-  NB: TimeSheets MUST NEVER BE unlocked, manually or otherwise, if they have
-  a property exportInProgress set to true. TODO: write a highly privileged 
-  "unlockTimesheet" function that gets called by only permitted users and 
-  uses a transaction that verifies no exportInProgress flag exists prior to
-  unlocking
+  TimeSheets MUST NEVER BE unlocked, manually or otherwise, if they have
+  a property exportInProgress set to true. This is a highly privileged 
+  function that gets called by only permitted users and uses a transaction 
+  that verifies no exportInProgress flag exists prior to unlocking. It then
+  sets the exportInProgress flag and deletes any corresponding rows in 
+  MySQL. Finally it unsets the exportInProgress flag.
 */
 export async function unlockTimesheet(data: unknown, context: functions.https.CallableContext) {
+  // caller must have permission to run this
   getAuthObject(context, ["tsunlock"])
 
   // Validate the data or throw
@@ -310,9 +313,18 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
     );
   }
 
+  const db = admin.firestore();
+
+  // create a flag which will be true if rows need to be deleted from MySQL
+  // After the transaction if this flag is true we will continue with the 
+  // DELETEs and then update the exported and exportInProgress flags on the 
+  // document
+  let deleteFromMySQL = false;
+  const successBatch = db.batch();
+  const failBatch = db.batch();
+
   // run transaction to read the timesheet and if it exists check that
   // it is locked and an export is not in progress. Then unlock it.
-  const db = admin.firestore();
   const timeSheet = db.collection("TimeSheets").doc(data.id);
   await db.runTransaction(async (transaction) => {
     return transaction.get(timeSheet).then(async (tsSnap) => {
@@ -336,18 +348,37 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
           " currently being exported"
         );
       }
-      // if exported is already true, set requiresReExport:true,
-      // set locked:false, and don't update the value of exported
+      // if exported is already true, set deleteFromMySQL=true to perform the
+      // deletion next. Update the success and fail batches to run after the
+      // deletion depending on the outcome.
       if (snapData.exported === true) {
-        functions.logger.info(`${tsSnap.id} was unlocked. Since it was " +
-          "previously exported, it has been flagged for re-export`);
-        return transaction.update(timeSheet, { locked: false, requiresReExport: true });
+        deleteFromMySQL = true;
+        functions.logger.info(`${tsSnap.id} will be unlocked after it is " + 
+          "deleted from the export destination.`);
+        successBatch.update(timeSheet, { exportInProgress: false, locked: false, exported: false });
+        failBatch.update(timeSheet, { exportInProgress: false });
+        return transaction.update(timeSheet, { exportInProgress: true });
       }
       
       // timesheet is lockable, lock it and set the exported flag to false
       return transaction.update(timeSheet, { locked: false });
     });
   });
+
+  if (deleteFromMySQL) {
+    // Delete from MySQL then if successful run successBatch.commit()
+    const mysqlConnection = await createSSHMySQLConnection();
+    try {
+      await query(mysqlConnection, "DELETE FROM TimeSheets WHERE id=?", [timeSheet.id]);
+    } catch (error) {
+      await failBatch.commit();
+      throw new functions.https.HttpsError(
+        "internal",
+        "An error occured while deleting the Timesheet from the synced database");
+    }
+    return successBatch.commit();
+  }
+  return;
 }
 
 /*
@@ -376,26 +407,30 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
     return transaction.get(timeSheet).then(async (tsSnap) => {
       const snapData = tsSnap.data();
       if (!snapData) {
-        throw new Error("The TimeSheet docsnap was empty during the locking transaction")
+        throw new functions.https.HttpsError(
+          "internal",
+          "The TimeSheet docsnap was empty during the locking transaction"
+        );
       }
       if (
         snapData.submitted === true &&
         snapData.approved === true &&
         snapData.locked === false
       ) {
-        // if exported is already true, it was previously unlocked so
-        // requiresReExport:true will have already be set by unlockTimesheet()
-        // These will be handled by the sync cleanup
-        // set locked:true, and leave exported:true
+        // if exported is already true, the exported flag needs to be cleared
+        // prior to locking, with the cleanTime() function in sync.ts
+        // otherwise set locked:true, and leave exported:true
         if (snapData.exported === true) {
-          functions.logger.info(`${tsSnap.id} was previously exported and requires re-export`);
-          return transaction.update(timeSheet, { locked: true });
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            "The timesheet was previouly exported and the database is in an " +
+            "inconsistent state. Please contact a tybalt admin.");
         }
         
         // timesheet is lockable, lock it and set the exported flag to false
         return transaction.update(timeSheet, { locked: true, exported: false });
       } else {
-        throw new Error(
+        throw new functions.https.HttpsError("failed-precondition",
           "The timesheet has either not been submitted and approved " +
             "or it was already locked"
         );
