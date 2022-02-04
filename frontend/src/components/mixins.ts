@@ -2,7 +2,7 @@ import Vue from "vue";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
-import { format, subDays, addDays, differenceInDays } from "date-fns";
+import { format, subDays, addDays } from "date-fns";
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import {
   TimeSheet,
@@ -15,6 +15,12 @@ import {
   ExpenseMeals,
   isExpense,
 } from "./types";
+import {
+  payPeriodsForYear as ppGen,
+  isPayrollWeek2,
+  nextSaturday,
+  thisTimeNextWeekInTimeZone,
+} from "./helpers";
 import { parse } from "json2csv";
 import { transforms } from "json2csv";
 
@@ -36,50 +42,23 @@ export default Vue.extend({
     ...mapState(["claims", "user"]),
   },
   methods: {
+    // returns Date[] of all pay periods in the given year
+    payPeriodsForYear(year: number): Date[] {
+      return Array.from(ppGen(year));
+    },
     // return the same time 7 days ago in the given time zone
-    thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
+    thisTimeLastNWeeksInTimeZone(datetime: Date, timezone: string, n: number) {
       const zone_time = utcToZonedTime(datetime, timezone);
-      return zonedTimeToUtc(addDays(zone_time, 7), timezone);
+      return zonedTimeToUtc(subDays(zone_time, 7 * n), timezone);
     },
-    nextSaturday(date: Date): Date {
-      let calculatedSaturday;
-      const zonedTime = utcToZonedTime(date, "America/Thunder_Bay");
-      if (zonedTime.getDay() === 6) {
-        calculatedSaturday = zonedTimeToUtc(
-          new Date(
-            zonedTime.getFullYear(),
-            zonedTime.getMonth(),
-            zonedTime.getDate(),
-            23,
-            59,
-            59,
-            999
-          ),
-          "America/Thunder_Bay"
-        );
-      } else {
-        const nextsat = new Date(zonedTime.getTime());
-        nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
-        calculatedSaturday = zonedTimeToUtc(
-          new Date(
-            nextsat.getFullYear(),
-            nextsat.getMonth(),
-            nextsat.getDate(),
-            23,
-            59,
-            59,
-            999
-          ),
-          "America/Thunder_Bay"
-        );
-      }
-      return calculatedSaturday;
-    },
+    thisTimeNextWeekInTimeZone,
+    nextSaturday,
     copyEntry(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference
     ) {
       if (confirm("Want to copy this entry to tomorrow?")) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { date, ...newItem } = item;
         newItem.date = addDays(item.date.toDate(), 1);
         store.commit("startTask", {
@@ -535,23 +514,7 @@ export default Vue.extend({
         amendments: unfoldedAmendmentsOutput,
       };
     },
-    // Given a number (result of getTime() from js Date object), verify that it is
-    // 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
-    // week 2 of a payroll at TBT Engineering. The definition of this is an
-    // integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
-    // NB: THIS FUNCTION ALSO IN BACKEND utilities.ts
-    isPayrollWeek2(weekEnding: Date): boolean {
-      const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
-
-      // There will not be integer days if epoch and weekEnding are in different
-      // time zones (EDT vs EST). Convert them both to the same timezone prior
-      // to calculating the difference
-      const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, "America/Thunder_Bay");
-      const tbayWeekEnding = utcToZonedTime(weekEnding, "America/Thunder_Bay");
-      const difference = differenceInDays(tbayWeekEnding, tbayEpoch);
-
-      return difference % 14 === 0 ? true : false;
-    },
+    isPayrollWeek2,
     async generateJobSummaryCSV(job: string, timeSheets: TimeSheet[]) {
       // Filter entries without specified job
       const relevantJobsOnly = timeSheets.map((x: TimeSheet) => {

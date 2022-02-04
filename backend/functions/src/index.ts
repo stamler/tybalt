@@ -20,7 +20,7 @@ export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking } from "./expenses";
 export { writeFileLinks } from "./utilities";
-export { algoliaUpdateSecuredAPIKey } from "./profiles";
+export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { syncTime } from "./sync";
 export { auditExportStatus } from "./audit";

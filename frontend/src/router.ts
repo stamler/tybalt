@@ -24,6 +24,7 @@ import ComputersDetails from "@/components/ComputersDetails.vue";
 import UsersList from "@/components/UsersList.vue";
 import UsersDetails from "@/components/UsersDetails.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
+import ProfilesBulkEdit from "@/components/ProfilesBulkEdit.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
 //import JobsList from "@/components/JobsList.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
@@ -417,6 +418,13 @@ const router = new Router({
               name: "Profiles List",
               props: { collection: "Profiles" },
               component: ProfilesList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Bulk Edit" },
+              path: "bulkedit",
+              name: "Bulk Edit",
+              props: { collection: "Profiles" },
+              component: ProfilesBulkEdit,
             },
             {
               path: ":id/edit",

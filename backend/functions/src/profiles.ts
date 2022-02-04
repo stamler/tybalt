@@ -18,6 +18,7 @@ import * as _ from "lodash";
 import axios from "axios";
 import jwtDecode, { JwtPayload } from "jwt-decode";
 //import { subDays } from "date-fns";
+import { getAuthObject, isPayrollWeek2 } from "./utilities";
 import algoliasearch from "algoliasearch";
 const env = functions.config();
 
@@ -27,6 +28,48 @@ interface MSJwtPayload extends JwtPayload {
 
 interface AccessTokenPayload {
   accessToken: string;
+}
+
+interface OpeningValuesPayload {
+  // integer result of openingDateTimeOff.toDate().getTime()
+  openingDateTimeOff: number;
+  openingOV: number;
+  openingOP: number;
+  uid: string;
+}
+
+function isOpeningValuesPayload(data: any): data is OpeningValuesPayload {
+  
+  // validate that the openingDateTimeOff is a number
+  if (!(
+      data.openingDateTimeOff !== undefined && 
+      typeof data.openingDateTimeOff === "number"
+    )) {
+    return false;
+  }
+
+  // validate that openingOV is a number
+  if (!(
+    data.openingOV !== undefined &&
+    typeof data.openingOV === "number" 
+  )) {
+    return false;
+  }
+
+  // validate that openingOP has is multiple of 0.5 and no more than 252
+  if (!(
+    data.openingOP !== undefined &&
+    typeof data.openingOP === "number"
+  )) {
+    return false;
+  }
+
+  // validate uid is a string
+  if (!(data.uid !== undefined && typeof data.uid === "string")) {
+    return false;
+  }
+
+  return true;
 }
 
 // User-defined Type Guard
@@ -273,3 +316,70 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
     algoliaSearchKeyUpdated: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
 });
+
+// This function validates that the caller has permission then receives and
+// checks new opening values for time off (PPTO and VAC) and the corresponding
+// opening date. Once the data is validated the Profile is updated.
+export const updateOpeningValues = functions.https.onCall((data: unknown, context: functions.https.CallableContext) => {
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context,["ovals"]);
+
+  const db = admin.firestore();
+
+  if (!isOpeningValuesPayload(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The opening values payload didn't validate"
+    );
+  }
+
+  if (!(
+    isPayrollWeek2(new Date(data.openingDateTimeOff))
+  )) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The date provided is not the end of a pay period"
+    );
+  }
+
+  if (!(
+    Math.floor(data.openingOV) === data.openingOV ||
+    data.openingOV.toString().split(".")[1].length < 3
+  )) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The opening OV value cannot have more than 2 decimal places"
+    );
+  }
+
+  if ( data.openingOV > 200 || data.openingOV < 0 ) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The opening OV cannot be negative or greater than 200"
+    );
+  }
+
+  if (!(
+    Math.floor(data.openingOP * 2) === data.openingOP * 2
+  )) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The opening OP must be a multiple of 0.5"
+    );
+  }
+
+  if ( data.openingOP > 252 || data.openingOP < 0 ) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The opening OP cannot negative or greater than 252"
+    );
+  }  
+
+  return db.collection("Profiles").doc(data.uid).update({
+    openingDateTimeOff: new Date(data.openingDateTimeOff),
+    openingOV: data.openingOV,
+    openingOP: data.openingOP,
+  });
+
+});
+
