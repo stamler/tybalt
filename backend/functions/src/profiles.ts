@@ -419,6 +419,7 @@ export async function updateTimeOffTallies(uid: string) {
     .where("uid", "==", uid)
     .where("locked", "==", true)
     .where("weekEnding", ">", openingDate)
+    .orderBy("weekEnding","desc")
     .get();
 
   // Iterate over the timesheets and come up with a total
@@ -430,5 +431,8 @@ export async function updateTimeOffTallies(uid: string) {
     usedOP += nonWorkHoursTally.OP || 0;
   });
 
-  return profile.ref.update({ usedOV, usedOP });
+  // the first TimeSheets doc in the query is the latest so will have
+  // the latest weekEnding for reporting effective date to the user
+  const usedAsOf = querySnap.docs[0].get("weekEnding");
+  return profile.ref.update({ usedOV, usedOP, usedAsOf });
 };
