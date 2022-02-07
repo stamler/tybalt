@@ -67,7 +67,7 @@ export interface WeekReference {
 // User-defined Type Guard
 // https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
 export function isWeekReference(data: any): data is WeekReference {
-  if (data.weekEnding) {
+  if (data.weekEnding !== undefined) {
     return typeof data.weekEnding === "number";
   }
   return false;
