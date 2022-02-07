@@ -358,8 +358,8 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
       // deletion depending on the outcome.
       if (snapData.exported === true) {
         deleteFromMySQL = true;
-        functions.logger.info(`${tsSnap.id} will be unlocked after it is " + 
-          "deleted from the export destination.`);
+        functions.logger.info(`${tsSnap.id} will be unlocked after it is ` + 
+          "deleted from the export destination.");
         successBatch.update(timeSheet, { exportInProgress: false, locked: false, exported: false });
         failBatch.update(timeSheet, { exportInProgress: false });
         return transaction.update(timeSheet, { exportInProgress: true });
