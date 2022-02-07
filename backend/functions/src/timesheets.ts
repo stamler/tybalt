@@ -31,6 +31,7 @@ import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
 import { createSSHMySQLConnection, query } from "./sshMysql";
+import { updateTimeOffTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
   displayName: string;
@@ -185,6 +186,8 @@ export const updateTimeTracking = functions.firestore
       afterData.approved === true
     ) {
       // just unlocked
+      // update the Time Off Tallies on the corresponding profile
+      await updateTimeOffTallies(afterData.uid);
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
       functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} has been manually unlocked.`);
@@ -231,6 +234,8 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === true
     ) {
       // just locked
+      // update the Time Off Tallies on the corresponding profile
+      await updateTimeOffTallies(afterData.uid);
       // remove document from pending and add it to timeSheets
       await timeTrackingDocRef.update(
         {
@@ -382,9 +387,8 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
 }
 
 /*
-  Given a document id, lock the corresponding approved TimeSheet document 
-  then add it to the timeSheets property array of the TimeTracking doc. 
-  Finally, call exportJson()
+  Given a document id, lock the corresponding approved TimeSheet document
+  and mark it as exported:false.
 */
 export async function lockTimesheet(data: unknown, context: functions.https.CallableContext) {
 

@@ -383,3 +383,52 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
 
 });
 
+// This function takes a uid as an argument in data { uid: "user_ID" } and
+// updates the usedOV and usedOP numbers on the profile by enumerating all of
+// that user's timesheets that are later than the profile's openingDateTimeOff
+// value and summing the values of the OV and OP properties of each
+// nonWorkHoursTally property of each TimeSheets document.
+export async function updateTimeOffTallies(uid: string) {
+  const db = admin.firestore();
+
+  // Load the profile for the user to get opening values and later
+  // use it to write back the used values
+  const profile = await db.collection("Profiles").doc(uid).get();
+  if (!profile.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "A Profile doesn't exist for this user"
+    );
+  }
+  const openingDate = profile.get("openingDateTimeOff");
+  const openingOV = profile.get("openingOV");
+  const openingOP = profile.get("openingOP");
+
+  if (
+    openingDate === undefined ||
+    openingOV === undefined ||
+    openingOP === undefined
+    ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The profile is missing one of openingDateTimeOff, openingOV, openingOP"
+    );
+  }
+
+  const querySnap = await db.collection("TimeSheets")
+    .where("uid", "==", uid)
+    .where("locked", "==", true)
+    .where("weekEnding", ">", openingDate)
+    .get();
+
+  // Iterate over the timesheets and come up with a total
+  let usedOV = 0;
+  let usedOP = 0;
+  querySnap.docs.map((tsSnap) => {
+    const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
+    usedOV += nonWorkHoursTally.OV || 0;
+    usedOP += nonWorkHoursTally.OP || 0;
+  });
+
+  return profile.ref.update({ usedOV, usedOP });
+};
