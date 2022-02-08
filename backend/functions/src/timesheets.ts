@@ -187,7 +187,11 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just unlocked
       // update the Time Off Tallies on the corresponding profile
-      await updateTimeOffTallies(afterData.uid);
+      try {
+        await updateTimeOffTallies(afterData.uid);
+      } catch (error) {
+        functions.logger.error(`Error on updateTimeOffTallies for user ${afterData.uid}: ${error}`)
+      }
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
       functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} has been manually unlocked.`);
@@ -235,7 +239,11 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just locked
       // update the Time Off Tallies on the corresponding profile
-      await updateTimeOffTallies(afterData.uid);
+      try {
+        await updateTimeOffTallies(afterData.uid);
+      } catch (error) {
+        functions.logger.error(`Error on updateTimeOffTallies for user ${afterData.uid}: ${error}`)
+      }
       // remove document from pending and add it to timeSheets
       await timeTrackingDocRef.update(
         {
