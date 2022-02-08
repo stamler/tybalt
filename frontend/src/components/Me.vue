@@ -7,6 +7,22 @@
     <div id="dash">
       <h2>Hi, {{ user.displayName }}</h2>
       <img alt="TBTE logo" src="../assets/logo.png" />
+      <div
+        style="
+          width: 100%;
+          padding: 0em 0.4em;
+          margin-bottom: 2em;
+          background-color: ivory;
+        "
+      >
+        <h3>Balances</h3>
+        <h4>Available time off as of {{ item.usedAsOf | shortDate }}</h4>
+        <p>Vacation: {{ item.openingOV - item.usedOV }} hr(s)</p>
+        <p>PPTO: {{ item.openingOP - item.usedOP }} hr(s)</p>
+        <p>
+          Company policy requires the use of vacation time prior to using PPTO
+        </p>
+      </div>
       <form id="editor">
         <h3>Settings</h3>
         <h4>Time Sheets</h4>
@@ -79,6 +95,7 @@ import Vue from "vue";
 import { signOut } from "../main";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+import { format } from "date-fns";
 
 const db = firebase.firestore();
 
@@ -100,6 +117,12 @@ export default Vue.extend({
     this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.user.uid);
+  },
+  filters: {
+    shortDate(date: firebase.firestore.Timestamp | undefined): string {
+      if (date === undefined) return "";
+      return format(date.toDate(), "MMM dd");
+    },
   },
   methods: {
     signOut,

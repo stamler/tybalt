@@ -415,24 +415,47 @@ export async function updateTimeOffTallies(uid: string) {
     );
   }
 
-  const querySnap = await db.collection("TimeSheets")
+  const querySnapTimeSheets = await db.collection("TimeSheets")
     .where("uid", "==", uid)
     .where("locked", "==", true)
     .where("weekEnding", ">", openingDate)
-    .orderBy("weekEnding","desc")
+    .orderBy("weekEnding","desc") // sorted descending so latest element first
     .get();
 
   // Iterate over the timesheets and come up with a total
   let usedOV = 0;
   let usedOP = 0;
-  querySnap.docs.map((tsSnap) => {
+  querySnapTimeSheets.docs.map((tsSnap) => {
     const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
     usedOV += nonWorkHoursTally.OV || 0;
     usedOP += nonWorkHoursTally.OP || 0;
   });
+  
+  // iterate over TimeAmendments and add to existing totals
+  const querySnapTimeAmendmentsOV = await db.collection("TimeAmendments")
+    .where("uid", "==", uid)
+    .where("committed", "==", true)
+    .where("committedWeekEnding", ">", openingDate)
+    .where("timetype","==","OV")
+    .get();
+    
+    querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
+      usedOV += amendSnap.get("hours");
+    });
+
+    const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
+    .where("uid", "==", uid)
+    .where("committed", "==", true)
+    .where("committedWeekEnding", ">", openingDate)
+    .where("timetype","==","OP")
+    .get();
+
+    querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
+      usedOP += amendSnap.get("hours");
+    });
 
   // the first TimeSheets doc in the query is the latest so will have
   // the latest weekEnding for reporting effective date to the user
-  const usedAsOf = querySnap.docs[0].get("weekEnding");
+  const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
   return profile.ref.update({ usedOV, usedOP, usedAsOf });
 };

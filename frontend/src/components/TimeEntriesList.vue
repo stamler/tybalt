@@ -1,5 +1,13 @@
 <template>
   <div id="list">
+    <div>
+      <span class="listheader">
+        <p style="width: 100%; text-align: right">
+          {{ openingOV - usedOV }} hrs Vacation & {{ openingOP - usedOP }} hrs
+          PPTO remaining as of {{ usedAsOf | shortDate }}
+        </p>
+      </span>
+    </div>
     <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
       <span class="listheader">
         {{ tallies[week].weekEnding | shortDateWeekDayStart }} &mdash;
@@ -218,6 +226,11 @@ export default mixins.extend({
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       items: [] as firebase.firestore.DocumentData[],
+      openingOV: 0,
+      openingOP: 0,
+      usedOP: 0,
+      usedOV: 0,
+      usedAsOf: new Date(),
     };
   },
   watch: {
@@ -233,6 +246,19 @@ export default mixins.extend({
         if (uid === undefined) {
           throw "There is no valid uid";
         }
+        db.collection("Profiles")
+          .doc(this.user.uid)
+          .get()
+          .then((docSnap) => {
+            this.openingOV = docSnap.get("openingOV") || 0;
+            this.openingOP = docSnap.get("openingOP") || 0;
+            this.usedOV = docSnap.get("usedOV") || 0;
+            this.usedOP = docSnap.get("usedOP") || 0;
+            this.usedAsOf = docSnap.get("usedAsOf")?.toDate() || new Date();
+          })
+          .catch((err) => {
+            alert(`Error loading profile: ${err}`);
+          });
         if (this.collection === "TimeEntries") {
           this.$bind(
             "items",

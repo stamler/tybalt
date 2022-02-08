@@ -23,6 +23,7 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
+            Opening:
             {{ item.openingDateTimeOff | fullDetailDate }}
           </div>
         </div>
@@ -38,6 +39,14 @@
             max="240"
             placeholder="123.45"
           />
+          <span v-if="item.openingOV > 0" style="margin-left: 0.5em">
+            <span class="labels">
+              used: {{ item.usedOV }} hrs to {{ item.usedAsOf | shortDate }}
+            </span>
+            <span class="labels">
+              balance: {{ item.openingOV - item.usedOV }}
+            </span>
+          </span>
         </span>
         <span>
           <label class="labels" for="openingOP">Opening PPTO Hours:</label>
@@ -51,6 +60,14 @@
             max="252"
             placeholder="48"
           />
+          <span v-if="item.openingOV > 0" style="margin-left: 0.5em">
+            <span class="labels">
+              used: {{ item.usedOP }} hrs to {{ item.usedAsOf | shortDate }}
+            </span>
+            <span class="labels">
+              balance: {{ item.openingOP - item.usedOP }}
+            </span>
+          </span>
         </span>
       </div>
       <div class="rowactionsbox">
@@ -87,6 +104,10 @@ export default mixins.extend({
     fullDetailDate(date: firebase.firestore.Timestamp): string {
       if (date) return format(date.toDate(), "yyyy MMM dd @ HH:mm:ss.SSS");
       else return "";
+    },
+    shortDate(date: firebase.firestore.Timestamp | undefined): string {
+      if (date === undefined) return "";
+      return format(date.toDate(), "MMM dd");
     },
   },
   created() {

@@ -201,6 +201,28 @@
       ]
     },
     {
+      "collectionGroup": "TimeAmendments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "committed",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timetype",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "committedWeekEnding",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "TimeEntries",
       "queryScope": "COLLECTION",
       "fields": [
