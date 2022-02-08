@@ -23,6 +23,7 @@ export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { syncTime } from "./sync";
+export { queryMySQL } from "./endpoint";
 export { auditExportStatus } from "./audit";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
 
