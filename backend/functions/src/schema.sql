@@ -34,3 +34,34 @@ CREATE TABLE `TimeEntries` (
   KEY `fk_tsid` (`tsid`),
   CONSTRAINT `fk_tsid` FOREIGN KEY (`tsid`) REFERENCES `TimeSheets` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `TimeAmendments` (
+  `id` varchar(512) NOT NULL DEFAULT '',
+  `creator` varchar(128) NOT NULL,
+  `creatorName` varchar(80) NOT NULL,
+  `commitUid` varchar(128) NOT NULL DEFAULT '',
+  `commitName` varchar(80) NOT NULL DEFAULT '',
+  `commitTime` timestamp NOT NULL,
+  `created` timestamp NOT NULL,
+  `committedWeekEnding` date NOT NULL,
+  `uid` varchar(128) NOT NULL DEFAULT '',
+  `givenName` varchar(48) NOT NULL DEFAULT '',
+  `surname` varchar(32) NOT NULL DEFAULT '',
+  `tbtePayrollId` varchar(6) NOT NULL DEFAULT '',
+  `salary` tinyint(1) NOT NULL,
+  `weekEnding` date NOT NULL,
+  `date` date NOT NULL,
+  `timetype` varchar(5) NOT NULL DEFAULT '',
+  `timetypeName` varchar(128) NOT NULL DEFAULT '',
+  `division` varchar(5) DEFAULT NULL,
+  `divisionName` varchar(128) DEFAULT NULL,
+  `client` varchar(128) DEFAULT NULL,
+  `job` varchar(16) DEFAULT NULL,
+  `workrecord` varchar(16) DEFAULT NULL,
+  `jobDescription` varchar(128) DEFAULT NULL,
+  `hours` decimal(3,1) DEFAULT NULL,
+  `jobHours` decimal(3,1) DEFAULT NULL,
+  `mealsHours` decimal(3,1) DEFAULT NULL,
+  `workDescription` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

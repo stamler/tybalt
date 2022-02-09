@@ -3,7 +3,7 @@ import * as functions from "firebase-functions";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { TimeEntry } from "./utilities";
-import { createSSHMySQLConnection, query } from "./sshMysql";
+import { createSSHMySQLConnection2 } from "./sshMysql";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -17,6 +17,8 @@ export const syncTime = functions
   .onRun(async (context) => {
     await cleanupTime();
     await exportTime();
+    await cleanupAmendments();
+    await exportAmendments();
     return;
   });
 
@@ -34,7 +36,7 @@ longer time than a transaction during the exportTime() function call
 */
 export async function exportTime() {
   const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection();
+  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the first "batchSize" documents that are locked but not yet exported
   // This batches runs. Since runs are idempotent we can just run it again if
@@ -92,8 +94,8 @@ export async function exportTime() {
   //  and failure of any query should fail the entire transaction.
   //  multipleStatements is disabled by default in mysql2 hence 2 queries
 
-  await query(mysqlConnection, "SET FOREIGN_KEY_CHECKS=0;");
-  await query(mysqlConnection, "START TRANSACTION;");
+  await mysqlConnection.query("SET FOREIGN_KEY_CHECKS=0;");
+  await mysqlConnection.query("START TRANSACTION;");
 
   // create the batch that will be run only if the export MySQL COMMIT succeeds
   const exportSuccessBatch = db.batch();
@@ -115,7 +117,7 @@ export async function exportTime() {
     };
 
     // Insert the TimeSheet-level data into the TimeSheets table first
-    const tsSQLResponse = query(mysqlConnection, "INSERT INTO TimeSheets SET ?", [timeSheet]);
+    const tsSQLResponse = mysqlConnection.query("INSERT INTO TimeSheets SET ?", [timeSheet]);
     
     // Get the entries then INSERT them into MySQL in the transaction
     const timeEntriesFields = ["uid", "tsid", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount"];
@@ -128,12 +130,12 @@ export async function exportTime() {
       return timeEntriesFields.map(x => cleaned[x]);
     });
     const q = `INSERT INTO TimeEntries (${timeEntriesFields.toString()}) VALUES ?`;
-    const entriesSQLResponse = query(mysqlConnection, q, [insertValues]);
+    const entriesSQLResponse = mysqlConnection.query(q, [insertValues]);
 
     try {
       await Promise.all([tsSQLResponse, entriesSQLResponse]);
     } catch (error) {
-      console.log(`Failed to export TimeSheets document ${timeSheet.id} ${timeSheet.tbtePayrollId}`);
+      functions.logger.error(`Failed to export TimeSheets document ${timeSheet.id} ${timeSheet.tbtePayrollId}`);
       throw error
     }
 
@@ -146,20 +148,20 @@ export async function exportTime() {
 
   try {
     await Promise.all(tsresults);
-    await query(mysqlConnection, "COMMIT;");
+    await mysqlConnection.query( "COMMIT;");
     // delete exportInProgress:true property, set exported:true on local docs
     await exportSuccessBatch.commit();
     const end = process.hrtime.bigint();
     const elapsed = (end - start) / BigInt(1000000000);
-    console.log(`Exported ${tsresults.length} TimeSheets documents in ${elapsed.toString()} sec`);
+    functions.logger.log(`Exported ${tsresults.length} TimeSheets documents in ${elapsed.toString()} sec`);
   } catch (error) {
-    await query(mysqlConnection, "ROLLBACK;");
+    await mysqlConnection.query( "ROLLBACK;");
     // delete exportInProgress:true property on local docs
     await exportFailBatch.commit();
-    console.log(`Export failed ${error}`);
+    functions.logger.error(`Export failed ${error}`);
   }
 
-  await query(mysqlConnection, "SET FOREIGN_KEY_CHECKS=1;");
+  await mysqlConnection.query( "SET FOREIGN_KEY_CHECKS=1;");
   return exportLocksDoc.delete();
 };
 
@@ -171,7 +173,7 @@ deletion is confirmed, delete the exportInProgress property and set
 exported:false. The next time exportTime() runs, this document will be
 exported fresh. */
 export async function cleanupTime() {
-  const mysqlConnection = await createSSHMySQLConnection();
+  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the documents where exportInProgress:true. They may locked or
   // unlocked, exported or not exported
@@ -194,7 +196,7 @@ export async function cleanupTime() {
     "from running simultaneously."})
   });
 
-  await query(mysqlConnection, "START TRANSACTION;");
+  await mysqlConnection.query( "START TRANSACTION;");
 
   // create the batch that will be run only if the export MySQL COMMIT succeeds
   const cleanupSuccessBatch = db.batch();
@@ -204,7 +206,7 @@ export async function cleanupTime() {
   // delete the entries so we don't have to handle that here.
   const tsresults = tsSnaps.docs.map(async tsSnap => {
     // This will throw, thus returning a rejected promise, if it fails
-    await query(mysqlConnection, "DELETE FROM TimeSheets WHERE id=?", [tsSnap.id]);
+    await mysqlConnection.query( "DELETE FROM TimeSheets WHERE id=?", [tsSnap.id]);
 
     // DELETEs were successful for this doc, mark it in success batch
     return cleanupSuccessBatch.update(tsSnap.ref, {
@@ -215,13 +217,167 @@ export async function cleanupTime() {
 
   try {
     await Promise.all(tsresults);
-    await query(mysqlConnection, "COMMIT;");
+    await mysqlConnection.query("COMMIT;");
     // delete exportInProgress property and set exported:false on local docs
-    console.log(`Cleaned up ${tsresults.length} previous TimeSheets exports`);    
+    functions.logger.log(`Cleaned up ${tsresults.length} previous TimeSheets exports`);    
     await cleanupSuccessBatch.commit();
   } catch (error) {
-    console.log(`Cleanup failed ${error}`);
-    await query(mysqlConnection, "ROLLBACK;");
+    functions.logger.error(`Cleanup failed ${error}`);
+    await mysqlConnection.query("ROLLBACK;");
+  }
+  return exportLocksDoc.delete();
+}
+
+/*
+exportTime() but for TimeAmendments
+*/
+export async function exportAmendments() {
+  const start = process.hrtime.bigint();
+  const mysqlConnection = await createSSHMySQLConnection2();
+
+  // Get the first "batchSize" documents that are locked but not yet exported
+  // This batches runs. Since runs are idempotent we can just run it again if
+  // there are remaining documents (i.e. initial sync). batchSize must be large
+  // enough to, on average, export all the docs generated within the scheduled
+  // export cadence
+  const batchSize = 500;
+  const pendingExportQuery = db.collection("TimeAmendments")
+    .where("committed", "==", true)
+    .where("exported", "==", false)
+    .limit(batchSize);
+
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+
+  // Run the query and set the flag exportInProgress:true. At the same time
+  // create a batch to delete the exportInProgress:true flag that will be run
+  // only if the export fails.
+  const [amenddocsnaps, exportFailBatch] = await db.runTransaction(async t => {
+    const rollbackBatch = db.batch();
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "exportAmendments(): exportTime() or cleanupTime() or exportAmendments() are already running"
+      );
+    }
+    const amendmentSnaps = await t.get(pendingExportQuery);
+    const docs:admin.firestore.QueryDocumentSnapshot[] = [];
+    amendmentSnaps.forEach(amendmentSnap => {
+      // skip the TimeAmendments doc if prerequisites aren't met
+      if (
+        amendmentSnap.get("exportInProgress") === true || // another export is running
+        amendmentSnap.get("committed") !== true || // the Amendment hasn't been committed
+        amendmentSnap.get("exported") === true // the Amendment is already exported
+      ) {
+        // skip this TimeAmendments document
+        return;
+      }
+      docs.push(amendmentSnap);
+      rollbackBatch.update(amendmentSnap.ref, {
+        exportInProgress: admin.firestore.FieldValue.delete(),
+      });
+      t.update(amendmentSnap.ref, { exportInProgress: true });
+    });
+    t.set(exportLocksDoc,{ message: "exportAmendment() transaction created this " +
+      "doc to prevent other instances of exportTime() or cleanupTime() or " + 
+      "exportAmendment() from running simultaneously."})
+    return [docs, rollbackBatch];
+  });
+
+  // create the batch that will be run only if the export MySQL COMMIT succeeds
+  const exportSuccessBatch = db.batch();
+
+  // Iterate over the TimeAmendments documents, INSERTing them into MySQL table
+  const timeAmendmentsFields = ["id", "creator", "creatorName", "commitUid", "commitName", "commitTime", "created", "committedWeekEnding", "uid", "givenName", "surname", "tbtePayrollId", "salary", "weekEnding", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription"];
+  const insertValues = amenddocsnaps.map((amendSnap) => {
+    const amendment = amendSnap.data();
+    amendment.id = amendSnap.id;
+    amendment.commitTime = amendment.commitTime.toDate();
+    amendment.created = amendment.created.toDate();
+    amendment.committedWeekEnding = format(utcToZonedTime(amendment.committedWeekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    amendment.weekEnding = format(utcToZonedTime(amendment.weekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    amendment.date = format(utcToZonedTime(amendment.date.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    // VALUEs were included in the data set for this doc, include it in success batch
+    exportSuccessBatch.update(amendSnap.ref, {
+      exported: true,
+      exportInProgress: admin.firestore.FieldValue.delete(),
+    });    
+    return timeAmendmentsFields.map(x => amendment[x]);
+  });
+  
+  const q = `INSERT INTO TimeAmendments (${timeAmendmentsFields.toString()}) VALUES ?`;
+  try {
+    if (insertValues.length > 0) {
+      await mysqlConnection.query(q, [insertValues]);
+    }
+    // delete exportInProgress:true property, set exported:true on local docs
+    await exportSuccessBatch.commit();
+    const end = process.hrtime.bigint();
+    const elapsed = (end - start) / BigInt(1000000000);
+    functions.logger.log(`Exported ${insertValues.length} TimeAmendments documents in ${elapsed.toString()} sec`);
+  } catch (error) {
+    // delete exportInProgress:true property on local docs
+    await exportFailBatch.commit();
+    functions.logger.error(`Export failed ${error}`);
+  }
+
+  return exportLocksDoc.delete();
+};
+
+/*
+cleanupTime() but for TimeAmendments
+*/
+export async function cleanupAmendments() {
+  const mysqlConnection = await createSSHMySQLConnection2();
+
+  // Get the documents where exportInProgress:true. They may locked or
+  // unlocked, exported or not exported
+  const amendmentSnaps = await db.collection("TimeAmendments")
+    .where("exportInProgress", "==", true)
+    .get();
+
+  // Check to make sure another operation isn't already running
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+  await db.runTransaction(async t => {
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "cleanupAmendments(): export[Time | Amendments]() or cleanup[Time | Amendments]() are already running"
+      );
+    }
+    return t.set(exportLocksDoc,{ message: "cleanupAmendments() transaction created "+
+    "this doc to prevent other export or cleanup functions " + 
+    "from running simultaneously."})
+  });
+
+  await mysqlConnection.query("START TRANSACTION");
+
+  // create the batch that will be run only if the export MySQL COMMIT succeeds
+  const cleanupSuccessBatch = db.batch();
+
+  // Iterate over the TimeAmendments documents, DELETINGing them from the 
+  // TimeAmendments tables.
+  const amendmentresults = amendmentSnaps.docs.map(async amendmentSnap => {
+    // This will throw, thus returning a rejected promise, if it fails
+    await mysqlConnection.query("DELETE FROM TimeAmendments WHERE id=?", [amendmentSnap.id])
+
+    // DELETEs were successful for this doc, mark it in success batch
+    return cleanupSuccessBatch.update(amendmentSnap.ref, {
+      exported: false,
+      exportInProgress: admin.firestore.FieldValue.delete(),
+    });
+  });
+
+  try {
+    await Promise.all(amendmentresults);
+    await mysqlConnection.query("COMMIT;");
+    // delete exportInProgress property and set exported:false on local docs
+    functions.logger.log(`Cleaned up ${amendmentresults.length} previous TimeAmendments exports`);
+    await cleanupSuccessBatch.commit();
+  } catch (error) {
+    functions.logger.error(`Cleanup failed ${error}`);
+    await mysqlConnection.query("ROLLBACK;");
   }
   return exportLocksDoc.delete();
 }
