@@ -620,6 +620,7 @@ export async function commitTimeAmendment(data: unknown, context: functions.http
       commitName,
       salary: profile.salary,
       tbtePayrollId: profile.tbtePayrollId,
+      exported: false,
     });
 };
 
