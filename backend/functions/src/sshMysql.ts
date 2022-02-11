@@ -16,19 +16,7 @@ export type QueryResponse = Promise<
 
 const sshClient = new Client();
 
-/* 
-Connect to a mysql database behind an SSH server by reading credentials
-from google cloud functions environment variables
-
-Usage:
-
-const connection = await SSHMySQLConnection
-try {
-  connection.query("....", (err, results, fields) => { ... });
-} catch (error) {
-  console.log(error)
-}
-*/
+// TODO: DELETE THIS CODE AS createSSHMySQLConnection2 uses BUILT-IN PROMISES
 export const createSSHMySQLConnection = () => {return new Promise<mysql.Connection>((resolve, reject) => {
   sshClient.on("ready", () => {
     sshClient.forwardOut(
@@ -60,6 +48,19 @@ export const createSSHMySQLConnection = () => {return new Promise<mysql.Connecti
   });
 })};
 
+/* 
+Connect to a mysql database behind an SSH server by reading credentials
+from google cloud functions environment variables
+
+Usage:
+
+const connection = await createSSHMySQLConnection2();
+try {
+  connection.query("....", [values]);
+} catch (error) {
+  console.log(error)
+}
+*/
 export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.Connection>((resolve, reject) => {
   sshClient.on("ready", () => {
     sshClient.forwardOut(
