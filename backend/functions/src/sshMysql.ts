@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions";
 import * as mysql from "mysql2";
+import * as mysqlPromise from "mysql2/promise";
 import { Client } from "ssh2";
 
 const env = functions.config();
@@ -49,6 +50,39 @@ export const createSSHMySQLConnection = () => {return new Promise<mysql.Connecti
           if (error) reject(error);
           resolve(connection);
         });
+      }
+    );
+  }).connect({
+    host: env.mysqlssh.host,
+    port: env.mysqlssh.port,
+    username: env.mysqlssh.user,
+    password: env.mysqlssh.pass,
+  });
+})};
+
+export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.Connection>((resolve, reject) => {
+  sshClient.on("ready", () => {
+    sshClient.forwardOut(
+      "127.0.0.1",
+      3306,
+      env.mysql.host,
+      env.mysql.port,
+      async (err, stream) => {
+        if (err) reject(err);
+        try {
+          const connection = await mysqlPromise.createConnection({
+            dateStrings: true, // don't cast DATE/DATETIME/TIMESTAMP to Date()
+            host: "127.0.0.1",
+            port: 3306,
+            user: env.mysql.user,
+            password: env.mysql.pass,
+            database: env.mysql.db,
+            stream,
+          });            
+          resolve(connection);
+        } catch (error) {
+          reject(error);          
+        }
       }
     );
   }).connect({

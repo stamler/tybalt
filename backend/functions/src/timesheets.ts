@@ -30,7 +30,7 @@ import * as path from "path";
 import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
-import { createSSHMySQLConnection, query } from "./sshMysql";
+import { createSSHMySQLConnection2 } from "./sshMysql";
 import { updateTimeOffTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
@@ -368,8 +368,14 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
         deleteFromMySQL = true;
         functions.logger.info(`${tsSnap.id} will be unlocked after it is ` + 
           "deleted from the export destination.");
-        successBatch.update(timeSheet, { exportInProgress: false, locked: false, exported: false });
-        failBatch.update(timeSheet, { exportInProgress: false });
+        successBatch.update(timeSheet, { 
+          exportInProgress: admin.firestore.FieldValue.delete(),
+          locked: false,
+          exported: false,
+        });
+        failBatch.update(timeSheet, { 
+          exportInProgress: admin.firestore.FieldValue.delete(),
+        });
         return transaction.update(timeSheet, { exportInProgress: true });
       }
       
@@ -380,9 +386,9 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
 
   if (deleteFromMySQL) {
     // Delete from MySQL then if successful run successBatch.commit()
-    const mysqlConnection = await createSSHMySQLConnection();
+    const mysqlConnection = await createSSHMySQLConnection2();
     try {
-      await query(mysqlConnection, "DELETE FROM TimeSheets WHERE id=?", [timeSheet.id]);
+      await mysqlConnection.query("DELETE FROM TimeSheets WHERE id=?", [timeSheet.id]);
     } catch (error) {
       await failBatch.commit();
       throw new functions.https.HttpsError(
