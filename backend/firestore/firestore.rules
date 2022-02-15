@@ -363,7 +363,7 @@ service cloud.firestore {
         hasClaim("admin") &&
         newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation"
+          "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff"
         ]) &&
         (
           newDoc().offRotation is bool || isMissing("offRotation")
@@ -382,6 +382,9 @@ service cloud.firestore {
         ) &&
         (
           newDoc().allowPersonalReimbursement is bool || isMissing("allowPersonalReimbursement")
+        ) &&
+        (
+          newDoc().untrackedTimeOff is bool || isMissing("untrackedTimeOff")
         ) &&
         (
           newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")

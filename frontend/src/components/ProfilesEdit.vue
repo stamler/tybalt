@@ -47,6 +47,17 @@
       />
     </span>
     <span class="field">
+      <label for="untrackedTimeOff">
+        Do not track Time Off (and skip 40 hour checks)
+      </label>
+      <input
+        class="grow"
+        type="checkbox"
+        name="untrackedTimeOff"
+        v-model="item.untrackedTimeOff"
+      />
+    </span>
+    <span class="field">
       <label for="skipMinTimeCheckOnNextBundle">
         Skip 40-hour check next bundle
       </label>
@@ -204,7 +215,8 @@ export default Vue.extend({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
-              this.item.personalVehicleInsuranceExpiry = result.personalVehicleInsuranceExpiry?.toDate();
+              this.item.personalVehicleInsuranceExpiry =
+                result.personalVehicleInsuranceExpiry?.toDate();
             }
           })
           .catch(() => {
@@ -241,6 +253,7 @@ export default Vue.extend({
           offRotation?: boolean;
           timeSheetExpected: boolean;
           allowPersonalReimbursement?: boolean;
+          untrackedTimeOff?: boolean;
           tbtePayrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
@@ -256,6 +269,9 @@ export default Vue.extend({
         if (typeof this.item.allowPersonalReimbursement === "boolean") {
           obj.allowPersonalReimbursement = this.item.allowPersonalReimbursement;
         }
+        if (typeof this.item.untrackedTimeOff === "boolean") {
+          obj.untrackedTimeOff = this.item.untrackedTimeOff;
+        }
         if (typeof this.item.doNotAcceptSubmissions === "boolean") {
           obj.doNotAcceptSubmissions = this.item.doNotAcceptSubmissions;
         }
@@ -263,13 +279,15 @@ export default Vue.extend({
           obj.alternateManager = this.item.alternateManager;
         }
         if (typeof this.item.skipMinTimeCheckOnNextBundle === "boolean") {
-          obj.skipMinTimeCheckOnNextBundle = this.item.skipMinTimeCheckOnNextBundle;
+          obj.skipMinTimeCheckOnNextBundle =
+            this.item.skipMinTimeCheckOnNextBundle;
         }
         if (this.item.tbtePayrollId) {
           obj.tbtePayrollId = this.item.tbtePayrollId;
         }
         if (this.item.personalVehicleInsuranceExpiry) {
-          obj.personalVehicleInsuranceExpiry = this.item.personalVehicleInsuranceExpiry;
+          obj.personalVehicleInsuranceExpiry =
+            this.item.personalVehicleInsuranceExpiry;
         }
         this.collectionObject
           .doc(this.id)

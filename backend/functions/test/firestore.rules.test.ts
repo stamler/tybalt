@@ -426,6 +426,36 @@ describe("Other Firestore Rules", function () {
         })
       );
     });
+    it("allows only admin to change untrackedTimeOff", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const doc = db.collection("Profiles").doc("bob"); // admin alice updating bob's profile
+      const doc2 = db2.collection("Profiles").doc("bob"); // regular alice updating bob's profile
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc2.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+    });
     it("requires doNotAcceptSubmissions to be boolean or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
@@ -561,6 +591,57 @@ describe("Other Firestore Rules", function () {
           managerUid: "alice",
           tbtePayrollId: 28,
           allowPersonalReimbursement: "true",
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+    });
+    it("requires untrackedTimeOff to be boolean or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: false,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: "true",
           defaultDivision: "ABC",
           salary: true,
           offRotation: false,

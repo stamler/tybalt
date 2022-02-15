@@ -38,6 +38,11 @@
             </template>
           </span>
           <span v-else class="attention">timeSheetExpected not specified</span>
+          <span v-if="typeof item.untrackedTimeOff === 'boolean'">
+            <template v-if="item.untrackedTimeOff">
+              /Untracked Time Off
+            </template>
+          </span>
           <span v-if="item.personalVehicleInsuranceExpiry">
             <template
               v-if="item.personalVehicleInsuranceExpiry.toDate() >= new Date()"
