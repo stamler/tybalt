@@ -12,6 +12,8 @@ firebase.initializeApp({
   projectId: "charade-ca63f",
   storageBucket: "charade-ca63f.appspot.com",
   messagingSenderId: "1033101603088",
+  appId: "1:1033101603088:web:805b8fd493e12cd44db595",
+  measurementId: "G-Y8GRRSDLZD",
 });
 
 const USE_EMULATORS = false;
