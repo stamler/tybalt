@@ -4,7 +4,7 @@ import * as path from "path";
 // the array of the filenames without the extension. Will also be used as the
 // name property in the object that is returned.
 export const queries = [
-  { name: "payrollReport", authorizedClaims: ["report"] },
+  { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
   { name: "stats", authorizedClaims: ["report"] },
 ];
 

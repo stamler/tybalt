@@ -19,7 +19,7 @@ import firebase from "../firebase";
 export default Vue.extend({
   data() {
     return {
-      reports: ["stats"],
+      reports: ["stats", "payrollReport-TimeEntriesOnly"],
       reportName: "",
       result: undefined as Record<string, any>[] | undefined,
     };
