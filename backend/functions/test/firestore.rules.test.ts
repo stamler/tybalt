@@ -456,6 +456,104 @@ describe("Other Firestore Rules", function () {
         })
       );
     });
+    it("prevents untrackedTimeOff:true if salary:false", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: false,
+          defaultDivision: "ABC",
+          salary: false,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: false,
+          offRotation: false,
+        })
+      );
+    });
+    it("prevents skipMinTimeCheckOnNextBundle:true if salary:false", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          skipMinTimeCheckOnNextBundle: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          skipMinTimeCheckOnNextBundle: true,
+          defaultDivision: "ABC",
+          salary: false,
+          offRotation: false,
+        })
+      );
+    });
+    it("prevents skipMinTimeCheckOnNextBundle:true if untrackedTimeOff:true", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          skipMinTimeCheckOnNextBundle: true,
+          untrackedTimeOff: false,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          skipMinTimeCheckOnNextBundle: true,
+          untrackedTimeOff: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+    });
     it("requires doNotAcceptSubmissions to be boolean or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

@@ -256,6 +256,25 @@ describe("tallyAndValidate", async () => {
         "Salaried staff cannot claim Sick time. Please use PPTO or vacation instead."
       );
     });
+    it("rejects for salaried staff member with untrackedTimeOff:true who claims any OB, OH, OP, OV timetype(s)", async () => {
+      // verify each rejection
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      for (let timetype of ["OB", "OH", "OP", "OV"]) {
+        await db.collection("TimeEntries").doc(timetype).set({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype, timetypeName: "Testing Placeholder", hours: 8 });
+        let timeEntries = await db
+          .collection("TimeEntries")
+          .where("uid", "==", alice.uid)
+          .where("weekEnding", "==", weekEnding)
+          .orderBy("date", "asc")
+          .get();
+        assert.equal(timeEntries.size,5);
+        await assert.isRejected(
+          tallyAndValidate(auth, profile2, timeEntries, weekEnding),
+          `Staff with untracked time off are only permitted to create TimeEntries of type “Hours Worked” or “Training”`
+        );
+        await db.collection("TimeEntries").doc(timetype).delete();
+      }
+    });
     it("tallies and validates for hourly staff member who claims sick time", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OS", timetypeName: "Sick", hours: 8 });
       const timeEntries = await db
@@ -522,6 +541,27 @@ describe("tallyAndValidate", async () => {
       assert(_.isEqual(tally.divisions.sort(), ["EE", "EG"]));
       assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
       assert(_.isEqual(tally.jobNumbers.sort(),["25-001", "25-002"]));
+      assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
+    });
+    it("tallies and validates for salaried staff member with fewer than 40 regular hours if untrackedTimeOff:true", async () => {
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,4);
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const tally = await tallyAndValidate(auth, profile2, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,16, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
+      assert.equal(tally.jobsTally["25-001"].hours,16, "hours tally for job 25-001 doesn't match");
+      assert.equal(tally.jobsTally["25-001"].jobHours,16, "jobHours tally for job 25-001 doesn't match");
+      assert(_.isEqual(tally.timetypes, ["R"]));
+      assert(_.isEqual(tally.divisions.sort(), ["EE"]));
+      assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
+      assert(_.isEqual(tally.jobNumbers.sort(),["25-001"]));
       assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
     });
     it("rejects if a job in a time entry isn't active", async () => {

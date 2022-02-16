@@ -250,14 +250,16 @@ export async function tallyAndValidate(
     )
   }
 
-  // require salaried employees to have at least 40 hours on a timesheet
+  // require salaried employees to have at least 40 hours on a timesheet unless
+  // their profile has untrackedTimeOff:true OR
+  // skipMinTimeCheckOnNextBundle:true
   const bypass40hour = profile.get("skipMinTimeCheckOnNextBundle");
   const offRotationHours = offRotationDates.length * 8;
-  if (bypass40hour !== true) {
-    if (
-      profile.get("salary") === true &&
-      workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
-    ) {
+  if (
+    profile.get("salary") === true &&
+    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
+  ) {
+    if (bypass40hour !== true && profile.get("untrackedTimeOff") !== true) {      
       throw new functions.https.HttpsError(
         "failed-precondition",
         "Salaried staff must have a minimum of 40 hours on each time sheet."
@@ -274,6 +276,18 @@ export async function tallyAndValidate(
       "failed-precondition",
       "Salaried staff cannot claim Sick time. Please use PPTO or vacation instead."
     )
+  }
+
+  // prevent salaried employees w/ untrackedTimeOff:true claiming OB, OH, OP, OV
+  if(profile.get("salary") === true && profile.get("untrackedTimeOff") === true) {
+    ["OB", "OH", "OP", "OV"].map(x => {
+      if (Object.prototype.hasOwnProperty.call(nonWorkHoursTally, x)) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Staff with untracked time off are only permitted to create TimeEntries of type “Hours Worked” or “Training”`
+        )
+      }  
+    });
   }
 
   // get the entire job document for each key in the jobsTally

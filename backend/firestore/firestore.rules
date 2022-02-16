@@ -378,13 +378,26 @@ service cloud.firestore {
           newDoc().personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
         ) &&
         (
-          newDoc().skipMinTimeCheckOnNextBundle is bool || isMissing("skipMinTimeCheckOnNextBundle")
+          (
+            newDoc().skipMinTimeCheckOnNextBundle is bool &&
+            (
+              newDoc().skipMinTimeCheckOnNextBundle == newDoc().salary || newDoc().skipMinTimeCheckOnNextBundle != true
+            ) &&
+            (
+              newDoc().skipMinTimeCheckOnNextBundle == false || (newDoc().untrackedTimeOff == false || isMissing("untrackedTimeOff"))
+            )
+          ) || isMissing("skipMinTimeCheckOnNextBundle")
         ) &&
         (
           newDoc().allowPersonalReimbursement is bool || isMissing("allowPersonalReimbursement")
         ) &&
         (
-          newDoc().untrackedTimeOff is bool || isMissing("untrackedTimeOff")
+          (
+            newDoc().untrackedTimeOff is bool && 
+            (
+              newDoc().untrackedTimeOff == newDoc().salary || newDoc().untrackedTimeOff != true
+            ) 
+          ) || isMissing("untrackedTimeOff")
         ) &&
         (
           newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
