@@ -3,8 +3,12 @@ import * as path from "path";
 
 // the array of the filenames without the extension. Will also be used as the
 // name property in the object that is returned.
+// name: the basename of the sql query file and a unique reference
+// authorizedClaims: required claims to call this query
+// valueMutator: a function to preprocess the queryValues
 export const queries = [
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
+  { name: "payrollReport-FoldedAmendments", authorizedClaims: ["report"], valueMutator: (x: any)=>[x,x,x] },
   { name: "stats", authorizedClaims: ["report"] },
 ];
 

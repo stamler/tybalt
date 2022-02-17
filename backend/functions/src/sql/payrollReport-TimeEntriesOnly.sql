@@ -3,9 +3,9 @@ SELECT tbtePayrollId,
   surname,
   givenName,
   manager,
-  meals,
-  daysOffRotation AS "days off rotation",
-  hoursWorked AS "hours worked",
+  IFNULL(meals,0) meals,
+  IFNULL(daysOffRotation, 0) AS "days off rotation",
+  IFNULL(hoursWorked, 0) AS "hours worked",
   salaryHoursOver44,
   adjustedHoursWorked,
   totalOvertimeHours AS "total overtime hours",
@@ -21,8 +21,8 @@ SELECT tbtePayrollId,
   PPTO,
   Sick,
   Vacation,
-  overtimeHoursToBank AS "overtime hours to bank",
-  overtimePayoutRequested AS "Overtime Payout Requested",
+  IFNULL(overtimeHoursToBank, 0) AS "overtime hours to bank",
+  IFNULL(overtimePayoutRequested, 0) AS "Overtime Payout Requested",
   "UNKNOWN" AS hasAmendmentsForWeeksEnding,
   salary
 FROM (
@@ -34,7 +34,7 @@ FROM (
       END AS salaryHoursOver44,
       CASE
         WHEN salary = TRUE THEN CASE
-          WHEN hoursWorked + Stat + Bereavement > 40 THEN 40 - Stat - Bereavement
+          WHEN hoursWorked + IFNULL(Stat,0) + IFNULL(Bereavement,0) > 40 THEN 40 - IFNULL(Stat,0) - IFNULL(Bereavement,0)
           ELSE hoursWorked
         END
         ELSE CASE
@@ -53,7 +53,7 @@ FROM (
           TimeSheets.surname AS surname,
           TimeSheets.givenName AS givenName,
           TimeSheets.managerName AS manager,
-          TimeEntries.mealsHours AS meals,
+          SUM(TimeEntries.mealsHours) AS meals,
           SUM(
             CASE
               WHEN timetype = "OR" THEN 1
@@ -94,12 +94,12 @@ FROM (
               WHEN timetype = "RB" THEN hours
             END
           ) AS overtimeHoursToBank,
-          TimeEntries.payoutRequestAmount AS overtimePayoutRequested,
+          SUM(TimeEntries.payoutRequestAmount) AS overtimePayoutRequested,
           "UNKNOWN" AS hasAmendmentsForWeeksEnding,
           TimeSheets.salary AS salary
         FROM TimeSheets
           RIGHT OUTER JOIN TimeEntries ON TimeSheets.id = TimeEntries.tsid
-        WHERE TimeSheets.weekEnding = "2022-01-15"
+        WHERE TimeSheets.weekEnding = ?
         GROUP BY TimeSheets.uid
       ) AS x
   ) AS y;

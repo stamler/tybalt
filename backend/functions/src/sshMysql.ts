@@ -79,6 +79,11 @@ export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.
             password: env.mysql.pass,
             database: env.mysql.db,
             stream,
+            // https://github.com/sidorares/node-mysql2/tree/master/documentation#known-incompatibilities-with-node-mysql
+            // This ensures that DECIMAL are returned as Number so we can save
+            // work on the client site at the expense of possible floating point
+            // errors!!
+            decimalNumbers: true,
           });            
           resolve(connection);
         } catch (error) {

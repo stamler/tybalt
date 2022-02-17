@@ -22,6 +22,20 @@
       </div>
       <div class="rowactionsbox">
         <router-link
+          v-bind:to="{ name: 'Payroll' }"
+          v-on:click.native="
+            generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)
+          "
+        >
+          week1SQL <download-icon></download-icon>
+        </router-link>
+        <router-link
+          v-bind:to="{ name: 'Payroll' }"
+          v-on:click.native="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
+        >
+          week2SQL <download-icon></download-icon>
+        </router-link>
+        <router-link
           v-if="hasLink(item, 'week1TimeJson')"
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="generatePayrollCSV(item['week1TimeJson'])"
@@ -56,7 +70,7 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import store from "../store";
 import { utcToZonedTime } from "date-fns-tz";
 import {
@@ -125,6 +139,82 @@ export default mixins.extend({
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
         Object.keys(item.timeSheets).length > 0
       );
+    },
+    // This method attempts to coerce a value into a number. If it cannot it
+    // returns false
+    tryToMakeNumber(input: null | string | number | undefined) {
+      switch (typeof input) {
+        case "number":
+          return input;
+        case "object":
+          return false; // null case
+        case "undefined":
+          return false; // undefined case
+      }
+      if (typeof input !== "string") return false;
+      const candidate = input.trim(); // it's a string with no leading or trailing whitespace
+      if (candidate.length < 1) return false; // it's a blank string
+      return !isNaN(Number(candidate)) ? Number(candidate) : input;
+    },
+    async generateSQLPayrollCSVForWeek(
+      timestamp: firebase.firestore.Timestamp,
+      week1 = false
+    ) {
+      let weekEndingTbay = utcToZonedTime(
+        timestamp.toDate(),
+        "America/Thunder_Bay"
+      );
+      if (week1) {
+        // must calculate the week1 ending and run the query
+        weekEndingTbay = subDays(
+          utcToZonedTime(timestamp.toDate(), "America/Thunder_Bay"),
+          7
+        );
+      }
+      const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      try {
+        const response = await queryMySQL({
+          queryName: "payrollReport-FoldedAmendments",
+          queryValues,
+        });
+        /*
+        // Use this code if decimalNumbers: true isn't set in mysql2 config to
+        // attempt to coerce every returned value into a number (inelegant)
+        // https://github.com/sidorares/node-mysql2/tree/master/documentation#known-incompatibilities-with-node-mysql
+        const dat = response.data.map((x: any) => {
+          const processed: Record<string,any> = {};
+          for (const k of Object.keys(x)) {
+            const a = this.tryToMakeNumber(x[k]);
+            console.log(a);
+            processed[k] = a === false ? x[k] : a;
+          }
+          return processed;
+        });
+        console.log(JSON.stringify(dat));
+        const csv = parse(dat);
+        */
+        // post-processing of response data for CSV conversion
+        const dat = response.data.map((x: any) => {
+          const processed = x;
+          // set salary (string) to boolean
+          processed.salary = x.salary === 0 ? false : true;
+          // Coerce number-like payrollID strings to numbers
+          if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID
+          processed.tbtePayrollId = Number(x.tbtePayrollId);
+          return processed;
+        });
+        const csv = parse(dat);
+        const blob = new Blob([csv], { type: "text/csv" });
+        this.downloadBlob(
+          blob,
+          `SQLpayroll_${this.exportDateWeekStart(
+            weekEndingTbay
+          )}-${this.exportDate(weekEndingTbay)}.csv`
+        );
+      } catch (error) {
+        alert(`Error: ${error}`);
+      }
     },
     async generatePayrollCSV(url: string) {
       const response = await fetch(url);
@@ -293,7 +383,7 @@ export default mixins.extend({
         }
         return item;
       });
-      const amendmentRecords = amendments.map((x) => {
+      const amendmentRecords = amendments.map((x: Amendment) => {
         const item: PayrollReportRecord = {
           hasAmendmentsForWeeksEnding: [x.weekEnding],
           weekEnding: x.committedWeekEnding,
@@ -318,7 +408,17 @@ export default mixins.extend({
 
         return item;
       });
-      const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
+      // Sort the records by tbtePayrollId ascending
+      const joined = timesheetRecords.concat(amendmentRecords);
+      joined.sort((a, b) => {
+        const aval = Number(a.tbtePayrollId);
+        const bval = Number(b.tbtePayrollId);
+        if (!isNaN(aval) && !isNaN(bval)) return aval - bval;
+        if (!isNaN(aval)) return -1;
+        if (!isNaN(bval)) return 1;
+        return 0;
+      });
+      const csv = parse(joined, opts);
       const blob = new Blob([csv], { type: "text/csv" });
       this.downloadBlob(
         blob,

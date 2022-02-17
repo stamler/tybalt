@@ -96,7 +96,7 @@ export interface Amendment {
   workrecord?: string;
   jobHours?: number;
   salary?: boolean;
-  tbtePayrollId?: number | string;
+  tbtePayrollId: number | string;
 }
 
 export type TimeOffTypes = "OB" | "OH" | "OP" | "OS" | "OV";
@@ -161,7 +161,7 @@ export interface PayrollReportRecord {
   payoutRequest?: number;
   hasAmendmentsForWeeksEnding?: string[];
   salary?: boolean;
-  tbtePayrollId?: number | string;
+  tbtePayrollId: number | string;
 }
 
 interface ExpenseCommon {
