@@ -63,5 +63,6 @@ CREATE TABLE `TimeAmendments` (
   `jobHours` decimal(3,1) DEFAULT NULL,
   `mealsHours` decimal(3,1) DEFAULT NULL,
   `workDescription` text,
+  `payoutRequestAmount` decimal(7,2) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
