@@ -288,7 +288,7 @@ export async function exportAmendments() {
   const exportSuccessBatch = db.batch();
 
   // Iterate over the TimeAmendments documents, INSERTing them into MySQL table
-  const timeAmendmentsFields = ["id", "creator", "creatorName", "commitUid", "commitName", "commitTime", "created", "committedWeekEnding", "uid", "givenName", "surname", "tbtePayrollId", "salary", "weekEnding", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription"];
+  const timeAmendmentsFields = ["id", "creator", "creatorName", "commitUid", "commitName", "commitTime", "created", "committedWeekEnding", "uid", "givenName", "surname", "tbtePayrollId", "salary", "weekEnding", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount"];
   const insertValues = amenddocsnaps.map((amendSnap) => {
     const amendment = amendSnap.data();
     amendment.id = amendSnap.id;
