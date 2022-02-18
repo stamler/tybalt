@@ -290,6 +290,81 @@ export async function tallyAndValidate(
     });
   }
 
+  // throw if openingDateTimeOff isn't a Timestamp
+  if (!(profile.get("openingDateTimeOff") instanceof admin.firestore.Timestamp)) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a valid openingDateTimeOff value"
+    )
+  }
+
+  // throw if OP balance is unavailable
+  const openingOP = profile.get("openingOP")
+  if (typeof openingOP !== "number" || openingOP < 0) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a valid openingOP value"
+    )
+  }
+
+  // throw if OV balance is unavailable
+  const openingOV = profile.get("openingOV");
+  if (typeof openingOV !== "number" || openingOV < 0) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a valid openingOV value"
+    )
+  }
+  
+  // throw if usedOP isn't a positive number or undefined
+  const usedOPRaw = profile.get("usedOP");
+  if (
+      usedOPRaw !== undefined && 
+      (
+        typeof usedOPRaw !== "number" || 
+        usedOPRaw < 0
+      )
+    ) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "The Profile for this user doesn't contain a valid usedOP value"
+      )
+  }
+  // if usedOP is undefined, set it to zero
+  const usedOP = usedOPRaw || 0;
+
+  // throw if usedOV isn't a positive number or undefined
+  const usedOVRaw = profile.get("usedOV");
+  if (
+    usedOVRaw !== undefined && 
+    (
+      typeof usedOVRaw !== "number" || 
+      usedOVRaw < 0
+    )
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a valid usedOV value"
+    )
+  }
+  const usedOV = usedOVRaw || 0;
+
+  // throw if openingOP - usedOP < nonWorkHoursTally.OP
+  if(openingOP - usedOP < nonWorkHoursTally.OP) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Your PPTO claim exceeds your available PPTO balance."
+    )
+  }
+
+  // throw if openingOV - usedOV < nonWorkHoursTally.OV
+  if(openingOV - usedOV < nonWorkHoursTally.OV) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Your Vacation claim exceeds your available Vacation balance."
+    )
+  }
+
   // get the entire job document for each key in the jobsTally
   // and store it in the tally so the info is available for reports
   // jobsTally entries already have name, hours, jobHours properties
