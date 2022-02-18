@@ -580,7 +580,7 @@ export async function exportOnAmendmentCommit(
 ) {
     const committedWeekEnding = change.after.data().committedWeekEnding;
     if (committedWeekEnding !== undefined) {
-      const timeTrackingDocRef = await getTrackingDoc(committedWeekEnding,"TimeTracking","weekEnding");
+      const timeTrackingDocRef = await getTrackingDoc(committedWeekEnding.toDate(),"TimeTracking","weekEnding");
       return exportJson({ id: timeTrackingDocRef.id });
     }
   };
