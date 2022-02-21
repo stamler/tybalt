@@ -27,7 +27,7 @@ describe("tallyAndValidate", async () => {
   const auth = { uid: "alice", token: {} as admin.auth.DecodedIdToken };
 
   // a mock profile object
-  const openingVals = { openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 20, openingOP: 80 };
+  const openingVals = { openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 113, openingOP: 80 };
   const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
 
   const workDescription = "Generic Description";
@@ -397,7 +397,7 @@ describe("tallyAndValidate", async () => {
 
       // available OV balance is openingOV - usedOV
       // throw if available OP balance < nonWorkHoursTally.OV
-      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 113, openingOP: 80, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Your Vacation claim exceeds your available Vacation balance."
@@ -413,12 +413,22 @@ describe("tallyAndValidate", async () => {
       const tally2 = await tallyAndValidate(auth, profile3, timeEntries, weekEnding);
       assert.equal(tally2.nonWorkHoursTally.OV,8, "Vacation tally doesn't match");
     });
-    it("rejects if OP total is less than OV available balance", async () => {
-      // if usedOV is undefined
-      // available OV balance is openingOV
-      // else available OV balance is openingOV - usedOV
-      // throw if available OV balance >= nonWorkHoursTally.OP
-      assert(false);
+    it("rejects if OP total is less than OV available balance minus OV claimed in this bundle", async () => {
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OP", timetypeName: "PPTO", hours: 8 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+
+      // ensure PPTO isn't being claimed when it should be Vacation
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 112, openingOP: 80, usedOP:72, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "You must exhaust your Vacation balance prior to claiming PPTO per company policy."
+      );
     });
     it("rejects for salaried staff member with untrackedTimeOff:true who claims any OB, OH, OP, OV timetype(s)", async () => {
       // verify each rejection

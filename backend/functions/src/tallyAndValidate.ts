@@ -374,6 +374,14 @@ export async function tallyAndValidate(
     )
   }
 
+  // throw if openingOV - usedOV - nonWorkHoursTally.OV >= nonWorkHoursTally.OP
+  if(openingOV - usedOV - (nonWorkHoursTally.OV || 0) >= nonWorkHoursTally.OP) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "You must exhaust your Vacation balance prior to claiming PPTO per company policy."
+    )
+  }
+
   // get the entire job document for each key in the jobsTally
   // and store it in the tally so the info is available for reports
   // jobsTally entries already have name, hours, jobHours properties
