@@ -273,9 +273,9 @@ export default mixins.extend({
     pendingUserKeys() {
       let pendingUserKeys = [] as string[];
       if (this?.item?.pending && Object.keys(this.item.pending).length > 0) {
-        pendingUserKeys = (Object.values(
-          this.item.pending
-        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+        pendingUserKeys = (
+          Object.values(this.item.pending) as TimeSheetTrackingPayload[]
+        ).map((p) => p.uid);
       }
       return pendingUserKeys;
     },
@@ -285,9 +285,9 @@ export default mixins.extend({
         this?.item?.submitted &&
         Object.keys(this.item.submitted).length > 0
       ) {
-        submittedUserKeys = (Object.values(
-          this.item.submitted
-        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+        submittedUserKeys = (
+          Object.values(this.item.submitted) as TimeSheetTrackingPayload[]
+        ).map((p) => p.uid);
       }
       return submittedUserKeys;
     },
@@ -297,9 +297,9 @@ export default mixins.extend({
         this?.item?.timeSheets &&
         Object.keys(this.item.timeSheets).length > 0
       ) {
-        lockedUserKeys = (Object.values(
-          this.item.timeSheets
-        ) as TimeSheetTrackingPayload[]).map((p) => p.uid);
+        lockedUserKeys = (
+          Object.values(this.item.timeSheets) as TimeSheetTrackingPayload[]
+        ).map((p) => p.uid);
       }
       return lockedUserKeys;
     },
