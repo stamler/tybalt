@@ -814,7 +814,7 @@ export default Vue.extend({
         // the arg is firestore DocumentData. Convert timestamps to JS dates
         firestoreDoc = true;
         if (!isTimeSheet(urlOrFirestoreTimeSheet)) {
-          throw new Error("There was an error validating the timesheet");
+          throw new Error("(mixins1)There was an error validating the timesheet");
         }
         items = [urlOrFirestoreTimeSheet];
         amendments = [];
@@ -855,7 +855,7 @@ export default Vue.extend({
       const timesheetRecords = [];
       for (const item of items) {
         if (!isTimeSheet(item)) {
-          throw new Error("There was an error validating the timesheet");
+          throw new Error("(mixins2)There was an error validating the timesheet");
         }
         for (const entry of item.entries) {
           //if (!["R", "RT"].includes(entry.timetype)) continue;
