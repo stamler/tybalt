@@ -267,7 +267,6 @@ export default mixins.extend({
       const opts = { fields, withBOM: true };
       const timesheetRecords = items.map((x) => {
         if (!isTimeSheet(x)) {
-          console.log(x);
           throw new Error("(Payroll)There was an error validating the timesheet");
         }
         const item = _.pick(x, [
