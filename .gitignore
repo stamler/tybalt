@@ -71,4 +71,6 @@ node_modules/
 
 # zip files
 *.zip
+
 backend/functions/src/dev_creds.ts
+frontend/testdocs/
