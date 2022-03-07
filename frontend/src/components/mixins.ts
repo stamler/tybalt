@@ -515,97 +515,21 @@ export default Vue.extend({
       };
     },
     isPayrollWeek2,
-    async generateJobSummaryCSV(job: string, timeSheets: TimeSheet[]) {
-      // Filter entries without specified job
-      const relevantJobsOnly = timeSheets.map((x: TimeSheet) => {
-        x.entries = x.entries.filter((e) => e.job === job);
-        // This type conversion is a kludge because I can't figure out how
-        // to handle the conversion of TimeSheet to UnwoundTimeSheet within
-        // the unwind() transform inside json2csv so I'm doing it beforehand
-        return x as unknown as UnwoundTimeSheet;
-      });
-
-      const fields = [
-        {
-          label: "client",
-          value: (row: UnwoundTimeSheet) => row.jobsTally[job].client,
-        },
-        {
-          label: "job",
-          value: (row: UnwoundTimeSheet) => row.entries.job,
-        },
-        {
-          label: "division",
-          value: (row: UnwoundTimeSheet) => row.entries.division,
-        },
-        {
-          label: "timetype",
-          value: (row: UnwoundTimeSheet) => row.entries.timetype,
-        },
-        {
-          label: "date",
-          value: (row: UnwoundTimeSheet) => row.entries.date.toDate().getDate(),
-        },
-        {
-          label: "Month",
-          value: (row: UnwoundTimeSheet) =>
-            row.entries.date
-              .toDate()
-              .toLocaleString("en-US", { month: "short" }),
-        },
-        {
-          label: "Year",
-          value: (row: UnwoundTimeSheet) =>
-            row.entries.date.toDate().getFullYear(),
-        },
-        {
-          label: "qty",
-          value: (row: UnwoundTimeSheet) => row.entries.jobHours,
-          default: "0",
-        },
-        {
-          label: "unit",
-          value: "unit",
-          default: "hours",
-        },
-        {
-          label: "nc",
-          value: (row: UnwoundTimeSheet) => row.entries.hours,
-          default: "0",
-        },
-        {
-          label: "meals",
-          value: (row: UnwoundTimeSheet) => row.entries.mealsHours,
-          default: "0",
-        },
-        {
-          label: "ref",
-          value: (row: UnwoundTimeSheet) => row.entries.workrecord,
-        },
-        {
-          label: "project",
-          value: (row: UnwoundTimeSheet) => row.entries.jobDescription,
-        },
-        {
-          label: "description",
-          value: (row: UnwoundTimeSheet) => row.entries.workDescription,
-        },
-        "comments",
-        {
-          label: "employee",
-          value: "displayName",
-        },
-        "surname",
-        "givenName",
-      ];
-      const opts = {
-        fields,
-        withBOM: true,
-        transforms: [transforms.unwind({ paths: ["entries"] })],
-      };
-      const csv = parse(relevantJobsOnly, opts);
-      const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(blob, `${job}_JobSummary.csv`);
+    async generateSQLJobSummaryCSV(job: string, allDashes = false) {
+      const queryValues = [job];
+      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      try {
+        const queryName = allDashes ? "jobReport-startsWith" : "jobReport";
+        const response = await queryMySQL({
+          queryName,
+          queryValues,
+        });
+        const csv = parse(response.data);
+        const blob = new Blob([csv], { type: "text/csv" });
+        this.downloadBlob(blob, `${job}_JobSummary.csv`);
+      } catch (error) {
+        alert(`Error: ${error}`);
+      }
     },
     async generatePayablesCSV(
       urlOrExpenseArrayPromise: string | Promise<Expense[]>

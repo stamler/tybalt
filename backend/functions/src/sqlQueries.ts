@@ -7,6 +7,8 @@ import * as path from "path";
 // authorizedClaims: required claims to call this query
 // valueMutator: a function to preprocess the queryValues
 export const queries = [
+  { name: "jobReport-startsWith", authorizedClaims: ["report"] },
+  { name: "jobReport", authorizedClaims: ["report"] },
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
   { name: "payrollReport-FoldedAmendments", authorizedClaims: ["report"], valueMutator: (x: any)=>[x,x,x] },
   { name: "stats", authorizedClaims: ["report"] },

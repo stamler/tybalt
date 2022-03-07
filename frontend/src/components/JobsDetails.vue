@@ -13,10 +13,19 @@
       <router-link
         v-if="timeSheets.length > 0"
         v-bind:to="{ name: 'Job Details' }"
-        v-on:click.native="generateJobSummaryCSV(id, timeSheets)"
+        v-on:click.native="generateSQLJobSummaryCSV(id)"
       >
         <download-icon></download-icon>
       </router-link>
+      <template v-if="isTopLevelJob(id)">
+        All Sub-jobs
+        <router-link
+          v-bind:to="{ name: 'Job Details' }"
+          v-on:click.native="generateSQLJobSummaryCSV(id, true)"
+        >
+          <download-icon></download-icon>
+        </router-link>
+      </template>
     </h4>
     <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
       {{ timeSheet.weekEnding.toDate() | relativeTime }} -
@@ -71,6 +80,11 @@ export default mixins.extend({
     this.setItem(this.id);
   },
   methods: {
+    isTopLevelJob(job: string) {
+      // return true if the provided job doesn't have dashed subjobs
+      const re = /^(P)?[0-9]{2}-[0-9]{3,4}$/;
+      return re.test(job);
+    },
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
