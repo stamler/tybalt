@@ -9,19 +9,23 @@
       </select>
     </span>
     <button v-on:click="runReport(reportName)">Run Report</button>
-    <div v-if="result !== undefined" v-html="renderTable(result)"></div>
+    <object-table :tableData="result"></object-table>
   </div>
 </template>
 <script lang="ts">
 import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
+import ObjectTable from "./ObjectTable.vue";
+import { TableData } from "./types";
+
 export default Vue.extend({
+  components: { ObjectTable },
   data() {
     return {
       reports: ["stats", "payrollReport-TimeEntriesOnly"],
       reportName: "",
-      result: undefined as Record<string, any>[] | undefined,
+      result: undefined as TableData,
     };
   },
   methods: {
@@ -33,34 +37,13 @@ export default Vue.extend({
       const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
       return queryMySQL({ queryName: name })
         .then((response) => {
-          this.result = response.data;
           store.commit("endTask", { id: "runReport" });
+          this.result = response.data;
         })
         .catch((error) => {
           store.commit("endTask", { id: "runReport" });
           alert(`Error running report: ${error.message}`);
         });
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    renderTable(data: Record<string, any>[]) {
-      const fields = Object.keys(data[0]);
-      const header =
-        "<tr>" + fields.map((x) => `<th>${x}</th>`).join("") + "</tr>";
-
-      const values = data
-        .map((row) => {
-          return (
-            "<tr>" +
-            fields
-              .map((field: any) => {
-                return `<td>${row[field]}</td>`;
-              })
-              .join("") +
-            "</tr>"
-          );
-        })
-        .join("");
-      return "<table>" + header + values + "</table>";
     },
   },
 });

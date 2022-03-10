@@ -1,5 +1,8 @@
 import firebase from "../firebase";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TableData = Record<string, any>[] | undefined;
+
 export interface TimeEntry {
   // required properties always
   date: firebase.firestore.Timestamp;
@@ -46,9 +49,11 @@ export interface TimeSheet {
       clientContact?: string;
     };
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   entries: any[];
 
   // others to be filled in later
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
 }
 
@@ -64,6 +69,7 @@ export interface UnwoundTimeSheet extends Omit<TimeSheet, "entries"> {
     workrecord?: string;
     jobDescription?: string;
     workDescription?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [x: string]: any;
   };
 }
