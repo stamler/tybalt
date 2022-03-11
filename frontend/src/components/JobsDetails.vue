@@ -52,19 +52,28 @@
       ]"
       :dlFileName="`${id}_JobEntriesSummary.csv`"
     />
-    <h5>
-      Full Report
-      <download-query-link
-        style="display: inline-block"
-        :queryName="subJobs ? 'jobReport-startsWith' : 'jobReport'"
-        :queryValues="[id]"
-        :dlFileName="`${id}_JobReport.csv`"
-      />
-    </h5>
 
     <!-- Link to related TimeSheets for context. Available to report
     claimholders only -->
     <div v-if="claims.report === true">
+      <h5>
+        Full Report
+        <download-query-link
+          style="display: inline-block"
+          :queryName="fullReportSubJobs ? 'jobReport-startsWith' : 'jobReport'"
+          :queryValues="[id]"
+          :dlFileName="`${id}_JobReport.csv`"
+        />
+      </h5>
+      <span class="field" v-if="isTopLevelJob(id)">
+        <label for="fullReportSubJobs">include sub jobs? </label>
+        <input
+          name="fullReportSubJobs"
+          type="checkbox"
+          v-model="fullReportSubJobs"
+        />
+      </span>
+
       <h4>Time Sheets</h4>
       <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
         {{ timeSheet.weekEnding.toDate() | relativeTime }} -
@@ -117,6 +126,7 @@ export default mixins.extend({
       startDate: new Date(2021, 4, 1),
       endDate: new Date(),
       subJobs: false,
+      fullReportSubJobs: false,
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData,
