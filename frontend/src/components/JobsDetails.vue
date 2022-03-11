@@ -117,13 +117,13 @@ export default mixins.extend({
       dps: {
         // date picker state
         disabled: {
-          to: new Date(2021, 4, 1),
+          to: new Date(2021, 5, 12), // stopped allowing hours (not jobHours) to be billed with job numbers on June 12, 2021
         },
         highlighted: {
           dates: [new Date()],
         },
       },
-      startDate: new Date(2021, 4, 1),
+      startDate: new Date(2021, 5, 12),
       endDate: new Date(),
       subJobs: false,
       fullReportSubJobs: false,
