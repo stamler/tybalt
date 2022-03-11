@@ -145,6 +145,12 @@ export default mixins.extend({
     id: function (id) {
       this.setItem(id);
     }, // first arg is newVal, second is oldVal
+    startDate: function (startDate) {
+      if (startDate > this.endDate) this.endDate = new Date(startDate);
+    },
+    endDate: function (endDate) {
+      if (endDate < this.startDate) this.startDate = new Date(endDate);
+    },
   },
   created() {
     this.parentPath =

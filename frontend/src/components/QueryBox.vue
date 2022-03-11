@@ -18,6 +18,7 @@ import ObjectTable from "./ObjectTable.vue";
 import { parse } from "json2csv";
 import { DownloadIcon } from "vue-feather-icons";
 import { TableData, QueryPayloadObject } from "./types";
+import { debounce } from "lodash";
 
 export default mixins.extend({
   data() {
@@ -39,7 +40,8 @@ export default mixins.extend({
       const name = this.dlFileName || "report.csv";
       this.downloadBlob(blob, name);
     },
-    runQuery() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    runQuery: debounce(function (this: any) {
       store.commit("startTask", {
         id: "runQuery",
         message: "getting data...",
@@ -57,7 +59,7 @@ export default mixins.extend({
           store.commit("endTask", { id: "runQuery" });
           alert(`Error running query: ${error.message}`);
         });
-    },
+    }, 200),
   },
   created() {
     this.runQuery();
