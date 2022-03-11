@@ -255,7 +255,7 @@ import store from "../store";
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
-import _, { isInteger } from "lodash";
+import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
 
@@ -493,7 +493,8 @@ export default mixins.extend({
     },
     // any annotation in next line due to the following:
     // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
-    updateJobCandidates: _.debounce(function (this: any, e: Event) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updateJobCandidates: debounce(function (this: any, e: Event) {
       // TODO: possibly use full text search like
       // https://www.npmjs.com/package/adv-firestore-functions
       this.showSuggestions = true;
@@ -531,7 +532,7 @@ export default mixins.extend({
         (i) => i.id === this.item.expensetype
       )[0].name;
       */
-      this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
+      this.item = pickBy(this.item, (i) => i !== ""); // strip blank fields
       delete this.item.rejected;
       delete this.item.rejectorId;
       delete this.item.rejectorName;
@@ -556,7 +557,7 @@ export default mixins.extend({
       // if paymentType is Allowance, delete total and description and set
       // unset meal types to false
       if (this.item.paymentType === "Allowance") {
-        _.defaults(this.item, {
+        defaults(this.item, {
           breakfast: false,
           lunch: false,
           dinner: false,
