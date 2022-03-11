@@ -6,38 +6,78 @@
     <div>description: {{ item.description }}</div>
     <div>manager: {{ item.manager }}</div>
     <div>status: {{ item.status }}</div>
+    <h4>Time Entries</h4>
+    <form id="editor">
+      <span class="field">
+        <label for="startDate">from</label>
+        <datepicker
+          name="startDate"
+          input-class="calendar-input"
+          wrapper-class="calendar-wrapper"
+          placeholder="Start Date"
+          :inline="false"
+          :disabledDates="dps.disabled"
+          :highlighted="dps.highlighted"
+          v-model="startDate"
+        />
+      </span>
+      <span class="field">
+        <label for="endDate">to</label>
+        <datepicker
+          name="endDate"
+          input-class="calendar-input"
+          wrapper-class="calendar-wrapper"
+          placeholder="End Date"
+          :inline="false"
+          :disabledDates="dps.disabled"
+          :highlighted="dps.highlighted"
+          v-model="endDate"
+        />
+      </span>
+      <span class="field" v-if="isTopLevelJob(id)">
+        <label for="subJobs">sub jobs?</label>
+        <input name="subJobs" type="checkbox" v-model="subJobs" />
+      </span>
+    </form>
 
-    <br />
-    <h4>
-      Work History
-      <router-link
-        v-if="timeSheets.length > 0"
-        v-bind:to="{ name: 'Job Details' }"
-        v-on:click.native="generateSQLJobSummaryCSV(id)"
-      >
-        <download-icon></download-icon>
-      </router-link>
-      <template v-if="isTopLevelJob(id)">
-        All Sub-jobs
+    <h5>Summary</h5>
+    <query-box
+      :queryName="
+        subJobs ? 'jobEntriesSummary-startsWith' : 'jobEntriesSummary'
+      "
+      :queryValues="[
+        id,
+        startDate.toISOString().substring(0, 10),
+        endDate.toISOString().substring(0, 10),
+      ]"
+      :dlFileName="`${id}_JobEntriesSummary.csv`"
+    />
+    <h5>
+      Full Report
+      <download-query-link
+        style="display: inline-block"
+        :queryName="subJobs ? 'jobReport-startsWith' : 'jobReport'"
+        :queryValues="[id]"
+        :dlFileName="`${id}_JobReport.csv`"
+      />
+    </h5>
+
+    <!-- Link to related TimeSheets for context. Available to report
+    claimholders only -->
+    <div v-if="claims.report === true">
+      <h4>Time Sheets</h4>
+      <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
+        {{ timeSheet.weekEnding.toDate() | relativeTime }} -
         <router-link
-          v-bind:to="{ name: 'Job Details' }"
-          v-on:click.native="generateSQLJobSummaryCSV(id, true)"
+          v-bind:to="{
+            name: 'Time Sheet Details',
+            params: { id: timeSheet.id },
+          }"
+          >{{ timeSheet.displayName }}</router-link
         >
-          <download-icon></download-icon>
-        </router-link>
-      </template>
-    </h4>
-    <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
-      {{ timeSheet.weekEnding.toDate() | relativeTime }} -
-      <router-link
-        v-bind:to="{
-          name: 'Time Sheet Details',
-          params: { id: timeSheet.id },
-        }"
-        >{{ timeSheet.displayName }}</router-link
-      >
-      /non-chargeable: {{ timeSheet.jobsTally[id].hours }} /chargeable:
-      {{ timeSheet.jobsTally[id].jobHours }}
+        /non-chargeable: {{ timeSheet.jobsTally[id].hours }} /chargeable:
+        {{ timeSheet.jobsTally[id].jobHours }}
+      </div>
     </div>
   </div>
 </template>
@@ -47,13 +87,36 @@ import mixins from "./mixins";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { format, formatDistanceToNow } from "date-fns";
-import { DownloadIcon } from "vue-feather-icons";
+import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
+import { mapState } from "vuex";
+import Datepicker from "vuejs-datepicker";
+import QueryBox from "./QueryBox.vue";
+import DownloadQueryLink from "./DownloadQueryLink.vue";
 
 export default mixins.extend({
+  computed: mapState(["claims"]),
   props: ["id", "collection"],
-  components: { DownloadIcon },
+  components: {
+    Datepicker,
+    DownloadIcon,
+    RefreshCwIcon,
+    QueryBox,
+    DownloadQueryLink,
+  },
   data() {
     return {
+      dps: {
+        // date picker state
+        disabled: {
+          to: new Date(2021, 4, 1),
+        },
+        highlighted: {
+          dates: [new Date()],
+        },
+      },
+      startDate: new Date(2021, 4, 1),
+      endDate: new Date(),
+      subJobs: false,
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
       item: {} as firebase.firestore.DocumentData,
@@ -120,3 +183,9 @@ export default mixins.extend({
   },
 });
 </script>
+<style scoped>
+h4,
+h5 {
+  margin-top: 2em;
+}
+</style>

@@ -5,12 +5,12 @@ import { queries, loadSQLFileToString } from "./sqlQueries";
 
 interface QueryPayloadObject {
   queryName: string;
-  queryValues: any[];
+  queryValues?: any[];
 }
 function isQueryPayloadObject(data: any): data is QueryPayloadObject {
   if (
     typeof data.queryName === "string" &&
-    (data.queryValues === undefined ||
+    (Object.prototype.hasOwnProperty.call(data,"queryValues") === false ||
     Array.isArray(data.queryValues))
   ) return true;
   return false;

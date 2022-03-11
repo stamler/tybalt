@@ -6,7 +6,6 @@ import { format, subDays, addDays } from "date-fns";
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import {
   TimeSheet,
-  UnwoundTimeSheet,
   Amendment,
   isTimeSheet,
   Expense,
@@ -22,7 +21,6 @@ import {
   thisTimeNextWeekInTimeZone,
 } from "./helpers";
 import { parse } from "json2csv";
-import { transforms } from "json2csv";
 
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -515,22 +513,6 @@ export default Vue.extend({
       };
     },
     isPayrollWeek2,
-    async generateSQLJobSummaryCSV(job: string, allDashes = false) {
-      const queryValues = [job];
-      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
-      try {
-        const queryName = allDashes ? "jobReport-startsWith" : "jobReport";
-        const response = await queryMySQL({
-          queryName,
-          queryValues,
-        });
-        const csv = parse(response.data);
-        const blob = new Blob([csv], { type: "text/csv" });
-        this.downloadBlob(blob, `${job}_JobSummary.csv`);
-      } catch (error) {
-        alert(`Error: ${error}`);
-      }
-    },
     async generatePayablesCSV(
       urlOrExpenseArrayPromise: string | Promise<Expense[]>
     ) {

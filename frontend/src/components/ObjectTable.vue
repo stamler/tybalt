@@ -2,10 +2,7 @@
   <div
     v-if="internalTableData !== undefined || Array.isArray(internalTableData)"
   >
-    <router-link to="#" v-on:click.native="download()">
-      <download-icon></download-icon>
-    </router-link>
-    <table>
+    <table v-if="internalTableData.length > 0">
       <thead class="heading">
         <tr>
           <th v-for="col in columns" v-bind:key="col">
@@ -36,21 +33,20 @@
         </tr>
       </tbody>
     </table>
+    <span v-else>No Data</span>
   </div>
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import _ from "lodash";
-import { parse } from "json2csv";
-import { ArrowUpIcon, ArrowDownIcon, DownloadIcon } from "vue-feather-icons";
+import { ArrowUpIcon, ArrowDownIcon } from "vue-feather-icons";
 import { TableData } from "./types";
 
-export default mixins.extend({
+export default Vue.extend({
   components: {
     ArrowUpIcon,
     ArrowDownIcon,
-    DownloadIcon,
   },
   props: { tableData: Array },
   data() {
@@ -62,7 +58,8 @@ export default mixins.extend({
   },
   computed: {
     columns(): string[] {
-      return this.internalTableData === undefined
+      return this.internalTableData === undefined ||
+        this.internalTableData.length === 0
         ? []
         : Object.keys(this.internalTableData[0]);
     },
@@ -73,12 +70,6 @@ export default mixins.extend({
     },
   },
   methods: {
-    download() {
-      const csv = parse(this.tableData);
-      const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(blob, `report.csv`);
-      return;
-    },
     sort(column: string) {
       this.sortColumn = column;
       this.order = (this.order + 1) % 3;
@@ -123,5 +114,8 @@ thead th {
   vertical-align: bottom;
   padding-right: 1em;
   border-bottom: 1px solid grey;
+}
+td {
+  padding-right: 3em;
 }
 </style>

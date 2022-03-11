@@ -3,6 +3,12 @@ import firebase from "../firebase";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TableData = Record<string, any>[] | undefined;
 
+export interface QueryPayloadObject {
+  queryName: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queryValues?: any[];
+}
+
 export interface TimeEntry {
   // required properties always
   date: firebase.firestore.Timestamp;

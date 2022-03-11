@@ -8,43 +8,22 @@
         </option>
       </select>
     </span>
-    <button v-on:click="runReport(reportName)">Run Report</button>
-    <object-table :tableData="result"></object-table>
+    <query-box :queryName="reportName"></query-box>
   </div>
 </template>
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
-import firebase from "../firebase";
-import ObjectTable from "./ObjectTable.vue";
+import QueryBox from "./QueryBox.vue";
 import { TableData } from "./types";
 
 export default Vue.extend({
-  components: { ObjectTable },
+  components: { QueryBox },
   data() {
     return {
       reports: ["stats", "payrollReport-TimeEntriesOnly"],
       reportName: "",
       result: undefined as TableData,
     };
-  },
-  methods: {
-    runReport(name: string) {
-      store.commit("startTask", {
-        id: "runReport",
-        message: "getting report...",
-      });
-      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
-      return queryMySQL({ queryName: name })
-        .then((response) => {
-          store.commit("endTask", { id: "runReport" });
-          this.result = response.data;
-        })
-        .catch((error) => {
-          store.commit("endTask", { id: "runReport" });
-          alert(`Error running report: ${error.message}`);
-        });
-    },
   },
 });
 </script>
