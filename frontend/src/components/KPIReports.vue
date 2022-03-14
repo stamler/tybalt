@@ -20,8 +20,8 @@ export default Vue.extend({
   components: { QueryBox },
   data() {
     return {
-      reports: ["stats", "payrollReport-TimeEntriesOnly"],
-      reportName: "",
+      reports: ["billablePercentage", "stats", "payrollReport-TimeEntriesOnly"],
+      reportName: "stats",
       result: undefined as TableData,
     };
   },

@@ -19,7 +19,7 @@ import ExpenseTrackingDetails from "@/components/ExpenseTrackingDetails.vue";
 import LoginsList from "@/components/LoginsList.vue";
 import RawLoginsList from "@/components/RawLoginsList.vue";
 import ContentShell from "@/components/ContentShell.vue";
-import SQLReports from "@/components/SQLReports.vue";
+import KPIReports from "@/components/KPIReports.vue";
 import ComputersList from "@/components/ComputersList.vue";
 import ComputersDetails from "@/components/ComputersDetails.vue";
 import UsersList from "@/components/UsersList.vue";
@@ -314,16 +314,16 @@ const router = new Router({
           ],
         },
         {
-          path: "sql",
-          name: "SQL",
-          redirect: "/reports/sql/list",
+          path: "kpi",
+          name: "KPI",
+          redirect: "/reports/kpi/list",
           component: ContentShell,
           children: [
             {
               meta: { showInUi: true, uiName: "List" },
               path: "list",
-              name: "SQL List",
-              component: SQLReports,
+              name: "KPI List",
+              component: KPIReports,
             },
           ],
         },
