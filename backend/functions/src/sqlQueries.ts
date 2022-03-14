@@ -16,6 +16,7 @@ export const queries = [
   { name: "utilizationRate", authorizedClaims: ["kpi"] },
   { name: "utilizationRate-withTimeOff", authorizedClaims: ["kpi"] },
   { name: "stats", authorizedClaims: ["kpi"] },
+  { name: "timetypeSummary", authorizedClaims: ["kpi"] },
 ];
 
 // Extract SQL query from a file and load to a string
