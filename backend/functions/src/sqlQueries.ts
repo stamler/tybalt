@@ -11,10 +11,10 @@ export const queries = [
   { name: "jobEntriesSummary", authorizedClaims: ["time"] },
   { name: "jobReport-startsWith", authorizedClaims: ["report"] },
   { name: "jobReport", authorizedClaims: ["report"] },
-  { name: "billablePercentage", authorizedClaims: ["report"] },
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
   { name: "payrollReport-FoldedAmendments", authorizedClaims: ["report"], valueMutator: (x: any)=>[x,x,x] },
-  { name: "stats", authorizedClaims: ["report"] },
+  { name: "utilizationRate", authorizedClaims: ["kpi"] },
+  { name: "stats", authorizedClaims: ["kpi"] },
 ];
 
 // Extract SQL query from a file and load to a string
