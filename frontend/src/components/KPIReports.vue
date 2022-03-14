@@ -21,7 +21,7 @@ export default Vue.extend({
   data() {
     return {
       reports: ["billablePercentage", "stats"],
-      reportName: "stats",
+      reportName: "billablePercentage",
       result: undefined as TableData,
     };
   },
