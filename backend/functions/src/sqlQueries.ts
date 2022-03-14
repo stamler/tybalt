@@ -14,6 +14,7 @@ export const queries = [
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
   { name: "payrollReport-FoldedAmendments", authorizedClaims: ["report"], valueMutator: (x: any)=>[x,x,x] },
   { name: "utilizationRate", authorizedClaims: ["kpi"] },
+  { name: "utilizationRate-withTimeOff", authorizedClaims: ["kpi"] },
   { name: "stats", authorizedClaims: ["kpi"] },
 ];
 
