@@ -20,7 +20,12 @@ export default Vue.extend({
   components: { QueryBox },
   data() {
     return {
-      reports: ["utilizationRate", "utilizationRate-withTimeOff", "stats"],
+      reports: [
+        "utilizationRate",
+        "utilizationRate-withTimeOff",
+        "stats",
+        "timetypeSummary",
+      ],
       reportName: "utilizationRate",
       result: undefined as TableData,
     };
