@@ -2,38 +2,40 @@
   <div
     v-if="internalTableData !== undefined || Array.isArray(internalTableData)"
   >
-    <table v-if="internalTableData.length > 0">
-      <thead class="heading">
-        <tr>
-          <th v-for="col in columns" v-bind:key="col">
-            <router-link to="#" v-on:click.native="sort(col)">
-              {{ col }}
-              <span id="sortIndicator">
-                <template v-if="sortColumn === col">
-                  <template v-if="order === 2">
-                    <!-- DESCENDING -->
-                    <arrow-down-icon></arrow-down-icon>
+    <div id="tablecontainer">
+      <table v-if="internalTableData.length > 0">
+        <thead class="heading">
+          <tr>
+            <th v-for="col in columns" v-bind:key="col">
+              <router-link to="#" v-on:click.native="sort(col)">
+                {{ col }}
+                <span id="sortIndicator">
+                  <template v-if="sortColumn === col">
+                    <template v-if="order === 2">
+                      <!-- DESCENDING -->
+                      <arrow-down-icon></arrow-down-icon>
+                    </template>
+                    <template v-else-if="order === 1">
+                      <!-- ASCENDING -->
+                      <arrow-up-icon></arrow-up-icon>
+                    </template>
+                    <template v-else><!--- UNSORTED --></template>
                   </template>
-                  <template v-else-if="order === 1">
-                    <!-- ASCENDING -->
-                    <arrow-up-icon></arrow-up-icon>
-                  </template>
-                  <template v-else><!--- UNSORTED --></template>
-                </template>
-              </span>
-            </router-link>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="row in internalTableData" v-bind:key="row.id">
-          <td v-for="col in columns" v-bind:key="col">
-            {{ row[col] }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <span v-else>No Data</span>
+                </span>
+              </router-link>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in internalTableData" v-bind:key="row.id">
+            <td v-for="col in columns" v-bind:key="col">
+              {{ row[col] }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <span v-else>No Data</span>
+    </div>
   </div>
 </template>
 
@@ -95,6 +97,10 @@ export default Vue.extend({
 });
 </script>
 <style scoped>
+#tablecontainer {
+  overflow-x: auto;
+  white-space: nowrap;
+}
 #sortIndicator {
   height: 1.2em;
   width: 1em;
