@@ -56,7 +56,7 @@ function isOpeningValuesPayload(data: any): data is OpeningValuesPayload {
     return false;
   }
 
-  // validate that openingOP has is multiple of 0.5 and no more than 252
+  // validate that openingOP has is multiple of 0.5 and no more than 332
   if (!(
     data.openingOP !== undefined &&
     typeof data.openingOP === "number"
@@ -368,10 +368,10 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
     );
   }
 
-  if ( data.openingOP > 252 || data.openingOP < 0 ) {
+  if ( data.openingOP > 332 || data.openingOP < 0 ) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "The opening OP cannot negative or greater than 252"
+      "The opening OP cannot negative or greater than 332"
     );
   }  
 

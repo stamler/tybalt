@@ -57,7 +57,7 @@
             v-model.number="item.openingOP"
             step="0.5"
             min="48"
-            max="252"
+            max="332"
             placeholder="48"
           />
           <span v-if="item.openingOV > 0" style="margin-left: 0.5em">
