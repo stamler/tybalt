@@ -388,7 +388,7 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
 // that user's timesheets that are later than the profile's openingDateTimeOff
 // value and summing the values of the OV and OP properties of each
 // nonWorkHoursTally property of each TimeSheets document.
-export async function updateTimeOffTallies(uid: string) {
+export async function updateProfileTallies(uid: string) {
   const db = admin.firestore();
 
   // Load the profile for the user to get opening values and later

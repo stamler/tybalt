@@ -31,7 +31,7 @@ import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
-import { updateTimeOffTallies } from "./profiles";
+import { updateProfileTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
   displayName: string;
@@ -188,9 +188,9 @@ export const updateTimeTracking = functions.firestore
       // just unlocked
       // update the Time Off Tallies on the corresponding profile
       try {
-        await updateTimeOffTallies(afterData.uid);
+        await updateProfileTallies(afterData.uid);
       } catch (error) {
-        functions.logger.error(`Error on updateTimeOffTallies for user ${afterData.uid}: ${error}`)
+        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
       }
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
@@ -238,11 +238,11 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === true
     ) {
       // just locked
-      // update the Time Off Tallies on the corresponding profile
+      // update the Time Off and mileage Tallies on the corresponding profile
       try {
-        await updateTimeOffTallies(afterData.uid);
+        await updateProfileTallies(afterData.uid);
       } catch (error) {
-        functions.logger.error(`Error on updateTimeOffTallies for user ${afterData.uid}: ${error}`)
+        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
       }
       // remove document from pending and add it to timeSheets
       await timeTrackingDocRef.update(
