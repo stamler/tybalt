@@ -44,6 +44,13 @@ firebase
         const snap = await db.collection("Profiles").doc(currentUser.uid).get();
         const profile = snap.data();
 
+        // get the expense rates and store them in the store
+        const getExpenseRates = firebase
+          .functions()
+          .httpsCallable("expenseRates");
+        const rates = await getExpenseRates();
+        store.commit("setExpenseRates", rates.data);
+
         if (
           profile !== undefined &&
           (profile.msGraphDataUpdated === undefined ||

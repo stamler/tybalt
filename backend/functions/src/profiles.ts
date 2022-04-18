@@ -387,7 +387,9 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
 // updates the usedOV and usedOP numbers on the profile by enumerating all of
 // that user's timesheets that are later than the profile's openingDateTimeOff
 // value and summing the values of the OV and OP properties of each
-// nonWorkHoursTally property of each TimeSheets document.
+// nonWorkHoursTally property of each TimeSheets document. It also gets all of
+// the user's mileage expenses after the app_wide "openingMileageDate" variable
+// and sums the mileage then stores it in the profile.
 export async function updateProfileTallies(uid: string) {
   const db = admin.firestore();
 
@@ -395,10 +397,7 @@ export async function updateProfileTallies(uid: string) {
   // use it to write back the used values
   const profile = await db.collection("Profiles").doc(uid).get();
   if (!profile.exists) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "A Profile doesn't exist for this user"
-    );
+    throw new Error(`Profile ${uid} does not exist`);
   }
   const openingDate = profile.get("openingDateTimeOff");
   const openingOV = profile.get("openingOV");
@@ -409,10 +408,7 @@ export async function updateProfileTallies(uid: string) {
     openingOV === undefined ||
     openingOP === undefined
     ) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "The profile is missing one of openingDateTimeOff, openingOV, openingOP"
-    );
+    throw new Error(`Profile ${uid} is missing one of openingDateTimeOff, openingOV, or openingOP`);
   }
 
   const querySnapTimeSheets = await db.collection("TimeSheets")
@@ -453,9 +449,46 @@ export async function updateProfileTallies(uid: string) {
     querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
       usedOP += amendSnap.get("hours");
     });
+  
+  // Load the AnnualDates document in the Config collection to get the
+  // openingMileage date
+  const annualDates = await db.collection("Config").doc("AnnualDates").get();
+  if (!annualDates.exists) {
+    throw new Error(`AnnualDates document does not exist`);
+  }
 
+  const mileageClaimedSince = annualDates.get("openingMileageDate");
+  if (mileageClaimedSince === undefined) {
+    throw new Error(`AnnualDates document is missing openingMileageDate`);
+  }
+
+  // Load mileage expenses for the user after mileageClaimedSince
+  const querySnapMileageExpenses = await db.collection("Expenses")
+    .where("uid", "==", uid)
+    .where("committed", "==", true)
+    .where("payPeriodEnding", ">", mileageClaimedSince)
+    .where("paymentType", "==", "Mileage")
+    .orderBy("payPeriodEnding","desc") // sorted descending so latest element first
+    .get();
+
+  // Total mileage is the sum of all distance entries in every returned document
+  let mileageClaimed = 0;
+  if(querySnapMileageExpenses.docs.length > 0) {
+    functions.logger.info(`${querySnapMileageExpenses.docs.length} mileage expenses found for ${uid} after ${mileageClaimedSince.toDate().toISOString()}`);
+    mileageClaimed = querySnapMileageExpenses.docs.reduce((acc, curr) => {
+      if (curr.get("distance") === undefined) {
+        throw new Error(`Expense ${curr.id} is missing distance property`);
+      }
+      if (typeof curr.get("distance") !== "number") {
+        throw new Error(`Expense ${curr.id} distance property is not a number`);
+      }
+      return acc + curr.get("distance");
+    }, 0);
+  }
+
+  // Commit the output to the profile for time off tallies and mileage total
   // the first TimeSheets doc in the query is the latest so will have
   // the latest weekEnding for reporting effective date to the user
   const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
-  return profile.ref.update({ usedOV, usedOP, usedAsOf });
+  return profile.ref.update({ usedOV, usedOP, usedAsOf, mileageClaimed, mileageClaimedSince });
 };

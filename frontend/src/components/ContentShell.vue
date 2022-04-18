@@ -30,8 +30,8 @@ export default mixins.extend({
   computed: {
     ...mapState(["claims", "showTasks"]),
     siblingRoutes(): RouteConfig[] | null {
-      const parentPath = this?.$route?.matched[this.$route.matched.length - 1]
-        ?.parent?.path;
+      const parentPath =
+        this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path;
       const currentRoute = this.getCurrentRoute(
         parentPath,
         this.$router.options.routes

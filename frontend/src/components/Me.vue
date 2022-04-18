@@ -22,6 +22,11 @@
         <p>
           Company policy requires the use of vacation time prior to using PPTO
         </p>
+        <br />
+        <h4>
+          Mileage Claimed since {{ item.mileageClaimedSince | shortDate }}
+        </h4>
+        <p>{{ item.mileageClaimed }} km</p>
       </div>
       <form id="editor">
         <h3>Settings</h3>

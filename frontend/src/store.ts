@@ -13,6 +13,8 @@ export default new Vuex.Store({
     sidenav: false,
     user: null as firebase.User | null,
     claims: null as { [claim: string]: boolean } | null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expenseRates: null as { [key: string]: any } | null,
     activeTasks: {} as TaskList, // items to show in the progress UI element
     showTasks: false, // whether to display the progress UI element
 
@@ -48,6 +50,10 @@ export default new Vuex.Store({
     },
     setClaims(state, claims: { [claim: string]: boolean }) {
       state.claims = claims;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setExpenseRates(state, rates: { [key: string]: any }) {
+      state.expenseRates = rates;
     },
   },
   actions: {},

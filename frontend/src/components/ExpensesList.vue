@@ -53,7 +53,10 @@
               </template>
             </div>
             <div class="byline" v-if="item.paymentType === 'Mileage'">
-              {{ item.distance }} km - ${{ item.distance * MILEAGE_RATE }}
+              {{ item.distance }} km - ${{
+                item.distance *
+                getExpenseRate("MILEAGE_RATE", item.date.toDate())
+              }}
             </div>
             <div
               class="byline"
@@ -282,6 +285,7 @@ export default mixins.extend({
     };
   },
   methods: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     unsubmittedExpenseIds(expenses: any[]) {
       return expenses.filter((x) => x.submitted !== true).map((x) => x.id);
     },

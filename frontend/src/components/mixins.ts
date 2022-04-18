@@ -29,7 +29,6 @@ import _ from "lodash";
 export default Vue.extend({
   data() {
     return {
-      MILEAGE_RATE: 0.5, // dollars per km
       BREAKFAST_RATE: 15, // dollars per meal
       LUNCH_RATE: 20, // dollars per meal
       DINNER_RATE: 20, // dollars per meal
@@ -37,9 +36,24 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["claims", "user"]),
+    ...mapState(["claims", "user", "expenseRates"]),
   },
   methods: {
+    // get the value of an expense rate on a specified date
+    getExpenseRate(rate: string, date: Date | undefined) {
+      if (this.expenseRates === null) return 0;
+      if (date === undefined) return 0;
+      // get the timezone of the user
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // make an ISO string from the date
+      const ISODate = format(utcToZonedTime(date, timezone), "yyyy-MM-dd");
+      // sort dates in descending order
+      const dates = Object.keys(this.expenseRates).sort().reverse();
+      // find the first date that is less than or equal to the specified date
+      const index = dates.findIndex((d: string) => d <= ISODate);
+      return this.expenseRates?.[dates[index]]?.[rate];
+    },
+
     // returns Date[] of all pay periods in the given year
     payPeriodsForYear(year: number): Date[] {
       return Array.from(ppGen(year));
@@ -582,7 +596,9 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage": {
-                const total = row.distance * this.MILEAGE_RATE;
+                const total =
+                  row.distance *
+                  this.getExpenseRate("MILEAGE_RATE", new Date(row.date));
                 return total - this.calculatedOntarioHST(total);
               }
               case "Allowance":
@@ -601,7 +617,8 @@ export default Vue.extend({
             switch (row.paymentType) {
               case "Mileage":
                 return this.calculatedOntarioHST(
-                  row.distance * this.MILEAGE_RATE
+                  row.distance *
+                    this.getExpenseRate("MILEAGE_RATE", new Date(row.date))
                 );
               case "Allowance":
               case "Meals":
@@ -618,7 +635,10 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage":
-                return row.distance * this.MILEAGE_RATE;
+                return (
+                  row.distance *
+                  this.getExpenseRate("MILEAGE_RATE", new Date(row.date))
+                );
               case "Allowance":
               case "Meals":
                 return this.calculatedAllowanceAmount(row);
@@ -720,7 +740,9 @@ export default Vue.extend({
         // the arg is firestore DocumentData. Convert timestamps to JS dates
         firestoreDoc = true;
         if (!isTimeSheet(urlOrFirestoreTimeSheet)) {
-          throw new Error("(mixins1)There was an error validating the timesheet");
+          throw new Error(
+            "(mixins1)There was an error validating the timesheet"
+          );
         }
         items = [urlOrFirestoreTimeSheet];
         amendments = [];
@@ -761,7 +783,9 @@ export default Vue.extend({
       const timesheetRecords = [];
       for (const item of items) {
         if (!isTimeSheet(item)) {
-          throw new Error("(mixins2)There was an error validating the timesheet");
+          throw new Error(
+            "(mixins2)There was an error validating the timesheet"
+          );
         }
         for (const entry of item.entries) {
           //if (!["R", "RT"].includes(entry.timetype)) continue;

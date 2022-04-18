@@ -195,6 +195,7 @@ export default mixins.extend({
         const csv = parse(dat);
         */
         // post-processing of response data for CSV conversion
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dat = response.data.map((x: any) => {
           const processed = x;
           // set salary (string) to boolean
@@ -358,7 +359,9 @@ export default mixins.extend({
       const opts = { fields, withBOM: true };
       const timesheetRecords = items.map((x) => {
         if (!isTimeSheet(x)) {
-          throw new Error("(Payroll)There was an error validating the timesheet");
+          throw new Error(
+            "(Payroll)There was an error validating the timesheet"
+          );
         }
         const item = _.pick(x, [
           "weekEnding",

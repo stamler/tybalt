@@ -18,7 +18,7 @@ import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./st
 import { emailOnReject, emailOnShare } from "./email";
 export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
-export { updateExpenseTracking } from "./expenses";
+export { updateExpenseTracking, expenseRates } from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { scheduledFirestoreExport } from "./export";

@@ -30,7 +30,9 @@
         <!--<option value="FuelOnAccount">Fuel On Account</option> -->
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
-        <option value="Mileage">Personal Mileage ${{ MILEAGE_RATE }}/km</option>
+        <option value="Mileage">
+          Personal Mileage ${{ getExpenseRate("MILEAGE_RATE", item.date) }}/km
+        </option>
         <option v-if="allowPersonalReimbursement" value="PersonalReimbursement">
           Personal Reimbursement
         </option>

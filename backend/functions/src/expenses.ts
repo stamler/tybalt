@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, isPayrollWeek2, thisTimeNextWeekInTimeZone, getTrackingDoc, getAuthObject } from "./utilities";
+import { updateProfileTallies } from "./profiles";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -48,11 +49,14 @@ export async function cleanUpOrphanedAttachment(
 
 
 /*
-  If an expense is committed, add it to the expenses property of the 
-  ExpenseTracking document for the corresponding weekEnding.
+  If an expense is committed, add it to the expenses property of the
+  ExpenseTracking document for the corresponding weekEnding. Update the profile
+  tallies at the same time to account for any mileage claims.
 
-  If an expense is manually uncommitted, remove it from the expenses property 
-  of the ExpenseTracking document for the corresponding weekEnding.
+  If an expense is manually uncommitted, remove it from the expenses property of
+  the ExpenseTracking document for the corresponding weekEnding. Update the
+  profile tallies at the same time to account for any mileage claims that were
+  removed.
  */
 export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSeconds: 180}).firestore
   .document("Expenses/{expenseId}")
@@ -80,6 +84,12 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
           [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, date: afterData.date },
         }
       );
+      // update the Time Off and mileage Tallies on the corresponding profile
+      try {
+        await updateProfileTallies(afterData.uid);
+      } catch (error) {
+        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
+      }      
     }
     if (
       afterData &&
@@ -104,6 +114,13 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
         committedWeekEnding: admin.firestore.FieldValue.delete(),
         payPeriodEnding: admin.firestore.FieldValue.delete(),
       });
+
+      // update the Time Off and mileage Tallies on the corresponding profile
+      try {
+        await updateProfileTallies(afterData.uid);
+      } catch (error) {
+        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
+      }      
     }
     await exportJson({ id: expenseTrackingDocRef.id });
     return generateExpenseAttachmentArchive({ id: expenseTrackingDocRef.id });
@@ -348,3 +365,23 @@ export async function submitExpense(
     { merge: true }
   );
 }
+
+// Get the values from all of the documents in the ExpenseRates collection
+// and return them as an array of objects. Authentication is not required
+export const expenseRates = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  if (!context.auth) {
+    // Throw an HttpsError so that the client gets the error details
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Caller must be authenticated"
+    );
+  }
+
+  const db = admin.firestore();
+  const result:Record<string, any> = {};
+  const ratesSnapshot = await db.collection("ExpenseRates").get();
+  ratesSnapshot.forEach(x => {
+    result[x.id] = x.data();
+  });
+  return result;
+});
