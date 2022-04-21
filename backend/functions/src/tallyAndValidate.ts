@@ -12,6 +12,16 @@ export async function tallyAndValidate(
 
   const db = admin.firestore();
 
+  // Get the workWeekHours setting it to a default of 40 if it doesn't exist
+  const wwh = profile.get("workWeekHours");
+  if (!["number", "undefined"].includes(typeof wwh)) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "workWeekHours must be a number"
+    );
+  }
+  const workWeekHours = wwh > 0 && wwh <= 40 ? wwh : 40;
+  
   // Put the existing timeEntries into an array then delete from Collection
   const entries: TimeEntry[] = [];
   const workrecords: string[] = [];
@@ -195,19 +205,18 @@ export async function tallyAndValidate(
   // calculate total non-work hours
   const nonWorkHoursTotal = Object.values(nonWorkHoursTally).reduce((a,b) => a + b, 0);
 
-  // prevent salaried employees from using vacation or PPTO to raise their
-  // timesheet hours beyond 40.
+  // prevent staff from using vacation or PPTO to raise their timesheet hours
+  // beyond workWeekHours.
   const discretionaryTimeOff = 
     (nonWorkHoursTally.OV ?? 0) + 
     (nonWorkHoursTally.OP ?? 0);
   if (
-    profile.get("salary") === true &&
     discretionaryTimeOff > 0 && 
-    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal > 40
+    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal > workWeekHours
   ) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
+      `You cannot claim Vacation or PPTO entries that increase total hours beyond ${workWeekHours}.`
     );
   }
 
@@ -250,19 +259,19 @@ export async function tallyAndValidate(
     )
   }
 
-  // require salaried employees to have at least 40 hours on a timesheet unless
-  // their profile has untrackedTimeOff:true OR
+  // require salaried employees to have at least workWeekHours hours on a
+  // timesheet unless their profile has untrackedTimeOff:true OR
   // skipMinTimeCheckOnNextBundle:true
-  const bypass40hour = profile.get("skipMinTimeCheckOnNextBundle");
+  const skipMinTimeCheck = profile.get("skipMinTimeCheckOnNextBundle");
   const offRotationHours = offRotationDates.length * 8;
   if (
     profile.get("salary") === true &&
-    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < 40
+    workHoursTally.hours + workHoursTally.jobHours + nonWorkHoursTotal + offRotationHours < workWeekHours
   ) {
-    if (bypass40hour !== true && profile.get("untrackedTimeOff") !== true) {      
+    if (skipMinTimeCheck !== true && profile.get("untrackedTimeOff") !== true) {      
       throw new functions.https.HttpsError(
         "failed-precondition",
-        "Salaried staff must have a minimum of 40 hours on each time sheet."
+        `You must have a minimum of ${workWeekHours} hours on each time sheet.`
       )
     }
   }
@@ -408,7 +417,8 @@ export async function tallyAndValidate(
   }
 
   return {
-    bypass40hour, // remove this from the result before adding to database
+    workWeekHours,
+    skipMinTimeCheck, // remove this from the result before adding to database
     uid: auth.uid,
     surname: profile.get("surname"),
     givenName: profile.get("givenName"),

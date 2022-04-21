@@ -130,12 +130,12 @@ export async function bundleTimesheet(
   }
   const claims = manager.customClaims;
   if (claims && claims["tapr"] === true) {
-    if (timesheetData.bypass40hour === true) {
+    if (timesheetData.skipMinTimeCheck === true) {
       // the flag was previously set, clear it
       batch.update(profile.ref,{ skipMinTimeCheckOnNextBundle: admin.firestore.FieldValue.delete() })
     }
     // delete the flag from the return value of tallyAndValidate(), the new timesheet
-    delete timesheetData.bypass40hour;
+    delete timesheetData.skipMinTimeCheck;
 
     if (managerProfile.get("doNotAcceptSubmissions") === true) {
       const alternate = managerProfile.get("alternateManager");

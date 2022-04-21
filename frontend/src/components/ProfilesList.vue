@@ -60,6 +60,12 @@
           >
             /Not Accepting Submissions
           </span>
+          <span
+            v-if="item.workWeekHours && item.workWeekHours !== 40"
+            class="attention"
+          >
+            /Work Week Hours: {{ item.workWeekHours }}
+          </span>
         </div>
       </div>
       <div class="rowactionsbox">

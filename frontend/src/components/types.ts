@@ -157,6 +157,7 @@ export function isTimeSheet(data: unknown): data is TimeSheet {
 
 export interface PayrollReportRecord {
   weekEnding: string;
+  workWeekHours?: number;
   displayName: string;
   surname: string;
   givenName: string;

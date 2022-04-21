@@ -276,8 +276,9 @@ export default mixins.extend({
             if (row.salary) {
               const stat = row.OH || 0;
               const bereavement = row.OB || 0;
-              return reg + stat + bereavement > 40
-                ? 40 - stat - bereavement
+              const workWeekHours = row.workWeekHours || 40;
+              return reg + stat + bereavement > workWeekHours
+                ? workWeekHours - stat - bereavement
                 : reg;
             } else {
               return reg > 44 ? 44 : reg;

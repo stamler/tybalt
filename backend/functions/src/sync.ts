@@ -104,6 +104,7 @@ export async function exportTime() {
   // corresponding TimeEntries into the respective MySQL tables
   const tsresults = tsdocsnaps.map(async tsSnap => {
     const snapData = tsSnap.data();
+    const workWeekHours = snapData.workWeekHours === undefined ? 40 : snapData.workWeekHours;
     const timeSheet = {
       id: tsSnap.id,
       uid: snapData.uid,
@@ -112,6 +113,7 @@ export async function exportTime() {
       managerUid: snapData.managerUid,
       managerName: snapData.managerName,
       tbtePayrollId: snapData.tbtePayrollId,
+      workWeekHours,
       salary: snapData.salary,
       weekEnding: format(utcToZonedTime(snapData.weekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd"),
     };
@@ -288,9 +290,11 @@ export async function exportAmendments() {
   const exportSuccessBatch = db.batch();
 
   // Iterate over the TimeAmendments documents, INSERTing them into MySQL table
-  const timeAmendmentsFields = ["id", "creator", "creatorName", "commitUid", "commitName", "commitTime", "created", "committedWeekEnding", "uid", "givenName", "surname", "tbtePayrollId", "salary", "weekEnding", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount"];
+  const timeAmendmentsFields = ["id", "creator", "creatorName", "commitUid", "commitName", "commitTime", "created", "committedWeekEnding", "uid", "givenName", "surname", "tbtePayrollId", "workWeekHours", "salary", "weekEnding", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount"];
   const insertValues = amenddocsnaps.map((amendSnap) => {
     const amendment = amendSnap.data();
+    // if the amendment has no workWeekHours property, default to 40
+    amendment.workWeekHours = amendment.workWeekHours === undefined ? 40 : amendment.workWeekHours;
     amendment.id = amendSnap.id;
     amendment.commitTime = amendment.commitTime.toDate();
     amendment.created = amendment.created.toDate();

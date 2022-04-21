@@ -554,6 +554,88 @@ describe("Other Firestore Rules", function () {
         })
       );
     });
+    it("requires workWeekHours to be positive integer 0 < x <=40 or missing", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      // missing
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      // positive integer (5)
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          workWeekHours: 5,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      // zero fails
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          workWeekHours: 0,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      // negative integer (-5)
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          workWeekHours: -5,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      // positive integer (41)
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          workWeekHours: 41,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+      // text
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          workWeekHours: "5",
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+        })
+      );
+
+    });
     it("requires doNotAcceptSubmissions to be boolean or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

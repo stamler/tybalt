@@ -48,7 +48,7 @@
     </span>
     <span class="field">
       <label for="untrackedTimeOff">
-        Do not track Time Off (and skip 40 hour checks)
+        Do not track Time Off (and skip workWeekHours checks)
       </label>
       <input
         class="grow"
@@ -66,6 +66,15 @@
         type="checkbox"
         name="skipMinTimeCheckOnNextBundle"
         v-model="item.skipMinTimeCheckOnNextBundle"
+      />
+    </span>
+    <span class="field">
+      <label for="workWeekHours">Work Week Hours</label>
+      <input
+        class="grow"
+        type="number"
+        name="workWeekHours"
+        v-model.number="item.workWeekHours"
       />
     </span>
     <span class="field">
@@ -248,6 +257,7 @@ export default Vue.extend({
           defaultDivision: string;
           salary: boolean;
           skipMinTimeCheckOnNextBundle?: boolean;
+          workWeekHours?: number;
           doNotAcceptSubmissions?: boolean;
           alternateManager?: string;
           offRotation?: boolean;
@@ -281,6 +291,9 @@ export default Vue.extend({
         if (typeof this.item.skipMinTimeCheckOnNextBundle === "boolean") {
           obj.skipMinTimeCheckOnNextBundle =
             this.item.skipMinTimeCheckOnNextBundle;
+        }
+        if (typeof this.item.workWeekHours === "number") {
+          obj.workWeekHours = this.item.workWeekHours;
         }
         if (this.item.tbtePayrollId) {
           obj.tbtePayrollId = this.item.tbtePayrollId;

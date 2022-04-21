@@ -49,7 +49,7 @@ FROM (
       END AS salaryHoursOver44,
       CASE
         WHEN salary = TRUE THEN CASE
-          WHEN hoursWorked + IFNULL(Stat,0) + IFNULL(Bereavement,0) > 40 THEN 40 - IFNULL(Stat,0) - IFNULL(Bereavement,0)
+          WHEN hoursWorked + IFNULL(Stat,0) + IFNULL(Bereavement,0) > workWeekHours THEN workWeekHours - IFNULL(Stat,0) - IFNULL(Bereavement,0)
           ELSE hoursWorked
         END
         ELSE CASE
@@ -122,6 +122,7 @@ FROM (
             SELECT *
             FROM (
                 SELECT tbtePayrollId,
+                  workWeekHours,
                   committedWeekEnding weekEnding,
                   surname,
                   givenName,
@@ -159,6 +160,7 @@ FROM (
              hasAmendmentsForWeekEnding since these columns only appear in the
              first subquery of the UNION */
             SELECT tbtePayrollId,
+              workWeekHours,
               weekEnding,
               surname,
               givenName,

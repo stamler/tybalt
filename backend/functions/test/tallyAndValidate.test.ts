@@ -221,14 +221,65 @@ describe("tallyAndValidate", async () => {
       assert.equal(timeEntries.size,4);
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
-        "Salaried staff must have a minimum of 40 hours on each time sheet."
+        "You must have a minimum of 40 hours on each time sheet."
       );
       const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, skipMinTimeCheckOnNextBundle: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,4);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
     });
-    it("rejects for salaried staff member with fewer than 40 hours", async () => {
+    it("tallies and validates for salaried staff member with at least workWeekHours hours if workWeekHours is present on their profile and not zero", async () => {
+      // add two hour entry so total hours is 34
+      const twoHourDay = { division: "CI", divisionName: "Information Technology", timetype: "R", timetypeName: "Hours Worked", hours: 2, workDescription };
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...twoHourDay });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,5);
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+
+      const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
+
+      // tally works and hours tally is 34
+      assert.equal(tally.workHoursTally.hours,34,"hours tally doesn't match");
+    });
+    it("rejects for salaried staff member with fewer than workWeekHours if workWeekHours is present on their profile and not zero", async () => {
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,4);
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "You must have a minimum of 34 hours on each time sheet."
+      );
+    });
+    it("rejects for salaried staff member with fewer than 40 hours if workWeekHours is present on their profile and has a value of 0", async () => {
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+
+      assert.equal(timeEntries.size,4);
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:0, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+
+      await assert.isRejected(
+        tallyAndValidate(auth, profileB, timeEntries, weekEnding),
+        "You must have a minimum of 40 hours on each time sheet."
+      );
+    });
+    it("rejects for salaried staff member with fewer than 40 hours if workWeekHours is not present on their profile", async () => {
       const timeEntries = await db
         .collection("TimeEntries")
         .where("uid", "==", alice.uid)
@@ -239,7 +290,7 @@ describe("tallyAndValidate", async () => {
       assert.equal(timeEntries.size,4);
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
-        "Salaried staff must have a minimum of 40 hours on each time sheet."
+        "You must have a minimum of 40 hours on each time sheet."
       );
     });
     it("rejects for salaried staff member who claims sick time", async () => {
@@ -580,7 +631,7 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
     });    
-    it("rejects for salaried staff member if PPTO pushes hours over 40", async () => {
+    it("rejects if PPTO pushes hours over workWeekHours", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OP", timetypeName: "PPTO", hours: 9 });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -592,10 +643,10 @@ describe("tallyAndValidate", async () => {
       assert.equal(timeEntries.size,5);
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
-        "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
+        "You cannot claim Vacation or PPTO entries that increase total hours beyond 40."
       );
     });    
-    it("rejects for salaried staff member if Vacation pushes hours over 40", async () => {
+    it("rejects if Vacation pushes hours over workWeekHours", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OV", timetypeName: "Vacation", hours: 9 });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -607,7 +658,7 @@ describe("tallyAndValidate", async () => {
       assert.equal(timeEntries.size,5);
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
-        "Salaried staff cannot claim Vacation or PPTO entries that increase total hours beyond 40."
+        "You cannot claim Vacation or PPTO entries that increase total hours beyond 40."
       );
     });    
   });
