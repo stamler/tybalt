@@ -93,9 +93,11 @@
         </p>
       </form>
     </div>
+    <div style="text-align: right">v{{ VERSION }}</div>
   </div>
 </template>
 <script lang="ts">
+import { LIB_VERSION } from "../version";
 import Vue from "vue";
 import { signOut } from "../main";
 import { mapState } from "vuex";
@@ -107,6 +109,7 @@ const db = firebase.firestore();
 export default Vue.extend({
   data() {
     return {
+      VERSION: LIB_VERSION,
       item: {} as firebase.firestore.DocumentData,
       managers: [] as firebase.firestore.DocumentData[],
       divisions: [] as firebase.firestore.DocumentData[],
