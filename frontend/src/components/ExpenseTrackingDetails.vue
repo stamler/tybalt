@@ -29,9 +29,7 @@
               {{ exp.lodging ? "Personal Accommodation" : "" }}
             </div>
             <div class="byline" v-if="exp.paymentType === 'Mileage'">
-              {{ exp.distance }} km - ${{
-                exp.distance * getExpenseRate("MILEAGE_RATE", exp.date.toDate())
-              }}
+              {{ exp.distance }} km
             </div>
             <div
               class="byline"

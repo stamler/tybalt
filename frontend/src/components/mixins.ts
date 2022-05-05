@@ -51,9 +51,29 @@ export default Vue.extend({
       const dates = Object.keys(this.expenseRates).sort().reverse();
       // find the first date that is less than or equal to the specified date
       const index = dates.findIndex((d: string) => d <= ISODate);
+      if (this.expenseRates?.[dates[index]]?.[rate] === undefined) {
+        throw new Error(`No expense rate found for ${rate} on ${date}`);
+      }
       return this.expenseRates?.[dates[index]]?.[rate];
     },
-
+    getMileageRate(
+      date: Date | undefined,
+      profile: firebase.firestore.DocumentData
+    ) {
+      if (this.expenseRates === null) return 0;
+      if (date === undefined) return 0;
+      if (profile === undefined) return 0;
+      const previousMileage = profile.get("mileageClaimed");
+      if (previousMileage === undefined) return 0;
+      const rateMap = this.getExpenseRate("MILEAGE", date);
+      const tiers = Object.keys(rateMap).sort(
+        (a, b) => parseInt(b, 10) - parseInt(a, 10)
+      );
+      const index = tiers.findIndex(
+        (d: string) => previousMileage >= parseInt(d, 10)
+      );
+      return rateMap[tiers[index]];
+    },
     // returns Date[] of all pay periods in the given year
     payPeriodsForYear(year: number): Date[] {
       return Array.from(ppGen(year));
@@ -527,6 +547,81 @@ export default Vue.extend({
       };
     },
     isPayrollWeek2,
+
+    // return the reimbursement amount for claimed mileage. If the distance
+    // claimed is entirely within one tier, simply multiply the distance by the
+    // reimbursement rate. If the distance is split between two tiers, the
+    // reimbursement rate for the first tier is used and the remainder is
+    // multiplied by the rate in the next tier. The two amounts are then added
+    // together and returned.
+    calculateMileageAllowance(distance: number, date: Date, offset?: number) {
+      // offset is the total mileage already claimed, the sum of committed
+      // distance travelled since the beginning of the openingMileageDate
+      const mileageAlreadyClaimed = offset || 0;
+      const newTotal = mileageAlreadyClaimed + distance;
+
+      // get the MILEAGE rates map, extract tiers sorted descending
+      const rateMap = this.getExpenseRate("MILEAGE", new Date(date));
+      const tiers = Object.keys(rateMap).sort(
+        (a, b) => parseInt(b, 10) - parseInt(a, 10)
+      );
+
+      // TODO: It should be possible to find both the right and left indices in
+      // the same search of the tiers array. For now, we'll do two separate
+      // searches so the code is simpler.
+
+      // find the tier of the offset. This will be the lower number, so possibly
+      // higher of the two indices
+      const rightIndex = tiers.findIndex(
+        (d: string) => mileageAlreadyClaimed >= parseInt(d, 10)
+      );
+
+      // find the tier of the distance + offset. This will be the higher number,
+      // so possibly lower of the two indices
+      const leftIndex = tiers.findIndex(
+        (d: string) => newTotal >= parseInt(d, 10)
+      );
+
+      // If the newly claimed distance won't change the tier, simply multiply
+      // the distance by the rate in that tier.
+      if (leftIndex === rightIndex) {
+        return distance * rateMap[tiers[leftIndex]];
+      }
+
+      // If the distance will straddle tiers, rightIndex will be greater than
+      // leftIndex. Iterate through the tiers, starting at the leftIndex and
+      // and working toward the rightIndex. This is calculating the higher tiers
+      // first since the tier list is sorted descending.
+
+      // the value that will be returned
+      let calculatedTotal = 0;
+
+      // the distance that will be used to calculate the next tier. After the
+      // first tier it should remain the same as the tier distance
+      let remainingDistance = newTotal;
+
+      for (let tierIndex = leftIndex; tierIndex <= rightIndex; tierIndex++) {
+        // calculate the distance for this tier
+        const distanceInTier =
+          mileageAlreadyClaimed > parseInt(tiers[tierIndex], 10)
+            ? parseInt(tiers[tierIndex - 1], 10) - mileageAlreadyClaimed
+            : remainingDistance - parseInt(tiers[tierIndex], 10);
+
+        // multiply by rate and add the amount to the total
+        calculatedTotal += distanceInTier * rateMap[tiers[tierIndex]];
+
+        // update the remaining distance for future iterations
+        remainingDistance -= distanceInTier;
+      }
+
+      // sanity check
+      if (remainingDistance != mileageAlreadyClaimed) {
+        throw new Error(
+          "calculateMileageAllowance: remainingDistance != mileageAlreadyClaimed"
+        );
+      }
+      return calculatedTotal;
+    },
     async generatePayablesCSV(
       urlOrExpenseArrayPromise: string | Promise<Expense[]>
     ) {
@@ -596,9 +691,10 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage": {
-                const total =
-                  row.distance *
-                  this.getExpenseRate("MILEAGE_RATE", new Date(row.date));
+                const total = this.calculateMileageAllowance(
+                  row.distance,
+                  new Date(row.date)
+                );
                 return total - this.calculatedOntarioHST(total);
               }
               case "Allowance":
@@ -617,8 +713,10 @@ export default Vue.extend({
             switch (row.paymentType) {
               case "Mileage":
                 return this.calculatedOntarioHST(
-                  row.distance *
-                    this.getExpenseRate("MILEAGE_RATE", new Date(row.date))
+                  this.calculateMileageAllowance(
+                    row.distance,
+                    new Date(row.date)
+                  )
                 );
               case "Allowance":
               case "Meals":
@@ -635,9 +733,9 @@ export default Vue.extend({
           value: (row: Expense) => {
             switch (row.paymentType) {
               case "Mileage":
-                return (
-                  row.distance *
-                  this.getExpenseRate("MILEAGE_RATE", new Date(row.date))
+                return this.calculateMileageAllowance(
+                  row.distance,
+                  new Date(row.date)
                 );
               case "Allowance":
               case "Meals":

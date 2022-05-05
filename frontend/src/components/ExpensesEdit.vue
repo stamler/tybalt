@@ -31,7 +31,9 @@
         <option value="CorporateCreditCard">Corp Visa</option>
         <option value="Expense">Expense</option>
         <option value="Mileage">
-          Personal Mileage ${{ getExpenseRate("MILEAGE_RATE", item.date) }}/km
+          <!-- NB: This mileage rate doesn't update in realtime because the
+          profile is loaded once in setItem() -->
+          Personal Mileage ${{ getMileageRate(item.date, profile) }}/km
         </option>
         <option v-if="allowPersonalReimbursement" value="PersonalReimbursement">
           Personal Reimbursement

@@ -13,10 +13,7 @@
           </div>
           <div class="byline">
             <template v-if="item.paymentType === 'Mileage'">
-              {{ item.distance }} km - ${{
-                item.distance *
-                getExpenseRate("MILEAGE_RATE", item.date.toDate())
-              }}
+              {{ item.distance }} km
             </template>
             <template
               v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
@@ -92,10 +89,7 @@
           </div>
           <div class="byline">
             <template v-if="item.paymentType === 'Mileage'">
-              {{ item.distance }} km - ${{
-                item.distance *
-                getExpenseRate("MILEAGE_RATE", item.date.toDate())
-              }}
+              {{ item.distance }} km
             </template>
             <template
               v-else-if="['Meals', 'Allowance'].includes(item.paymentType)"
