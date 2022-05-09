@@ -2,7 +2,9 @@
   <div>
     <div id="spacer"></div>
     <div class="actions">
-      <router-link to="#" v-on:click.native="signOut()">Sign Out</router-link>
+      <router-link to="#" v-on:click.native="signOutWrapper">
+        Sign Out
+      </router-link>
     </div>
     <div id="dash">
       <h2>Hi, {{ user.displayName }}</h2>
@@ -134,6 +136,12 @@ export default Vue.extend({
   },
   methods: {
     signOut,
+    async signOutWrapper() {
+      // wrap the signOut because it was causing issues of not working at all
+      // may be because the function depended on async stuff being loaded
+      // but it's not clear why
+      signOut();
+    },
     setItem(id: string) {
       if (id) {
         db.collection("Profiles")
