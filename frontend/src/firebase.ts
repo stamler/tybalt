@@ -1,11 +1,18 @@
-import firebase from "firebase/app";
-import "firebase/functions";
-import "firebase/firestore";
-import "firebase/auth";
-import "firebase/storage";
-import "firebase/analytics";
+import firebase from "firebase/compat/app";
+import "firebase/compat/functions";
+import "firebase/compat/firestore";
+import "firebase/compat/auth";
+import "firebase/compat/storage";
+import "firebase/compat/analytics";
 
 // Initialize Firebase
+
+// Firebase Dynamic State Partitioning breaks the login flow and causes an
+// endless loop if "isolate other cross-site cookies" is enable in Firefox
+// settings. TODO: figure out how to work around this. A good approach may be to
+// change the authDomain to not include a different domain than the app. For
+// example, replace charade-ca63b.firebaseapp.com with tybalt.tbte.ca and update
+// necessary configuration.
 firebase.initializeApp({
   apiKey: "AIzaSyCZpTxn-kK2zEpG7rlXn_eGsFHa4xmuVPM",
   authDomain: "charade-ca63f.firebaseapp.com",
