@@ -45,6 +45,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.109.0",
     "@google-cloud/firestore": "^4.10.0",
     "@types/archiver": "^5.1.0",
     "@types/uuid": "^8.3.0",
