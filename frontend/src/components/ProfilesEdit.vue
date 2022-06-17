@@ -14,6 +14,17 @@
       />
     </span>
     <span class="field">
+      <label for="datepicker">Vehicle Insurance Expiry</label>
+      <datepicker
+        name="datepicker"
+        input-class="calendar-input"
+        wrapper-class="calendar-wrapper"
+        placeholder="Date"
+        :inline="false"
+        v-model="item.personalVehicleInsuranceExpiry"
+      />
+    </span>
+    <span class="field">
       <label for="salary">Salary</label>
       <input class="grow" type="checkbox" name="salary" v-model="item.salary" />
     </span>
@@ -148,19 +159,6 @@
         </option>
       </select>
     </span>
-
-    <span class="field">
-      <label for="datepicker">Vehicle Insurance Expiry</label>
-      <datepicker
-        name="datepicker"
-        input-class="calendar-input"
-        wrapper-class="calendar-wrapper"
-        placeholder="Date"
-        :inline="false"
-        v-model="item.personalVehicleInsuranceExpiry"
-      />
-    </span>
-
     <span class="field">
       <button type="button" v-on:click="save()">Save</button>
       <button type="button" v-on:click="$router.push(parentPath)">
