@@ -409,7 +409,21 @@ const router = new Router({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Users List",
-              props: { select: true, edit: true, del: true },
+              props: { query: "list" },
+              component: UsersList,
+            },
+            {
+              meta: { showInUi: true, uiName: "AD" },
+              path: "ad",
+              name: "AD Users List",
+              props: { query: "ad" },
+              component: UsersList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Not in AD" },
+              path: "noad",
+              name: "Not in AD Users List",
+              props: { query: "noad" },
               component: UsersList,
             },
             {
