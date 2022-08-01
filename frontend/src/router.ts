@@ -23,6 +23,8 @@ import KPIReports from "@/components/KPIReports.vue";
 import ComputersList from "@/components/ComputersList.vue";
 import ComputersDetails from "@/components/ComputersDetails.vue";
 import UsersList from "@/components/UsersList.vue";
+import UserMutationsList from "@/components/UserMutationsList.vue";
+import UsersEdit from "@/components/UsersEdit.vue";
 import UsersDetails from "@/components/UsersDetails.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesBulkEdit from "@/components/ProfilesBulkEdit.vue";
@@ -425,6 +427,27 @@ const router = new Router({
               name: "Not in AD Users List",
               props: { query: "noad" },
               component: UsersList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add User",
+              props: { collection: "Users" },
+              component: UsersEdit,
+            },
+            {
+              path: ":id/edit",
+              props: (route) => {
+                return { id: route.params.id, collection: "Users" };
+              },
+              name: "Edit User",
+              component: UsersEdit,
+            },
+            {
+              meta: { showInUi: true, uiName: "Mutations" },
+              path: "mutations",
+              name: "User Mutations",
+              component: UserMutationsList,
             },
             {
               path: ":id/details",

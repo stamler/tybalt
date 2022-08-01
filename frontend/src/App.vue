@@ -216,6 +216,7 @@ body,
 }
 .anchorbox {
   display: flex;
+  flex-direction: column;
   flex: 0 0 5em;
   margin: 0em 0.5em 0em;
   align-items: center;

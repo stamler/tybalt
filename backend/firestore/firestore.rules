@@ -621,6 +621,9 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if hasClaim("admin");
     }
+    match /UserMutations/{mutation} {
+      allow read: if hasClaim("admin");
+    }
     match /Users/{user} {
       allow read: if hasClaim("admin") || hasClaim("hr");
     }

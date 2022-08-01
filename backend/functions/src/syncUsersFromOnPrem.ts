@@ -1,24 +1,14 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { requestHasValidSecret } from "./utilities";
 
 export const currentADDump = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
-  // Validate the secret sent in the header from the client.
-  // or check signature of the request
   
-  const appSecret = functions.config().tybalt.azureuserautomation.secret;
-  if (appSecret !== undefined) {
-    const authHeader = req.get("Authorization");
-
-    let reqSecret = null;
-    if (authHeader !== undefined) {
-      reqSecret = authHeader.replace("TYBALT ", "").trim();
-    }
-    if (reqSecret !== appSecret) {
-      functions.logger.error(`Invalid secret ${reqSecret}`);
-      return res.status(401).send(
-        `request secret doesn't match expected`
-      );
-    }
+  // authenticate the caller
+  if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
+    return res.status(401).send(
+      `request secret doesn't match expected`
+    );
   }
 
   // req.body can be used directly as JSON if this passes
@@ -49,7 +39,6 @@ export const currentADDump = functions.https.onRequest(async (req: functions.htt
         if (userInRequest !== undefined) {
           await user.ref.update({
             department: userInRequest.Department,
-            description: userInRequest.Description,
             OU: userInRequest.OU,
             title: userInRequest.Title,
             adEnabled: userInRequest.enabled,

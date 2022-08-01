@@ -47,38 +47,34 @@
       <div class="rowactionsbox" v-if="item.isInOnPremisesAD === true">
         <template v-if="item.OU === 'Human Users'">
           <router-link
-            v-bind:to="{ name: 'Edit Employee' }"
+            v-if="item.currentMutationVerb !== 'edit'"
+            v-bind:to="{
+              name: 'Edit User',
+              params: { id: item.id },
+            }"
             title="Edit the user"
           >
             <edit-icon></edit-icon>
           </router-link>
           <router-link
+            v-if="
+              item.adEnabled === true && item.currentMutationVerb !== 'archive'
+            "
             to="#"
-            v-on:click.native="moveToDisabledOU(item.id)"
+            v-on:click.native="editUser('archive', item)"
             title="Disable and archive the user"
           >
             <archive-icon></archive-icon>
           </router-link>
           <router-link
+            v-if="
+              item.adEnabled === true && item.currentMutationVerb !== 'reset'
+            "
             to="#"
-            v-on:click.native="deleteAccount(item.id)"
-            title="Delete the user"
-          >
-            <x-circle-icon></x-circle-icon>
-          </router-link>
-          <router-link
-            to="#"
-            v-on:click.native="resetPassword(item.id)"
-            title="Reset the user's password and unlock if necessary"
+            v-on:click.native="editUser('reset', item)"
+            title="Reset the user's password and unlock account"
           >
             <key-icon></key-icon>
-          </router-link>
-          <router-link
-            to="#"
-            v-on:click.native="disableLogin(item.id)"
-            title="Disable the user"
-          >
-            <lock-icon></lock-icon>
           </router-link>
         </template>
         <template v-if="item.OU === 'Disabled Users'">Disabled</template>
@@ -95,13 +91,8 @@
 
 <script lang="ts">
 import mixins from "./mixins";
-import {
-  XCircleIcon,
-  EditIcon,
-  ArchiveIcon,
-  KeyIcon,
-  LockIcon,
-} from "vue-feather-icons";
+import store from "../store";
+import { EditIcon, ArchiveIcon, KeyIcon } from "vue-feather-icons";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -114,11 +105,9 @@ const db = firebase.firestore();
 export default mixins.extend({
   props: ["query"],
   components: {
-    XCircleIcon,
     EditIcon,
     ArchiveIcon,
     KeyIcon,
-    LockIcon,
   },
   data() {
     return {
@@ -184,6 +173,24 @@ export default mixins.extend({
       },
       { immediate: true }
     );
+  },
+  methods: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async editUser(verb: string, user: any) {
+      store.commit("startTask", {
+        id: `${verb}User${user.id}`,
+        message: "Creating Mutation...",
+      });
+      const addMutation = firebase.functions().httpsCallable("addMutation");
+      return addMutation({ verb, userId: user.id })
+        .then(() => {
+          store.commit("endTask", { id: `${verb}User${user.id}` });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: `${verb}User${user.id}` });
+          alert(`Error creating mutation: ${error.message}`);
+        });
+    },
   },
 });
 </script>

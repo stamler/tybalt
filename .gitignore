@@ -74,3 +74,4 @@ node_modules/
 
 backend/functions/src/dev_creds.ts
 frontend/testdocs/
+*.http

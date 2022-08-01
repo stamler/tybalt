@@ -18,15 +18,16 @@ $headers = @{
 }
 
 $body = $ous | ForEach-Object { 
-  Get-ADUser -Filter * -SearchBase $_ -properties Department, Description, telephoneNumber, Title, enabled, "mS-DS-ConsistencyGuid"
+  Get-ADUser -Filter * -SearchBase $_ -properties Department, mail, userPrincipalName, telephoneNumber, Title, enabled, "mS-DS-ConsistencyGuid"
 } |
 Select-Object -Property surname,
   givenName,
   Department,
-  Description,
   telephoneNumber,
   Title,
   enabled,
+  mail,
+  userPrincipalName,
   @{
     n='OU';
     e={

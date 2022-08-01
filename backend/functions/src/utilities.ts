@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as path from "path";
+import * as _ from "lodash";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
 
@@ -54,6 +55,22 @@ export function getAuthObject(context: functions.https.CallableContext, authoriz
     );
   }
   return auth;
+}
+
+export function requestHasValidSecret(req: functions.https.Request, secret: string): boolean {
+  const appSecret = _.get(functions.config().tybalt, secret);
+  if (appSecret !== undefined) {
+    const authHeader = req.get("Authorization");
+
+    let reqSecret = null;
+    if (authHeader !== undefined) {
+      reqSecret = authHeader.replace("TYBALT ", "").trim();
+    }
+    if (reqSecret === appSecret) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Dates are not supported in Firebase Functions yet so
