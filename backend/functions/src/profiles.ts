@@ -421,11 +421,17 @@ export async function updateProfileTallies(uid: string) {
   // Iterate over the timesheets and come up with a total
   let usedOV = 0;
   let usedOP = 0;
-  querySnapTimeSheets.docs.map((tsSnap) => {
-    const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
-    usedOV += nonWorkHoursTally.OV || 0;
-    usedOP += nonWorkHoursTally.OP || 0;
-  });
+
+  try {
+    querySnapTimeSheets.docs.map((tsSnap) => {
+      const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
+      usedOV += nonWorkHoursTally.OV || 0;
+      usedOP += nonWorkHoursTally.OP || 0;
+    });      
+  } catch (error) {
+    functions.logger.error(`Error tallying nonWorkHoursTally for ${uid}`);
+    throw error;
+  }
   
   // iterate over TimeAmendments and add to existing totals
   const querySnapTimeAmendmentsOV = await db.collection("TimeAmendments")
@@ -435,9 +441,14 @@ export async function updateProfileTallies(uid: string) {
     .where("timetype","==","OV")
     .get();
     
-    querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
-      usedOV += amendSnap.get("hours");
-    });
+    try {
+      querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
+        usedOV += amendSnap.get("hours");
+      });
+    } catch (error) {
+      functions.logger.error(`Error tallying TimeAmendments OV for ${uid}`);
+      throw error;
+    }
 
     const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
     .where("uid", "==", uid)
@@ -446,9 +457,14 @@ export async function updateProfileTallies(uid: string) {
     .where("timetype","==","OP")
     .get();
 
-    querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
-      usedOP += amendSnap.get("hours");
-    });
+    try {
+      querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
+        usedOP += amendSnap.get("hours");
+      });        
+    } catch (error) {
+      functions.logger.error(`Error tallying TimeAmendments OP for ${uid}`);
+      throw error;
+    }
   
   // Load the AnnualDates document in the Config collection to get the
   // openingMileage date
