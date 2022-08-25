@@ -245,7 +245,8 @@ export async function emailOnReject(
   }
 }
 
-// onUpdate of TimeSheets document
+// onUpdate of TimeSheets document, notify affected users that a time sheet was
+// shared
 export async function emailOnShare(
   change: functions.ChangeJson,
   context: functions.EventContext,
@@ -267,8 +268,11 @@ export async function emailOnShare(
   }
 
   if (difference.length > 1) {
+    functions.logger.error(">1 viewer simultaneously added to TimeSheet", difference);
+    functions.logger.error(beforeViewerIds);
+    functions.logger.error(afterViewerIds);
     throw new Error(
-      `More than one entry was added to ${collection} document ${change.after.id}`
+      `More than one viewer was added to ${collection} document ${change.after.id}`
     );
   }
   
