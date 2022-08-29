@@ -102,6 +102,8 @@ export async function createProfile(user: admin.auth.UserRecord) {
   const customClaims = { time: true };
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
 
+  // TODO: pull data from the UserMutation collection to populate salary,
+  // managerUid, managerName, defaultDivision, tbtePayrollId
   try {
     return db.collection("Profiles").doc(user.uid).set({
       displayName: user.displayName,
@@ -147,6 +149,7 @@ export async function updateAuth(change: functions.ChangeJson, context: function
         newClaims = after.customClaims
       } catch (error) {
         functions.logger.error(`newClaims error: ${error}`);
+        functions.logger.error(after.customClaims);
       }
       if (!isCustomClaims(newClaims)) {
         throw new Error(
