@@ -142,7 +142,12 @@ export async function updateAuth(change: functions.ChangeJson, context: function
     if (!_.isEqual(before.customClaims, after.customClaims)) {
       // customClaims were changed, update them
       // Validate the customClaims format with the type guard
-      const newClaims = after.customClaims
+      let newClaims;
+      try {
+        newClaims = after.customClaims
+      } catch (error) {
+        functions.logger.error(`newClaims error: ${error}`);
+      }
       if (!isCustomClaims(newClaims)) {
         throw new Error(
           `The provided data isn't a valid custom claims object`
