@@ -266,34 +266,29 @@ export async function emailOnShare(
     ) {
     return;
   }
-
-  if (difference.length > 1) {
-    functions.logger.error(">1 viewer simultaneously added to TimeSheet", difference);
-    functions.logger.error(beforeViewerIds);
-    functions.logger.error(afterViewerIds);
-    throw new Error(
-      `More than one viewer was added to ${collection} document ${change.after.id}`
-    );
-  }
   
   const db = admin.firestore();
   const profile = await db.collection("Profiles").doc(afterData.uid).get();
-  const viewerProfile = await db.collection("Profiles").doc(difference[0]).get();
 
-  if (collection === "TimeSheets") {
-    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
-    
-    // generate the user email
-    await db.collection("Emails").add({
-      toUids: [viewerProfile.id],
-      message: {
-        subject: `${profile.get("displayName")}'s time sheet was shared with you`,
-        text: `Hi ${ viewerProfile.get("givenName")},\n\n` +
-        `${profile.get("displayName")}'s time sheet for the week ending ${ 
-        weekEndingString } has been shared with you by ${ profile.get("managerName") 
-        }. You can review timesheets that have been shared with you by` +
-        ` visiting https://tybalt.tbte.ca/time/sheets/shared\n\n- Tybalt`,
-      },
-    });
+  // For each new viewer, generate an email
+  for (const viewerId of difference) {
+    const viewerProfile = await db.collection("Profiles").doc(viewerId).get();
+
+    if (collection === "TimeSheets") {
+      const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+      
+      // generate the user email
+      await db.collection("Emails").add({
+        toUids: [viewerId],
+        message: {
+          subject: `${profile.get("displayName")}'s time sheet was shared with you`,
+          text: `Hi ${ viewerProfile.get("givenName")},\n\n` +
+          `${profile.get("displayName")}'s time sheet for the week ending ${ 
+          weekEndingString } has been shared with you by ${ profile.get("managerName") 
+          }. You can review timesheets that have been shared with you by` +
+          ` visiting https://tybalt.tbte.ca/time/sheets/shared\n\n- Tybalt`,
+        },
+      });
+    }
   }
 }
