@@ -39,6 +39,9 @@ export const updatePayrollFromTimeTracking = functions.firestore
     }    
   });
 
+
+// When an expense is added, changed or deleted, update the payroll tracking
+// document.
 export const updatePayrollFromExpenses = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => {
@@ -47,7 +50,11 @@ export const updatePayrollFromExpenses = functions.firestore
     const payPeriodEnding: Date = afterData?.payPeriodEnding?.toDate() ?? beforeData?.payPeriodEnding?.toDate();
 
     if (afterData === undefined) {
-      throw new Error(`Expenses document ${change.after.ref.id} was deleted. PayrollTracking, ExpenseTracking, and exports may contain inconsistent data.`);
+      // The expense was deleted. Throw an error if the expense was already
+      // committed alerting that there could be inconsistencies.
+      if (beforeData?.committed) {
+        throw new Error(`Expenses document ${change.after.ref.id} was deleted. PayrollTracking, ExpenseTracking, and exports may contain inconsistent data.`);
+      }
     }
     if (payPeriodEnding === undefined) {
       functions.logger.warn(`property "payPeriodEnding" of Expenses doc ${change.after.ref.id} has no value. Doing nothing.`);
@@ -55,7 +62,7 @@ export const updatePayrollFromExpenses = functions.firestore
     }
     const payrollTrackingDocRef = await getPayrollTrackingDoc(payPeriodEnding);
 
-    if (afterData.committed) {
+    if (afterData?.committed) {
     // the expense is committed, add to expenses property of PayrollTracking doc
     return payrollTrackingDocRef.update(
         {
