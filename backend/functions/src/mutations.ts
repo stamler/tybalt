@@ -357,7 +357,7 @@ export const deleteMutation = functions.https.onCall(async (data: unknown, conte
 
   // throw if the caller isn't authenticated & authorized. For now only allow
   // clients with the 'admin' claim to delete mutations.
-  getAuthObject(context, ["admin"]);
+  getAuthObject(context, ["admin", "hr"]);
   
   const db = admin.firestore();
 
@@ -548,6 +548,10 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
         // the status to "complete". The administrator can then communicate this
         // password to the user. In the future an automated SMS message could be
         // sent to the user.
+
+        // TODO: archived users will need to have timesheet not expected set in
+        // their profile after the complete mutation is received.
+
         if (d.verb === "reset" || d.verb === "archive") {
           return t.update(mutation, {
             status: "complete",
