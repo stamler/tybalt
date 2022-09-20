@@ -188,7 +188,7 @@ export default Vue.extend({
       dps: {
         // date picker state
         disabled: {
-          to: subWeeks(new Date(), 8),
+          to: subWeeks(new Date(), 12),
           from: addWeeks(new Date(), 4),
         },
         highlighted: {
