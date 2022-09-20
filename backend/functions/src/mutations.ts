@@ -377,10 +377,11 @@ export const deleteMutation = functions.https.onCall(async (data: unknown, conte
         if (!mutationDocSnapshot.exists) {
           throw new functions.https.HttpsError("not-found", `The mutation document ${data.id} was not found`);
         }
-        if (mutationDocSnapshot.get("status") !== "pending") {
+        const status = mutationDocSnapshot.get("status");
+        if (status !== "pending" && status !== "complete") {
           throw new functions.https.HttpsError(
             "failed-precondition",
-            `The mutation status for document ${data.id} is not pending. You must wait for it to complete.`
+            `Only pending or completed mutations can be deleted.`
           );
         }
         // This update shouldn't be done if the mutation is a create operation
@@ -547,19 +548,9 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
         // the status to "complete". The administrator can then communicate this
         // password to the user. In the future an automated SMS message could be
         // sent to the user.
-        if (d.verb === "reset") {
+        if (d.verb === "reset" || d.verb === "archive") {
           return t.update(mutation, {
             status: "complete",
-            statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-            returnedData: {
-              password: d.password,
-            },
-          });
-        }
-
-        if (d.verb === "archive") {
-          return t.update(mutation, {
-            status: "onPremArchived",
             statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
             returnedData: {
               password: d.password,
