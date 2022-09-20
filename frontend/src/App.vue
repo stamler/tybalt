@@ -219,7 +219,6 @@ body,
   flex-direction: column;
   flex: 0 0 5em;
   margin: 0em 0.5em 0em;
-  align-items: center;
   font-weight: bold;
   font-size: 0.9em;
 }

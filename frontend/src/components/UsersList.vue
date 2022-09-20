@@ -58,7 +58,8 @@
           </router-link>
           <router-link
             v-if="
-              item.adEnabled === true && item.currentMutationVerb !== 'archive'
+              (item.adEnabled === true || item.OU === 'Human Users') &&
+              item.currentMutationVerb !== 'archive'
             "
             to="#"
             v-on:click.native="editUser('archive', item)"
