@@ -622,7 +622,7 @@ service cloud.firestore {
       allow write: if hasClaim("admin");
     }
     match /UserMutations/{mutation} {
-      allow read: if hasClaim("admin");
+      allow read: if hasClaim("admin") || hasClaim("hr");
     }
     match /Users/{user} {
       allow read: if hasClaim("admin") || hasClaim("hr");
