@@ -196,7 +196,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
 
   // throw if the caller isn't authenticated & authorized. For now only allow
   // clients with the 'admin' claim to create mutations.
-  const auth = getAuthObject(context, ["admin"]);
+  const auth = getAuthObject(context, ["admin","hr"]);
   
   // Validate the data or throw
   // use a User Defined Type Guard
@@ -572,4 +572,46 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
     })
   });
   return res.status(202).send();
+});
+
+export const approveMutation = functions.https.onCall(async (data: any, context: functions.https.CallableContext): Promise<any> => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "You must be signed in to approve a mutation"
+    );
+  }
+
+  // throw if the caller isn't authenticated & authorized. Only allow clients
+  // with the 'admin' claim to approve mutations.
+  getAuthObject(context, ["admin"]);
+
+  if (!data.id) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The function must be called with a mutation id"
+    );
+  }
+  const db = admin.firestore();
+  const mutation = db.collection("UserMutations").doc(data.id);
+  return db.runTransaction(async t => {
+    return t.get(mutation).then(async (docSnap) => {
+      if (!docSnap.exists) {
+        throw new functions.https.HttpsError(
+          "not-found",
+          "The mutation doesn't exist"
+        );
+      }
+      if (docSnap.get("status") !== "unapproved") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "The mutation status is not unapproved as expected. Aborting update."
+        );
+      }
+      return t.update(mutation, {
+        status: "pending",
+        statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+  });
 });

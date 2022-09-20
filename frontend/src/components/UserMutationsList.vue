@@ -57,6 +57,13 @@
         <router-link to="#" v-on:click.native="del(item)">
           <x-circle-icon></x-circle-icon>
         </router-link>
+        <router-link
+          to="#"
+          v-on:click.native="approve(item)"
+          v-if="item.status === 'unapproved'"
+        >
+          <check-circle-icon></check-circle-icon>
+        </router-link>
       </div>
     </div>
   </div>
@@ -65,7 +72,12 @@
 import mixins from "./mixins";
 import store from "../store";
 import firebase from "../firebase";
-import { XCircleIcon, EyeIcon, ClipboardIcon } from "vue-feather-icons";
+import {
+  XCircleIcon,
+  EyeIcon,
+  ClipboardIcon,
+  CheckCircleIcon,
+} from "vue-feather-icons";
 const db = firebase.firestore();
 
 // TODO: mixins cannot be used in TypeScript in Vue 2 without hacks.
@@ -76,6 +88,7 @@ export default mixins.extend({
     XCircleIcon,
     EyeIcon,
     ClipboardIcon,
+    CheckCircleIcon,
   },
   data() {
     return {
@@ -91,6 +104,23 @@ export default mixins.extend({
       navigator.clipboard.writeText(text).then(() => {
         alert(`SMS on clipboard`);
       });
+    },
+    approve(item: any) {
+      store.commit("startTask", {
+        id: `approvingMutation${item.id}`,
+        message: "Approving...",
+      });
+      const approvingMutation = firebase
+        .functions()
+        .httpsCallable("approveMutation");
+      return approvingMutation({ id: item.id })
+        .then(() => {
+          store.commit("endTask", { id: `approvingMutation${item.id}` });
+        })
+        .catch((error: any) => {
+          store.commit("endTask", { id: `approvingMutation${item.id}` });
+          alert(`Error approving mutation: ${error.message}`);
+        });
     },
     del(item: any) {
       store.commit("startTask", {

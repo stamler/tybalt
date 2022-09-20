@@ -26,7 +26,7 @@ export { scheduledFirestoreExport } from "./export";
 export { syncTime } from "./sync";
 export { queryMySQL } from "./endpoint";
 export { auditExportStatus } from "./audit";
-export { addMutation, deleteMutation, dispatchMutations, mutationComplete } from "./mutations";
+export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
 
 // send emails when timesheets are shared
