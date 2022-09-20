@@ -157,7 +157,7 @@ interface UserMutationRequestEdit {
 type UserMutationRequest = UserMutationRequestWithoutData | UserMutationRequestCreate | UserMutationRequestEdit;
 // UserMutations must conform to the following type.
 type UserMutation = UserMutationRequest & {
-  status: "pending" | "dispatched" | "completed" | "error";
+  status: "unapproved" | "pending" | "dispatched" | "completed" | "error";
   surname: string;
   givenName: string;
   created: admin.firestore.Timestamp | admin.firestore.FieldValue;
@@ -261,7 +261,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
     }
     mutation = {
       ...mutationRequest,
-      status: "pending",
+      status: "unapproved",
       surname, givenName,
       created: admin.firestore.FieldValue.serverTimestamp(),
       creatorUid: auth.uid,
@@ -277,7 +277,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
     // request, we can't use the existing user data to populate the fields.
     mutation = {
       ...mutationRequest,
-      status: "pending",
+      status: "unapproved",
       surname: mutationRequest.data.surname,
       givenName: mutationRequest.data.givenName,
       data: mutationDataFromFields(mutationRequest.data),
@@ -378,10 +378,10 @@ export const deleteMutation = functions.https.onCall(async (data: unknown, conte
           throw new functions.https.HttpsError("not-found", `The mutation document ${data.id} was not found`);
         }
         const status = mutationDocSnapshot.get("status");
-        if (status !== "pending" && status !== "complete") {
+        if (status !== "unapproved" && status !== "pending" && status !== "complete") {
           throw new functions.https.HttpsError(
             "failed-precondition",
-            `Only pending or completed mutations can be deleted.`
+            `Only mutations with status unapproved, pending or completed can be deleted.`
           );
         }
         // This update shouldn't be done if the mutation is a create operation
