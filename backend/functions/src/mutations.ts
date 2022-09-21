@@ -549,8 +549,29 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
           // then communicate this password to the user. In the future an
           // automated SMS message could be sent to the user.
           if (d.verb === "reset" || d.verb === "archive") {
-            // TODO: archived users will need to have timesheet not expected set in
-            // their profile after the complete mutation is received.
+            // Archived users must have timeSheetExpected set to false in their
+            // profile after the complete mutation is received. The profile
+            // document is retrieved by querying on the userSourceAnchor
+            // property of the UserMutations document to uniquely find it in the
+            // Profiles collection.
+            let profilesQuerySnap: admin.firestore.QuerySnapshot
+            try {
+              profilesQuerySnap = await db.collection("Profiles").where("userSourceAnchor", "==", docSnap.get("userSourceAnchor")).get();
+            } catch (error) {
+              throw new functions.https.HttpsError("internal", `Error querying Profiles for document with userSourceAnchor ${docSnap.get("userSourceAnchor")}`);
+            }
+
+            // Verify that there's only one profile document returned
+            if (profilesQuerySnap.size !== 1) {
+              throw new functions.https.HttpsError("failed-precondition", `There is not one single Profiles document matching userSourceAnchor ${docSnap.get("userSourceAnchor")} found while trying to set the timeSheetExpected property to false on the Profiles document`);
+            }
+
+            // Update the profile document
+            t.update(profilesQuerySnap.docs[0].ref, {
+              timeSheetExpected: false,
+            });
+
+            // Update the UserMutations document
             return t.update(mutation, {
               status: "complete",
               statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
