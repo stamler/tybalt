@@ -50,7 +50,9 @@
         <div class="thirdline" v-if="item.data !== undefined">
           {{ item.data.title }}, {{ item.data.department }} //
           {{ item.data.telephoneNumber }} // {{ item.data.remuneration }} //
-          defaultDivision:{{ item.data.defaultDivision }}
+          defaultDivision:{{ item.data.defaultDivision }} // manager:
+          {{ item.data.managerName }} // tbtePayrollId:
+          {{ item.data.tbtePayrollId }}
         </div>
       </div>
       <div class="rowactionsbox">
