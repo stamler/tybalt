@@ -508,66 +508,91 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
         );
       }
       if (d.result === "complete") {
-        // If the mutation is an edit operation, update the status to
-        // "complete". The next sync will ensure that the Users document is
-        // updated.
+ 
+        // If the verb is not "create", we need to get the existing user
+        // document from the firestore Users collection so the current mutation
+        // can be finished.
+        if (d.verb !== "create") {
 
-        // TODO: the currentADDump function will check for any onPremEdited
-        // mutations and update the corresponding Profiles document the next
-        // time it runs. currentADDump will then set the status of the
-        // UserMutations document to "complete".
-        if (d.verb === "edit") {
+          const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
+          const userDocSnap = await userDocRef.get();
+          if (!userDocSnap.exists) {
+            throw new functions.https.HttpsError("not-found", `The user document ${docSnap.get("userId")} was not found`);
+          }
+
+          // The mutation, which has a verb other than create, is completed.
+          // Update the corresponding Users document by deleting the
+          // currentMutationVerb and currentMutationId properties.
+          t.update(userDocRef, {
+            currentMutationVerb: admin.firestore.FieldValue.delete(), 
+            currentMutationId: admin.firestore.FieldValue.delete(),
+          });
+
+          // If the mutation is an edit operation, update the status to
+          // "onPremEdited". The next sync will ensure that the Users document
+          // is updated.
+
+          // TODO: the currentADDump function will check for any onPremEdited
+          // mutations and update the corresponding Profiles document the next
+          // time it runs. currentADDump will then set the status of the
+          // UserMutations document to "complete".
+          if (d.verb === "edit") {
+            return t.update(mutation, {
+              status: "onPremEdited",
+              statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+
+          // If the mutation verb is reset or archive, write back the new
+          // password to the UserMutations document under the "returnedData"
+          // property then set the status to "complete". The administrator can
+          // then communicate this password to the user. In the future an
+          // automated SMS message could be sent to the user.
+          if (d.verb === "reset" || d.verb === "archive") {
+            // TODO: archived users will need to have timesheet not expected set in
+            // their profile after the complete mutation is received.
+            return t.update(mutation, {
+              status: "complete",
+              statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+              returnedData: {
+                password: d.password,
+              },
+            });
+          }
+
+          // For all other verbs, just update the status to "complete"
           return t.update(mutation, {
-            status: "onPremEdited",
+            status: "complete",
             statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-          });      
+          });
         }
 
-        // If the mutation is a create operation, write back the password and
-        // upn and email to the UserMutation document under the "returnedData"
-        // property then set the status to "onPremCreated". 
+        // If we arrived here then the mutation verb is create. Write back the
+        // password and upn and email to the UserMutation document under the
+        // "returnedData" property then set the status to "onPremCreated". 
 
         // TODO: Upon first user login, the createProfile function will be
         // called to create the user profile using the data from the
         // UserMutation document. createProfile will then set the status
         // of the UserMutations document to "complete".
-        if (d.verb === "create") {
-          return t.update(mutation, {
-            status: "onPremCreated",
-            statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-            returnedData: {
-              password: d.password,
-              upn: d.upn,
-              email: d.email,
-            },
-          });      
-        }
-
-        // If the mutation is a reset operation, write back the new password to
-        // the UserMutations document under the "returnedData" property then set
-        // the status to "complete". The administrator can then communicate this
-        // password to the user. In the future an automated SMS message could be
-        // sent to the user.
-
-        // TODO: archived users will need to have timesheet not expected set in
-        // their profile after the complete mutation is received.
-
-        if (d.verb === "reset" || d.verb === "archive") {
-          return t.update(mutation, {
-            status: "complete",
-            statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-            returnedData: {
-              password: d.password,
-            },
-          });
-        }
-
-        // For all other verbs, just update the status to "complete" or "error".
         return t.update(mutation, {
-          status: "complete",
+          status: "onPremCreated",
           statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+          returnedData: {
+            password: d.password,
+            upn: d.upn,
+            email: d.email,
+          },
         });
       } else {
+        // TODO: at this point if the verb is not "create", we need to deterine
+        // whether to delete the currentMutationVerb and currentMutationId
+        // properties from the corresponding Users document. As it stands, the
+        // error will be recorded on the UserMutation document and the user will
+        // be stuck in a state where further mutations cannot be performed until
+        // the currentMutationVerb and currentMutationId properties are removed
+        // from the Users document. This forces the administrator to manually
+        // clear the error.
         return t.update(mutation, {
           status: "error",
           returnedData: d.error,
