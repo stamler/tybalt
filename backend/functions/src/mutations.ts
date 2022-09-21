@@ -65,6 +65,9 @@ interface NewADUserData extends ExistingADUserData {
   defaultDivision: string;
   remuneration: string;
   license: string;
+  managerUid: string;
+  managerName: string;
+  tbtePayrollId: string;
 }
 
 // Type Guard for ADUserData
@@ -94,9 +97,9 @@ function isNewADUserData(data: any): data is NewADUserData {
       typeof data.givenName === "string" && data.givenName.length > 2 &&
       typeof data.department === "string" &&
       typeof data.title === "string" &&
-      //typeof data.areaCode === "number" && data.areaCode > 199 && data.areaCode < 1000 &&
-      //typeof data.centralOffice === "number" && data.centralOffice > 199 && data.centralOffice < 1000 &&
-      //typeof data.station === "number" && data.station > 0 && data.station < 10000 &&
+      typeof data.managerUid === "string" && data.managerUid.length > 12 &&
+      typeof data.managerName === "string" && data.managerName.length > 5 &&
+      typeof data.tbtePayrollId === "string" && data.tbtePayrollId.length > 0 &&
       areaCodeInt > 199 && areaCodeInt < 1000 &&
       centralOfficeInt > 199 && centralOfficeInt < 1000 &&
       stationInt > 0 && stationInt < 10000 &&
@@ -119,6 +122,9 @@ function mutationDataFromFields(fields: NewADUserData | ExistingADUserData) {
       title: fields.title,
       defaultDivision: fields.defaultDivision,
       remuneration: fields.remuneration,
+      managerUid: fields.managerUid,
+      managerName: fields.managerName,
+      tbtePayrollId: fields.tbtePayrollId,
       telephoneNumber: `+1 (${fields.areaCode}) ${fields.centralOffice}-${fields.station}`,
       license: fields.license,
     };
@@ -204,6 +210,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
   if (isUserMutationRequest(data)) {
     mutationRequest = data;
   } else {
+    functions.logger.error(data);
     throw new functions.https.HttpsError(
       "invalid-argument",
       "The provided data isn't a valid mutation request"

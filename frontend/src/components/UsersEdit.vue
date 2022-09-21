@@ -49,11 +49,29 @@
       </select>
     </span>
     <span class="field">
+      <label for="manager">Manager</label>
+      <select class="grow" name="manager" v-model="item.managerUid">
+        <option v-for="m in managers" :value="m.id" v-bind:key="m.id">
+          {{ m.displayName }}
+        </option>
+      </select>
+    </span>
+    <span class="field">
       <label for="remuneration">Remuneration:</label>
       <select class="grow" name="remuneration" v-model="item.remuneration">
         <option value="Hourly">Hourly</option>
         <option value="Salary">Salary</option>
       </select>
+    </span>
+    <span class="field">
+      <label for="tbtePayrollId">Payroll ID</label>
+      <input
+        class="grow"
+        type="text"
+        name="tbtePayrollId"
+        v-model.trim="item.tbtePayrollId"
+        placeholder="900"
+      />
     </span>
     <span class="field">
       <label for="areaCode">Area Code</label>
@@ -132,6 +150,7 @@ export default mixins.extend({
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
+      managers: [] as firebase.firestore.DocumentData[],
       divisions: [] as firebase.firestore.DocumentData[],
       item: {} as firebase.firestore.DocumentData,
     };
@@ -145,6 +164,7 @@ export default mixins.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
+    this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.id);
   },
@@ -194,6 +214,11 @@ export default mixins.extend({
           "station",
         ]);
       }
+      // populate the Manager Name
+      const manager = this.managers.find(
+        (m: firebase.firestore.DocumentData) => m.id === this.item.managerUid
+      );
+      this.item.managerName = manager?.displayName ?? null;
       const mutation = this.id
         ? { verb, userId: this.id, data: this.item }
         : { verb, data: this.item };
