@@ -585,19 +585,26 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
           },
         });
       } else {
-        // TODO: at this point if the verb is not "create", we need to deterine
-        // whether to delete the currentMutationVerb and currentMutationId
-        // properties from the corresponding Users document. As it stands, the
-        // error will be recorded on the UserMutation document and the user will
-        // be stuck in a state where further mutations cannot be performed until
-        // the currentMutationVerb and currentMutationId properties are removed
-        // from the Users document. This forces the administrator to manually
-        // clear the error.
+        // The mutation is complete in an error state. Update the corresponding
+        // Users document if this wasn't a create mutation by deleting the
+        // currentMutationVerb and currentMutationId properties.
+        if (d.verb !== "create") {
+          const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
+          const userDocSnap = await userDocRef.get();
+          if (userDocSnap.exists) {
+            t.update(userDocRef, {
+              currentMutationVerb: admin.firestore.FieldValue.delete(), 
+              currentMutationId: admin.firestore.FieldValue.delete(),
+            });
+          } else {
+            functions.logger.error(`The user document ${docSnap.get("userId")} was not found when it should exist, but the error that caused this request is still being recorded in the mutation document.`);
+          }
+        }
         return t.update(mutation, {
           status: "error",
           returnedData: d.error,
         });
-      }      
+      }
     })
   });
   return res.status(202).send();
