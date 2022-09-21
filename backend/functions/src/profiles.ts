@@ -102,22 +102,54 @@ export async function createProfile(user: admin.auth.UserRecord) {
   const customClaims = { time: true };
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
 
-  // TODO: pull data from the UserMutation collection to populate salary,
-  // managerUid, managerName, defaultDivision, tbtePayrollId
+  // Pull data from the UserMutation collection, matching on the email address,
+  // to populate salary, defaultDivision, tbtePayrollId, managerUid, managerName
+  const mutationQuery = await db.collection("UserMutations")
+    .where("status", "==", "onPremCreated")
+    .where("returnedData.email", "==", user.email)
+    .get();
+
+  // set default values
+  let mutationProps = {
+    salary: false,
+    defaultDivision: null,
+    tbtePayrollId: null,
+    managerUid: null,
+    managerName: null,
+  };
+  const batch = db.batch();
+  if (mutationQuery.size === 1) {
+    // if there is a matching mutation, use the data from it in place of the
+    // defaults
+    const data = mutationQuery.docs[0].data().data;
+    mutationProps = {
+      salary: data.remuneration === "Salary" ? true : false,
+      defaultDivision: data.defaultDivision || null,
+      tbtePayrollId: data.tbtePayrollId || null,
+      managerUid: data.managerUid || null,
+      managerName: data.managerName || null,
+    }
+    batch.update(mutationQuery.docs[0].ref, {
+      status: "complete",
+      statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } else {
+    functions.logger.error(`UserMutation query returned ${mutationQuery.size} results`);
+  }
+
   try {
-    return db.collection("Profiles").doc(user.uid).set({
+    batch.set(db.collection("Profiles").doc(user.uid), {
       displayName: user.displayName,
       email: user.email,
       customClaims,
-      managerUid: null,
-      tbtePayrollId: null,
-      salary: false,
+      ...mutationProps,
       timeSheetExpected: true,
     }, { merge: true });
+    return batch.commit();
   } catch (error) {
-    console.log(error);
-    return null;
+    functions.logger.error(error);
   }
+  return null;
 };
 
 // Delete the corresponding Profile document when an auth user is deleted
