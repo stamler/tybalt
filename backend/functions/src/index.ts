@@ -21,7 +21,7 @@ export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking, expenseRates } from "./expenses";
 export { writeFileLinks } from "./utilities";
-export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
+export { algoliaUpdateSecuredAPIKey, updateOpeningValues, getMileageForUids } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { syncTime } from "./sync";
 export { queryMySQL } from "./endpoint";

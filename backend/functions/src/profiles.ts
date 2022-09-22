@@ -30,12 +30,24 @@ interface AccessTokenPayload {
   accessToken: string;
 }
 
+interface UidListPayload {
+  uids: string[];
+}
+
 interface OpeningValuesPayload {
   // integer result of openingDateTimeOff.toDate().getTime()
   openingDateTimeOff: number;
   openingOV: number;
   openingOP: number;
   uid: string;
+}
+
+function isUidListPayload(data: any): data is UidListPayload {
+  if (data.uids && Array.isArray(data.uids)) {
+    // an empty list is technically valid
+    return data.uids.every((uid: any) => typeof uid === "string");
+  }
+  return false;
 }
 
 function isOpeningValuesPayload(data: any): data is OpeningValuesPayload {
@@ -548,3 +560,28 @@ export async function updateProfileTallies(uid: string) {
   const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
   return profile.ref.update({ usedOV, usedOP, usedAsOf, mileageClaimed, mileageClaimedSince });
 };
+
+// Given a list of uids, return an object whose keys are the uids and values the
+// corresponding mileageClaimed value. This is primarily used to fold into the
+// raw data in generatePayablesCSV() so that mileage tiers are accurately
+// calculated.
+export const getMileageForUids = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context,["report"]);
+
+  if (!isUidListPayload(data)) {
+    throw new functions.https.HttpsError("invalid-argument", "The function must be called with a list of uids");
+  }
+
+  const docRefs = data.uids.map((uid) => {
+    return admin.firestore().collection("Profiles").doc(uid);
+  });
+  const docSnaps = await admin.firestore().getAll(...docRefs);
+  
+  return Object.fromEntries(docSnaps.map((docSnap) => {
+    if (!docSnap.exists) {
+      throw new functions.https.HttpsError("not-found", `Profile ${docSnap.id} does not exist`);
+    }
+    return [docSnap.id, docSnap.get("mileageClaimed")];
+  }));
+});

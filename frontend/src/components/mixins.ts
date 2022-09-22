@@ -651,6 +651,41 @@ export default Vue.extend({
         }
       }
 
+      // For any mileage expenses, get the uids and load the mileageClaimed
+      // value from the corresponding Profiles document by calling the
+      // getMileageForUids cloud functions with a uids argument that is an array
+      // of uids . Fold the mileageClaimed values returned by the cloud function
+      // into the items array for each mileage expense so that this value can be
+      // used as the offset when calculating the mileage allowance.
+      const mileageEntryUserIds = Array.from(
+        new Set(
+          items
+            .filter((item) => item.paymentType === "Mileage")
+            .map((item) => item.uid)
+        )
+      );
+
+      if (mileageEntryUserIds.length > 0) {
+        const getMileageForUids = firebase
+          .functions()
+          .httpsCallable("getMileageForUids");
+        const mileagesClaimed = await getMileageForUids({
+          uids: mileageEntryUserIds,
+        });
+
+        // fold the mileageClaimed values into the items array
+        items = items.map((item) => {
+          if (item.paymentType === "Mileage") {
+            const mileageClaimed = mileagesClaimed.data[item.uid];
+            return {
+              ...item,
+              mileageClaimed,
+            };
+          }
+          return item;
+        });
+      }
+
       const fields = [
         "tbtePayrollId",
         {
@@ -693,7 +728,8 @@ export default Vue.extend({
               case "Mileage": {
                 const total = this.calculateMileageAllowance(
                   row.distance,
-                  new Date(row.date)
+                  new Date(row.date),
+                  row.mileageClaimed
                 );
                 return total - this.calculatedOntarioHST(total);
               }
@@ -715,7 +751,8 @@ export default Vue.extend({
                 return this.calculatedOntarioHST(
                   this.calculateMileageAllowance(
                     row.distance,
-                    new Date(row.date)
+                    new Date(row.date),
+                    row.mileageClaimed
                   )
                 );
               case "Allowance":
@@ -735,7 +772,8 @@ export default Vue.extend({
               case "Mileage":
                 return this.calculateMileageAllowance(
                   row.distance,
-                  new Date(row.date)
+                  new Date(row.date),
+                  row.mileageClaimed
                 );
               case "Allowance":
               case "Meals":

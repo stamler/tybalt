@@ -214,6 +214,7 @@ interface ExpenseMileage extends ExpenseCommon {
   paymentType: "Mileage";
   description: string;
   distance: number;
+  mileageClaimed: number;
 }
 
 export interface ExpenseMeals extends ExpenseCommon {
@@ -310,7 +311,14 @@ function isExpenseMileage(data: unknown): data is ExpenseMileage {
     data.distance > 0 &&
     Number.isInteger(data.distance);
   const description = typeof data.description === "string";
-  return isExpenseCommon(data) && paymentType && distance && description;
+  const mileageClaimed = typeof data.mileageClaimed === "number";
+  return (
+    isExpenseCommon(data) &&
+    paymentType &&
+    distance &&
+    description &&
+    mileageClaimed
+  );
 }
 
 export function isExpenseMeals(data: unknown): data is ExpenseMeals {
