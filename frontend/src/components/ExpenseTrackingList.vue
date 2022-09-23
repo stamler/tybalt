@@ -37,6 +37,12 @@
         >
           payables<download-icon></download-icon>
         </router-link>
+        <router-link
+          v-bind:to="{ name: 'Expense Tracking' }"
+          v-on:click.native="generatePayablesCSVSQL(item.weekEnding, 'weekly')"
+        >
+          payablesSQL<download-icon></download-icon>
+        </router-link>
       </div>
     </div>
   </div>

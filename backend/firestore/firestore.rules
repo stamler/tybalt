@@ -131,6 +131,9 @@ service cloud.firestore {
         // tbtePayrollId matches that on the profile
         get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc.tbtePayrollId &&
 
+        // tbtePayrollId is not null
+        newDoc.tbtePayrollId != null &&
+        
         // the following list has "FuelOnAccount" removed to disable it
         newDoc.paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "Allowance", "PersonalReimbursement"] &&
         isInCollection("division","Divisions") &&
@@ -512,7 +515,8 @@ service cloud.firestore {
               get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.displayName == newDoc().rejectorName
             ) ||
             (
-              newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid"]) &&
+              newDoc().diff(resource.data).affectedKeys().hasOnly(["committed", "commitTime", "commitName", "commitUid", "exported"]) &&
+              newDoc().exported == false &&
               newDoc().committed == true &&
               newDoc().commitUid == request.auth.uid &&
               resource.data.approved == true &&

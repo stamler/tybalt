@@ -71,6 +71,17 @@
             </span>
           </div>
         </div>
+        <div class="rowactionsbox">
+          <router-link
+            v-bind:to="{
+              name: 'Expense Tracking Details',
+              params: { id },
+            }"
+            v-on:click.native="uncommitExpense(exp.id)"
+          >
+            <unlock-icon></unlock-icon>
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -81,14 +92,15 @@ import mixins from "./mixins";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+import store from "../store";
 import _ from "lodash";
-import { DownloadIcon } from "vue-feather-icons";
+import { DownloadIcon, UnlockIcon } from "vue-feather-icons";
 
 const db = firebase.firestore();
 
 export default mixins.extend({
   props: ["id", "collection"],
-  components: { DownloadIcon },
+  components: { DownloadIcon, UnlockIcon },
   computed: {
     ...mapState(["user", "claims"]),
     weekStart(): Date {
@@ -166,6 +178,29 @@ export default mixins.extend({
           });
       } else {
         this.item = {};
+      }
+    },
+    uncommitExpense(id: string) {
+      const uncommitExpense = firebase
+        .functions()
+        .httpsCallable("uncommitExpense");
+      if (
+        confirm(
+          "You must check with accounting prior to uncommitting. Do you want to proceed?"
+        )
+      ) {
+        store.commit("startTask", {
+          id: `uncommit${id}`,
+          message: "uncommitting",
+        });
+        return uncommitExpense({ id })
+          .then(() => {
+            store.commit("endTask", { id: `uncommit${id}` });
+          })
+          .catch((error) => {
+            store.commit("endTask", { id: `uncommit${id}` });
+            alert(`Error uncommitting timesheet: ${error.message}`);
+          });
       }
     },
   },

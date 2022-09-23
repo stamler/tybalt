@@ -37,10 +37,15 @@ export const queryMySQL = functions.https.onCall(async (data: unknown, context: 
       "Unable to find a matching SQL query."
     );
   }
-  const { name, authorizedClaims, valueMutator } = query;
+  const { name, authorizedClaims, valueMutator, beforeFunction } = query;
 
   // throw if the caller isn't authenticated & authorized
   getAuthObject(context, authorizedClaims);
+
+  // Call the beforeFunction if it exists
+  if (beforeFunction !== undefined) {
+    beforeFunction(queryValues);
+  }
 
   // mutate queryValues if a valueMutator exists
   // This is a function that is run on the raw queryValues array

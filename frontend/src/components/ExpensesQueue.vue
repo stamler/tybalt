@@ -200,6 +200,7 @@ export default Vue.extend({
           commitTime: firebase.firestore.FieldValue.serverTimestamp(),
           commitUid: store.state.user?.uid,
           commitName: store.state.user?.displayName,
+          exported: false,
         })
         .catch((err) => {
           alert(`Error committing item: ${err}`);

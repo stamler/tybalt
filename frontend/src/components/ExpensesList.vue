@@ -324,25 +324,6 @@ export default mixins.extend({
         return this.thisTimeNextWeekInTimeZone(date, "America/Thunder_Bay");
       }
     },
-    commitItem(
-      item: firebase.firestore.DocumentData,
-      collection: firebase.firestore.CollectionReference
-    ) {
-      if (collection === null) {
-        throw "There is no valid collection object";
-      }
-      collection
-        .doc(item.id)
-        .update({
-          committed: true,
-          commitTime: firebase.firestore.FieldValue.serverTimestamp(),
-          commitUid: store.state.user?.uid,
-          commitName: store.state.user?.displayName,
-        })
-        .catch((err) => {
-          alert(`Error committing item: ${err}`);
-        });
-    },
     updateItems() {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";

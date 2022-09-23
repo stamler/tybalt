@@ -60,6 +60,14 @@
         >
           expenses<download-icon></download-icon>
         </router-link>
+        <router-link
+          v-bind:to="{ name: 'Payroll' }"
+          v-on:click.native="
+            generatePayablesCSVSQL(item.payPeriodEnding, 'payroll')
+          "
+        >
+          expensesSQL<download-icon></download-icon>
+        </router-link>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<download-icon></download-icon>
         </a>

@@ -17,13 +17,13 @@ async function addFieldToCollection(fieldname: string, collection: string) {
     querySnap = runCount > 0 ?
       await db
         .collection(collection)
-        .where("locked", "==", true) // CUSTOMIZATION POINT
+        .where("committed", "==", true) // CUSTOMIZATION POINT
         .startAfter(last)
         .limit(500) // limit 500 writes per batch request
         .get() :
       await db
         .collection(collection)
-        .where("locked", "==", true) // CUSTOMIZATION POINT
+        .where("committed", "==", true) // CUSTOMIZATION POINT
         .limit(500) // limit 500 writes per batch request
         .get();
     const batch = db.batch();

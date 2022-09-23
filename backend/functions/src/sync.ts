@@ -9,16 +9,19 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 
 const db = admin.firestore();
 
-export const syncTime = functions
+export const syncToSQL = functions
   .runWith({ memory: "1GB", timeoutSeconds:180 })
   .pubsub
   .schedule("0 12,17 * * 1-5") // M-F noon & 5pm, 10 times per week
+//  .schedule("0 * * * *") // every hour
   .timeZone("America/Thunder_Bay")
   .onRun(async (context) => {
     await cleanupTime();
     await exportTime();
-    await cleanupAmendments();
+    await cleanupExport("TimeAmendments");
     await exportAmendments();
+    await cleanupExport("Expenses");
+    await exportExpenses();
     return;
   });
 
@@ -38,12 +41,11 @@ export async function exportTime() {
   const start = process.hrtime.bigint();
   const mysqlConnection = await createSSHMySQLConnection2();
 
-  // Get the first "batchSize" documents that are locked but not yet exported
-  // This batches runs. Since runs are idempotent we can just run it again if
-  // there are remaining documents (i.e. initial sync). batchSize must be large
-  // enough to, on average, export all the docs generated within the scheduled
-  // export cadence
-  const batchSize = 500;
+  // Get the first "batchSize" documents that are locked but not yet exported.
+  // Since runs are idempotent we can just run it again if there are remaining
+  // documents (i.e. initial sync). batchSize must be large enough to, on
+  // average, export all the docs generated within the scheduled export cadence
+  const batchSize = 499;
   const pendingExportQuery = db.collection("TimeSheets")
     .where("locked", "==", true)
     .where("exported", "==", false)
@@ -242,7 +244,7 @@ export async function exportAmendments() {
   // there are remaining documents (i.e. initial sync). batchSize must be large
   // enough to, on average, export all the docs generated within the scheduled
   // export cadence
-  const batchSize = 500;
+  const batchSize = 499;
   const pendingExportQuery = db.collection("TimeAmendments")
     .where("committed", "==", true)
     .where("exported", "==", false)
@@ -329,14 +331,15 @@ export async function exportAmendments() {
 };
 
 /*
-cleanupTime() but for TimeAmendments
+cleanupExport() cleans up the exportInProgress:true property on the specified
+collection. See cleanupTime() for more details.
 */
-export async function cleanupAmendments() {
+export async function cleanupExport(collection: string) {
   const mysqlConnection = await createSSHMySQLConnection2();
 
-  // Get the documents where exportInProgress:true. They may locked or
-  // unlocked, exported or not exported
-  const amendmentSnaps = await db.collection("TimeAmendments")
+  // Get the documents where exportInProgress:true. They may locked/committed or
+  // unlocked/uncommitted, exported or not exported
+  const docSnaps = await db.collection(collection)
     .where("exportInProgress", "==", true)
     .get();
 
@@ -347,10 +350,10 @@ export async function cleanupAmendments() {
     if (lockDoc.exists) {
       throw new functions.https.HttpsError(
         "failed-precondition",
-        "cleanupAmendments(): export[Time | Amendments]() or cleanup[Time | Amendments]() are already running"
+        "cleanupExport(): export or cleanup are already running"
       );
     }
-    return t.set(exportLocksDoc,{ message: "cleanupAmendments() transaction created "+
+    return t.set(exportLocksDoc,{ message: `cleanupExport(${collection}) transaction created `+
     "this doc to prevent other export or cleanup functions " + 
     "from running simultaneously."})
   });
@@ -360,24 +363,24 @@ export async function cleanupAmendments() {
   // create the batch that will be run only if the export MySQL COMMIT succeeds
   const cleanupSuccessBatch = db.batch();
 
-  // Iterate over the TimeAmendments documents, DELETINGing them from the 
-  // TimeAmendments tables.
-  const amendmentresults = amendmentSnaps.docs.map(async amendmentSnap => {
+  // Iterate over the Collection documents, DELETINGing them from the 
+  // Collection tables.
+  const docResults = docSnaps.docs.map(async docSnap => {
     // This will throw, thus returning a rejected promise, if it fails
-    await mysqlConnection.query("DELETE FROM TimeAmendments WHERE id=?", [amendmentSnap.id])
+    await mysqlConnection.query(`DELETE FROM ${collection} WHERE id=?`, [docSnap.id])
 
     // DELETEs were successful for this doc, mark it in success batch
-    return cleanupSuccessBatch.update(amendmentSnap.ref, {
+    return cleanupSuccessBatch.update(docSnap.ref, {
       exported: false,
       exportInProgress: admin.firestore.FieldValue.delete(),
     });
   });
 
   try {
-    await Promise.all(amendmentresults);
+    await Promise.all(docResults);
     await mysqlConnection.query("COMMIT;");
     // delete exportInProgress property and set exported:false on local docs
-    functions.logger.log(`Cleaned up ${amendmentresults.length} previous TimeAmendments exports`);
+    functions.logger.log(`Cleaned up ${docResults.length} previous ${collection} exports`);
     await cleanupSuccessBatch.commit();
   } catch (error) {
     functions.logger.error(`Cleanup failed ${error}`);
@@ -387,40 +390,127 @@ export async function cleanupAmendments() {
 }
 
 /*
-clearExportedFlags():
-Set exported:false where currently true for all TimeSheets docs
-This is a utility function and shouldn't generally be run in production unless
-trying to rebuild the target database from scratch
+exportExpenses(): Export committed unexported docs to MySQL. If the destination
+is verified correct, set exported:true on the local document, otherwise rollback
+the changes on the external source and make no changes to the local document.
+Since the local documents could potentially be uncommitted during write to the
+destination, flag the local documents as exportInProgress:true at the beginning
+using a transaction. uncommitExpense() must respect this flag by NEVER UNLOCKING
+A DOCUMENT THAT HAS THIS FLAG SET. The final batch update will delete this flag.
+This is a manual document-locking mechanism that can span a longer time than a
+transaction during the exportExpenses() function call 
 */
-export async function clearExportedFlags() {
-  const exportedQuery = db.collection("TimeSheets")
-    .where("exported", "==", true)
-    .limit(500); // maximum allowed batch size in Firestore
-  const tsSnaps = await exportedQuery.get();
-  const batch = db.batch();
-  tsSnaps.forEach(tsSnap => {
-    batch.update(tsSnap.ref, { exported: false });
+export async function exportExpenses() {
+  const start = process.hrtime.bigint();
+  const mysqlConnection = await createSSHMySQLConnection2();
+
+  // Get the first "batchSize" documents that are committed but not yet exported
+  // This batches runs. Since runs are idempotent we can just run it again if
+  // there are remaining documents (i.e. initial sync). batchSize must be large
+  // enough to, on average, export all the docs generated within the scheduled
+  // export cadence
+  const batchSize = 499;
+  const pendingExportQuery = db.collection("Expenses")
+    .where("committed", "==", true)
+    .where("exported", "==", false)
+    .limit(batchSize);
+
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+
+  // Run the query and set the flag exportInProgress:true. At the same time
+  // create a batch to delete the exportInProgress:true flag that will be run
+  // only if the export fails.
+  const [expenseDocSnaps, exportFailBatch] = await db.runTransaction(async t => {
+    const rollbackBatch = db.batch();
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "exportExpenses(): exportTime() or cleanupTime() or exportAmendments() or exportExpenses() are already running"
+      );
+    }
+    const expenseSnaps = await t.get(pendingExportQuery);
+    const docs:admin.firestore.QueryDocumentSnapshot[] = [];
+    expenseSnaps.forEach(expenseSnap => {
+      // skip the Expenses doc if prerequisites aren't met
+      if (
+        expenseSnap.get("exportInProgress") === true || // another export is running
+        expenseSnap.get("committed") !== true || // the Expense hasn't been committed
+        expenseSnap.get("exported") === true // the Expense is already exported
+      ) {
+        // skip this Expenses document
+        return;
+      }
+      docs.push(expenseSnap);
+      rollbackBatch.update(expenseSnap.ref, {
+        exportInProgress: admin.firestore.FieldValue.delete(),
+      });
+      t.update(expenseSnap.ref, { exportInProgress: true });
+    });
+    t.set(exportLocksDoc,{ message: "exportExpense() transaction created this " +
+      "doc to prevent other instances of exportTime() or cleanupTime() or " + 
+      "exportAmendment() from running simultaneously."})
+    return [docs, rollbackBatch];
   });
-  return batch.commit();
+
+  // create the batch that will be run only if the export MySQL COMMIT succeeds
+  const exportSuccessBatch = db.batch();
+
+  // Iterate over the Expenses documents, INSERTing them into MySQL table
+  const expensesFields = ["id", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "tbtePayrollId", "total", "uid", "unitNumber", "vendorName"];
+  const insertValues = expenseDocSnaps.map((expenseSnap) => {
+    const expense = expenseSnap.data();
+    expense.id = expenseSnap.id;
+    expense.commitTime = expense.commitTime.toDate();
+    expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    expense.date = format(utcToZonedTime(expense.date.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    // VALUEs were included in the data set for this doc, include it in success batch
+    exportSuccessBatch.update(expenseSnap.ref, {
+      exported: true,
+      exportInProgress: admin.firestore.FieldValue.delete(),
+    });    
+    return expensesFields.map(x => expense[x]);
+  });
+
+  const q = `INSERT INTO Expenses (${expensesFields.toString()}) VALUES ?`;
+  try {
+    if (insertValues.length > 0) {
+      await mysqlConnection.query(q, [insertValues]);
+    }
+    // delete exportInProgress:true property, set exported:true on local docs
+    await exportSuccessBatch.commit();
+    const end = process.hrtime.bigint();
+    const elapsed = (end - start) / BigInt(1000000000);
+    functions.logger.log(`Exported ${insertValues.length} Expenses documents in ${elapsed.toString()} sec`);
+  } catch (error) {
+    // delete exportInProgress:true property on local docs
+    await exportFailBatch.commit();
+    functions.logger.error(`Export failed ${error}`);
+  }
+
+  return exportLocksDoc.delete();
 }
 
 /*
-clearExportInProgressFlags():
-Set exported:false where currently true for all TimeSheets docs
-This is a utility function and shouldn't generally be run in production unless
-cleaning up after a failed exportTime()
+clearFlags(): Set exported:false or delete exportInProgress where currently true
+for all docs in collection This is a utility function and shouldn't generally be
+run in production unless trying to rebuild the target database from scratch
 */
-export async function clearExportInProgressFlags() {
-  const exportLockQuery = db.collection("TimeSheets")
-    .where("exportInProgress", "==", true)
+export async function clearFlags(collection: string, flag: "exported" | "exportInProgress") {
+  let updateObject: any = {};
+  if (flag === "exported") {
+    updateObject = { exported: false };
+  } else if (flag === "exportInProgress") {
+    updateObject = { exportInProgress: admin.firestore.FieldValue.delete() };
+  }
+  const query = db.collection(collection)
+    .where(flag, "==", true)
     .limit(500); // maximum allowed batch size in Firestore
-  const tsSnaps = await exportLockQuery.get();
+  const docSnaps = await query.get();
   const batch = db.batch();
-  tsSnaps.forEach(tsSnap => {
-    batch.update(
-      tsSnap.ref,
-      { exportInProgress: admin.firestore.FieldValue.delete() }
-    );
+  docSnaps.forEach(docSnap => {
+    batch.update(docSnap.ref, updateObject);
   });
   return batch.commit();
 }

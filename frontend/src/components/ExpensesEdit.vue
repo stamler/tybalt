@@ -258,7 +258,7 @@ const storage = firebase.storage();
 import store from "../store";
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
-import { addWeeks, subWeeks } from "date-fns";
+import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";

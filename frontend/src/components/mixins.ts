@@ -855,6 +855,69 @@ export default Vue.extend({
         );
       }
     },
+    async generatePayablesCSVSQL(
+      timestamp: firebase.firestore.Timestamp,
+      type: "payroll" | "weekly"
+    ) {
+      const start = new Date();
+      store.commit("startTask", {
+        id: `getExpensesSQL${start.getTime()}`,
+        message: "Getting Expenses",
+      });
+      const weekEndingTbay = utcToZonedTime(
+        timestamp.toDate(),
+        "America/Thunder_Bay"
+      );
+      const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      try {
+        let response;
+        // type determines whether we push out one or two weeks of data.
+        if (type === "payroll") {
+          response = await queryMySQL({
+            queryName: "payablesPayrollCSV",
+            queryValues,
+          });
+        } else if (type === "weekly") {
+          response = await queryMySQL({
+            queryName: "payablesWeeklyCSV",
+            queryValues,
+          });
+        } else {
+          throw new Error("Invalid type in generatePayablesCSVSQL");
+        }
+        // post-processing of response data for CSV conversion
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dat = response.data.map((x: any) => {
+          const processed = x;
+          // Coerce number-like payrollID strings to numbers
+          if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID
+          processed.tbtePayrollId = Number(x.tbtePayrollId);
+          return processed;
+        });
+        const csv = parse(dat);
+        const blob = new Blob([csv], { type: "text/csv" });
+        /* TODO: filename should represent the correct start and end dates of
+        the report */
+        let filename: string;
+        if (type === "payroll") {
+          filename = `SQLExpensesForPayPeriod_${this.exportDateWeekStart(
+            subDays(weekEndingTbay, 7)
+          )}-${this.exportDate(weekEndingTbay)}`;
+        } else if (type === "weekly") {
+          filename = `SQLPayables_${this.exportDateWeekStart(
+            weekEndingTbay
+          )}-${this.exportDate(weekEndingTbay)}`;
+        } else {
+          throw new Error("Invalid type in generatePayablesCSVSQL");
+        }
+        store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+        this.downloadBlob(blob, `${filename}.csv`);
+      } catch (error) {
+        store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+        alert(`Error: ${error}`);
+      }
+    },
     async generateTimeReportCSV(
       urlOrFirestoreTimeSheet: string | firebase.firestore.DocumentData
     ) {
