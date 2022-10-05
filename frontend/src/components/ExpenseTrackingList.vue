@@ -30,13 +30,16 @@
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
           .json<download-icon></download-icon>
         </a>
-        <router-link
-          v-if="hasLink(item, 'json')"
-          v-bind:to="{ name: 'Expense Tracking' }"
-          v-on:click.native="generatePayablesCSV(item['json'])"
-        >
-          payables<download-icon></download-icon>
-        </router-link>
+        <!--
+          REMOVED AND REPLACED WITH generatePayablesCSVSQL
+          <router-link
+            v-if="hasLink(item, 'json')"
+            v-bind:to="{ name: 'Expense Tracking' }"
+            v-on:click.native="generatePayablesCSV(item['json'])"
+          >
+            payables<download-icon></download-icon>
+          </router-link>
+        -->
         <router-link
           v-bind:to="{ name: 'Expense Tracking' }"
           v-on:click.native="generatePayablesCSVSQL(item.weekEnding, 'weekly')"

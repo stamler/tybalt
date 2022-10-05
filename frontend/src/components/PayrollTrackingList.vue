@@ -49,17 +49,20 @@
         >
           week2 <download-icon></download-icon>
         </router-link>
-        <router-link
-          v-if="Object.keys(item.expenses).length > 0"
-          v-bind:to="{ name: 'Payroll' }"
-          v-on:click.native="
-            generatePayablesCSV(
-              getPayPeriodExpenses(item.payPeriodEnding.toDate())
-            ).then(() => generateAttachmentZip(item))
-          "
-        >
-          expenses<download-icon></download-icon>
-        </router-link>
+        <!--
+        REMOVED AND REPLACED WITH generatePayablesCSVSQL
+          <router-link
+            v-if="Object.keys(item.expenses).length > 0"
+            v-bind:to="{ name: 'Payroll' }"
+            v-on:click.native="
+              generatePayablesCSV(
+                getPayPeriodExpenses(item.payPeriodEnding.toDate())
+              ).then(() => generateAttachmentZip(item))
+            "
+          >
+            expenses<download-icon></download-icon>
+          </router-link>
+        -->
         <router-link
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="
@@ -460,31 +463,32 @@ export default mixins.extend({
         id: `generateAttachments${payPeriodEnding}`,
       });
     },
-    async getPayPeriodExpenses(week: Date) {
-      const getPayPeriodExpenses = firebase
-        .functions()
-        .httpsCallable("getPayPeriodExpenses");
-      try {
-        store.commit("startTask", {
-          id: `getExpenses${week.getTime()}`,
-          message: "Getting Expenses",
-        });
-        const result = await getPayPeriodExpenses({
-          weekEnding: week.getTime(),
-        });
-        store.commit("endTask", { id: `getExpenses${week.getTime()}` });
-        return result.data;
-        /*
-        const blob = new Blob([JSON.stringify(result.data)], {
-          type: "application/json;charset=utf-8",
-        });
-        this.downloadBlob(blob, "expenses.json", true);
-        */
-      } catch (error) {
-        store.commit("endTask", { id: `getExpenses${week.getTime()}` });
-        alert(`Error getting expenses: ${error}`);
-      }
-    },
+    // REMOVED AND REPLACED WITH generatePayablesCSVSQL
+    // async getPayPeriodExpenses(week: Date) {
+    //   const getPayPeriodExpenses = firebase
+    //     .functions()
+    //     .httpsCallable("getPayPeriodExpenses");
+    //   try {
+    //     store.commit("startTask", {
+    //       id: `getExpenses${week.getTime()}`,
+    //       message: "Getting Expenses",
+    //     });
+    //     const result = await getPayPeriodExpenses({
+    //       weekEnding: week.getTime(),
+    //     });
+    //     store.commit("endTask", { id: `getExpenses${week.getTime()}` });
+    //     return result.data;
+    //     /*
+    //     const blob = new Blob([JSON.stringify(result.data)], {
+    //       type: "application/json;charset=utf-8",
+    //     });
+    //     this.downloadBlob(blob, "expenses.json", true);
+    //     */
+    //   } catch (error) {
+    //     store.commit("endTask", { id: `getExpenses${week.getTime()}` });
+    //     alert(`Error getting expenses: ${error}`);
+    //   }
+    // },
   },
 });
 </script>

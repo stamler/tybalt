@@ -12,7 +12,7 @@ import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment, getPayPeriodExpenses, submitExpense } from "./expenses";
+import { cleanUpOrphanedAttachment/*, getPayPeriodExpenses*/, submitExpense } from "./expenses";
 import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
@@ -85,7 +85,8 @@ exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 exports.unlockTimesheet = functions.https.onCall(unlockTimesheet);
 
 // return expense documents associated with a pay period
-exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
+// replaced by payablesPayrollCSV.sql
+// exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,

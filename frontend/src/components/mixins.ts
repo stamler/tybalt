@@ -8,11 +8,11 @@ import {
   TimeSheet,
   Amendment,
   isTimeSheet,
-  Expense,
+  //Expense,
   ExpenseAllowance,
   isExpenseMeals,
   ExpenseMeals,
-  isExpense,
+  //isExpense,
 } from "./types";
 import {
   payPeriodsForYear as ppGen,
@@ -622,239 +622,240 @@ export default Vue.extend({
       }
       return calculatedTotal;
     },
-    async generatePayablesCSV(
-      urlOrExpenseArrayPromise: string | Promise<Expense[]>
-    ) {
-      // We assume that string arguments are for weekly reports and promise
-      // arguments are for payroll-oriented reports. The only difference is the
-      // range of dates which are included in the report
-      let payroll = false;
+    // removed and replaced with generatePayablesCSVSQL
+    // async generatePayablesCSV(
+    //   urlOrExpenseArrayPromise: string | Promise<Expense[]>
+    // ) {
+    //   // We assume that string arguments are for weekly reports and promise
+    //   // arguments are for payroll-oriented reports. The only difference is the
+    //   // range of dates which are included in the report
+    //   let payroll = false;
 
-      let items;
-      let weekEnding;
-      if (typeof urlOrExpenseArrayPromise === "string") {
-        const response = await fetch(urlOrExpenseArrayPromise);
-        items = (await response.json()) as Expense[];
-        // since all entries have the same week ending, pull from the first entry
-        weekEnding = new Date(items[0].committedWeekEnding);
-      } else {
-        const result = await Promise.resolve(urlOrExpenseArrayPromise);
-        if (Array.isArray(result)) {
-          items = result;
-          // since all entries have the same week ending, pull from the first entry
-          weekEnding = new Date(items[0].payPeriodEnding);
-          payroll = true;
-        } else {
-          throw new Error(
-            "The provided promise doesn't resolve an array or a string"
-          );
-        }
-      }
+    //   let items;
+    //   let weekEnding;
+    //   if (typeof urlOrExpenseArrayPromise === "string") {
+    //     const response = await fetch(urlOrExpenseArrayPromise);
+    //     items = (await response.json()) as Expense[];
+    //     // since all entries have the same week ending, pull from the first entry
+    //     weekEnding = new Date(items[0].committedWeekEnding);
+    //   } else {
+    //     const result = await Promise.resolve(urlOrExpenseArrayPromise);
+    //     if (Array.isArray(result)) {
+    //       items = result;
+    //       // since all entries have the same week ending, pull from the first entry
+    //       weekEnding = new Date(items[0].payPeriodEnding);
+    //       payroll = true;
+    //     } else {
+    //       throw new Error(
+    //         "The provided promise doesn't resolve an array or a string"
+    //       );
+    //     }
+    //   }
 
-      // For any mileage expenses, get the uids and load the mileageClaimed
-      // value from the corresponding Profiles document by calling the
-      // getMileageForUids cloud functions with a uids argument that is an array
-      // of uids . Fold the mileageClaimed values returned by the cloud function
-      // into the items array for each mileage expense so that this value can be
-      // used as the offset when calculating the mileage allowance.
-      const mileageEntryUserIds = Array.from(
-        new Set(
-          items
-            .filter((item) => item.paymentType === "Mileage")
-            .map((item) => item.uid)
-        )
-      );
+    //   // For any mileage expenses, get the uids and load the mileageClaimed
+    //   // value from the corresponding Profiles document by calling the
+    //   // getMileageForUids cloud functions with a uids argument that is an array
+    //   // of uids . Fold the mileageClaimed values returned by the cloud function
+    //   // into the items array for each mileage expense so that this value can be
+    //   // used as the offset when calculating the mileage allowance.
+    //   const mileageEntryUserIds = Array.from(
+    //     new Set(
+    //       items
+    //         .filter((item) => item.paymentType === "Mileage")
+    //         .map((item) => item.uid)
+    //     )
+    //   );
 
-      if (mileageEntryUserIds.length > 0) {
-        const getMileageForUids = firebase
-          .functions()
-          .httpsCallable("getMileageForUids");
-        const mileagesClaimed = await getMileageForUids({
-          uids: mileageEntryUserIds,
-        });
+    //   if (mileageEntryUserIds.length > 0) {
+    //     const getMileageForUids = firebase
+    //       .functions()
+    //       .httpsCallable("getMileageForUids");
+    //     const mileagesClaimed = await getMileageForUids({
+    //       uids: mileageEntryUserIds,
+    //     });
 
-        // fold the mileageClaimed values into the items array
-        items = items.map((item) => {
-          if (item.paymentType === "Mileage") {
-            const mileageClaimed = mileagesClaimed.data[item.uid];
-            return {
-              ...item,
-              mileageClaimed,
-            };
-          }
-          return item;
-        });
-      }
+    //     // fold the mileageClaimed values into the items array
+    //     items = items.map((item) => {
+    //       if (item.paymentType === "Mileage") {
+    //         const mileageClaimed = mileagesClaimed.data[item.uid];
+    //         return {
+    //           ...item,
+    //           mileageClaimed,
+    //         };
+    //       }
+    //       return item;
+    //     });
+    //   }
 
-      const fields = [
-        "tbtePayrollId",
-        {
-          label: "Acct/Visa/Exp",
-          value: "paymentType",
-        },
-        {
-          label: "Job #",
-          value: "job",
-        },
-        {
-          label: "Client",
-          value: "client",
-        },
-        {
-          label: "Job Description",
-          value: "jobDescription",
-        },
-        {
-          label: "Div",
-          value: "division",
-        },
-        {
-          label: "Date",
-          value: (row: Expense) => new Date(row.date).getDate(),
-        },
-        {
-          label: "Month",
-          value: (row: Expense) =>
-            new Date(row.date).toLocaleString("en-US", { month: "short" }),
-        },
-        {
-          label: "Year",
-          value: (row: Expense) => new Date(row.date).getFullYear(),
-        },
-        {
-          label: "calculatedSubtotal",
-          value: (row: Expense) => {
-            switch (row.paymentType) {
-              case "Mileage": {
-                const total = this.calculateMileageAllowance(
-                  row.distance,
-                  new Date(row.date),
-                  row.mileageClaimed
-                );
-                return total - this.calculatedOntarioHST(total);
-              }
-              case "Allowance":
-              case "Meals": {
-                const total = this.calculatedAllowanceAmount(row);
-                return total - this.calculatedOntarioHST(total);
-              }
-              default:
-                return row.total - this.calculatedOntarioHST(row.total);
-            }
-          },
-        },
-        {
-          label: "calculatedOntarioHST",
-          value: (row: Expense) => {
-            switch (row.paymentType) {
-              case "Mileage":
-                return this.calculatedOntarioHST(
-                  this.calculateMileageAllowance(
-                    row.distance,
-                    new Date(row.date),
-                    row.mileageClaimed
-                  )
-                );
-              case "Allowance":
-              case "Meals":
-                return this.calculatedOntarioHST(
-                  this.calculatedAllowanceAmount(row)
-                );
-              default:
-                return this.calculatedOntarioHST(row.total);
-            }
-          },
-        },
-        {
-          label: "Total",
-          value: (row: Expense) => {
-            switch (row.paymentType) {
-              case "Mileage":
-                return this.calculateMileageAllowance(
-                  row.distance,
-                  new Date(row.date),
-                  row.mileageClaimed
-                );
-              case "Allowance":
-              case "Meals":
-                return this.calculatedAllowanceAmount(row);
-              default:
-                return row.total;
-            }
-          },
-        },
-        {
-          label: "PO#",
-          value: "po",
-        },
-        {
-          label: "Description",
-          value: (row: Expense) => {
-            const description = "";
-            switch (row.paymentType) {
-              case "Allowance":
-                return description.concat(
-                  row.breakfast === true ? "Breakfast " : "",
-                  row.lunch === true ? "Lunch " : "",
-                  row.dinner === true ? "Dinner " : "",
-                  row.lodging === true ? "Lodging " : ""
-                );
-              case "Meals":
-                return description.concat(
-                  row.breakfast === true ? "Breakfast " : "",
-                  row.lunch === true ? "Lunch " : "",
-                  row.dinner === true ? "Dinner " : ""
-                );
-              default:
-                return row.description;
-            }
-          },
-        },
-        {
-          label: "Company",
-          value: "vendorName",
-        },
-        {
-          label: "Employee",
-          value: "displayName",
-        },
-        {
-          label: "Approved By",
-          value: "managerName",
-        },
-      ];
-      const opts = { fields, withBOM: true };
-      const expenseRecords = items.map((x) => {
-        if (!isExpense(x)) {
-          throw new Error("There was an error validating the expense");
-        }
-        x["committedWeekEnding"] = format(
-          utcToZonedTime(
-            new Date(x.committedWeekEnding),
-            "America/Thunder_Bay"
-          ),
-          "yyyy MMM dd"
-        );
-        return x;
-      });
-      const csv = parse(expenseRecords, opts);
-      const blob = new Blob([csv], { type: "text/csv" });
-      if (payroll) {
-        this.downloadBlob(
-          blob,
-          `ExpensesForPayPeriod${this.exportDateWeekStart(
-            subDays(weekEnding, 7)
-          )}-${this.exportDate(weekEnding)}.csv`
-        );
-      } else {
-        this.downloadBlob(
-          blob,
-          `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
-            weekEnding
-          )}.csv`
-        );
-      }
-    },
+    //   const fields = [
+    //     "tbtePayrollId",
+    //     {
+    //       label: "Acct/Visa/Exp",
+    //       value: "paymentType",
+    //     },
+    //     {
+    //       label: "Job #",
+    //       value: "job",
+    //     },
+    //     {
+    //       label: "Client",
+    //       value: "client",
+    //     },
+    //     {
+    //       label: "Job Description",
+    //       value: "jobDescription",
+    //     },
+    //     {
+    //       label: "Div",
+    //       value: "division",
+    //     },
+    //     {
+    //       label: "Date",
+    //       value: (row: Expense) => new Date(row.date).getDate(),
+    //     },
+    //     {
+    //       label: "Month",
+    //       value: (row: Expense) =>
+    //         new Date(row.date).toLocaleString("en-US", { month: "short" }),
+    //     },
+    //     {
+    //       label: "Year",
+    //       value: (row: Expense) => new Date(row.date).getFullYear(),
+    //     },
+    //     {
+    //       label: "calculatedSubtotal",
+    //       value: (row: Expense) => {
+    //         switch (row.paymentType) {
+    //           case "Mileage": {
+    //             const total = this.calculateMileageAllowance(
+    //               row.distance,
+    //               new Date(row.date),
+    //               row.mileageClaimed
+    //             );
+    //             return total - this.calculatedOntarioHST(total);
+    //           }
+    //           case "Allowance":
+    //           case "Meals": {
+    //             const total = this.calculatedAllowanceAmount(row);
+    //             return total - this.calculatedOntarioHST(total);
+    //           }
+    //           default:
+    //             return row.total - this.calculatedOntarioHST(row.total);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       label: "calculatedOntarioHST",
+    //       value: (row: Expense) => {
+    //         switch (row.paymentType) {
+    //           case "Mileage":
+    //             return this.calculatedOntarioHST(
+    //               this.calculateMileageAllowance(
+    //                 row.distance,
+    //                 new Date(row.date),
+    //                 row.mileageClaimed
+    //               )
+    //             );
+    //           case "Allowance":
+    //           case "Meals":
+    //             return this.calculatedOntarioHST(
+    //               this.calculatedAllowanceAmount(row)
+    //             );
+    //           default:
+    //             return this.calculatedOntarioHST(row.total);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       label: "Total",
+    //       value: (row: Expense) => {
+    //         switch (row.paymentType) {
+    //           case "Mileage":
+    //             return this.calculateMileageAllowance(
+    //               row.distance,
+    //               new Date(row.date),
+    //               row.mileageClaimed
+    //             );
+    //           case "Allowance":
+    //           case "Meals":
+    //             return this.calculatedAllowanceAmount(row);
+    //           default:
+    //             return row.total;
+    //         }
+    //       },
+    //     },
+    //     {
+    //       label: "PO#",
+    //       value: "po",
+    //     },
+    //     {
+    //       label: "Description",
+    //       value: (row: Expense) => {
+    //         const description = "";
+    //         switch (row.paymentType) {
+    //           case "Allowance":
+    //             return description.concat(
+    //               row.breakfast === true ? "Breakfast " : "",
+    //               row.lunch === true ? "Lunch " : "",
+    //               row.dinner === true ? "Dinner " : "",
+    //               row.lodging === true ? "Lodging " : ""
+    //             );
+    //           case "Meals":
+    //             return description.concat(
+    //               row.breakfast === true ? "Breakfast " : "",
+    //               row.lunch === true ? "Lunch " : "",
+    //               row.dinner === true ? "Dinner " : ""
+    //             );
+    //           default:
+    //             return row.description;
+    //         }
+    //       },
+    //     },
+    //     {
+    //       label: "Company",
+    //       value: "vendorName",
+    //     },
+    //     {
+    //       label: "Employee",
+    //       value: "displayName",
+    //     },
+    //     {
+    //       label: "Approved By",
+    //       value: "managerName",
+    //     },
+    //   ];
+    //   const opts = { fields, withBOM: true };
+    //   const expenseRecords = items.map((x) => {
+    //     if (!isExpense(x)) {
+    //       throw new Error("There was an error validating the expense");
+    //     }
+    //     x["committedWeekEnding"] = format(
+    //       utcToZonedTime(
+    //         new Date(x.committedWeekEnding),
+    //         "America/Thunder_Bay"
+    //       ),
+    //       "yyyy MMM dd"
+    //     );
+    //     return x;
+    //   });
+    //   const csv = parse(expenseRecords, opts);
+    //   const blob = new Blob([csv], { type: "text/csv" });
+    //   if (payroll) {
+    //     this.downloadBlob(
+    //       blob,
+    //       `ExpensesForPayPeriod${this.exportDateWeekStart(
+    //         subDays(weekEnding, 7)
+    //       )}-${this.exportDate(weekEnding)}.csv`
+    //     );
+    //   } else {
+    //     this.downloadBlob(
+    //       blob,
+    //       `payables_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+    //         weekEnding
+    //       )}.csv`
+    //     );
+    //   }
+    // },
     async generatePayablesCSVSQL(
       timestamp: firebase.firestore.Timestamp,
       type: "payroll" | "weekly"

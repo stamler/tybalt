@@ -1,19 +1,19 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { isDocIdObject, isWeekReference, createPersistentDownloadUrl, isPayrollWeek2, thisTimeNextWeekInTimeZone, getTrackingDoc, getAuthObject } from "./utilities";
+import { isDocIdObject, createPersistentDownloadUrl, getTrackingDoc, getAuthObject /*, isWeekReference, isPayrollWeek2, thisTimeNextWeekInTimeZone */ } from "./utilities";
 import { updateProfileTallies } from "./profiles";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { generateExpenseAttachmentArchive } from "./storage";
-import { utcToZonedTime } from "date-fns-tz";
-import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
+//import { utcToZonedTime } from "date-fns-tz";
+//import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
 import * as _ from "lodash";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 
-const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
-const WITHIN_MSEC = 1;
+//const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
+//const WITHIN_MSEC = 1;
 
 // onWrite()
 // check if the filepath changed
@@ -223,87 +223,88 @@ export async function exportJson(data: unknown) {
   });
 };
 
-export async function getPayPeriodExpenses(
-    data: unknown, 
-    context: functions.https.CallableContext
-): Promise<admin.firestore.DocumentData[]> {
+// replaced with payablesPayrollCSV.sql
+// export async function getPayPeriodExpenses(
+//     data: unknown, 
+//     context: functions.https.CallableContext
+// ): Promise<admin.firestore.DocumentData[]> {
 
-  // throw if the caller isn't authenticated & authorized
-  getAuthObject(context, ["report"]);
+//   // throw if the caller isn't authenticated & authorized
+//   getAuthObject(context, ["report"]);
   
-  // Validate the data or throw
-  // use a User Defined Type Guard
-  if (!isWeekReference(data)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The provided data isn't a valid week reference"
-    );
-  }
+//   // Validate the data or throw
+//   // use a User Defined Type Guard
+//   if (!isWeekReference(data)) {
+//     throw new functions.https.HttpsError(
+//       "invalid-argument",
+//       "The provided data isn't a valid week reference"
+//     );
+//   }
 
-  // Get argument
-  const week2Ending = new Date(data.weekEnding);
+//   // Get argument
+//   const week2Ending = new Date(data.weekEnding);
 
-  // Verify that the provided weekEnding is a payroll week 2
-  // by ensuring an even week difference from a week epoch
-  if (!isPayrollWeek2(week2Ending)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The week ending specified is not week 2 of a payroll period"
-    )
-  }
+//   // Verify that the provided weekEnding is a payroll week 2
+//   // by ensuring an even week difference from a week epoch
+//   if (!isPayrollWeek2(week2Ending)) {
+//     throw new functions.https.HttpsError(
+//       "invalid-argument",
+//       "The week ending specified is not week 2 of a payroll period"
+//     )
+//   }
 
-  /* 
-  throw if the current datetime is before the end of the week following the 
-  pay period because more expenses may still be committed. This allows
-  adding and committing of expenses up to a full week following the end of
-  the pay period to be paid out during that period
-  */
-  if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay")) {
-    const tbay_week = utcToZonedTime(
-      new Date(data.weekEnding),
-      "America/Thunder_Bay"
-    );  
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      `Wait until ${format(addDays(tbay_week,8), "MMM dd")} to process expenses for pay period ending ${format(tbay_week, "MMM dd")}`
-    )
-  }
+//   /* 
+//   throw if the current datetime is before the end of the week following the 
+//   pay period because more expenses may still be committed. This allows
+//   adding and committing of expenses up to a full week following the end of
+//   the pay period to be paid out during that period
+//   */
+//   if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay")) {
+//     const tbay_week = utcToZonedTime(
+//       new Date(data.weekEnding),
+//       "America/Thunder_Bay"
+//     );  
+//     throw new functions.https.HttpsError(
+//       "invalid-argument",
+//       `Wait until ${format(addDays(tbay_week,8), "MMM dd")} to process expenses for pay period ending ${format(tbay_week, "MMM dd")}`
+//     )
+//   }
 
-  /*
-  pay periods are two weeks long. Expenses are reported in the week in 
-  which they are committed. We will use all expenses commited in week2
-  of the pay period, and all expenses committed in the week after whose
-  date is before the end of the pay period. Because they will already have
-  been paid out, we also must remove out any expense commited in week1 of
-  the pay period whose date is before the beginning of the pay period.
-  */
-  const db = admin.firestore();
+//   /*
+//   pay periods are two weeks long. Expenses are reported in the week in 
+//   which they are committed. We will use all expenses commited in week2
+//   of the pay period, and all expenses committed in the week after whose
+//   date is before the end of the pay period. Because they will already have
+//   been paid out, we also must remove out any expense commited in week1 of
+//   the pay period whose date is before the beginning of the pay period.
+//   */
+//   const db = admin.firestore();
 
-  let expensesSnapshot;
-  if (EXACT_TIME_SEARCH) {
-    expensesSnapshot = await db.collection("Expenses")
-      .where("committed", "==", true)
-      .where("payPeriodEnding", "==", week2Ending)
-      .get();
-  } else {
-    expensesSnapshot = await db.collection("Expenses")
-      .where("committed", "==", true)
-      .where("payPeriodEnding", ">", subMilliseconds(week2Ending, WITHIN_MSEC))
-      .where("payPeriodEnding", "<", addMilliseconds(week2Ending, WITHIN_MSEC))
-      .get();
-  }
+//   let expensesSnapshot;
+//   if (EXACT_TIME_SEARCH) {
+//     expensesSnapshot = await db.collection("Expenses")
+//       .where("committed", "==", true)
+//       .where("payPeriodEnding", "==", week2Ending)
+//       .get();
+//   } else {
+//     expensesSnapshot = await db.collection("Expenses")
+//       .where("committed", "==", true)
+//       .where("payPeriodEnding", ">", subMilliseconds(week2Ending, WITHIN_MSEC))
+//       .where("payPeriodEnding", "<", addMilliseconds(week2Ending, WITHIN_MSEC))
+//       .get();
+//   }
 
-  const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
+//   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
 
-  // convert commitTime, committedWeekEnding, and date to strings
-  return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
-    e.date = e.date.toDate().toString();
-    e.commitTime = e.commitTime.toDate().toString();
-    e.committedWeekEnding = e.committedWeekEnding.toDate().toString();
-    e.payPeriodEnding = e.payPeriodEnding.toDate().toString();
-    return e
-  });
-}
+//   // convert commitTime, committedWeekEnding, and date to strings
+//   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
+//     e.date = e.date.toDate().toString();
+//     e.commitTime = e.commitTime.toDate().toString();
+//     e.committedWeekEnding = e.committedWeekEnding.toDate().toString();
+//     e.payPeriodEnding = e.payPeriodEnding.toDate().toString();
+//     return e
+//   });
+// }
 
 export async function submitExpense(
   data: unknown, 
