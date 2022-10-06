@@ -30,9 +30,9 @@ interface AccessTokenPayload {
   accessToken: string;
 }
 
-interface UidListPayload {
-  uids: string[];
-}
+// interface UidListPayload {
+//   uids: string[];
+// }
 
 interface OpeningValuesPayload {
   // integer result of openingDateTimeOff.toDate().getTime()
@@ -42,13 +42,13 @@ interface OpeningValuesPayload {
   uid: string;
 }
 
-function isUidListPayload(data: any): data is UidListPayload {
-  if (data.uids && Array.isArray(data.uids)) {
-    // an empty list is technically valid
-    return data.uids.every((uid: any) => typeof uid === "string");
-  }
-  return false;
-}
+// function isUidListPayload(data: any): data is UidListPayload {
+//   if (data.uids && Array.isArray(data.uids)) {
+//     // an empty list is technically valid
+//     return data.uids.every((uid: any) => typeof uid === "string");
+//   }
+//   return false;
+// }
 
 function isOpeningValuesPayload(data: any): data is OpeningValuesPayload {
   
@@ -442,6 +442,14 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
 // nonWorkHoursTally property of each TimeSheets document. It also gets all of
 // the user's mileage expenses after the app_wide "openingMileageDate" variable
 // and sums the mileage then stores it in the profile.
+
+// mileageClaimed, mileageClaimedSince tallies are now retrieved from SQL using
+// a the updateMileageClaimed() scheduled function which updates all profiles at
+// once based on the reset date in SQL. mileageClaimed and mileageClaimedSince
+// have been commented out from this function.
+
+// TODO: write a similar function to update the usedOV and usedOP properties
+// from SQL then delete updateProfileTallies() completely
 export async function updateProfileTallies(uid: string) {
   const db = admin.firestore();
 
@@ -520,68 +528,68 @@ export async function updateProfileTallies(uid: string) {
   
   // Load the AnnualDates document in the Config collection to get the
   // openingMileage date
-  const annualDates = await db.collection("Config").doc("AnnualDates").get();
-  if (!annualDates.exists) {
-    throw new Error(`AnnualDates document does not exist`);
-  }
+  // const annualDates = await db.collection("Config").doc("AnnualDates").get();
+  // if (!annualDates.exists) {
+  //   throw new Error(`AnnualDates document does not exist`);
+  // }
 
-  const mileageClaimedSince = annualDates.get("openingMileageDate");
-  if (mileageClaimedSince === undefined) {
-    throw new Error(`AnnualDates document is missing openingMileageDate`);
-  }
+  // const mileageClaimedSince = annualDates.get("openingMileageDate");
+  // if (mileageClaimedSince === undefined) {
+  //   throw new Error(`AnnualDates document is missing openingMileageDate`);
+  // }
 
   // Load mileage expenses for the user after mileageClaimedSince
-  const querySnapMileageExpenses = await db.collection("Expenses")
-    .where("uid", "==", uid)
-    .where("committed", "==", true)
-    .where("payPeriodEnding", ">", mileageClaimedSince)
-    .where("paymentType", "==", "Mileage")
-    .orderBy("payPeriodEnding","desc") // sorted descending so latest element first
-    .get();
+  // const querySnapMileageExpenses = await db.collection("Expenses")
+  //   .where("uid", "==", uid)
+  //   .where("committed", "==", true)
+  //   .where("payPeriodEnding", ">", mileageClaimedSince)
+  //   .where("paymentType", "==", "Mileage")
+  //   .orderBy("payPeriodEnding","desc") // sorted descending so latest element first
+  //   .get();
 
   // Total mileage is the sum of all distance entries in every returned document
-  let mileageClaimed = 0;
-  if(querySnapMileageExpenses.docs.length > 0) {
-    functions.logger.info(`${querySnapMileageExpenses.docs.length} mileage expenses found for ${uid} after ${mileageClaimedSince.toDate().toISOString()}`);
-    mileageClaimed = querySnapMileageExpenses.docs.reduce((acc, curr) => {
-      if (curr.get("distance") === undefined) {
-        throw new Error(`Expense ${curr.id} is missing distance property`);
-      }
-      if (typeof curr.get("distance") !== "number") {
-        throw new Error(`Expense ${curr.id} distance property is not a number`);
-      }
-      return acc + curr.get("distance");
-    }, 0);
-  }
+  // let mileageClaimed = 0;
+  // if(querySnapMileageExpenses.docs.length > 0) {
+  //   functions.logger.info(`${querySnapMileageExpenses.docs.length} mileage expenses found for ${uid} after ${mileageClaimedSince.toDate().toISOString()}`);
+  //   mileageClaimed = querySnapMileageExpenses.docs.reduce((acc, curr) => {
+  //     if (curr.get("distance") === undefined) {
+  //       throw new Error(`Expense ${curr.id} is missing distance property`);
+  //     }
+  //     if (typeof curr.get("distance") !== "number") {
+  //       throw new Error(`Expense ${curr.id} distance property is not a number`);
+  //     }
+  //     return acc + curr.get("distance");
+  //   }, 0);
+  // }
 
   // Commit the output to the profile for time off tallies and mileage total
   // the first TimeSheets doc in the query is the latest so will have
   // the latest weekEnding for reporting effective date to the user
   const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
-  return profile.ref.update({ usedOV, usedOP, usedAsOf, mileageClaimed, mileageClaimedSince });
+  return profile.ref.update({ usedOV, usedOP, usedAsOf });
 };
 
 // Given a list of uids, return an object whose keys are the uids and values the
 // corresponding mileageClaimed value. This is primarily used to fold into the
 // raw data in generatePayablesCSV() so that mileage tiers are accurately
 // calculated.
-export const getMileageForUids = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-  // throw if the caller isn't authenticated & authorized
-  getAuthObject(context,["report"]);
+// export const getMileageForUids = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+//   // throw if the caller isn't authenticated & authorized
+//   getAuthObject(context,["report"]);
 
-  if (!isUidListPayload(data)) {
-    throw new functions.https.HttpsError("invalid-argument", "The function must be called with a list of uids");
-  }
+//   if (!isUidListPayload(data)) {
+//     throw new functions.https.HttpsError("invalid-argument", "The function must be called with a list of uids");
+//   }
 
-  const docRefs = data.uids.map((uid) => {
-    return admin.firestore().collection("Profiles").doc(uid);
-  });
-  const docSnaps = await admin.firestore().getAll(...docRefs);
+//   const docRefs = data.uids.map((uid) => {
+//     return admin.firestore().collection("Profiles").doc(uid);
+//   });
+//   const docSnaps = await admin.firestore().getAll(...docRefs);
   
-  return Object.fromEntries(docSnaps.map((docSnap) => {
-    if (!docSnap.exists) {
-      throw new functions.https.HttpsError("not-found", `Profile ${docSnap.id} does not exist`);
-    }
-    return [docSnap.id, docSnap.get("mileageClaimed")];
-  }));
-});
+//   return Object.fromEntries(docSnaps.map((docSnap) => {
+//     if (!docSnap.exists) {
+//       throw new functions.https.HttpsError("not-found", `Profile ${docSnap.id} does not exist`);
+//     }
+//     return [docSnap.id, docSnap.get("mileageClaimed")];
+//   }));
+// });

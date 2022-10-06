@@ -11,6 +11,8 @@ import { generateExpenseAttachmentArchive } from "./storage";
 //import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
 import * as _ from "lodash";
 import { createSSHMySQLConnection2 } from "./sshMysql";
+import { loadSQLFileToString } from "./sqlQueries";
+import { RowDataPacket } from "mysql2";
 
 //const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 //const WITHIN_MSEC = 1;
@@ -484,3 +486,69 @@ export const uncommitExpense = functions.https.onCall(async (data: unknown, cont
   }
   return;
 });
+
+// get mileageClaimed, mileageClaimedSince tallies from SQL using the
+// mileageClaimed.sql query on a schedule that updates all profiles at once
+// based on the reset date in SQL.
+export const updateMileageClaimed = functions.pubsub
+  .schedule("17 12,15,18 * * *") // 12:17, 15:17, 18:17 daily
+  .timeZone("America/Thunder_Bay")
+  .onRun(async (context) => {
+    // Load and run the query
+    const sql = loadSQLFileToString("mileageClaimed");
+    const connection = await createSSHMySQLConnection2();
+    const [rows, _fields] = await connection.query(sql);
+
+    const db = admin.firestore();
+
+    const profilesQuery = await db.collection("Profiles").get();
+    const profiles = profilesQuery.docs;
+    functions.logger.debug(`${profilesQuery.size} in profiles query`);
+    const updateProfilesBatch = db.batch()
+
+    // Update the mileageClaimed and mileageClaimedSince properties on each
+    // profile where a value exists
+    let mileageClaimedSince: Date;
+
+    if (Array.isArray(rows)) {
+      functions.logger.debug(`${rows.length} rows returned from SQL query`);
+      // The mileageClaimedSince property is set to the reset date in SQL. Since
+      // this is the same for every row, we can get it here then use it
+      // throughout the rest of the function.
+      mileageClaimedSince = new Date((rows[0] as RowDataPacket).jsDate);
+
+      rows.forEach((row: any) => {
+        // remove this profile from the profiles array
+        const index = profiles.findIndex(x => x.id === row.uid);
+        if (index > -1) {
+          profiles.splice(index, 1);
+        } else {
+          throw new Error(`Profile ${row.uid} not found in Firestore`);
+        }
+
+        // update the mileageClaimed and mileageClaimedSince properties
+        const profileRef = db.collection("Profiles").doc(row.uid);
+        // functions.logger.debug(`Updating mileageClaimed for ${row.uid} to ${row.mileageClaimed}`);
+        // functions.logger.debug(`${profiles.length} elements in profiles array`);
+        updateProfilesBatch.update(profileRef, {
+          mileageClaimed: row.mileageClaimed,
+          mileageClaimedSince,
+        });
+      });
+    }
+
+    // set the mileageClaimed to 0 and the mileageClaimedSince date for
+    // all profiles where there was no result in the previous step
+    functions.logger.debug(`zeroing out mileage on remaining ${profiles.length} profiles`);
+    profiles.forEach((profile) => {
+      // functions.logger.debug(`zeroing out mileage for ${profile.id} on ${mileageClaimedSince.toISOString()}`);
+      updateProfilesBatch.update(profile.ref, {
+        mileageClaimed: 0,
+        mileageClaimedSince,
+      });
+    });
+    
+    // Commit the batch
+    // return; // abandon the batch in testing
+    return updateProfilesBatch.commit();
+  });

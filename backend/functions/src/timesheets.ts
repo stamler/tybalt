@@ -186,7 +186,7 @@ export const updateTimeTracking = functions.firestore
       afterData.approved === true
     ) {
       // just unlocked
-      // update the Time Off and mileage tallies on the corresponding profile
+      // update the Time Off tallies on the corresponding profile
       try {
         await updateProfileTallies(afterData.uid);
       } catch (error) {
@@ -238,7 +238,7 @@ export const updateTimeTracking = functions.firestore
       afterData.locked === true
     ) {
       // just locked
-      // update the Time Off and mileage Tallies on the corresponding profile
+      // update the Time Off Tallies on the corresponding profile
       try {
         await updateProfileTallies(afterData.uid);
       } catch (error) {
