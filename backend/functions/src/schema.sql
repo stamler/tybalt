@@ -1,3 +1,14 @@
+CREATE TABLE `Profiles` (
+  `id` varchar(512) NOT NULL,
+  `surname` varchar(32) NOT NULL,
+  `givenName` varchar(48) NOT NULL,
+  `openingDateTimeOff` date NOT NULL,
+  `openingOP` int unsigned NOT NULL,
+  `openingOV` int unsigned NOT NULL,
+  `timestamp` timestamp NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `TimeSheets` (
   `id` varchar(512) NOT NULL DEFAULT '',
   `uid` varchar(128) NOT NULL,

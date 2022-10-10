@@ -22,6 +22,7 @@ export const syncToSQL = functions
     await exportAmendments();
     await cleanupExport("Expenses");
     await exportExpenses();
+    await exportProfiles();
     return;
   });
 
@@ -513,4 +514,62 @@ export async function clearFlags(collection: string, flag: "exported" | "exportI
     batch.update(docSnap.ref, updateObject);
   });
   return batch.commit();
+}
+
+/*
+exportProfiles(): Export Profiles documents to MySQL, but only fields including
+id, surname, givenName, openingDateTimeOff, openingOP, openingOV. These will be
+used to calculated the usedOV and usedOP values by ensuring only the OP and OV
+values on or after the openingDateTimeOff are included in the calculation. A
+timestamp column which is updated on UPSERT is used to determine which Profiles
+are stale (at least 2 minutes old) and should be deleted. These are cleaned up
+in this function.
+*/
+export async function exportProfiles() {
+  // const start = process.hrtime.bigint();
+  const mysqlConnection = await createSSHMySQLConnection2();
+
+  // Get specified fields from all profiles and store them in an array of arrays
+  // to be used in the INSERT query
+  const allProfilesQuerySnap = await db.collection("Profiles").get();
+  const profilesFields = ["id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "timestamp"];
+  const now = new Date();
+  const insertValues = allProfilesQuerySnap.docs.map((profileSnap) => {
+    const profile = profileSnap.data();
+    profile.id = profileSnap.id;
+    // now is a javascript date that will be the same for all retrieved
+    // profiles. We do this instead of NOW() because there is no way to pass a
+    // function to this parameter. We would let the database set the timestamp
+    // except that on the UPSERT if the data already exists and isn't changed
+    // then the timestamp won't be updated.
+    profile.timestamp = now;
+    profile.openingDateTimeOff = format(utcToZonedTime(profile.openingDateTimeOff.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd")
+    return profilesFields.map(x => profile[x]);
+  });
+  // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been
+  // deleted from Firestore will remain in MySQL. For this reason we delete all
+  // rows where the timestamp is older than expected. We can safely assume that
+  // 5 minutes prior to now is too old.
+  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), timestamp=UTC_TIMESTAMP()`;
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export Profiles documents: ${error}`);
+    throw error
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} Profiles documents`);
+  const cleanupQuery = "DELETE FROM Profiles p WHERE p.timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  let cleanupResult;
+  try {
+    cleanupResult = await mysqlConnection.query(cleanupQuery);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale Profiles rows: ${error}`);
+    throw error
+  }
+  functions.logger.log(`Cleaned up stale Profiles rows`);
+
+  // The affectedRows property is the number of rows that were deleted, but I'm
+  // lazy and this is typescript so I'm just going to show the whole object
+  // instead of declaring a type and then using it to extract the property
+  functions.logger.log(cleanupResult[0]);
 }
