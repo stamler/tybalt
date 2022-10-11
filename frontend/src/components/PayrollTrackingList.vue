@@ -66,7 +66,9 @@
         <router-link
           v-bind:to="{ name: 'Payroll' }"
           v-on:click.native="
-            generatePayablesCSVSQL(item.payPeriodEnding, 'payroll')
+            generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
+              generateAttachmentZip(item)
+            )
           "
         >
           expensesSQL<download-icon></download-icon>
