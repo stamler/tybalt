@@ -17,36 +17,36 @@ export type QueryResponse = Promise<
 const sshClient = new Client();
 
 // TODO: DELETE THIS CODE AS createSSHMySQLConnection2 uses BUILT-IN PROMISES
-export const createSSHMySQLConnection = () => {return new Promise<mysql.Connection>((resolve, reject) => {
-  sshClient.on("ready", () => {
-    sshClient.forwardOut(
-      "127.0.0.1",
-      3306,
-      env.mysql.host,
-      env.mysql.port,
-      (err, stream) => {
-        if (err) reject(err);
-        const connection =  mysql.createConnection({
-          host: "127.0.0.1",
-          port: 3306,
-          user: env.mysql.user,
-          password: env.mysql.pass,
-          database: env.mysql.db,
-          stream,
-        });
-        connection.connect((error) => {
-          if (error) reject(error);
-          resolve(connection);
-        });
-      }
-    );
-  }).connect({
-    host: env.mysqlssh.host,
-    port: env.mysqlssh.port,
-    username: env.mysqlssh.user,
-    password: env.mysqlssh.pass,
-  });
-})};
+// export const createSSHMySQLConnection = () => {return new Promise<mysql.Connection>((resolve, reject) => {
+//   sshClient.on("ready", () => {
+//     sshClient.forwardOut(
+//       "127.0.0.1",
+//       3306,
+//       env.mysql.host,
+//       env.mysql.port,
+//       (err, stream) => {
+//         if (err) reject(err);
+//         const connection =  mysql.createConnection({
+//           host: "127.0.0.1",
+//           port: 3306,
+//           user: env.mysql.user,
+//           password: env.mysql.pass,
+//           database: env.mysql.db,
+//           stream,
+//         });
+//         connection.connect((error) => {
+//           if (error) reject(error);
+//           resolve(connection);
+//         });
+//       }
+//     );
+//   }).connect({
+//     host: env.mysqlssh.host,
+//     port: env.mysqlssh.port,
+//     username: env.mysqlssh.user,
+//     password: env.mysqlssh.pass,
+//   });
+// })};
 
 /* 
 Connect to a mysql database behind an SSH server by reading credentials
