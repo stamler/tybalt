@@ -4,6 +4,8 @@ import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { TimeEntry } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
+import { loadSQLFileToString } from "./sqlQueries";
+import { RowDataPacket } from "mysql2";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -23,6 +25,7 @@ export const syncToSQL = functions
     await cleanupExport("Expenses");
     await exportExpenses();
     await exportProfiles();
+    await writebackProfiles();
     return;
   });
 
@@ -572,4 +575,67 @@ export async function exportProfiles() {
   // lazy and this is typescript so I'm just going to show the whole object
   // instead of declaring a type and then using it to extract the property
   functions.logger.log(cleanupResult[0]);
+}
+
+/*
+writebackProfiles(): Write back the usedOV and usedOP, mileageClaimed and
+mileageClaimedSince values to the Profiles collection. This is done by
+retrieving the Profiles data from MySQL and then updating the Firestore
+documents.
+*/
+
+export async function writebackProfiles() {
+  // Load and run the query
+  const mileageSql = loadSQLFileToString("mileageClaimed");
+  const timeOffSql = loadSQLFileToString("timeOffTallies");
+  const connection = await createSSHMySQLConnection2();
+  const [mr, _fields0] = await connection.query(mileageSql);
+  const [tr, _fields1] = await connection.query(timeOffSql);
+
+  const profilesQuery = await db.collection("Profiles").get();
+  const profiles = profilesQuery.docs;
+  functions.logger.debug(`${profilesQuery.size} in profiles query`);
+  const updateProfilesBatch = db.batch()
+
+  let mileageClaimedSince: Date;
+  
+  // Update the mileageClaimed and mileageClaimedSince properties and the usedOV
+  // and usedOP properties on each profile where a value exists in SQL, or set
+  // it to 0
+  if (Array.isArray(mr) && Array.isArray(tr)) {
+    // Cast the correct types to remove ambiguity. There may be a better way to
+    // do this
+    const mileageRows = mr as RowDataPacket[];
+    const timeOffRows = tr as RowDataPacket[];
+  
+    functions.logger.debug(`${mileageRows.length} mileage values and ${timeOffRows.length} time off values returned from SQL queries`);
+    // The mileageClaimedSince property is set to the reset date in SQL. Since
+    // this is the same for every row, we can get it here then use it
+    // throughout the rest of the function.
+    mileageClaimedSince = new Date(mileageRows[0].jsDate);
+
+    // For each profile, check whether it has a matching row in each of the SQL
+    // queries. If not, set the corresponding values to 0.
+    profiles.forEach((profile) => {
+      const mileageRow = mileageRows.find((x: any) => x.uid === profile.id);
+      const timeOffRow = timeOffRows.find((x: any) => x.uid === profile.id);
+      const mileageClaimed = mileageRow ? mileageRow.mileageClaimed : 0;
+      const usedOV = timeOffRow ? timeOffRow.usedOV : 0;
+      const usedOP = timeOffRow ? timeOffRow.usedOP : 0;
+      const usedAsOf = timeOffRow ? new Date(timeOffRow.jsDateWeekEnding) : null;
+
+      // functions.logger.debug(`Updating ${profile.id} with mileageClaimed=${mileageClaimed}, usedOV=${usedOV}, usedOP=${usedOP}, mileageClaimedSince=${mileageClaimedSince}, usedAsOf=${usedAsOf}`);
+      const profileRef = db.collection("Profiles").doc(profile.id);
+      updateProfilesBatch.update(profileRef, {
+        mileageClaimed,
+        mileageClaimedSince,
+        usedOV,
+        usedOP,
+        usedAsOf,
+      });
+    });
+  }
+  
+  // Commit the batch
+  return updateProfilesBatch.commit();
 }

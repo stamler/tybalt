@@ -19,7 +19,7 @@ import { emailOnReject, emailOnShare } from "./email";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, updateViewers } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
-export { updateExpenseTracking, expenseRates, uncommitExpense, updateMileageClaimed } from "./expenses";
+export { updateExpenseTracking, expenseRates, uncommitExpense/*, updateMileageClaimed */} from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey, updateOpeningValues /*, getMileageForUids*/ } from "./profiles";
 export { scheduledFirestoreExport } from "./export";

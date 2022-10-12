@@ -31,7 +31,7 @@ import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
-import { updateProfileTallies } from "./profiles";
+// import { updateProfileTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
   displayName: string;
@@ -187,11 +187,12 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just unlocked
       // update the Time Off tallies on the corresponding profile
-      try {
-        await updateProfileTallies(afterData.uid);
-      } catch (error) {
-        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
-      }
+      // 2022-10-12: This is now done in syncToSQL
+      // try {
+      //   await updateProfileTallies(afterData.uid);
+      // } catch (error) {
+      //   functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
+      // }
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
       functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} has been manually unlocked.`);
@@ -239,11 +240,12 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just locked
       // update the Time Off Tallies on the corresponding profile
-      try {
-        await updateProfileTallies(afterData.uid);
-      } catch (error) {
-        functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
-      }
+      // 2022-10-12: This is now done in syncToSQL
+      // try {
+      //   await updateProfileTallies(afterData.uid);
+      // } catch (error) {
+      //   functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
+      // }
       // remove document from pending and add it to timeSheets
       await timeTrackingDocRef.update(
         {

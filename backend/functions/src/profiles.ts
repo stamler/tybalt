@@ -450,124 +450,124 @@ export const updateOpeningValues = functions.https.onCall((data: unknown, contex
 
 // TODO: write a similar function to update the usedOV and usedOP properties
 // from SQL then delete updateProfileTallies() completely
-export async function updateProfileTallies(uid: string) {
-  const db = admin.firestore();
+// export async function updateProfileTallies(uid: string) {
+//   const db = admin.firestore();
 
-  // Load the profile for the user to get opening values and later
-  // use it to write back the used values
-  const profile = await db.collection("Profiles").doc(uid).get();
-  if (!profile.exists) {
-    throw new Error(`Profile ${uid} does not exist`);
-  }
-  const openingDate = profile.get("openingDateTimeOff");
-  const openingOV = profile.get("openingOV");
-  const openingOP = profile.get("openingOP");
+//   // Load the profile for the user to get opening values and later
+//   // use it to write back the used values
+//   const profile = await db.collection("Profiles").doc(uid).get();
+//   if (!profile.exists) {
+//     throw new Error(`Profile ${uid} does not exist`);
+//   }
+//   const openingDate = profile.get("openingDateTimeOff");
+//   const openingOV = profile.get("openingOV");
+//   const openingOP = profile.get("openingOP");
 
-  if (
-    openingDate === undefined ||
-    openingOV === undefined ||
-    openingOP === undefined
-    ) {
-    throw new Error(`Profile ${uid} is missing one of openingDateTimeOff, openingOV, or openingOP`);
-  }
+//   if (
+//     openingDate === undefined ||
+//     openingOV === undefined ||
+//     openingOP === undefined
+//     ) {
+//     throw new Error(`Profile ${uid} is missing one of openingDateTimeOff, openingOV, or openingOP`);
+//   }
 
-  const querySnapTimeSheets = await db.collection("TimeSheets")
-    .where("uid", "==", uid)
-    .where("locked", "==", true)
-    .where("weekEnding", ">", openingDate)
-    .orderBy("weekEnding","desc") // sorted descending so latest element first
-    .get();
+//   const querySnapTimeSheets = await db.collection("TimeSheets")
+//     .where("uid", "==", uid)
+//     .where("locked", "==", true)
+//     .where("weekEnding", ">", openingDate)
+//     .orderBy("weekEnding","desc") // sorted descending so latest element first
+//     .get();
 
-  // Iterate over the timesheets and come up with a total
-  let usedOV = 0;
-  let usedOP = 0;
+//   // Iterate over the timesheets and come up with a total
+//   let usedOV = 0;
+//   let usedOP = 0;
 
-  try {
-    querySnapTimeSheets.docs.map((tsSnap) => {
-      const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
-      usedOV += nonWorkHoursTally.OV || 0;
-      usedOP += nonWorkHoursTally.OP || 0;
-    });      
-  } catch (error) {
-    functions.logger.error(`Error tallying nonWorkHoursTally for ${uid}`);
-    throw error;
-  }
+//   try {
+//     querySnapTimeSheets.docs.map((tsSnap) => {
+//       const nonWorkHoursTally = tsSnap.get("nonWorkHoursTally");
+//       usedOV += nonWorkHoursTally.OV || 0;
+//       usedOP += nonWorkHoursTally.OP || 0;
+//     });      
+//   } catch (error) {
+//     functions.logger.error(`Error tallying nonWorkHoursTally for ${uid}`);
+//     throw error;
+//   }
   
-  // iterate over TimeAmendments and add to existing totals
-  const querySnapTimeAmendmentsOV = await db.collection("TimeAmendments")
-    .where("uid", "==", uid)
-    .where("committed", "==", true)
-    .where("committedWeekEnding", ">", openingDate)
-    .where("timetype","==","OV")
-    .get();
+//   // iterate over TimeAmendments and add to existing totals
+//   const querySnapTimeAmendmentsOV = await db.collection("TimeAmendments")
+//     .where("uid", "==", uid)
+//     .where("committed", "==", true)
+//     .where("committedWeekEnding", ">", openingDate)
+//     .where("timetype","==","OV")
+//     .get();
     
-    try {
-      querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
-        usedOV += amendSnap.get("hours");
-      });
-    } catch (error) {
-      functions.logger.error(`Error tallying TimeAmendments OV for ${uid}`);
-      throw error;
-    }
+//     try {
+//       querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
+//         usedOV += amendSnap.get("hours");
+//       });
+//     } catch (error) {
+//       functions.logger.error(`Error tallying TimeAmendments OV for ${uid}`);
+//       throw error;
+//     }
 
-    const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
-    .where("uid", "==", uid)
-    .where("committed", "==", true)
-    .where("committedWeekEnding", ">", openingDate)
-    .where("timetype","==","OP")
-    .get();
+//     const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
+//     .where("uid", "==", uid)
+//     .where("committed", "==", true)
+//     .where("committedWeekEnding", ">", openingDate)
+//     .where("timetype","==","OP")
+//     .get();
 
-    try {
-      querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
-        usedOP += amendSnap.get("hours");
-      });        
-    } catch (error) {
-      functions.logger.error(`Error tallying TimeAmendments OP for ${uid}`);
-      throw error;
-    }
+//     try {
+//       querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
+//         usedOP += amendSnap.get("hours");
+//       });        
+//     } catch (error) {
+//       functions.logger.error(`Error tallying TimeAmendments OP for ${uid}`);
+//       throw error;
+//     }
   
-  // Load the AnnualDates document in the Config collection to get the
-  // openingMileage date
-  // const annualDates = await db.collection("Config").doc("AnnualDates").get();
-  // if (!annualDates.exists) {
-  //   throw new Error(`AnnualDates document does not exist`);
-  // }
+//   // Load the AnnualDates document in the Config collection to get the
+//   // openingMileage date
+//   // const annualDates = await db.collection("Config").doc("AnnualDates").get();
+//   // if (!annualDates.exists) {
+//   //   throw new Error(`AnnualDates document does not exist`);
+//   // }
 
-  // const mileageClaimedSince = annualDates.get("openingMileageDate");
-  // if (mileageClaimedSince === undefined) {
-  //   throw new Error(`AnnualDates document is missing openingMileageDate`);
-  // }
+//   // const mileageClaimedSince = annualDates.get("openingMileageDate");
+//   // if (mileageClaimedSince === undefined) {
+//   //   throw new Error(`AnnualDates document is missing openingMileageDate`);
+//   // }
 
-  // Load mileage expenses for the user after mileageClaimedSince
-  // const querySnapMileageExpenses = await db.collection("Expenses")
-  //   .where("uid", "==", uid)
-  //   .where("committed", "==", true)
-  //   .where("payPeriodEnding", ">", mileageClaimedSince)
-  //   .where("paymentType", "==", "Mileage")
-  //   .orderBy("payPeriodEnding","desc") // sorted descending so latest element first
-  //   .get();
+//   // Load mileage expenses for the user after mileageClaimedSince
+//   // const querySnapMileageExpenses = await db.collection("Expenses")
+//   //   .where("uid", "==", uid)
+//   //   .where("committed", "==", true)
+//   //   .where("payPeriodEnding", ">", mileageClaimedSince)
+//   //   .where("paymentType", "==", "Mileage")
+//   //   .orderBy("payPeriodEnding","desc") // sorted descending so latest element first
+//   //   .get();
 
-  // Total mileage is the sum of all distance entries in every returned document
-  // let mileageClaimed = 0;
-  // if(querySnapMileageExpenses.docs.length > 0) {
-  //   functions.logger.info(`${querySnapMileageExpenses.docs.length} mileage expenses found for ${uid} after ${mileageClaimedSince.toDate().toISOString()}`);
-  //   mileageClaimed = querySnapMileageExpenses.docs.reduce((acc, curr) => {
-  //     if (curr.get("distance") === undefined) {
-  //       throw new Error(`Expense ${curr.id} is missing distance property`);
-  //     }
-  //     if (typeof curr.get("distance") !== "number") {
-  //       throw new Error(`Expense ${curr.id} distance property is not a number`);
-  //     }
-  //     return acc + curr.get("distance");
-  //   }, 0);
-  // }
+//   // Total mileage is the sum of all distance entries in every returned document
+//   // let mileageClaimed = 0;
+//   // if(querySnapMileageExpenses.docs.length > 0) {
+//   //   functions.logger.info(`${querySnapMileageExpenses.docs.length} mileage expenses found for ${uid} after ${mileageClaimedSince.toDate().toISOString()}`);
+//   //   mileageClaimed = querySnapMileageExpenses.docs.reduce((acc, curr) => {
+//   //     if (curr.get("distance") === undefined) {
+//   //       throw new Error(`Expense ${curr.id} is missing distance property`);
+//   //     }
+//   //     if (typeof curr.get("distance") !== "number") {
+//   //       throw new Error(`Expense ${curr.id} distance property is not a number`);
+//   //     }
+//   //     return acc + curr.get("distance");
+//   //   }, 0);
+//   // }
 
-  // Commit the output to the profile for time off tallies and mileage total
-  // the first TimeSheets doc in the query is the latest so will have
-  // the latest weekEnding for reporting effective date to the user
-  const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
-  return profile.ref.update({ usedOV, usedOP, usedAsOf });
-};
+//   // Commit the output to the profile for time off tallies and mileage total
+//   // the first TimeSheets doc in the query is the latest so will have
+//   // the latest weekEnding for reporting effective date to the user
+//   const usedAsOf = querySnapTimeSheets.docs[0].get("weekEnding");
+//   return profile.ref.update({ usedOV, usedOP, usedAsOf });
+// };
 
 // Given a list of uids, return an object whose keys are the uids and values the
 // corresponding mileageClaimed value. This is primarily used to fold into the
