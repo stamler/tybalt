@@ -37,7 +37,10 @@ IFNULL(SUM(e.OP),0) usedOP,
 p.openingOP - IFNULL(SUM(e.OP),0) remainingOP,
 p.openingOV,
 IFNULL(SUM(e.OV),0) usedOV,
-p.openingOV - IFNULL(SUM(OV),0) remainingOV
+p.openingOV - IFNULL(SUM(OV),0) remainingOV,
+MAX(e.weekEnding) usedAsOf, /* This is the last weekEnding with time off claimed, not the most recent time sheet */
+/* The time must first be set to 23:59:59.999 prior to conversion to UTC */
+UNIX_TIMESTAMP(CONVERT_TZ(ADDTIME(MAX(e.weekEnding),"23:59:59.999"), 'America/Thunder_bay', @@global.time_zone)) * 1000 jsDateWeekEnding
 FROM entries e
 LEFT JOIN Profiles p
 ON p.id = e.uid
