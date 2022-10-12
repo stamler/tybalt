@@ -105,8 +105,8 @@ export default mixins.extend({
       if (date) return format(date.toDate(), "yyyy MMM dd @ HH:mm:ss.SSS");
       else return "";
     },
-    shortDate(date: firebase.firestore.Timestamp | undefined): string {
-      if (date === undefined) return "";
+    shortDate(date: firebase.firestore.Timestamp | undefined | null): string {
+      if (date === undefined || date === null) return "";
       return format(date.toDate(), "MMM dd");
     },
   },
