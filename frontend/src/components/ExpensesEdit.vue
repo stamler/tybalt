@@ -420,7 +420,8 @@ export default mixins.extend({
               url = await storage.ref(pathReference).getDownloadURL();
               this.attachmentPreviouslyUploaded = true;
             } catch (error) {
-              if (error.code === "storage/object-not-found") {
+              const err = error as firebase.storage.FirebaseStorageError;
+              if (err.code === "storage/object-not-found") {
                 this.newAttachment = pathReference;
                 this.attachmentPreviouslyUploaded = false;
               }
@@ -610,7 +611,8 @@ export default mixins.extend({
           await doc.set(this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
-          alert(`Failed to edit Expense Entry: ${error.message}`);
+          const err = error as firebase.firestore.FirestoreError;
+          alert(`Failed to edit Expense Entry: ${err.message}`);
         }
       } else {
         alert("Uploading the attachment failed");
