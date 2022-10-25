@@ -43,5 +43,7 @@ Select-Object -Property surname,
 Sort-Object -Property surname, givenName |
 ConvertTo-Json
 
+Write-Verbose $body
+
 #TODO: sign body with certificate or use a token
 Invoke-RestMethod -Method POST -Uri $uri -Body $body -ContentType "application/json" -Headers $headers
