@@ -36,10 +36,10 @@ export default Vue.extend({
               // TODO: enable it and test
               return true;
             } else {
-              if (x.meta && x.meta.claims) {
+              if (x.meta && x.meta?.claims) {
                 // There are claims requirements for this route, validate
                 // them by getting intersect of link.claims & this.claims
-                const intersect = x.meta.claims.filter((y: string) =>
+                const intersect = x.meta?.claims.filter((y: string) =>
                   Object.prototype.hasOwnProperty.call(this.claims, y)
                 );
                 // ensure the value of at least one item is true
