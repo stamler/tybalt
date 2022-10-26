@@ -229,9 +229,17 @@
 </template>
 
 <script lang="ts">
+import {
+  thisTimeNextWeekInTimeZone,
+  nextSaturday,
+  isPayrollWeek2,
+  submitExpense,
+  copyEntry,
+  del,
+} from "./helpers";
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
-import mixins from "./mixins";
+import Vue from "vue";
 import { format, addDays } from "date-fns";
 import _ from "lodash";
 import {
@@ -248,12 +256,12 @@ import {
 import store from "../store";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["approved", "collection"],
   computed: {
     processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
       return _.groupBy(this.items, (x) =>
-        this.nextSaturday(x.date.toDate()).getTime()
+        nextSaturday(x.date.toDate()).getTime()
       );
     },
   },
@@ -282,13 +290,16 @@ export default mixins.extend({
     };
   },
   methods: {
+    copyEntry,
+    del,
+    submitExpense,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     unsubmittedExpenseIds(expenses: any[]) {
       return expenses.filter((x) => x.submitted !== true).map((x) => x.id);
     },
     async submitExpenses(expenses: string[]) {
       for (const id of expenses) {
-        await this.submitExpense(id);
+        await submitExpense(id);
       }
     },
     commitMessage(item: firebase.firestore.DocumentData) {
@@ -317,11 +328,11 @@ export default mixins.extend({
       )}`;
     },
     originalPayPeriod(item: firebase.firestore.DocumentData) {
-      const date = this.nextSaturday(item.date.toDate());
-      if (this.isPayrollWeek2(date)) {
+      const date = nextSaturday(item.date.toDate());
+      if (isPayrollWeek2(date)) {
         return date;
       } else {
-        return this.thisTimeNextWeekInTimeZone(date, "America/Thunder_Bay");
+        return thisTimeNextWeekInTimeZone(date, "America/Thunder_Bay");
       }
     },
     updateItems() {

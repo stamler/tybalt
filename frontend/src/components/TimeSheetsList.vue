@@ -151,8 +151,8 @@ import ShareModal from "./ShareModal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
 import _ from "lodash";
-import mixins from "./mixins";
 import { format } from "date-fns";
+import { isPayrollWeek2, recallTs, submitTs, unbundle } from "./helpers";
 import {
   EditIcon,
   SendIcon,
@@ -164,7 +164,6 @@ import store from "../store";
 const db = firebase.firestore();
 
 export default Vue.extend({
-  mixins: [mixins],
   props: ["query", "collection"],
   computed: {
     _() {
@@ -259,6 +258,10 @@ export default Vue.extend({
     );
   },
   methods: {
+    recallTs,
+    submitTs,
+    unbundle,
+    isPayrollWeek2,
     unreviewed(item: firebase.firestore.DocumentData) {
       if (item.viewers) {
         return _.omit(item.viewers, item.reviewedIds);

@@ -71,24 +71,19 @@
   </div>
 </template>
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
-import {
-  XCircleIcon,
-  EyeIcon,
-  ClipboardIcon,
-  CheckCircleIcon,
-} from "vue-feather-icons";
+import { XCircleIcon, ClipboardIcon, CheckCircleIcon } from "vue-feather-icons";
+import { searchString } from "./helpers";
 const db = firebase.firestore();
 
 // TODO: mixins cannot be used in TypeScript in Vue 2 without hacks.
 // https://github.com/vuejs/vue/issues/8721
 // In this case instead of using Vue.extend() we're extending the mixin.
-export default mixins.extend({
+export default Vue.extend({
   components: {
     XCircleIcon,
-    EyeIcon,
     ClipboardIcon,
     CheckCircleIcon,
   },
@@ -107,6 +102,7 @@ export default mixins.extend({
         alert(`SMS on clipboard`);
       });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     approve(item: any) {
       store.commit("startTask", {
         id: `approvingMutation${item.id}`,
@@ -115,15 +111,19 @@ export default mixins.extend({
       const approvingMutation = firebase
         .functions()
         .httpsCallable("approveMutation");
-      return approvingMutation({ id: item.id })
-        .then(() => {
-          store.commit("endTask", { id: `approvingMutation${item.id}` });
-        })
-        .catch((error: any) => {
-          store.commit("endTask", { id: `approvingMutation${item.id}` });
-          alert(`Error approving mutation: ${error.message}`);
-        });
+      return (
+        approvingMutation({ id: item.id })
+          .then(() => {
+            store.commit("endTask", { id: `approvingMutation${item.id}` });
+          })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .catch((error: any) => {
+            store.commit("endTask", { id: `approvingMutation${item.id}` });
+            alert(`Error approving mutation: ${error.message}`);
+          })
+      );
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     del(item: any) {
       store.commit("startTask", {
         id: `deleteMutation${item.id}`,
@@ -148,7 +148,7 @@ export default mixins.extend({
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
           (p: firebase.firestore.DocumentData) =>
-            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
   },

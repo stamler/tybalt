@@ -78,13 +78,14 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import SaveBox from "./SaveBox.vue";
 import firebase from "../firebase";
 import { format } from "date-fns";
+import { payPeriodsForYear as ppGen } from "./helpers";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   components: { SaveBox },
   props: ["collection"],
   data() {
@@ -97,7 +98,7 @@ export default mixins.extend({
   },
   computed: {
     openingDateCandidates(): Date[] {
-      return this.payPeriodsForYear(new Date().getFullYear());
+      return Array.from(ppGen(new Date().getFullYear()));
     },
   },
   filters: {

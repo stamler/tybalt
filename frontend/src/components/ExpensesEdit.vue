@@ -110,15 +110,15 @@
     <span class="field" v-if="item.paymentType === 'Allowance'">
       <label for="breakfast" class="checkoption">
         <input type="checkbox" id="breakfast" v-model="item.breakfast" />
-        Breakfast (${{ BREAKFAST_RATE }})
+        Breakfast (${{ getExpenseRate("BREAKFAST_RATE", item.date) }})
       </label>
       <label for="lunch" class="checkoption">
         <input class="grow" type="checkbox" id="lunch" v-model="item.lunch" />
-        Lunch (${{ LUNCH_RATE }})
+        Lunch (${{ getExpenseRate("LUNCH_RATE", item.date) }})
       </label>
       <label for="dinner" class="checkoption">
         <input class="grow" type="checkbox" id="dinner" v-model="item.dinner" />
-        Dinner (${{ DINNER_RATE }})
+        Dinner (${{ getExpenseRate("DINNER_RATE", item.date) }})
       </label>
       <label for="lodging" class="checkoption">
         <input
@@ -127,7 +127,9 @@
           id="lodging"
           v-model="item.lodging"
         />
-        Personal Accommodation (${{ LODGING_RATE }})
+        Personal Accommodation (${{
+          getExpenseRate("LODGING_RATE", item.date)
+        }})
       </label>
     </span>
     <span class="field">
@@ -251,7 +253,7 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -262,12 +264,14 @@ import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
+import { format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
-export default mixins.extend({
+export default Vue.extend({
   components: { Datepicker, DownloadIcon, FileMinusIcon },
   props: ["id", "collection"],
   data() {
@@ -299,7 +303,7 @@ export default mixins.extend({
     };
   },
   computed: {
-    ...mapState(["user"]),
+    ...mapState(["user", "expenseRates"]),
     mileageTokensInDescWhileOtherPaymentType(): boolean {
       if (
         this.item.paymentType !== undefined &&
@@ -381,6 +385,41 @@ export default mixins.extend({
     this.setItem(this.id);
   },
   methods: {
+    // get the value of an expense rate on a specified date
+    getExpenseRate(rate: string, date: Date | undefined) {
+      if (this.expenseRates === null) return 0;
+      if (date === undefined) return 0;
+      // get the timezone of the user
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // make an ISO string from the date
+      const ISODate = format(utcToZonedTime(date, timezone), "yyyy-MM-dd");
+      // sort dates in descending order
+      const dates = Object.keys(this.expenseRates).sort().reverse();
+      // find the first date that is less than or equal to the specified date
+      const index = dates.findIndex((d: string) => d <= ISODate);
+      if (this.expenseRates?.[dates[index]]?.[rate] === undefined) {
+        throw new Error(`No expense rate found for ${rate} on ${date}`);
+      }
+      return this.expenseRates?.[dates[index]]?.[rate];
+    },
+    getMileageRate(
+      date: Date | undefined,
+      profile: firebase.firestore.DocumentData
+    ) {
+      if (this.expenseRates === null) return 0;
+      if (date === undefined) return 0;
+      if (profile === undefined) return 0;
+      const previousMileage = profile.get("mileageClaimed");
+      if (previousMileage === undefined) return 0;
+      const rateMap = this.getExpenseRate("MILEAGE", date);
+      const tiers = Object.keys(rateMap).sort(
+        (a, b) => parseInt(b, 10) - parseInt(a, 10)
+      );
+      const index = tiers.findIndex(
+        (d: string) => previousMileage >= parseInt(d, 10)
+      );
+      return rateMap[tiers[index]];
+    },
     cleanup() {
       // clean up any existing orphaned attachments
       const cleanup = firebase
@@ -401,7 +440,7 @@ export default mixins.extend({
       if (files && files[0]) {
         this.localFile = files[0];
         const reader = new FileReader();
-        reader.onload = async (event: ProgressEvent) => {
+        reader.onload = async (/*event: ProgressEvent*/) => {
           const checksum = sha256(reader.result as ArrayBuffer);
           const subtype = this.localFile.type.replace(/.+\//g, "");
           if (subtype in allowedTypes) {
@@ -415,9 +454,9 @@ export default mixins.extend({
 
             // Notify if the file already exist in storage,
             // otherwise set a flag and save the ref to item
-            let url;
+            // let url;
             try {
-              url = await storage.ref(pathReference).getDownloadURL();
+              /*url = */ await storage.ref(pathReference).getDownloadURL();
               this.attachmentPreviouslyUploaded = true;
             } catch (error) {
               const err = error as firebase.storage.FirebaseStorageError;

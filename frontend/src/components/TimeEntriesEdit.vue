@@ -267,6 +267,7 @@ export default Vue.extend({
         .collection("ProfileSecrets")
         .doc(this.user.uid)
         .get();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const writeJobToItem = (values: any) => {
         this.job = values.objectID;
         this.item.jobDescription = values.description;
