@@ -138,13 +138,13 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
 import _ from "lodash";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["id", "collection"],
   data() {
     return {

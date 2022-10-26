@@ -86,13 +86,14 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import firebase from "../firebase";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
+import { searchString } from "./helpers";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["retired", "collection"],
   computed: {
     ...mapState(["claims"]),
@@ -102,14 +103,14 @@ export default mixins.extend({
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
           .filter((p) => Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
-            (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       } else {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
           .filter((p) => !Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
-            (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       }
     },

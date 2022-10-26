@@ -55,13 +55,14 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { searchString } from "./helpers";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { XCircleIcon } from "vue-feather-icons";
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"],
   components: {
     XCircleIcon,
@@ -72,7 +73,7 @@ export default mixins.extend({
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
           (p: firebase.firestore.DocumentData) =>
-            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
   },

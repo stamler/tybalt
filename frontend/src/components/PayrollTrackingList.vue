@@ -82,7 +82,14 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import {
+  generatePayablesCSVSQL,
+  downloadBlob,
+  exportDate,
+  exportDateWeekStart,
+  foldAmendments,
+} from "./helpers";
 import { format, subDays } from "date-fns";
 import store from "../store";
 import { utcToZonedTime } from "date-fns-tz";
@@ -93,16 +100,15 @@ import {
   Amendment,
   TimeOffTypes,
 } from "./types";
-import { LockIcon, DownloadIcon } from "vue-feather-icons";
+import { DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import { parse } from "json2csv";
 import _ from "lodash";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
-    LockIcon,
     DownloadIcon,
   },
   filters: {
@@ -129,6 +135,11 @@ export default mixins.extend({
     });
   },
   methods: {
+    generatePayablesCSVSQL,
+    downloadBlob,
+    exportDate,
+    exportDateWeekStart,
+    foldAmendments,
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&

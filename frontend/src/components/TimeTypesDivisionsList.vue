@@ -27,13 +27,14 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { searchString } from "./helpers";
 import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
     EditIcon,
@@ -43,9 +44,7 @@ export default mixins.extend({
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-        .filter(
-          (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
-        );
+        .filter((p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0);
     },
   },
   data() {

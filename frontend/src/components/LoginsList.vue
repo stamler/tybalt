@@ -19,20 +19,19 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { searchString } from "./helpers";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"],
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-        .filter(
-          (p) => this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
-        );
+        .filter((p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0);
     },
   },
   filters: {

@@ -179,7 +179,8 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { bundle, copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import {
   EditIcon,
@@ -193,7 +194,7 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"],
   components: {
     EditIcon,
@@ -247,7 +248,7 @@ export default mixins.extend({
           throw "There is no valid uid";
         }
         db.collection("Profiles")
-          .doc(this.user.uid)
+          .doc(uid)
           .get()
           .then((docSnap) => {
             this.openingOV = docSnap.get("openingOV") || 0;
@@ -281,6 +282,9 @@ export default mixins.extend({
     },
   },
   methods: {
+    bundle,
+    copyEntry,
+    del,
     dayIsSTThS(item: firebase.firestore.DocumentData): boolean {
       // return true if day is Sunday, Tuesday, Thursday or Saturday
       if (item.date.toDate().getDay() % 2 === 0) {

@@ -92,7 +92,7 @@ export function* payPeriodsForYear(year: number): Generator<Date, void, void> {
 // timesheets property whose value is an array of timesheets and
 // an amendments property whose value is amendments that didn't have a
 // corresponding timesheet.
-function foldAmendments(items: (TimeSheet | Amendment)[]) {
+export function foldAmendments(items: (TimeSheet | Amendment)[]) {
   const [amendments, timesheets] = _.partition(items, { amendment: true });
   const groupedAmendments = _.groupBy(amendments, "uid") as {
     [x: string]: Amendment[];
@@ -226,7 +226,7 @@ export async function generateTimeReportCSV(
     // the arg is firestore DocumentData. Convert timestamps to JS dates
     firestoreDoc = true;
     if (!isTimeSheet(urlOrFirestoreTimeSheet)) {
-      throw new Error("(mixins1)There was an error validating the timesheet");
+      throw new Error("(helpers1)There was an error validating the timesheet");
     }
     items = [urlOrFirestoreTimeSheet];
     amendments = [];
@@ -267,7 +267,7 @@ export async function generateTimeReportCSV(
   const timesheetRecords = [];
   for (const item of items) {
     if (!isTimeSheet(item)) {
-      throw new Error("(mixins2)There was an error validating the timesheet");
+      throw new Error("(helpers2)There was an error validating the timesheet");
     }
     for (const entry of item.entries) {
       //if (!["R", "RT"].includes(entry.timetype)) continue;
@@ -350,18 +350,18 @@ export async function generateTimeReportCSV(
   );
 }
 
-function exportDate(date: Date) {
+export function exportDate(date: Date) {
   return format(date, "yyyy MMM dd");
 }
 
-function exportDateWeekStart(date: Date) {
+export function exportDateWeekStart(date: Date) {
   const startDate = subDays(date, 6);
   return format(startDate, "yyyy MMM dd");
 }
 
 // Force the download of a blob to a file by creating an
 // anchor and programmatically clicking it.
-function downloadBlob(blob: Blob, filename: string, inline = false) {
+export function downloadBlob(blob: Blob, filename: string, inline = false) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -496,6 +496,22 @@ export function recallTs(timesheetId: string) {
     });
 }
 
+export function bundle(week: Date) {
+  store.commit("startTask", {
+    id: "bundle",
+    message: "verifying...",
+  });
+  const bundleTimesheet = firebase.functions().httpsCallable("bundleTimesheet");
+  return bundleTimesheet({ weekEnding: week.getTime() })
+    .then(() => {
+      store.commit("endTask", { id: "bundle" });
+    })
+    .catch((error) => {
+      store.commit("endTask", { id: "bundle" });
+      alert(`Error bundling timesheet: ${error.message}`);
+    });
+}
+
 export function unbundle(timesheetId: string) {
   store.commit("startTask", { id: "unbundle", message: "unbundling" });
   const unbundleTimesheet = firebase
@@ -526,4 +542,68 @@ export function submitTs(timesheetId: string) {
       store.commit("endTask", { id: `submit${timesheetId}` });
       alert(`Error submitting timesheet: ${error}`);
     });
+}
+
+export async function generatePayablesCSVSQL(
+  timestamp: firebase.firestore.Timestamp,
+  type: "payroll" | "weekly"
+) {
+  const start = new Date();
+  store.commit("startTask", {
+    id: `getExpensesSQL${start.getTime()}`,
+    message: "Getting Expenses",
+  });
+  const weekEndingTbay = utcToZonedTime(
+    timestamp.toDate(),
+    "America/Thunder_Bay"
+  );
+  const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+  const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+  try {
+    let response;
+    // type determines whether we push out one or two weeks of data.
+    if (type === "payroll") {
+      response = await queryMySQL({
+        queryName: "payablesPayrollCSV",
+        queryValues,
+      });
+    } else if (type === "weekly") {
+      response = await queryMySQL({
+        queryName: "payablesWeeklyCSV",
+        queryValues,
+      });
+    } else {
+      throw new Error("Invalid type in generatePayablesCSVSQL");
+    }
+    // post-processing of response data for CSV conversion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dat = response.data.map((x: any) => {
+      const processed = x;
+      // Coerce number-like payrollID strings to numbers
+      if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID
+      processed.tbtePayrollId = Number(x.tbtePayrollId);
+      return processed;
+    });
+    const csv = parse(dat);
+    const blob = new Blob([csv], { type: "text/csv" });
+    /* TODO: filename should represent the correct start and end dates of
+    the report */
+    let filename: string;
+    if (type === "payroll") {
+      filename = `SQLExpensesForPayPeriod_${exportDateWeekStart(
+        subDays(weekEndingTbay, 7)
+      )}-${exportDate(weekEndingTbay)}`;
+    } else if (type === "weekly") {
+      filename = `SQLPayables_${exportDateWeekStart(
+        weekEndingTbay
+      )}-${exportDate(weekEndingTbay)}`;
+    } else {
+      throw new Error("Invalid type in generatePayablesCSVSQL");
+    }
+    store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+    downloadBlob(blob, `${filename}.csv`);
+  } catch (error) {
+    store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+    alert(`Error: ${error}`);
+  }
 }

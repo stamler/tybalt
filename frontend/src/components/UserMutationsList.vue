@@ -78,9 +78,6 @@ import { XCircleIcon, ClipboardIcon, CheckCircleIcon } from "vue-feather-icons";
 import { searchString } from "./helpers";
 const db = firebase.firestore();
 
-// TODO: mixins cannot be used in TypeScript in Vue 2 without hacks.
-// https://github.com/vuejs/vue/issues/8721
-// In this case instead of using Vue.extend() we're extending the mixin.
 export default Vue.extend({
   components: {
     XCircleIcon,

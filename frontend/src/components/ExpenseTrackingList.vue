@@ -53,17 +53,20 @@
 
 <script lang="ts">
 import firebase from "../firebase";
-import mixins from "./mixins";
+import Vue from "vue";
+import { mapState } from "vuex";
+import { generatePayablesCSVSQL } from "./helpers";
 import store from "../store";
 import { format } from "date-fns";
 import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
 
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"],
   components: { DownloadIcon, RefreshCwIcon },
   computed: {
+    ...mapState(["claims"]),
     canRefresh(): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "admin") &&
@@ -84,6 +87,7 @@ export default mixins.extend({
     };
   },
   methods: {
+    generatePayablesCSVSQL,
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&

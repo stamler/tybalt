@@ -4,14 +4,15 @@
   </router-link>
 </template>
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
 import { parse } from "json2csv";
 import { DownloadIcon } from "vue-feather-icons";
 import { QueryPayloadObject } from "./types";
+import { downloadBlob } from "./helpers";
 
-export default mixins.extend({
+export default Vue.extend({
   props: {
     queryName: String,
     queryValues: Array,
@@ -24,7 +25,7 @@ export default mixins.extend({
       const csv = parse(result);
       const blob = new Blob([csv], { type: "text/csv" });
       const name = this.dlFileName || "report.csv";
-      this.downloadBlob(blob, name);
+      downloadBlob(blob, name);
     },
     runQuery() {
       store.commit("startTask", {

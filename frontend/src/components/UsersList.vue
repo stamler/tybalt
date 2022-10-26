@@ -91,7 +91,8 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { searchString } from "./helpers";
 import store from "../store";
 import { EditIcon, ArchiveIcon, KeyIcon } from "vue-feather-icons";
 import { format, formatDistanceToNow } from "date-fns";
@@ -100,10 +101,7 @@ import firebase from "../firebase";
 
 const db = firebase.firestore();
 
-// TODO: mixins cannot be used in TypeScript in Vue 2 without hacks.
-// https://github.com/vuejs/vue/issues/8721
-// In this case instead of using Vue.extend() we're extending the mixin.
-export default mixins.extend({
+export default Vue.extend({
   props: ["query"],
   components: {
     EditIcon,
@@ -125,7 +123,7 @@ export default mixins.extend({
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
           (p: firebase.firestore.DocumentData) =>
-            this.searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
   },
