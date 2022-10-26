@@ -22,7 +22,7 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Payroll' }"
+          to="#"
           v-on:click.native="
             generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)
           "
@@ -30,21 +30,21 @@
           week1SQL <download-icon></download-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Payroll' }"
+          to="#"
           v-on:click.native="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
         >
           week2SQL <download-icon></download-icon>
         </router-link>
         <router-link
           v-if="hasLink(item, 'week1TimeJson')"
-          v-bind:to="{ name: 'Payroll' }"
+          to="#"
           v-on:click.native="generatePayrollCSV(item['week1TimeJson'])"
         >
           week1 <download-icon></download-icon>
         </router-link>
         <router-link
           v-if="hasLink(item, 'week2TimeJson')"
-          v-bind:to="{ name: 'Payroll' }"
+          to="#"
           v-on:click.native="generatePayrollCSV(item['week2TimeJson'])"
         >
           week2 <download-icon></download-icon>
@@ -64,7 +64,7 @@
           </router-link>
         -->
         <router-link
-          v-bind:to="{ name: 'Payroll' }"
+          to="#"
           v-on:click.native="
             generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
               generateAttachmentZip(item)

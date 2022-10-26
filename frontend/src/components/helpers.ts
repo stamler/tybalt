@@ -5,6 +5,8 @@ import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
 import { parse } from "json2csv";
 import store from "../store";
+import router from "../router";
+
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -513,22 +515,6 @@ export function recallTs(timesheetId: string) {
     });
 }
 
-export function bundle(week: Date) {
-  store.commit("startTask", {
-    id: "bundle",
-    message: "verifying...",
-  });
-  const bundleTimesheet = firebase.functions().httpsCallable("bundleTimesheet");
-  return bundleTimesheet({ weekEnding: week.getTime() })
-    .then(() => {
-      store.commit("endTask", { id: "bundle" });
-    })
-    .catch((error) => {
-      store.commit("endTask", { id: "bundle" });
-      alert(`Error bundling timesheet: ${error.message}`);
-    });
-}
-
 export function unbundle(timesheetId: string) {
   store.commit("startTask", { id: "unbundle", message: "unbundling" });
   const unbundleTimesheet = firebase
@@ -537,6 +523,7 @@ export function unbundle(timesheetId: string) {
   return unbundleTimesheet({ id: timesheetId })
     .then(() => {
       store.commit("endTask", { id: "unbundle" });
+      router.push({ name: "Time Entries" });
     })
     .catch((error) => {
       store.commit("endTask", { id: "unbundle" });
@@ -554,6 +541,7 @@ export function submitTs(timesheetId: string) {
     .set({ submitted: true }, { merge: true })
     .then(() => {
       store.commit("endTask", { id: `submit${timesheetId}` });
+      router.push({ name: "Time Sheets" });
     })
     .catch((error) => {
       store.commit("endTask", { id: `submit${timesheetId}` });

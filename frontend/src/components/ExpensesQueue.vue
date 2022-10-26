@@ -62,13 +62,13 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Expenses Commit Queue' }"
+          to="#"
           v-on:click.native="$refs.rejectModal.openModal(item.id)"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Expenses Commit Queue' }"
+          to="#"
           v-on:click.native="commitItem(item, collectionObject)"
         >
           <lock-icon></lock-icon>
@@ -137,13 +137,13 @@
       </div>
       <div class="rowactionsbox">
         <router-link
-          v-bind:to="{ name: 'Expenses Commit Queue' }"
+          to="#"
           v-on:click.native="$refs.rejectModal.openModal(item.id)"
         >
           <x-circle-icon></x-circle-icon>
         </router-link>
         <router-link
-          v-bind:to="{ name: 'Expenses Commit Queue' }"
+          to="#"
           v-on:click.native="commitItem(item, collectionObject)"
         >
           <lock-icon></lock-icon>

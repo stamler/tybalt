@@ -93,7 +93,7 @@
           </template>
           <template v-else>
             <router-link
-              :to="{ name: 'Time Entries List' }"
+              to="#"
               v-on:click.native="copyEntry(item, collectionObject)"
               title="copy to tomorrow"
             >
@@ -166,7 +166,7 @@
         </div>
         <div class="rowactionsbox">
           <router-link
-            v-bind:to="{ name: 'Time Sheets' }"
+            to="#"
             v-on:click.native="bundle(new Date(Number(week)))"
             title="bundle and submit"
           >
@@ -180,7 +180,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { bundle, copyEntry, del } from "./helpers";
+import { copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import {
   EditIcon,
@@ -282,7 +282,24 @@ export default Vue.extend({
     },
   },
   methods: {
-    bundle,
+    bundle(week: Date) {
+      store.commit("startTask", {
+        id: "bundle",
+        message: "verifying...",
+      });
+      const bundleTimesheet = firebase
+        .functions()
+        .httpsCallable("bundleTimesheet");
+      return bundleTimesheet({ weekEnding: week.getTime() })
+        .then(() => {
+          store.commit("endTask", { id: "bundle" });
+          this.$router.push({ name: "Time Sheets" });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: "bundle" });
+          alert(`Error bundling timesheet: ${error.message}`);
+        });
+    },
     copyEntry,
     del,
     dayIsSTThS(item: firebase.firestore.DocumentData): boolean {

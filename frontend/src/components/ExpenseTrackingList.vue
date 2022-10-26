@@ -22,7 +22,7 @@
         </a>
         <router-link
           v-if="canRefresh"
-          v-bind:to="{ name: 'Expense Tracking' }"
+          to="#"
           v-on:click.native="generateAttachmentZip(item)"
         >
           <refresh-cw-icon></refresh-cw-icon>
@@ -41,7 +41,7 @@
           </router-link>
         -->
         <router-link
-          v-bind:to="{ name: 'Expense Tracking' }"
+          to="#"
           v-on:click.native="generatePayablesCSVSQL(item.weekEnding, 'weekly')"
         >
           payablesSQL<download-icon></download-icon>

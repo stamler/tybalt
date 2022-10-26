@@ -61,23 +61,14 @@
                 <td>{{ item.pending[tsId].offRotationDaysTally }}</td>
                 <td>
                   <router-link
-                    v-bind:to="{
-                      name: 'Time Tracking Details',
-                      params: { id },
-                    }"
+                    to="#"
                     v-on:click.native="$refs.rejectModal.openModal(tsId)"
                   >
                     <x-circle-icon></x-circle-icon>
                   </router-link>
                 </td>
                 <td>
-                  <router-link
-                    v-bind:to="{
-                      name: 'Time Tracking Details',
-                      params: { id },
-                    }"
-                    v-on:click.native="lockTimesheet(tsId)"
-                  >
+                  <router-link to="#" v-on:click.native="lockTimesheet(tsId)">
                     <lock-icon></lock-icon>
                   </router-link>
                 </td>
@@ -111,10 +102,7 @@
             {{ profile.surname }}, {{ profile.givenName }}
           </a>
           <router-link
-            v-bind:to="{
-              name: 'Time Tracking Details',
-              params: { id },
-            }"
+            to="#"
             v-bind:title="`Ignore ${profile.displayName} this week`"
             v-on:click.native="ignore(profile.id)"
           >
@@ -137,10 +125,7 @@
             {{ profile.surname }}, {{ profile.givenName }}
           </router-link>
           <router-link
-            v-bind:to="{
-              name: 'Time Tracking Details',
-              params: { id },
-            }"
+            to="#"
             v-on:click.native="
               unlockTimesheet(tsIdForUid(profile.id, item.timeSheets))
             "
@@ -156,10 +141,7 @@
         <p v-for="profile in ignoredProfiles" v-bind:key="profile.id">
           {{ profile.surname }}, {{ profile.givenName }}
           <router-link
-            v-bind:to="{
-              name: 'Time Tracking Details',
-              params: { id },
-            }"
+            to="#"
             v-bind:title="`Expect ${profile.displayName} this week`"
             v-on:click.native="restore(profile.id)"
           >

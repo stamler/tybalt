@@ -72,13 +72,7 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <router-link
-            v-bind:to="{
-              name: 'Expense Tracking Details',
-              params: { id },
-            }"
-            v-on:click.native="uncommitExpense(exp.id)"
-          >
+          <router-link to="#" v-on:click.native="uncommitExpense(exp.id)">
             <unlock-icon></unlock-icon>
           </router-link>
         </div>

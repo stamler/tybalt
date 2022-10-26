@@ -10,7 +10,7 @@
         {{ new Date(parseInt(weekEnding, 10)) | shortDate }}
         <router-link
           v-if="unsubmittedExpenseIds(expenses).length > 0"
-          v-bind:to="{ name: 'Expenses' }"
+          to="#"
           v-on:click.native="submitExpenses(unsubmittedExpenseIds(expenses))"
         >
           <send-icon></send-icon>
@@ -145,7 +145,7 @@
             <template v-if="item.submitted === false">
               <router-link
                 v-if="!item.attachment"
-                :to="{ name: 'Expenses' }"
+                to="#"
                 v-on:click.native="copyEntry(item, collectionObject)"
                 title="copy to tomorrow"
               >
@@ -160,19 +160,13 @@
               <router-link :to="[parentPath, item.id, 'edit'].join('/')">
                 <edit-icon></edit-icon>
               </router-link>
-              <router-link
-                v-bind:to="{ name: 'Expenses' }"
-                v-on:click.native="submitExpense(item.id)"
-              >
+              <router-link to="#" v-on:click.native="submitExpense(item.id)">
                 <send-icon></send-icon>
               </router-link>
             </template>
 
             <template v-if="item.submitted === true && item.approved === false">
-              <router-link
-                v-bind:to="{ name: 'Expenses' }"
-                v-on:click.native="recallExpense(item.id)"
-              >
+              <router-link to="#" v-on:click.native="recallExpense(item.id)">
                 <rewind-icon></rewind-icon>
               </router-link>
               <span class="label">submitted</span>
@@ -189,15 +183,12 @@
           <!-- The template for "pending" -->
           <template v-if="approved === false">
             <template v-if="!item.approved && !item.rejected">
-              <router-link
-                v-bind:to="{ name: 'Expenses Pending' }"
-                v-on:click.native="approveExpense(item.id)"
-              >
+              <router-link to="#" v-on:click.native="approveExpense(item.id)">
                 <check-circle-icon></check-circle-icon>
               </router-link>
               <router-link
                 v-if="!item.approved && !item.rejected"
-                v-bind:to="{ name: 'Expenses Pending' }"
+                to="#"
                 v-on:click.native="$refs.rejectModal.openModal(item.id)"
               >
                 <x-circle-icon></x-circle-icon>
@@ -212,7 +203,7 @@
           <template v-if="approved === true">
             <template v-if="!item.committed">
               <router-link
-                v-bind:to="{ name: 'Expenses Pending' }"
+                to="#"
                 v-on:click.native="$refs.rejectModal.openModal(item.id)"
               >
                 <x-circle-icon></x-circle-icon>
@@ -295,37 +286,6 @@ export default Vue.extend({
     del,
     downloadAttachment,
     submitExpense,
-    approveExpense(itemId: string) {
-      store.commit("startTask", {
-        id: `approve${itemId}`,
-        message: "approving",
-      });
-      const item = db.collection("Expenses").doc(itemId);
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(item)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `An expense with id ${itemId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (data !== undefined && data.submitted === true) {
-                // timesheet is approvable because it has been submitted
-                transaction.update(item, { approved: true, committed: false });
-              } else {
-                throw "The expense has not been submitted";
-              }
-            });
-        })
-        .then(() => {
-          store.commit("endTask", { id: `approve${itemId}` });
-        })
-        .catch(function (error) {
-          store.commit("endTask", { id: `approve${itemId}` });
-          alert(`Approval failed: ${error}`);
-        });
-    },
     recallExpense(expenseId: string) {
       // A transaction is used to update the submitted field by
       // first verifying that approved is false. Similarly an approve
@@ -360,6 +320,38 @@ export default Vue.extend({
         .catch(function (error) {
           store.commit("endTask", { id: `recall${expenseId}` });
           alert(`Recall failed: ${error}`);
+        });
+    },
+    approveExpense(itemId: string) {
+      store.commit("startTask", {
+        id: `approve${itemId}`,
+        message: "approving",
+      });
+      const item = db.collection("Expenses").doc(itemId);
+      return db
+        .runTransaction(function (transaction) {
+          return transaction
+            .get(item)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `An expense with id ${itemId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (data !== undefined && data.submitted === true) {
+                // timesheet is approvable because it has been submitted
+                transaction.update(item, { approved: true, committed: false });
+              } else {
+                throw "The expense has not been submitted";
+              }
+            });
+        })
+        .then(() => {
+          store.commit("endTask", { id: `approve${itemId}` });
+          this.$router.push({ name: "Expenses Pending" });
+        })
+        .catch(function (error) {
+          store.commit("endTask", { id: `approve${itemId}` });
+          alert(`Approval failed: ${error}`);
         });
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -67,15 +67,12 @@
       <div class="rowactionsbox">
         <template v-if="query === 'list'">
           <template v-if="!item.submitted">
-            <router-link
-              v-bind:to="{ name: 'Time Entries' }"
-              v-on:click.native="unbundle(item.id)"
-            >
+            <router-link to="#" v-on:click.native="unbundle(item.id)">
               <edit-icon></edit-icon>
             </router-link>
             <router-link
               v-if="!item.rejected"
-              v-bind:to="{ name: 'Time Sheets' }"
+              to="#"
               v-on:click.native="submitTs(item.id)"
             >
               <send-icon></send-icon>
@@ -84,7 +81,7 @@
           <template v-else-if="!item.approved">
             <router-link
               v-if="!item.approved"
-              v-bind:to="{ name: 'Time Sheets' }"
+              to="#"
               v-on:click.native="recallTs(item.id)"
             >
               <rewind-icon></rewind-icon>

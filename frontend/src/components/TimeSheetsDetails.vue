@@ -15,26 +15,20 @@
           item.approved === false &&
           item.rejected === false
         "
-        v-bind:to="{ name: 'Time Sheets' }"
+        to="#"
         v-on:click.native="approveTs(id)"
       >
         <check-circle-icon></check-circle-icon>
       </router-link>
       <!-- download button -->
-      <router-link
-        v-bind:to="{
-          name: 'Time Sheet Details',
-          params: { id: id, collection: 'TimeSheets' },
-        }"
-        v-on:click.native="generateTimeReportCSV(item)"
-      >
+      <router-link to="#" v-on:click.native="generateTimeReportCSV(item)">
         <download-icon></download-icon>
       </router-link>
 
       <!-- submit button -->
       <router-link
         v-if="!item.rejected && belongsToMe(item) && item.submitted === false"
-        v-bind:to="{ name: 'Time Sheets' }"
+        to="#"
         v-on:click.native="submitTs(id)"
       >
         <send-icon></send-icon>
@@ -46,7 +40,7 @@
           item.submitted === true &&
           item.approved === false
         "
-        v-bind:to="{ name: 'Time Sheets' }"
+        to="#"
         v-on:click.native="recallTs(id)"
       >
         <rewind-icon></rewind-icon>
@@ -59,7 +53,7 @@
           item.locked === false &&
           item.rejected === false
         "
-        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        to="#"
         v-on:click.native="$refs.rejectModal.openModal(id)"
       >
         <x-circle-icon></x-circle-icon>
@@ -69,7 +63,7 @@
         v-if="
           canApprove(item) && item.submitted === true && item.locked === false
         "
-        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        to="#"
         v-on:click.native="$refs.shareModal.openModal(id, item.viewerIds)"
       >
         <share-icon></share-icon>
@@ -82,7 +76,7 @@
           item.submitted === true &&
           item.locked === false
         "
-        v-bind:to="{ name: 'Time Sheet Details', params: { id, collection } }"
+        to="#"
         v-on:click.native="reviewTs(id)"
       >
         <eye-icon></eye-icon>
@@ -276,6 +270,7 @@ export default Vue.extend({
         })
         .then(() => {
           store.commit("endTask", { id: `approve${timesheetId}` });
+          this.$router.push({ name: "Time Sheets" });
         })
         .catch(function (error) {
           store.commit("endTask", { id: `approve${timesheetId}` });

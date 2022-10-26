@@ -28,7 +28,7 @@
         </a>
         <router-link
           v-if="hasLink(item, 'json')"
-          v-bind:to="{ name: 'Time Tracking' }"
+          to="#"
           v-on:click.native="generateTimeReportCSV(item['json'])"
         >
           time_report<download-icon></download-icon>
