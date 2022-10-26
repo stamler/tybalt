@@ -6,6 +6,7 @@ import _ from "lodash";
 import { parse } from "json2csv";
 import store from "../store";
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // Given a number (result of getTime() from js Date object), verify that it is
 // 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
@@ -392,6 +393,22 @@ export function downloadBlob(blob: Blob, filename: string, inline = false) {
   // Useful if you want a reference to the element
   // in order to attach it to the DOM or use it in some other way
   return a;
+}
+
+export async function downloadAttachment(
+  item: firebase.firestore.DocumentData,
+  sameTab?: boolean
+) {
+  const url = await storage.ref(item.attachment).getDownloadURL();
+  if (sameTab === true) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "download";
+    a.click();
+    return a;
+  } else {
+    window.open(url, "_blank");
+  }
 }
 
 export function submitExpense(expenseId: string) {

@@ -356,7 +356,7 @@ export function nextSaturday(date: Date): Date {
 // 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
 // week 2 of a payroll at TBT Engineering. The definition of this is an
 // integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
-// NB: THIS FUNCTION ALSO IN FRONTEND mixins.ts
+// NB: THIS FUNCTION ALSO IN FRONTEND helpers.ts
 export function isPayrollWeek2(weekEnding: Date): boolean {
   const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
   

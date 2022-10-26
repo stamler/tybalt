@@ -155,16 +155,15 @@
 
 <script lang="ts">
 import Vue from "vue";
+import { downloadAttachment } from "./helpers";
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
-import mixins from "./mixins";
 import { format } from "date-fns";
 import { LockIcon, DownloadIcon, XCircleIcon } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
 
 export default Vue.extend({
-  mixins: [mixins],
   props: ["collection"],
   components: {
     Modal,
@@ -186,6 +185,7 @@ export default Vue.extend({
     };
   },
   methods: {
+    downloadAttachment,
     commitItem(
       item: firebase.firestore.DocumentData,
       collection: firebase.firestore.CollectionReference

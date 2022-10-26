@@ -185,7 +185,7 @@
 
 <script lang="ts">
 import Modal from "./RejectModal.vue";
-import mixins from "./mixins";
+import Vue from "vue";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -207,7 +207,7 @@ interface TimeSheetTrackingPayload {
   uid: string;
 }
 
-export default mixins.extend({
+export default Vue.extend({
   components: {
     XCircleIcon,
     LockIcon,

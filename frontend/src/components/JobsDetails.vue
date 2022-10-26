@@ -92,23 +92,20 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { format, formatDistanceToNow } from "date-fns";
-import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
 import { mapState } from "vuex";
 import Datepicker from "vuejs-datepicker";
 import QueryBox from "./QueryBox.vue";
 import DownloadQueryLink from "./DownloadQueryLink.vue";
 
-export default mixins.extend({
+export default Vue.extend({
   computed: mapState(["claims"]),
   props: ["id", "collection"],
   components: {
     Datepicker,
-    DownloadIcon,
-    RefreshCwIcon,
     QueryBox,
     DownloadQueryLink,
   },

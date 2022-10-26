@@ -39,16 +39,16 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { generateTimeReportCSV } from "./helpers";
 import { format } from "date-fns";
-import { LockIcon, DownloadIcon } from "vue-feather-icons";
+import { DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
-    LockIcon,
     DownloadIcon,
   },
   computed: {
@@ -83,6 +83,7 @@ export default mixins.extend({
     });
   },
   methods: {
+    generateTimeReportCSV,
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&

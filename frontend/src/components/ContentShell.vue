@@ -17,10 +17,10 @@
 
 <script lang="ts">
 import { RouteConfig } from "vue-router";
-import mixins from "./mixins";
+import Vue from "vue";
 import WaitMessages from "./WaitMessages.vue";
 import { mapState } from "vuex";
-export default mixins.extend({
+export default Vue.extend({
   filters: {
     uiLinkTitle(item: RouteConfig): string {
       return item.meta?.uiName ?? item.name;

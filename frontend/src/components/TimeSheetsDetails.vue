@@ -150,11 +150,13 @@
 <script lang="ts">
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
-import mixins from "./mixins";
+import Vue from "vue";
+import { generateTimeReportCSV, submitTs, recallTs } from "./helpers";
 import { TimeEntry } from "./types";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
+import store from "../store";
 import {
   SendIcon,
   EyeIcon,
@@ -166,7 +168,7 @@ import {
 } from "vue-feather-icons";
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   components: {
     RejectModal,
     ShareModal,
@@ -232,6 +234,9 @@ export default mixins.extend({
     this.setItem(this.id);
   },
   methods: {
+    generateTimeReportCSV,
+    submitTs,
+    recallTs,
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
@@ -245,6 +250,55 @@ export default mixins.extend({
       } else {
         this.item = {};
       }
+    },
+    approveTs(timesheetId: string) {
+      store.commit("startTask", {
+        id: `approve${timesheetId}`,
+        message: "approving",
+      });
+      const timesheet = db.collection("TimeSheets").doc(timesheetId);
+      return db
+        .runTransaction(function (transaction) {
+          return transaction
+            .get(timesheet)
+            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
+              if (!tsDoc.exists) {
+                throw `A timesheet with id ${timesheetId} doesn't exist.`;
+              }
+              const data = tsDoc?.data() ?? undefined;
+              if (data !== undefined && data.submitted === true) {
+                // timesheet is approvable because it has been submitted
+                transaction.update(timesheet, { approved: true });
+              } else {
+                throw "The timesheet has not been submitted";
+              }
+            });
+        })
+        .then(() => {
+          store.commit("endTask", { id: `approve${timesheetId}` });
+        })
+        .catch(function (error) {
+          store.commit("endTask", { id: `approve${timesheetId}` });
+          alert(`Approval failed: ${error}`);
+        });
+    },
+    reviewTs(timesheetId: string) {
+      store.commit("startTask", {
+        id: `review${timesheetId}`,
+        message: "marking reviewed",
+      });
+      db.collection("TimeSheets")
+        .doc(timesheetId)
+        .update({
+          reviewedIds: firebase.firestore.FieldValue.arrayUnion(this.user.uid),
+        })
+        .then(() => {
+          store.commit("endTask", { id: `review${timesheetId}` });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: `review${timesheetId}` });
+          alert(`Error marking timesheet as reviewed: ${error}`);
+        });
     },
     belongsToMe(item: firebase.firestore.DocumentData) {
       return this.user.uid === item.uid;

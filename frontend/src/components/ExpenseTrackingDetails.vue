@@ -88,7 +88,7 @@
 </template>
 
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -98,7 +98,7 @@ import { DownloadIcon, UnlockIcon } from "vue-feather-icons";
 
 const db = firebase.firestore();
 
-export default mixins.extend({
+export default Vue.extend({
   props: ["id", "collection"],
   components: { DownloadIcon, UnlockIcon },
   computed: {

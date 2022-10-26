@@ -11,7 +11,8 @@
   </div>
 </template>
 <script lang="ts">
-import mixins from "./mixins";
+import Vue from "vue";
+import { downloadBlob } from "./helpers";
 import store from "../store";
 import firebase from "../firebase";
 import ObjectTable from "./ObjectTable.vue";
@@ -20,7 +21,7 @@ import { DownloadIcon } from "vue-feather-icons";
 import { TableData, QueryPayloadObject } from "./types";
 import { debounce } from "lodash";
 
-export default mixins.extend({
+export default Vue.extend({
   data() {
     return {
       queryResult: undefined as TableData,
@@ -38,7 +39,7 @@ export default mixins.extend({
       const csv = parse(this.queryResult);
       const blob = new Blob([csv], { type: "text/csv" });
       const name = this.dlFileName || "report.csv";
-      this.downloadBlob(blob, name);
+      downloadBlob(blob, name);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     runQuery: debounce(function (this: any) {
