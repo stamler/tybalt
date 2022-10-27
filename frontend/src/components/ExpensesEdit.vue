@@ -266,6 +266,7 @@ import { sha256 } from "js-sha256";
 import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
+import { downloadAttachment } from "./helpers";
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
@@ -385,6 +386,7 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    downloadAttachment,
     // get the value of an expense rate on a specified date
     getExpenseRate(rate: string, date: Date | undefined) {
       if (this.expenseRates === null) return 0;

@@ -236,6 +236,7 @@ import {
   submitExpense,
   copyEntry,
   del,
+  downloadAttachment,
 } from "./helpers";
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
@@ -292,6 +293,7 @@ export default Vue.extend({
   methods: {
     copyEntry,
     del,
+    downloadAttachment,
     submitExpense,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     unsubmittedExpenseIds(expenses: any[]) {

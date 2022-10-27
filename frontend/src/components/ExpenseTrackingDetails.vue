@@ -89,6 +89,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import { downloadAttachment } from "./helpers";
 import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -144,6 +145,7 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    downloadAttachment,
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
