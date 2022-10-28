@@ -10,7 +10,7 @@ import "firebase/compat/analytics";
 // Dynamic State Partitioning breaks the login flow and causes an endless loop
 // if "isolate other cross-site cookies" is enabled in Firefox settings. The
 // authDomain is set to match the actual custom URL of the site, replacing
-// charade-ca63b.firebaseapp.com with tybalt.tbte.ca and the Azure App
+// charade-ca63f.firebaseapp.com with tybalt.tbte.ca and the Azure App
 // registration configuration matches.
 firebase.initializeApp({
   apiKey: "AIzaSyCZpTxn-kK2zEpG7rlXn_eGsFHa4xmuVPM",

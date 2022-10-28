@@ -22,6 +22,10 @@ export default {
 </script>
 
 <style>
+:root {
+  --main-link-color: #00f;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -230,15 +234,29 @@ body,
   flex-direction: column;
   justify-content: center;
 }
+
+a {
+  color: var(--main-link-color);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+a:active {
+  filter: brightness(0.7) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.3));
+}
+
 .rowactionsbox {
   display: flex;
   flex: 0 0;
   align-items: center;
   margin: 0em 0.6em 0em;
 }
-.rowactionsbox a {
+.rowactionsbox > * {
+  color: var(--main-link-color);
   margin-right: 0.8em;
   text-decoration: none;
+  display: inherit;
 }
 
 .headline_wrapper {
