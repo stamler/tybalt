@@ -23,16 +23,21 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
-          .json<download-icon></download-icon>
-        </a>
-        <router-link
+        <a
+          style="display: block"
           v-if="hasLink(item, 'json')"
-          to="#"
-          v-on:click.native="generateTimeReportCSV(item['json'])"
+          download
+          :href="item['json']"
         >
-          time_report<download-icon></download-icon>
-        </router-link>
+          json<download-icon></download-icon>
+        </a>
+        <action-button
+          v-if="hasLink(item, 'json')"
+          type="download"
+          @click="generateTimeReportCSV(item['json'])"
+        >
+          csv
+        </action-button>
       </div>
     </div>
   </div>
@@ -42,6 +47,7 @@
 import Vue from "vue";
 import { generateTimeReportCSV } from "./helpers";
 import { format } from "date-fns";
+import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
@@ -49,6 +55,7 @@ const db = firebase.firestore();
 export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
+    ActionButton,
     DownloadIcon,
   },
   computed: {

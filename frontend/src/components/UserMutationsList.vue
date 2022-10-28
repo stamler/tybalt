@@ -25,17 +25,15 @@
             item.returnedData.email
           "
         >
-          <router-link
+          <action-button
             title="copy password to clipboard"
-            to="#"
-            v-on:click.native="
+            type="clipboard"
+            @click="
               copyToClipboard(
                 `Your username and password are ${item.returnedData.email} ${item.returnedData.password} \nYou now have everything you need to complete the setup of Authenticator per the instructions.`
               )
             "
-          >
-            <clipboard-icon></clipboard-icon>
-          </router-link>
+          />
         </span>
       </div>
       <div class="detailsbox">
@@ -56,16 +54,17 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link to="#" v-on:click.native="del(item)">
-          <x-circle-icon></x-circle-icon>
-        </router-link>
-        <router-link
-          to="#"
-          v-on:click.native="approve(item)"
+        <action-button
+          title="delete the mutation"
+          type="delete"
+          @click="del(item)"
+        />
+        <action-button
+          @click="approve(item)"
           v-if="item.status === 'unapproved'"
-        >
-          <check-circle-icon></check-circle-icon>
-        </router-link>
+          title="approve the mutation"
+          type="approve"
+        />
       </div>
     </div>
   </div>
@@ -74,15 +73,13 @@
 import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
-import { XCircleIcon, ClipboardIcon, CheckCircleIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import { searchString } from "./helpers";
 const db = firebase.firestore();
 
 export default Vue.extend({
   components: {
-    XCircleIcon,
-    ClipboardIcon,
-    CheckCircleIcon,
+    ActionButton,
   },
   data() {
     return {

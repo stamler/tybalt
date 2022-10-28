@@ -46,9 +46,7 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link to="#" v-on:click.native="del(item, collectionObject)">
-          <x-circle-icon></x-circle-icon>
-        </router-link>
+        <action-button type="delete" @click="del(item, collectionObject)" />
       </div>
     </div>
   </div>
@@ -60,12 +58,12 @@ import { searchString } from "./helpers";
 import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { XCircleIcon } from "vue-feather-icons";
-
+import ActionButton from "./ActionButton.vue";
+import { del } from "./helpers";
 export default Vue.extend({
   props: ["collection"],
   components: {
-    XCircleIcon,
+    ActionButton,
   },
   computed: {
     processedItems(): firebase.firestore.DocumentData[] {
@@ -101,6 +99,7 @@ export default Vue.extend({
     );
   },
   methods: {
+    del,
     guessSerial(item: firebase.firestore.DocumentData): string {
       const dnsHostname =
         item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname;

@@ -54,29 +54,25 @@
             }"
             title="Edit the user"
           >
-            <edit-icon></edit-icon>
+            <edit-icon />
           </router-link>
-          <router-link
+          <action-button
             v-if="
               (item.adEnabled === true || item.OU === 'Human Users') &&
               item.currentMutationVerb !== 'archive'
             "
-            to="#"
-            v-on:click.native="editUser('archive', item)"
+            type="archive"
+            @click="editUser('archive', item)"
             title="Disable and archive the user"
-          >
-            <archive-icon></archive-icon>
-          </router-link>
-          <router-link
+          />
+          <action-button
             v-if="
               item.adEnabled === true && item.currentMutationVerb !== 'reset'
             "
-            to="#"
-            v-on:click.native="editUser('reset', item)"
+            type="key"
+            @click="editUser('reset', item)"
             title="Reset the user's password and unlock account"
-          >
-            <key-icon></key-icon>
-          </router-link>
+          />
         </template>
         <template v-if="item.OU === 'Disabled Users'">Disabled</template>
         <div
@@ -94,7 +90,8 @@
 import Vue from "vue";
 import { searchString } from "./helpers";
 import store from "../store";
-import { EditIcon, ArchiveIcon, KeyIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
+import { EditIcon } from "vue-feather-icons";
 import { format, formatDistanceToNow } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -104,9 +101,8 @@ const db = firebase.firestore();
 export default Vue.extend({
   props: ["query"],
   components: {
+    ActionButton,
     EditIcon,
-    ArchiveIcon,
-    KeyIcon,
   },
   data() {
     return {

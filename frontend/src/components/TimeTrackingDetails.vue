@@ -60,17 +60,18 @@
                 <td>{{ item.pending[tsId].OB }}</td>
                 <td>{{ item.pending[tsId].offRotationDaysTally }}</td>
                 <td>
-                  <router-link
-                    to="#"
-                    v-on:click.native="$refs.rejectModal.openModal(tsId)"
-                  >
-                    <x-circle-icon></x-circle-icon>
-                  </router-link>
+                  <action-button
+                    type="delete"
+                    title="reject this time sheet"
+                    @click="$refs.rejectModal.openModal(tsId)"
+                  />
                 </td>
                 <td>
-                  <router-link to="#" v-on:click.native="lockTimesheet(tsId)">
-                    <lock-icon></lock-icon>
-                  </router-link>
+                  <action-button
+                    type="lock"
+                    title="lock this time sheet"
+                    @click="lockTimesheet(tsId)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -101,13 +102,11 @@
           >
             {{ profile.surname }}, {{ profile.givenName }}
           </a>
-          <router-link
-            to="#"
-            v-bind:title="`Ignore ${profile.displayName} this week`"
-            v-on:click.native="ignore(profile.id)"
-          >
-            <user-minus-icon></user-minus-icon>
-          </router-link>
+          <action-button
+            type="removeuser"
+            :title="`Ignore ${profile.displayName} this week`"
+            @click="ignore(profile.id)"
+          />
         </p>
         <br />
       </div>
@@ -124,14 +123,11 @@
           >
             {{ profile.surname }}, {{ profile.givenName }}
           </router-link>
-          <router-link
-            to="#"
-            v-on:click.native="
-              unlockTimesheet(tsIdForUid(profile.id, item.timeSheets))
-            "
-          >
-            <unlock-icon></unlock-icon>
-          </router-link>
+          <action-button
+            type="unlock"
+            :title="`unlock ${profile.displayName}'s Timesheet`"
+            @click="unlockTimesheet(tsIdForUid(profile.id, item.timeSheets))"
+          />
         </p>
       </div>
 
@@ -140,13 +136,11 @@
         <h5>Ignored this week</h5>
         <p v-for="profile in ignoredProfiles" v-bind:key="profile.id">
           {{ profile.surname }}, {{ profile.givenName }}
-          <router-link
-            to="#"
-            v-bind:title="`Expect ${profile.displayName} this week`"
-            v-on:click.native="restore(profile.id)"
-          >
-            <user-plus-icon></user-plus-icon>
-          </router-link>
+          <action-button
+            type="adduser"
+            :title="`Expect ${profile.displayName} this week`"
+            @click="restore(profile.id)"
+          />
         </p>
         <br />
       </div>
@@ -172,13 +166,7 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
-import {
-  LockIcon,
-  UnlockIcon,
-  XCircleIcon,
-  UserMinusIcon,
-  UserPlusIcon,
-} from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import _ from "lodash";
 
 const db = firebase.firestore();
@@ -191,11 +179,7 @@ interface TimeSheetTrackingPayload {
 
 export default Vue.extend({
   components: {
-    XCircleIcon,
-    LockIcon,
-    UnlockIcon,
-    UserMinusIcon,
-    UserPlusIcon,
+    ActionButton,
     Modal,
   },
   props: ["id", "collection"],
