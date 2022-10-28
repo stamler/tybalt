@@ -256,7 +256,18 @@ a:active {
   color: var(--main-link-color);
   margin-right: 0.8em;
   text-decoration: none;
+  font-weight: bold;
   display: inherit;
+}
+
+.rowactionsbox > a:hover {
+  text-decoration: none;
+  transition: filter 0.05s ease-in;
+  filter: drop-shadow(2px 2px 1px rgb(0 0 0 / 0.3));
+}
+
+.rowactionsbox > a:active {
+  filter: brightness(0.7) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.3));
 }
 
 .headline_wrapper {
