@@ -18,34 +18,32 @@
       </div>
       <div class="rowactionsbox">
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
-          attachments.zip<download-icon></download-icon>
+          attachments.zip<download-icon />
         </a>
-        <router-link
+        <action-button
           v-if="canRefresh"
-          to="#"
-          v-on:click.native="generateAttachmentZip(item)"
-        >
-          <refresh-cw-icon></refresh-cw-icon>
-        </router-link>
+          type="refresh"
+          @click="generateAttachmentZip(item)"
+        />
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
-          .json<download-icon></download-icon>
+          .json<download-icon />
         </a>
         <!--
           REMOVED AND REPLACED WITH generatePayablesCSVSQL
-          <router-link
+          <action-button
             v-if="hasLink(item, 'json')"
-            v-bind:to="{ name: 'Expense Tracking' }"
-            v-on:click.native="generatePayablesCSV(item['json'])"
+            type="download"
+            @click="generatePayablesCSV(item['json'])"
           >
-            payables<download-icon></download-icon>
-          </router-link>
+            payables
+          </action-button>
         -->
-        <router-link
-          to="#"
-          v-on:click.native="generatePayablesCSVSQL(item.weekEnding, 'weekly')"
+        <action-button
+          type="download"
+          @click="generatePayablesCSVSQL(item.weekEnding, 'weekly')"
         >
-          payablesSQL<download-icon></download-icon>
-        </router-link>
+          payablesSQL
+        </action-button>
       </div>
     </div>
   </div>
@@ -58,13 +56,14 @@ import { mapState } from "vuex";
 import { generatePayablesCSVSQL } from "./helpers";
 import store from "../store";
 import { format } from "date-fns";
-import { DownloadIcon, RefreshCwIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
+import { DownloadIcon } from "vue-feather-icons";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
   props: ["collection"],
-  components: { DownloadIcon, RefreshCwIcon },
+  components: { ActionButton, DownloadIcon },
   computed: {
     ...mapState(["claims"]),
     canRefresh(): boolean {

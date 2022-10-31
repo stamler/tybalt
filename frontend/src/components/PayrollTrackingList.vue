@@ -21,58 +21,56 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link
-          to="#"
-          v-on:click.native="
-            generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)
-          "
+        <action-button
+          type="download"
+          @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)"
         >
-          week1SQL <download-icon></download-icon>
-        </router-link>
-        <router-link
-          to="#"
-          v-on:click.native="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
+          week1SQL
+        </action-button>
+        <action-button
+          type="download"
+          @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
         >
-          week2SQL <download-icon></download-icon>
-        </router-link>
-        <router-link
+          week2SQL
+        </action-button>
+        <action-button
           v-if="hasLink(item, 'week1TimeJson')"
-          to="#"
-          v-on:click.native="generatePayrollCSV(item['week1TimeJson'])"
+          type="download"
+          @click="generatePayrollCSV(item['week1TimeJson'])"
         >
-          week1 <download-icon></download-icon>
-        </router-link>
-        <router-link
+          week1
+        </action-button>
+        <action-button
           v-if="hasLink(item, 'week2TimeJson')"
-          to="#"
-          v-on:click.native="generatePayrollCSV(item['week2TimeJson'])"
+          type="download"
+          @click="generatePayrollCSV(item['week2TimeJson'])"
         >
-          week2 <download-icon></download-icon>
-        </router-link>
+          week2
+        </action-button>
         <!--
         REMOVED AND REPLACED WITH generatePayablesCSVSQL
-          <router-link
+          <action-button
             v-if="Object.keys(item.expenses).length > 0"
-            v-bind:to="{ name: 'Payroll' }"
-            v-on:click.native="
+            type="download"
+            @click="
               generatePayablesCSV(
                 getPayPeriodExpenses(item.payPeriodEnding.toDate())
               ).then(() => generateAttachmentZip(item))
             "
           >
-            expenses<download-icon></download-icon>
-          </router-link>
+            expenses
+          </action-button>
         -->
-        <router-link
-          to="#"
-          v-on:click.native="
+        <action-button
+          type="download"
+          @click="
             generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
               generateAttachmentZip(item)
             )
           "
         >
-          expensesSQL<download-icon></download-icon>
-        </router-link>
+          expensesSQL
+        </action-button>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<download-icon></download-icon>
         </a>
@@ -100,6 +98,7 @@ import {
   Amendment,
   TimeOffTypes,
 } from "./types";
+import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 import { parse } from "json2csv";
@@ -109,6 +108,7 @@ const db = firebase.firestore();
 export default Vue.extend({
   props: ["collection"], // a string, the Firestore Collection name
   components: {
+    ActionButton,
     DownloadIcon,
   },
   filters: {

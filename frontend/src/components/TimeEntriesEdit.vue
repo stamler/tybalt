@@ -51,9 +51,7 @@
       </span>
       <span class="field" v-show="job !== undefined">
         <span class="grow">
-          <router-link to="#" v-on:click.native="job = undefined">
-            <x-circle-icon></x-circle-icon>
-          </router-link>
+          <action-button type="delete" @click="job = undefined" />
           {{ job }} / {{ item.client }}:{{ item.jobDescription }}
         </span>
       </span>
@@ -178,10 +176,10 @@ import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
-import { XCircleIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 
 export default Vue.extend({
-  components: { Datepicker, XCircleIcon },
+  components: { Datepicker, ActionButton },
   props: ["id", "collection"],
   data() {
     return {

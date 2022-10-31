@@ -8,79 +8,65 @@
       <span class="label" v-if="isReviewedByMe(item)">reviewed</span>
 
       <!-- approve button -->
-      <router-link
+      <action-button
         v-if="
           canApprove(item) &&
           item.submitted === true &&
           item.approved === false &&
           item.rejected === false
         "
-        to="#"
-        v-on:click.native="approveTs(id)"
-      >
-        <check-circle-icon></check-circle-icon>
-      </router-link>
+        type="approve"
+        @click="approveTs(id)"
+      />
       <!-- download button -->
-      <router-link to="#" v-on:click.native="generateTimeReportCSV(item)">
-        <download-icon></download-icon>
-      </router-link>
+      <action-button type="download" @click="generateTimeReportCSV(item)" />
 
       <!-- submit button -->
-      <router-link
+      <action-button
         v-if="!item.rejected && belongsToMe(item) && item.submitted === false"
-        to="#"
-        v-on:click.native="submitTs(id)"
-      >
-        <send-icon></send-icon>
-      </router-link>
+        type="send"
+        @click="submitTs(id)"
+      />
       <!-- recall button -->
-      <router-link
+      <action-button
         v-if="
           belongsToMe(item) &&
           item.submitted === true &&
           item.approved === false
         "
-        to="#"
-        v-on:click.native="recallTs(id)"
-      >
-        <rewind-icon></rewind-icon>
-      </router-link>
+        type="recall"
+        @click="recallTs(id)"
+      />
       <!-- reject button -->
-      <router-link
+      <action-button
         v-if="
           canReject(item) &&
           item.submitted === true &&
           item.locked === false &&
           item.rejected === false
         "
-        to="#"
-        v-on:click.native="$refs.rejectModal.openModal(id)"
-      >
-        <x-circle-icon></x-circle-icon>
-      </router-link>
+        type="delete"
+        @click="$refs.rejectModal.openModal(id)"
+      />
       <!-- share button -->
-      <router-link
+      <action-button
         v-if="
           canApprove(item) && item.submitted === true && item.locked === false
         "
-        to="#"
-        v-on:click.native="$refs.shareModal.openModal(id, item.viewerIds)"
-      >
-        <share-icon></share-icon>
-      </router-link>
+        type="share"
+        @click="$refs.shareModal.openModal(id, item.viewerIds)"
+      />
       <!-- review button -->
-      <router-link
+      <action-button
         v-if="
           canReview(item) &&
           !isReviewedByMe(item) &&
           item.submitted === true &&
           item.locked === false
         "
-        to="#"
-        v-on:click.native="reviewTs(id)"
-      >
-        <eye-icon></eye-icon>
-      </router-link>
+        type="view"
+        @click="reviewTs(id)"
+      />
     </div>
     <div v-if="item.weekEnding">
       Sunday {{ weekStart | shortDate }} to Saturday
@@ -151,28 +137,14 @@ import { format, subWeeks, addMilliseconds } from "date-fns";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
-import {
-  SendIcon,
-  EyeIcon,
-  RewindIcon,
-  CheckCircleIcon,
-  ShareIcon,
-  DownloadIcon,
-  XCircleIcon,
-} from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 const db = firebase.firestore();
 
 export default Vue.extend({
   components: {
+    ActionButton,
     RejectModal,
     ShareModal,
-    ShareIcon,
-    DownloadIcon,
-    EyeIcon,
-    SendIcon,
-    RewindIcon,
-    CheckCircleIcon,
-    XCircleIcon,
   },
   props: ["id", "collection"],
   computed: {

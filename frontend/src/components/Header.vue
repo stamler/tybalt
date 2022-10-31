@@ -1,7 +1,7 @@
 <template>
   <div class="header">
     <div class="linksstart">
-      <router-link to="#" v-on:click.native="toggleMenu"> &#9776; </router-link>
+      <action-button color="00f" @click="toggleMenu">&#9776;</action-button>
     </div>
     <div class="linksend">
       <router-link to="/me">{{ user.displayName }}</router-link>
@@ -17,8 +17,10 @@
 <script lang="ts">
 import { mapState } from "vuex";
 import store from "../store";
+import ActionButton from "./ActionButton.vue";
 
 export default {
+  components: { ActionButton },
   methods: {
     toggleMenu(): void {
       store.commit("toggleMenu");

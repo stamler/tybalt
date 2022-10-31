@@ -38,9 +38,7 @@
             {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
           </template>
           <template v-if="item.attachment">
-            <router-link to="#" v-on:click.native="downloadAttachment(item)">
-              <download-icon></download-icon>
-            </router-link>
+            <action-button type="download" @click="downloadAttachment(item)" />
           </template>
           approved by {{ item.managerName }}
         </div>
@@ -61,18 +59,14 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link
-          to="#"
-          v-on:click.native="$refs.rejectModal.openModal(item.id)"
-        >
-          <x-circle-icon></x-circle-icon>
-        </router-link>
-        <router-link
-          to="#"
-          v-on:click.native="commitItem(item, collectionObject)"
-        >
-          <lock-icon></lock-icon>
-        </router-link>
+        <action-button
+          type="delete"
+          @click="$refs.rejectModal.openModal(item.id)"
+        />
+        <action-button
+          type="lock"
+          @click="commitItem(item, collectionObject)"
+        />
       </div>
     </div>
     <span class="listheader" v-if="submitted.length > 0">
@@ -114,9 +108,7 @@
             {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
           </template>
           <template v-if="item.attachment">
-            <router-link to="#" v-on:click.native="downloadAttachment(item)">
-              <download-icon></download-icon>
-            </router-link>
+            <action-button type="download" @click="downloadAttachment(item)" />
           </template>
           /manager: {{ item.managerName }}
         </div>
@@ -136,18 +128,14 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <router-link
-          to="#"
-          v-on:click.native="$refs.rejectModal.openModal(item.id)"
-        >
-          <x-circle-icon></x-circle-icon>
-        </router-link>
-        <router-link
-          to="#"
-          v-on:click.native="commitItem(item, collectionObject)"
-        >
-          <lock-icon></lock-icon>
-        </router-link>
+        <action-button
+          type="delete"
+          @click="$refs.rejectModal.openModal(item.id)"
+        />
+        <action-button
+          type="lock"
+          @click="commitItem(item, collectionObject)"
+        />
       </div>
     </div>
   </div>
@@ -159,17 +147,15 @@ import { downloadAttachment } from "./helpers";
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
 import { format } from "date-fns";
-import { LockIcon, DownloadIcon, XCircleIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import store from "../store";
 const db = firebase.firestore();
 
 export default Vue.extend({
   props: ["collection"],
   components: {
+    ActionButton,
     Modal,
-    LockIcon,
-    DownloadIcon,
-    XCircleIcon,
   },
   filters: {
     shortDate(date: Date) {

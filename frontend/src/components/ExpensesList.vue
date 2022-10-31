@@ -8,13 +8,11 @@
       <span class="listheader">
         Week Ending
         {{ new Date(parseInt(weekEnding, 10)) | shortDate }}
-        <router-link
+        <action-button
           v-if="unsubmittedExpenseIds(expenses).length > 0"
-          to="#"
-          v-on:click.native="submitExpenses(unsubmittedExpenseIds(expenses))"
-        >
-          <send-icon></send-icon>
-        </router-link>
+          type="send"
+          @click="submitExpenses(unsubmittedExpenseIds(expenses))"
+        />
       </span>
       <div
         class="listentry"
@@ -82,9 +80,10 @@
               {{ item.job }} {{ item.jobDescription }} for {{ item.client }}
             </template>
             <template v-if="item.attachment">
-              <router-link to="#" v-on:click.native="downloadAttachment(item)">
-                <download-icon></download-icon>
-              </router-link>
+              <action-button
+                type="download"
+                @click="downloadAttachment(item)"
+              />
             </template>
             <template v-if="approved === true">
               approved by {{ item.managerName }}
@@ -143,32 +142,24 @@
           <!-- The template for users -->
           <template v-if="approved === undefined">
             <template v-if="item.submitted === false">
-              <router-link
+              <action-button
                 v-if="!item.attachment"
-                to="#"
-                v-on:click.native="copyEntry(item, collectionObject)"
+                type="copy"
+                @click="copyEntry(item, collectionObject)"
                 title="copy to tomorrow"
-              >
-                <copy-icon></copy-icon>
-              </router-link>
-              <router-link
-                to="#"
-                v-on:click.native="del(item, collectionObject)"
-              >
-                <x-circle-icon></x-circle-icon>
-              </router-link>
+              />
+              <action-button
+                type="delete"
+                @click="del(item, collectionObject)"
+              />
               <router-link :to="[parentPath, item.id, 'edit'].join('/')">
                 <edit-icon></edit-icon>
               </router-link>
-              <router-link to="#" v-on:click.native="submitExpense(item.id)">
-                <send-icon></send-icon>
-              </router-link>
+              <action-button type="send" @click="submitExpense(item.id)" />
             </template>
 
             <template v-if="item.submitted === true && item.approved === false">
-              <router-link to="#" v-on:click.native="recallExpense(item.id)">
-                <rewind-icon></rewind-icon>
-              </router-link>
+              <action-button type="recall" @click="recallExpense(item.id)" />
               <span class="label">submitted</span>
             </template>
 
@@ -183,16 +174,12 @@
           <!-- The template for "pending" -->
           <template v-if="approved === false">
             <template v-if="!item.approved && !item.rejected">
-              <router-link to="#" v-on:click.native="approveExpense(item.id)">
-                <check-circle-icon></check-circle-icon>
-              </router-link>
-              <router-link
+              <action-button type="approve" @click="approveExpense(item.id)" />
+              <action-button
                 v-if="!item.approved && !item.rejected"
-                to="#"
-                v-on:click.native="$refs.rejectModal.openModal(item.id)"
-              >
-                <x-circle-icon></x-circle-icon>
-              </router-link>
+                type="delete"
+                @click="$refs.rejectModal.openModal(item.id)"
+              />
             </template>
             <template v-if="item.rejected">
               <span class="label">rejected</span>
@@ -202,12 +189,10 @@
           <!-- The template for "approved" -->
           <template v-if="approved === true">
             <template v-if="!item.committed">
-              <router-link
-                to="#"
-                v-on:click.native="$refs.rejectModal.openModal(item.id)"
-              >
-                <x-circle-icon></x-circle-icon>
-              </router-link>
+              <action-button
+                type="delete"
+                @click="$refs.rejectModal.openModal(item.id)"
+              />
             </template>
             <template v-if="item.committed">
               <span class="label">committed</span>
@@ -234,17 +219,8 @@ import firebase from "../firebase";
 import Vue from "vue";
 import { format, addDays } from "date-fns";
 import _ from "lodash";
-import {
-  EditIcon,
-  CopyIcon,
-  ClockIcon,
-  DollarSignIcon,
-  DownloadIcon,
-  SendIcon,
-  RewindIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
+import { EditIcon, ClockIcon, DollarSignIcon } from "vue-feather-icons";
 import store from "../store";
 const db = firebase.firestore();
 
@@ -258,16 +234,11 @@ export default Vue.extend({
     },
   },
   components: {
+    ActionButton,
     Modal,
     EditIcon,
-    CopyIcon,
     ClockIcon,
-    SendIcon,
     DollarSignIcon,
-    DownloadIcon,
-    RewindIcon,
-    CheckCircleIcon,
-    XCircleIcon,
   },
   filters: {
     shortDate(date: Date) {

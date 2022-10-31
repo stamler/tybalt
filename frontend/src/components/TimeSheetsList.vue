@@ -67,25 +67,19 @@
       <div class="rowactionsbox">
         <template v-if="query === 'list'">
           <template v-if="!item.submitted">
-            <router-link to="#" v-on:click.native="unbundle(item.id)">
-              <edit-icon></edit-icon>
-            </router-link>
-            <router-link
+            <action-button type="edit" @click="unbundle(item.id)" />
+            <action-button
               v-if="!item.rejected"
-              to="#"
-              v-on:click.native="submitTs(item.id)"
-            >
-              <send-icon></send-icon>
-            </router-link>
+              type="send"
+              @click="submitTs(item.id)"
+            />
           </template>
           <template v-else-if="!item.approved">
-            <router-link
+            <action-button
               v-if="!item.approved"
-              to="#"
-              v-on:click.native="recallTs(item.id)"
-            >
-              <rewind-icon></rewind-icon>
-            </router-link>
+              type="recall"
+              @click="recallTs(item.id)"
+            />
             <span class="label">submitted</span>
           </template>
           <template v-else>
@@ -95,20 +89,16 @@
         <!-- The template for "pending" -->
         <template v-if="query === 'pending'">
           <template v-if="!item.approved && !item.rejected">
-            <router-link
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="
-                $refs.shareModal.openModal(item.id, item.viewerIds)
-              "
-            >
-              <share-icon></share-icon>
-            </router-link>
-            <router-link
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="$refs.rejectModal.openModal(item.id)"
-            >
-              <x-circle-icon></x-circle-icon>
-            </router-link>
+            <action-button
+              type="share"
+              title="share with another manager"
+              @click="$refs.shareModal.openModal(item.id, item.viewerIds)"
+            />
+            <action-button
+              type="delete"
+              title="reject this timesheet"
+              @click="$refs.rejectModal.openModal(item.id)"
+            />
           </template>
           <template v-if="item.rejected">
             <span class="label">rejected</span>
@@ -117,21 +107,17 @@
 
         <!-- The template for "approved" -->
         <template v-if="query === 'approved'">
-          <router-link
-            v-bind:to="{ name: 'Time Sheets Approved' }"
-            v-on:click.native="
-              $refs.shareModal.openModal(item.id, item.viewerIds)
-            "
-          >
-            <share-icon></share-icon>
-          </router-link>
+          <action-button
+            type="share"
+            title="share with another manager"
+            @click="$refs.shareModal.openModal(item.id, item.viewerIds)"
+          />
           <template v-if="!item.locked">
-            <router-link
-              v-bind:to="{ name: 'Time Sheets Pending' }"
-              v-on:click.native="$refs.rejectModal.openModal(item.id)"
-            >
-              <x-circle-icon></x-circle-icon>
-            </router-link>
+            <action-button
+              type="delete"
+              title="reject this timesheet"
+              @click="$refs.rejectModal.openModal(item.id)"
+            />
           </template>
         </template>
         <template v-if="item.locked === true">
@@ -150,13 +136,7 @@ import firebase from "../firebase";
 import _ from "lodash";
 import { format } from "date-fns";
 import { isPayrollWeek2, recallTs, submitTs, unbundle } from "./helpers";
-import {
-  EditIcon,
-  SendIcon,
-  RewindIcon,
-  ShareIcon,
-  XCircleIcon,
-} from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import store from "../store";
 const db = firebase.firestore();
 
@@ -168,13 +148,9 @@ export default Vue.extend({
     },
   },
   components: {
+    ActionButton,
     RejectModal,
     ShareModal,
-    EditIcon,
-    SendIcon,
-    RewindIcon,
-    ShareIcon,
-    XCircleIcon,
   },
   filters: {
     shortDate(date: Date) {

@@ -17,6 +17,8 @@
     <clipboard-icon v-if="type === 'clipboard'" />
     <key-icon v-if="type === 'key'" />
     <file-minus-icon v-if="type === 'removefile'" />
+    <refresh-cw-icon v-if="type === 'refresh'" />
+    <eye-icon v-if="type === 'view'" />
   </button>
 </template>
 
@@ -39,6 +41,8 @@ import {
   ClipboardIcon,
   KeyIcon,
   FileMinusIcon,
+  RefreshCwIcon,
+  EyeIcon,
 } from "vue-feather-icons";
 
 export default Vue.extend({
@@ -71,6 +75,8 @@ export default Vue.extend({
     ClipboardIcon,
     KeyIcon,
     FileMinusIcon,
+    RefreshCwIcon,
+    EyeIcon,
   },
   name: "ActionButton",
 });

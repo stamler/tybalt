@@ -73,45 +73,37 @@
         <div class="rowactionsbox">
           <template v-if="collection === 'TimeAmendments'">
             <template v-if="item.committed === false">
-              <router-link to="#" v-on:click.native="commit(item)">
-                <check-circle-icon></check-circle-icon>
-              </router-link>
+              <action-button type="approve" @click="commit(item)" />
               <router-link
                 :to="[parentPath, item.id, 'edit'].join('/')"
                 title="edit"
               >
                 <edit-icon></edit-icon>
               </router-link>
-              <router-link
-                to="#"
-                v-on:click.native="del(item, collectionObject)"
+              <action-button
+                type="delete"
+                @click="del(item, collectionObject)"
                 title="delete"
-              >
-                <x-circle-icon></x-circle-icon>
-              </router-link>
+              />
             </template>
           </template>
           <template v-else>
-            <router-link
-              to="#"
-              v-on:click.native="copyEntry(item, collectionObject)"
+            <action-button
+              type="copy"
+              @click="copyEntry(item, collectionObject)"
               title="copy to tomorrow"
-            >
-              <copy-icon></copy-icon>
-            </router-link>
+            />
             <router-link
               :to="[parentPath, item.id, 'edit'].join('/')"
               title="edit"
             >
               <edit-icon></edit-icon>
             </router-link>
-            <router-link
-              to="#"
-              v-on:click.native="del(item, collectionObject)"
+            <action-button
+              type="delete"
+              @click="del(item, collectionObject)"
               title="delete"
-            >
-              <x-circle-icon></x-circle-icon>
-            </router-link>
+            />
           </template>
         </div>
       </div>
@@ -165,13 +157,11 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <router-link
-            to="#"
-            v-on:click.native="bundle(new Date(Number(week)))"
+          <action-button
+            type="send"
+            @click="bundle(new Date(Number(week)))"
             title="bundle and submit"
-          >
-            <send-icon></send-icon>
-          </router-link>
+          />
         </div>
       </div>
     </div>
@@ -182,13 +172,8 @@
 import Vue from "vue";
 import { copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
-import {
-  EditIcon,
-  XCircleIcon,
-  SendIcon,
-  CheckCircleIcon,
-  CopyIcon,
-} from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
+import { EditIcon } from "vue-feather-icons";
 import store from "../store";
 import { mapState } from "vuex";
 import firebase from "../firebase";
@@ -197,11 +182,8 @@ const db = firebase.firestore();
 export default Vue.extend({
   props: ["collection"],
   components: {
+    ActionButton,
     EditIcon,
-    XCircleIcon,
-    SendIcon,
-    CheckCircleIcon,
-    CopyIcon,
   },
   filters: {
     shortDate(date: Date) {
