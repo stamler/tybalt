@@ -1,23 +1,22 @@
 <template>
   <div>
     <object-table :tableData="queryResult"></object-table>
-    <router-link
-      to="#"
-      v-on:click.native="download()"
+    <action-button
+      type="download"
+      title="download report"
+      @click="download()"
       v-if="queryResult !== undefined && queryResult.length > 0"
-    >
-      <download-icon></download-icon>
-    </router-link>
+    />
   </div>
 </template>
 <script lang="ts">
 import Vue from "vue";
+import ActionButton from "./ActionButton.vue";
 import { downloadBlob } from "./helpers";
 import store from "../store";
 import firebase from "../firebase";
 import ObjectTable from "./ObjectTable.vue";
 import { parse } from "json2csv";
-import { DownloadIcon } from "vue-feather-icons";
 import { TableData, QueryPayloadObject } from "./types";
 import { debounce } from "lodash";
 
@@ -32,7 +31,7 @@ export default Vue.extend({
     queryValues: Array,
     dlFileName: String,
   },
-  components: { DownloadIcon, ObjectTable },
+  components: { ObjectTable, ActionButton },
   methods: {
     download() {
       if (this.queryResult === undefined) return;

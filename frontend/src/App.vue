@@ -257,7 +257,7 @@ a:active {
   margin-right: 0.8em;
   text-decoration: none;
   font-weight: bold;
-  display: inherit;
+  display: block;
 }
 
 .rowactionsbox > a:hover {

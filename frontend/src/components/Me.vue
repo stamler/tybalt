@@ -2,9 +2,9 @@
   <div>
     <div id="spacer"></div>
     <div class="actions">
-      <router-link to="#" v-on:click.native="signOutWrapper">
+      <action-button @click="signOutWrapper" :color="'000'">
         Sign Out
-      </router-link>
+      </action-button>
     </div>
     <div id="dash">
       <h2>Hi, {{ user.displayName }}</h2>
@@ -105,10 +105,12 @@ import { signOut } from "../main";
 import { mapState } from "vuex";
 import firebase from "../firebase";
 import { format } from "date-fns";
+import ActionButton from "./ActionButton.vue";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
+  components: { ActionButton },
   data() {
     return {
       VERSION: LIB_VERSION,

@@ -1,5 +1,5 @@
 <template>
-  <button @click="$emit('click')" :title="title">
+  <button @click="$emit('click')" :title="title" :style="cssProps">
     <slot />
     <send-icon v-if="type === 'send'" />
     <x-circle-icon v-if="type === 'delete'" />
@@ -43,6 +43,14 @@ export default Vue.extend({
   props: {
     type: String,
     title: String,
+    color: String,
+  },
+  computed: {
+    cssProps() {
+      return {
+        "--button-link-color": this.color ? this.color : "#00f",
+      };
+    },
   },
   components: {
     SendIcon,
@@ -67,9 +75,10 @@ export default Vue.extend({
 
 <style scoped>
 button {
-  color: var(--main-link-color);
+  color: var(--button-link-color);
   background: none;
   border: none;
+  border-radius: 0;
   text-decoration: none;
   font-size: 1em;
   font-weight: bold;
@@ -78,7 +87,6 @@ button {
   margin: inherit;
   margin-left: 0;
   padding: 0;
-  display: inline;
 }
 button:hover {
   transition: filter 0.05s ease-in;

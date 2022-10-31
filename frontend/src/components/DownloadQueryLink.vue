@@ -1,14 +1,12 @@
 <template>
-  <router-link to="#" v-on:click.native="download()">
-    <download-icon></download-icon>
-  </router-link>
+  <action-button type="download" title="download report" @click="download()" />
 </template>
 <script lang="ts">
 import Vue from "vue";
 import store from "../store";
 import firebase from "../firebase";
 import { parse } from "json2csv";
-import { DownloadIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import { QueryPayloadObject } from "./types";
 import { downloadBlob } from "./helpers";
 
@@ -18,7 +16,7 @@ export default Vue.extend({
     queryValues: Array,
     dlFileName: String,
   },
-  components: { DownloadIcon },
+  components: { ActionButton },
   methods: {
     async download() {
       const result = await this.runQuery();
