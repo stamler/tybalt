@@ -7,22 +7,22 @@
         <thead class="heading">
           <tr>
             <th v-for="col in columns" v-bind:key="col">
-              <router-link to="#" v-on:click.native="sort(col)">
+              <action-button title="sort" @click="sort(col)">
                 {{ col }}
-                <span id="sortIndicator">
-                  <template v-if="sortColumn === col">
-                    <template v-if="order === 2">
-                      <!-- DESCENDING -->
-                      <arrow-down-icon></arrow-down-icon>
-                    </template>
-                    <template v-else-if="order === 1">
-                      <!-- ASCENDING -->
-                      <arrow-up-icon></arrow-up-icon>
-                    </template>
-                    <template v-else><!--- UNSORTED --></template>
+              </action-button>
+              <span id="sortIndicator">
+                <template v-if="sortColumn === col">
+                  <template v-if="order === 2">
+                    <!-- DESCENDING -->
+                    <arrow-down-icon></arrow-down-icon>
                   </template>
-                </span>
-              </router-link>
+                  <template v-else-if="order === 1">
+                    <!-- ASCENDING -->
+                    <arrow-up-icon></arrow-up-icon>
+                  </template>
+                  <template v-else><!--- UNSORTED --></template>
+                </template>
+              </span>
             </th>
           </tr>
         </thead>
@@ -44,9 +44,11 @@ import Vue from "vue";
 import _ from "lodash";
 import { ArrowUpIcon, ArrowDownIcon } from "vue-feather-icons";
 import { TableData } from "./types";
+import ActionButton from "./ActionButton.vue";
 
 export default Vue.extend({
   components: {
+    ActionButton,
     ArrowUpIcon,
     ArrowDownIcon,
   },

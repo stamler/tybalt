@@ -43,9 +43,7 @@
           </div>
           <div class="secondline">
             <template v-if="exp.attachment">
-              <router-link to="#" v-on:click.native="downloadAttachment(exp)">
-                <download-icon></download-icon>
-              </router-link>
+              <action-button type="download" @click="downloadAttachment(exp)" />
             </template>
             <span
               v-else-if="['Meals', 'Allowance'].includes(exp.paymentType)"
@@ -72,9 +70,7 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <router-link to="#" v-on:click.native="uncommitExpense(exp.id)">
-            <unlock-icon></unlock-icon>
-          </router-link>
+          <action-button type="unlock" @click="uncommitExpense(exp.id)" />
         </div>
       </div>
     </div>
@@ -89,13 +85,13 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import store from "../store";
 import _ from "lodash";
-import { DownloadIcon, UnlockIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
   props: ["id", "collection"],
-  components: { DownloadIcon, UnlockIcon },
+  components: { ActionButton },
   computed: {
     ...mapState(["user", "claims"]),
     weekStart(): Date {

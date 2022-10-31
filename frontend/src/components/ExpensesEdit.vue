@@ -208,12 +208,8 @@
     >
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
-        <router-link to="#" v-on:click.native="downloadAttachment(item)">
-          <download-icon></download-icon>
-        </router-link>
-        <router-link to="#" v-on:click.native="$delete(item, 'attachment')">
-          <file-minus-icon></file-minus-icon>
-        </router-link>
+        <action-button type="download" @click="downloadAttachment(item)" />
+        <action-button type="removefile" @click="$delete(item, 'attachment')" />
       </span>
       <span v-else>
         <input
@@ -263,7 +259,7 @@ import Datepicker from "vuejs-datepicker";
 import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
-import { DownloadIcon, FileMinusIcon } from "vue-feather-icons";
+import ActionButton from "./ActionButton.vue";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { downloadAttachment } from "./helpers";
@@ -273,7 +269,7 @@ interface HTMLInputEvent extends Event {
 }
 
 export default Vue.extend({
-  components: { Datepicker, DownloadIcon, FileMinusIcon },
+  components: { Datepicker, ActionButton },
   props: ["id", "collection"],
   data() {
     return {

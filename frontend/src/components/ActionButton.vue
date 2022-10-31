@@ -1,5 +1,5 @@
 <template>
-  <button @click="$emit('click')" :title="title" :style="cssProps">
+  <button @click.prevent="$emit('click')" :title="title" :style="cssProps">
     <slot />
     <send-icon v-if="type === 'send'" />
     <x-circle-icon v-if="type === 'delete'" />
@@ -16,6 +16,7 @@
     <share-icon v-if="type === 'share'" />
     <clipboard-icon v-if="type === 'clipboard'" />
     <key-icon v-if="type === 'key'" />
+    <file-minus-icon v-if="type === 'removefile'" />
   </button>
 </template>
 
@@ -37,6 +38,7 @@ import {
   ShareIcon,
   ClipboardIcon,
   KeyIcon,
+  FileMinusIcon,
 } from "vue-feather-icons";
 
 export default Vue.extend({
@@ -68,6 +70,7 @@ export default Vue.extend({
     ShareIcon,
     ClipboardIcon,
     KeyIcon,
+    FileMinusIcon,
   },
   name: "ActionButton",
 });
