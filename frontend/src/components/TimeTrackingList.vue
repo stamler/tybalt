@@ -3,7 +3,7 @@
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
-          {{ item.weekEnding.toDate() | exportDate }}
+          {{ exportDate(item.weekEnding.toDate()) }}
         </router-link>
       </div>
       <div class="detailsbox">
@@ -45,8 +45,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { generateTimeReportCSV } from "./helpers";
-import { format } from "date-fns";
+import { exportDate, generateTimeReportCSV } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
 import firebase from "../firebase";
@@ -65,11 +64,6 @@ export default Vue.extend({
         (x: firebase.firestore.DocumentData) =>
           this.hasApproved(x) || this.hasLocked(x) || this.hasSubmitted(x)
       );
-    },
-  },
-  filters: {
-    exportDate(date: Date) {
-      return format(date, "yyyy MMM dd");
     },
   },
   data() {
@@ -93,6 +87,7 @@ export default Vue.extend({
     });
   },
   methods: {
+    exportDate,
     generateTimeReportCSV,
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (

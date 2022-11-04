@@ -1,18 +1,20 @@
-import firebase from "./firebase";
-import Vue from "vue";
-import Vuex from "vuex";
-
-Vue.use(Vuex);
+import firebase from "../firebase";
+import { defineStore } from "pinia";
 
 interface TaskList {
   [key: string]: { message: string };
 }
+interface Task {
+  id: string;
+  message: string;
+}
 
-export default new Vuex.Store({
-  state: {
+export const useStateStore = defineStore({
+  id: "state",
+  state: () => ({
     sidenav: false,
-    user: null as firebase.User | null,
-    claims: null as { [claim: string]: boolean } | null,
+    user: { uid: "", email: "" } as firebase.User,
+    claims: {} as { [claim: string]: boolean },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expenseRates: null as { [key: string]: any } | null,
     activeTasks: {} as TaskList, // items to show in the progress UI element
@@ -20,7 +22,7 @@ export default new Vuex.Store({
 
     // state of the notification system
     notifications: {}, // notifications to display in UI
-  },
+  }),
   getters: {
     // getters for the waiting message system
     // get the first message from the activeTasks object
@@ -32,29 +34,28 @@ export default new Vuex.Store({
       }
     },
   },
-  mutations: {
-    toggleMenu(state) {
-      state.sidenav = !state.sidenav;
+  actions: {
+    toggleMenu() {
+      this.sidenav = !this.sidenav;
     },
-    startTask(state, task) {
+    startTask(task: Task) {
       const id = task.id;
-      state.activeTasks[id] = { message: task.message };
-      state.showTasks = true;
+      this.activeTasks[id] = { message: task.message };
+      this.showTasks = true;
     },
-    endTask(state, task) {
-      delete state.activeTasks[task.id];
-      state.showTasks = Object.keys(state.activeTasks).length > 0;
+    endTask(id: string) {
+      delete this.activeTasks[id];
+      this.showTasks = Object.keys(this.activeTasks).length > 0;
     },
-    setUser(state, user: firebase.User) {
-      state.user = user;
+    setUser(user: firebase.User) {
+      this.user = user;
     },
-    setClaims(state, claims: { [claim: string]: boolean }) {
-      state.claims = claims;
+    setClaims(claims: { [claim: string]: boolean }) {
+      this.claims = claims;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setExpenseRates(state, rates: { [key: string]: any }) {
-      state.expenseRates = rates;
+    setExpenseRates(rates: { [key: string]: any }) {
+      this.expenseRates = rates;
     },
   },
-  actions: {},
 });

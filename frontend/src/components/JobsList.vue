@@ -31,7 +31,6 @@
 <script lang="ts">
 import Vue from "vue";
 import { searchString } from "./helpers";
-import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
@@ -41,7 +40,6 @@ export default Vue.extend({
     EditIcon,
   },
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       // display maximum of 100 items though there may be way more
       // TODO: don't pull more than 50 items from the server at a time

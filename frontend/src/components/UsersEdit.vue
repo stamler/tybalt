@@ -139,12 +139,17 @@
 
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 import _ from "lodash";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   props: ["id", "collection"],
   data() {
     return {
@@ -222,18 +227,18 @@ export default Vue.extend({
       const mutation = this.id
         ? { verb, userId: this.id, data: this.item }
         : { verb, data: this.item };
-      store.commit("startTask", {
+      this.startTask({
         id: `${verb}User${this.id}`,
         message: "Creating Mutation...",
       });
       const addMutation = firebase.functions().httpsCallable("addMutation");
       return addMutation(mutation)
         .then(() => {
-          store.commit("endTask", { id: `${verb}User${this.id}` });
+          this.endTask(`${verb}User${this.id}`);
           this.$router.push({ name: "User Mutations" });
         })
         .catch((error) => {
-          store.commit("endTask", { id: `${verb}User${this.id}` });
+          this.endTask(`${verb}User${this.id}`);
           alert(`Error creating mutation: ${error.message}`);
         });
     },

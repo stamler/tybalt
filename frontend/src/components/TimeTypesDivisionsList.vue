@@ -29,7 +29,6 @@
 <script lang="ts">
 import Vue from "vue";
 import { searchString } from "./helpers";
-import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
 import firebase from "../firebase";
 const db = firebase.firestore();
@@ -40,7 +39,6 @@ export default Vue.extend({
     EditIcon,
   },
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244

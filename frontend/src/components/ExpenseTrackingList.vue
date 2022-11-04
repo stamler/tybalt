@@ -3,7 +3,7 @@
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
-          {{ item.weekEnding.toDate() | exportDate }}
+          {{ exportDate(item.weekEnding.toDate()) }}
         </router-link>
       </div>
       <div class="detailsbox">
@@ -52,30 +52,27 @@
 <script lang="ts">
 import firebase from "../firebase";
 import Vue from "vue";
-import { mapState } from "vuex";
-import { generatePayablesCSVSQL } from "./helpers";
-import store from "../store";
-import { format } from "date-fns";
+import { useStateStore } from "../stores/state";
+import { exportDate, generatePayablesCSVSQL } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask, claims: store.claims };
+  },
   props: ["collection"],
   components: { ActionButton, DownloadIcon },
   computed: {
-    ...mapState(["claims"]),
     canRefresh(): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "admin") &&
         this.claims["admin"] === true
       );
-    },
-  },
-  filters: {
-    exportDate(date: Date) {
-      return format(date, "yyyy MMM dd");
     },
   },
   data() {
@@ -86,6 +83,7 @@ export default Vue.extend({
     };
   },
   methods: {
+    exportDate,
     generatePayablesCSVSQL,
     hasLink(item: firebase.firestore.DocumentData, property: string) {
       return (
@@ -97,7 +95,7 @@ export default Vue.extend({
       const generateExpenseAttachmentArchive = firebase
         .functions()
         .httpsCallable("generateExpenseAttachmentArchive");
-      store.commit("startTask", {
+      this.startTask({
         id: `generateAttachments${item.id}`,
         message: "Generating Attachments",
       });
@@ -106,9 +104,7 @@ export default Vue.extend({
       } catch (error) {
         alert(error);
       }
-      store.commit("endTask", {
-        id: `generateAttachments${item.id}`,
-      });
+      this.endTask(`generateAttachments${item.id}`);
     },
   },
   created() {

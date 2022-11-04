@@ -31,15 +31,18 @@
 
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
 import firebase from "../firebase";
-import { mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask, user: store.user };
+  },
   props: ["collection"],
-  computed: mapState(["user"]),
   data() {
     return {
       parentPath: "",
@@ -66,7 +69,7 @@ export default Vue.extend({
       //document.querySelector("body")?.classList.add("overflow-hidden");
     },
     rejectDoc(docId: string, reason: string, collection: string) {
-      store.commit("startTask", {
+      this.startTask({
         id: `reject${docId}`,
         message: "rejecting",
       });
@@ -103,10 +106,10 @@ export default Vue.extend({
             });
         })
         .then(() => {
-          store.commit("endTask", { id: `reject${docId}` });
+          this.endTask(`reject${docId}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `reject${docId}` });
+          this.endTask(`reject${docId}`);
           alert(`Rejection failed: ${error}`);
         });
     },

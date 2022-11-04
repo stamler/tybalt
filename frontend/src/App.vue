@@ -10,14 +10,24 @@
 // @ is an alias to /src
 import SideNav from "./components/SideNav.vue";
 import AppHeader from "./components/AppHeader.vue";
-import { mapState } from "vuex";
+import { useStateStore } from "./stores/state";
+import { storeToRefs } from "pinia";
+// import { toRef } from "vue";
 
 export default {
+  setup: () => {
+    // using toRef() to create a reactive reference to the store here works just
+    // as well but I'm using storeToRefs() for consistency when I'll need to
+    // access multiple store properties elsewhere in the app
+
+    // const sidenav = toRef(store, "sidenav");
+    const { sidenav } = storeToRefs(useStateStore());
+    return { sidenav };
+  },
   components: {
     SideNav,
     AppHeader,
   },
-  computed: mapState(["sidenav"]),
 };
 </script>
 

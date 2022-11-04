@@ -1,8 +1,8 @@
 <template>
   <div id="list">
     <h4 v-if="item.weekEnding">
-      {{ weekStart | shortDate }} to
-      {{ item.weekEnding.toDate() | shortDate }} ({{ this.expenses.length }},
+      {{ shortDate(weekStart) }} to
+      {{ shortDate(item.weekEnding.toDate()) }} ({{ this.expenses.length }},
       {{ countOfExpensesWithAttachments }} with attachments)
     </h4>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
@@ -12,7 +12,7 @@
       </span>
       <div class="listentry" v-for="exp in expenses" v-bind:key="exp.id">
         <div class="anchorbox">
-          {{ exp.date.toDate() | shortDate }}
+          {{ shortDate(exp.date.toDate()) }}
         </div>
         <div class="detailsbox">
           <div class="headline_wrapper">
@@ -79,21 +79,24 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { downloadAttachment } from "./helpers";
-import { format, subWeeks, addMilliseconds } from "date-fns";
-import { mapState } from "vuex";
+import { shortDate, downloadAttachment } from "./helpers";
+import { subWeeks, addMilliseconds } from "date-fns";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
-import store from "../store";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask, user: store.user, claims: store.claims };
+  },
   props: ["id", "collection"],
   components: { ActionButton },
   computed: {
-    ...mapState(["user", "claims"]),
     weekStart(): Date {
       if (this.item?.weekEnding !== undefined) {
         return addMilliseconds(subWeeks(this.item.weekEnding.toDate(), 1), 1);
@@ -118,11 +121,6 @@ export default Vue.extend({
       expenses: [] as firebase.firestore.DocumentData[],
     };
   },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd, yyyy");
-    },
-  },
   watch: {
     id: function (id: string) {
       this.setItem(id);
@@ -135,6 +133,7 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    shortDate,
     downloadAttachment,
     setItem(id: string) {
       if (this.collectionObject === null) {
@@ -183,16 +182,16 @@ export default Vue.extend({
           "You must check with accounting prior to uncommitting. Do you want to proceed?"
         )
       ) {
-        store.commit("startTask", {
+        this.startTask({
           id: `uncommit${id}`,
           message: "uncommitting",
         });
         return uncommitExpense({ id })
           .then(() => {
-            store.commit("endTask", { id: `uncommit${id}` });
+            this.endTask(`uncommit${id}`);
           })
           .catch((error) => {
-            store.commit("endTask", { id: `uncommit${id}` });
+            this.endTask(`uncommit${id}`);
             alert(`Error uncommitting timesheet: ${error.message}`);
           });
       }

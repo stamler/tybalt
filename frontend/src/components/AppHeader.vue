@@ -15,19 +15,15 @@
 </template>
 
 <script lang="ts">
-import { mapState } from "vuex";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 
 export default {
   components: { ActionButton },
-  methods: {
-    toggleMenu(): void {
-      store.commit("toggleMenu");
-    },
-  },
-  computed: {
-    ...mapState(["user"]),
+  setup: () => {
+    const store = useStateStore();
+    // reactivity of user is not needed here so we can just return the value
+    return { user: store.user, toggleMenu: store.toggleMenu };
   },
 };
 </script>

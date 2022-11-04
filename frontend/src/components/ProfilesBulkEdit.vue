@@ -24,7 +24,7 @@
         <div class="headline_wrapper">
           <div class="headline">
             Opening:
-            {{ item.openingDateTimeOff | fullDetailDate }}
+            {{ fullDetailDate(item.openingDateTimeOff) }}
           </div>
         </div>
         <span class="field">
@@ -44,7 +44,8 @@
           />
           <span v-if="item.openingOV >= 0" style="margin-left: 0.5em">
             <span class="labels">
-              used: {{ item.usedOV }} hrs to {{ item.usedAsOf | shortDate }}
+              used: {{ item.usedOV }} hrs to
+              {{ shortDate(item.usedAsOf.toDate()) }}
             </span>
             <span class="labels">
               balance: {{ item.openingOV - item.usedOV }}
@@ -68,7 +69,8 @@
           />
           <span v-if="item.openingOP >= 0" style="margin-left: 0.5em">
             <span class="labels">
-              used: {{ item.usedOP }} hrs to {{ item.usedAsOf | shortDate }}
+              used: {{ item.usedOP }} hrs to
+              {{ shortDate(item.usedAsOf.toDate()) }}
             </span>
             <span class="labels">
               balance: {{ item.openingOP - item.usedOP }}
@@ -88,7 +90,7 @@ import Vue from "vue";
 import SaveBox from "./SaveBox.vue";
 import firebase from "../firebase";
 import { format } from "date-fns";
-import { payPeriodsForYear as ppGen } from "./helpers";
+import { shortDate, payPeriodsForYear as ppGen } from "./helpers";
 const db = firebase.firestore();
 
 export default Vue.extend({
@@ -102,19 +104,16 @@ export default Vue.extend({
       items: [] as firebase.firestore.DocumentData[],
     };
   },
-  computed: {
-    openingDateCandidates(): Date[] {
-      return Array.from(ppGen(new Date().getFullYear()));
-    },
-  },
-  filters: {
+  methods: {
+    shortDate,
     fullDetailDate(date: firebase.firestore.Timestamp): string {
       if (date) return format(date.toDate(), "yyyy MMM dd @ HH:mm:ss.SSS");
       else return "";
     },
-    shortDate(date: firebase.firestore.Timestamp | undefined | null): string {
-      if (date === undefined || date === null) return "";
-      return format(date.toDate(), "MMM dd");
+  },
+  computed: {
+    openingDateCandidates(): Date[] {
+      return Array.from(ppGen(new Date().getFullYear()));
     },
   },
   created() {

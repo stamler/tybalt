@@ -3,32 +3,32 @@
     <div>
       {{ item.computerName }}
       <span v-if="item.retired">
-        (Retired {{ item.retired.toDate() | relativeTime }})
+        (Retired {{ relativeTime(item.retired.toDate()) }})
       </span>
     </div>
     <div>
       <div>
-        {{ item.mfg }} {{ item.model }} ({{ item.systemType | systemType }})
+        {{ item.mfg }} {{ item.model }} ({{ systemType(item.systemType) }})
       </div>
       <div>
         Windows {{ item.osVersion }} {{ item.osArch }}, SKU:{{ item.osSku }}
       </div>
       <div v-if="item.created">
-        created {{ item.created.toDate() | dateFormat }}
+        created {{ dateFormat(item.created.toDate()) }}
       </div>
       <div v-if="item.updated">
-        updated {{ item.updated.toDate() | dateFormat }} (radiator v{{
+        updated {{ dateFormat(item.updated.toDate()) }} (radiator v{{
           item.radiatorVersion
         }})
       </div>
       <div>
         {{ item.bootDrive }} ({{ item.bootDriveFS }})
-        {{ item.bootDriveCap | humanFileSize }} /
-        {{ item.bootDriveFree | humanFileSize }} Free ({{
+        {{ humanFileSize(item.bootDriveCap) }} /
+        {{ humanFileSize(item.bootDriveFree) }} Free ({{
           Math.floor((100 * item.bootDriveFree) / item.bootDriveCap)
         }}%)
       </div>
-      <div>{{ item.ram | humanFileSize }} RAM</div>
+      <div>{{ humanFileSize(item.ram) }} RAM</div>
       <div v-for="(props, mac) in item.networkConfig" v-bind:key="mac">
         <div>{{ mac }}: {{ props.ips }}</div>
       </div>
@@ -36,7 +36,7 @@
 
     <div>Login History (up to 20)</div>
     <div v-for="login in logins" v-bind:key="login.id">
-      {{ login.created.toDate() | relativeTime }}
+      {{ relativeTime(login.created.toDate()) }}
       <!-- 
         TODO: FIX THIS This will break when the userSourceAnchor and the Users id 
         do not match. BUG
@@ -58,7 +58,8 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { format, formatDistanceToNow } from "date-fns";
+import { dateFormat } from "./helpers";
+import { formatDistanceToNow } from "date-fns";
 
 export default Vue.extend({
   props: ["id", "collection"],
@@ -70,13 +71,19 @@ export default Vue.extend({
       logins: [],
     };
   },
-  filters: {
-    dateFormat(date: Date): string {
-      return format(date, "yyyy MMM dd / HH:mm:ss");
-    },
-    relativeTime(date: Date): string {
-      return formatDistanceToNow(date, { addSuffix: true });
-    },
+  watch: {
+    id: function (id) {
+      this.setItem(id);
+    }, // first arg is newVal, second is oldVal
+  },
+  created() {
+    this.parentPath =
+      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+    this.collectionObject = db.collection(this.collection);
+    this.setItem(this.id);
+  },
+  methods: {
+    dateFormat,
     systemType(type: number): string {
       enum SystemTypes {
         Desktop = 1,
@@ -105,19 +112,6 @@ export default Vue.extend({
       } while (Math.abs(bytes) >= thresh && u < units.length - 1);
       return bytes.toFixed(1) + " " + units[u];
     },
-  },
-  watch: {
-    id: function (id) {
-      this.setItem(id);
-    }, // first arg is newVal, second is oldVal
-  },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.setItem(this.id);
-  },
-  methods: {
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
@@ -161,6 +155,9 @@ export default Vue.extend({
           alert(`Computer assignment failed: ${error}`);
         }
       );
+    },
+    relativeTime(date: Date): string {
+      return formatDistanceToNow(date, { addSuffix: true });
     },
   },
 });

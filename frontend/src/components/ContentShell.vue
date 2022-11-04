@@ -6,7 +6,7 @@
         v-bind:key="route.name"
         v-bind:to="{ name: route.name }"
       >
-        {{ route | uiLinkTitle }}
+        {{ uiLinkTitle(route) }}
       </router-link>
       <WaitMessages v-if="showTasks" />
     </div>
@@ -18,16 +18,16 @@
 import { RouteConfig } from "vue-router";
 import Vue from "vue";
 import WaitMessages from "./WaitMessages.vue";
-import { mapState } from "vuex";
+import { storeToRefs } from "pinia";
+import { useStateStore } from "../stores/state";
 export default Vue.extend({
-  filters: {
-    uiLinkTitle(item: RouteConfig): string {
-      return item.meta?.uiName ?? item.name;
-    },
+  setup: () => {
+    const store = useStateStore();
+    const { showTasks } = storeToRefs(store);
+    return { claims: store.claims, showTasks };
   },
   components: { WaitMessages },
   computed: {
-    ...mapState(["claims", "showTasks"]),
     siblingRoutes(): RouteConfig[] | null {
       const parentPath =
         this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path;
@@ -39,6 +39,9 @@ export default Vue.extend({
     },
   },
   methods: {
+    uiLinkTitle(item: RouteConfig): string {
+      return item.meta?.uiName ?? item.name;
+    },
     // return true if the item has a showInUi property with a value
     // of true AND, if requiredClaims are present in the router, the user has
     // at least one of those claims. Return false otherwise.

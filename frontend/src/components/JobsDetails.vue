@@ -77,7 +77,7 @@
     <div v-if="claims.report === true">
       <h4>Time Sheets</h4>
       <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
-        {{ timeSheet.weekEnding.toDate() | relativeTime }} -
+        {{ relativeTime(timeSheet.weekEnding.toDate()) }} -
         <router-link
           v-bind:to="{
             name: 'Time Sheet Details',
@@ -96,14 +96,17 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { format, formatDistanceToNow } from "date-fns";
-import { mapState } from "vuex";
+import { formatDistanceToNow } from "date-fns";
+import { useStateStore } from "../stores/state";
 import Datepicker from "vuejs-datepicker";
 import QueryBox from "./QueryBox.vue";
 import DownloadQueryLink from "./DownloadQueryLink.vue";
 
 export default Vue.extend({
-  computed: mapState(["claims"]),
+  setup() {
+    const store = useStateStore();
+    return { claims: store.claims };
+  },
   props: ["id", "collection"],
   components: {
     Datepicker,
@@ -130,14 +133,6 @@ export default Vue.extend({
       item: {} as firebase.firestore.DocumentData,
       timeSheets: [],
     };
-  },
-  filters: {
-    dateFormat(date: Date): string {
-      return format(date, "yyyy MMM dd / HH:mm:ss");
-    },
-    relativeTime(date: Date): string {
-      return formatDistanceToNow(date, { addSuffix: true });
-    },
   },
   watch: {
     id: function (id) {
@@ -199,6 +194,9 @@ export default Vue.extend({
       } else {
         this.item = {};
       }
+    },
+    relativeTime(date: Date): string {
+      return formatDistanceToNow(date, { addSuffix: true });
     },
   },
 });

@@ -38,12 +38,17 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 import { EditIcon } from "vue-feather-icons";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    return { user: store.user };
+  },
+
   components: {
     EditIcon,
   },
@@ -70,9 +75,6 @@ export default Vue.extend({
       this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
       this.searchClientLoaded = true;
     },
-  },
-  computed: {
-    ...mapState(["user"]),
   },
 });
 </script>

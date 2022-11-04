@@ -2,7 +2,7 @@
   <div id="list">
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.payPeriodEnding.toDate() | exportDate }}
+        {{ exportDate(item.payPeriodEnding.toDate()) }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
@@ -89,7 +89,7 @@ import {
   foldAmendments,
 } from "./helpers";
 import { format, subDays } from "date-fns";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import { utcToZonedTime } from "date-fns-tz";
 import {
   PayrollReportRecord,
@@ -106,15 +106,15 @@ import _ from "lodash";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   props: ["collection"], // a string, the Firestore Collection name
   components: {
     ActionButton,
     DownloadIcon,
-  },
-  filters: {
-    exportDate(date: Date) {
-      return format(date, "yyyy MMM dd");
-    },
   },
   data() {
     return {
@@ -468,7 +468,7 @@ export default Vue.extend({
       if (item.zip !== undefined) {
         return;
       }
-      store.commit("startTask", {
+      this.startTask({
         id: `generateAttachments${payPeriodEnding}`,
         message: "Generating Attachments",
       });
@@ -477,9 +477,7 @@ export default Vue.extend({
       } catch (error) {
         alert(error);
       }
-      store.commit("endTask", {
-        id: `generateAttachments${payPeriodEnding}`,
-      });
+      this.endTask(`generateAttachments${payPeriodEnding}`);
     },
     // REMOVED AND REPLACED WITH generatePayablesCSVSQL
     // async getPayPeriodExpenses(week: Date) {

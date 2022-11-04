@@ -7,7 +7,7 @@
     >
       <span class="listheader">
         Week Ending
-        {{ new Date(parseInt(weekEnding, 10)) | shortDate }}
+        {{ shortDate(new Date(parseInt(weekEnding, 10))) }}
         <action-button
           v-if="unsubmittedExpenseIds(expenses).length > 0"
           type="send"
@@ -28,7 +28,7 @@
         }"
       >
         <div class="anchorbox">
-          {{ item.date.toDate() | shortDate }}
+          {{ shortDate(item.date.toDate()) }}
         </div>
         <div class="detailsbox">
           <div class="headline_wrapper">
@@ -206,6 +206,7 @@
 
 <script lang="ts">
 import {
+  shortDate,
   thisTimeNextWeekInTimeZone,
   nextSaturday,
   isPayrollWeek2,
@@ -221,10 +222,15 @@ import { format, addDays } from "date-fns";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon, ClockIcon, DollarSignIcon } from "vue-feather-icons";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { user: store.user, startTask, endTask };
+  },
   props: ["approved", "collection"],
   computed: {
     processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
@@ -240,11 +246,6 @@ export default Vue.extend({
     ClockIcon,
     DollarSignIcon,
   },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd");
-    },
-  },
   data() {
     return {
       parentPath: "",
@@ -253,6 +254,7 @@ export default Vue.extend({
     };
   },
   methods: {
+    shortDate,
     copyEntry,
     del,
     downloadAttachment,
@@ -262,7 +264,7 @@ export default Vue.extend({
       // first verifying that approved is false. Similarly an approve
       // function for the approving manager must use a transaction and
       // verify that the timesheet is submitted before marking it approved
-      store.commit("startTask", {
+      this.startTask({
         id: `recall${expenseId}`,
         message: "recalling",
       });
@@ -286,15 +288,15 @@ export default Vue.extend({
             });
         })
         .then(() => {
-          store.commit("endTask", { id: `recall${expenseId}` });
+          this.endTask(`recall${expenseId}`);
         })
-        .catch(function (error) {
-          store.commit("endTask", { id: `recall${expenseId}` });
+        .catch((error) => {
+          this.endTask(`recall${expenseId}`);
           alert(`Recall failed: ${error}`);
         });
     },
     approveExpense(itemId: string) {
-      store.commit("startTask", {
+      this.startTask({
         id: `approve${itemId}`,
         message: "approving",
       });
@@ -317,11 +319,11 @@ export default Vue.extend({
             });
         })
         .then(() => {
-          store.commit("endTask", { id: `approve${itemId}` });
+          this.endTask(`approve${itemId}`);
           this.$router.push({ name: "Expenses Pending" });
         })
-        .catch(function (error) {
-          store.commit("endTask", { id: `approve${itemId}` });
+        .catch((error) => {
+          this.endTask(`approve${itemId}`);
           alert(`Approval failed: ${error}`);
         });
     },
@@ -371,7 +373,7 @@ export default Vue.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      const uid = store.state.user?.uid;
+      const uid = this.user.uid;
       if (uid === undefined) {
         throw "There is no valid uid";
       }

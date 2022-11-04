@@ -16,7 +16,7 @@
           <div class="headline">{{ item.email }}</div>
         </div>
         <div class="firstline">
-          {{ item.customClaims | keysString }}
+          {{ keysString(item.customClaims) }}
         </div>
         <div class="secondline">
           <span v-if="item.managerName">Manager: {{ item.managerName }}</span>
@@ -48,7 +48,7 @@
               v-if="item.personalVehicleInsuranceExpiry.toDate() >= new Date()"
             >
               /vehicle insurance expiry:
-              {{ item.personalVehicleInsuranceExpiry.toDate() | shortDate }}
+              {{ shortDate(item.personalVehicleInsuranceExpiry.toDate()) }}
             </template>
             <span v-else class="attention"> /vehicle insurance expired</span>
           </span>
@@ -79,20 +79,23 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { searchString } from "./helpers";
+import { shortDate, searchString } from "./helpers";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { mapState } from "vuex";
 import { EditIcon } from "vue-feather-icons";
-import { format } from "date-fns";
 
 export default Vue.extend({
   props: ["collection"],
   components: {
     EditIcon,
   },
+  methods: {
+    shortDate,
+    keysString(obj: { [key: string]: unknown }): string {
+      return obj ? Object.keys(obj).join(", ") : "";
+    },
+  },
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
@@ -100,14 +103,6 @@ export default Vue.extend({
           (p: firebase.firestore.DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    },
-  },
-  filters: {
-    keysString(obj: { [key: string]: unknown }): string {
-      return obj ? Object.keys(obj).join(", ") : "";
-    },
-    shortDate(date: Date) {
-      return format(date, "MMM dd, yyyy");
     },
   },
   data() {

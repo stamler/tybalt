@@ -10,16 +10,17 @@
 
 <script lang="ts">
 import { HalfCircleSpinner } from "epic-spinners";
-import { mapGetters, mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 import Vue from "vue";
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    return { oneMessage: store.oneMessage };
+  },
+
   components: {
     HalfCircleSpinner,
-  },
-  computed: {
-    ...mapState(["showTasks"]),
-    ...mapGetters(["oneMessage"]),
   },
 });
 </script>

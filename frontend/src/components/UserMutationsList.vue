@@ -71,13 +71,18 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 import ActionButton from "./ActionButton.vue";
 import { searchString } from "./helpers";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   components: {
     ActionButton,
   },
@@ -98,7 +103,7 @@ export default Vue.extend({
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     approve(item: any) {
-      store.commit("startTask", {
+      this.startTask({
         id: `approvingMutation${item.id}`,
         message: "Approving...",
       });
@@ -108,18 +113,18 @@ export default Vue.extend({
       return (
         approvingMutation({ id: item.id })
           .then(() => {
-            store.commit("endTask", { id: `approvingMutation${item.id}` });
+            this.endTask(`approvingMutation${item.id}`);
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .catch((error: any) => {
-            store.commit("endTask", { id: `approvingMutation${item.id}` });
+            this.endTask(`approvingMutation${item.id}`);
             alert(`Error approving mutation: ${error.message}`);
           })
       );
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     del(item: any) {
-      store.commit("startTask", {
+      this.startTask({
         id: `deleteMutation${item.id}`,
         message: "Deleting...",
       });
@@ -128,10 +133,10 @@ export default Vue.extend({
         .httpsCallable("deleteMutation");
       return deleteMutation({ id: item.id })
         .then(() => {
-          store.commit("endTask", { id: `deleteMutation${item.id}` });
+          this.endTask(`deleteMutation${item.id}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `deleteMutation${item.id}` });
+          this.endTask(`deleteMutation${item.id}`);
           alert(`Error deleting mutation: ${error.message}`);
         });
     },

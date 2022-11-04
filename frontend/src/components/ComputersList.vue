@@ -35,12 +35,12 @@
                 ({{ item.serial }})
               </span>
               <span v-if="item.retired">
-                ### Retired {{ item.retired.toDate() | shortDate }} ##
+                ### Retired {{ shortDate(item.retired.toDate()) }} ##
               </span>
             </div>
           </div>
           <div class="firstline">
-            {{ item.updated.toDate() | relativeTime }}, Windows
+            {{ relativeTime(item.updated.toDate()) }}, Windows
             {{ item.osVersion }}
           </div>
           <div class="secondline">
@@ -72,12 +72,12 @@
                 </button>
               </span>
               <span v-else>
-                assigned {{ item.assigned.time.toDate() | relativeTime }}
+                assigned {{ relativeTime(item.assigned.time.toDate()) }}
               </span>
             </span>
           </div>
           <div class="thirdline">
-            first seen {{ item.created.toDate() | dateFormat }}
+            first seen {{ dateFormat(item.created.toDate()) }}
           </div>
         </div>
       </div>
@@ -89,14 +89,18 @@
 import Vue from "vue";
 import firebase from "../firebase";
 import { format, formatDistanceToNow } from "date-fns";
-import { mapState } from "vuex";
-import { searchString } from "./helpers";
+import { useStateStore } from "../stores/state";
+import { toRef } from "vue";
+import { dateFormat, searchString } from "./helpers";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup: function () {
+    const store = useStateStore();
+    return { claims: toRef(store, "claims") };
+  },
   props: ["retired", "collection"],
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       if (this.retired) {
         return this.items
@@ -120,17 +124,6 @@ export default Vue.extend({
               searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       }
-    },
-  },
-  filters: {
-    dateFormat(date: Date): string {
-      return format(date, "yyyy MMM dd / HH:mm:ss");
-    },
-    relativeTime(date: Date): string {
-      return formatDistanceToNow(date, { addSuffix: true });
-    },
-    shortDate(date: Date): string {
-      return format(date, "MMM dd");
     },
   },
   data() {
@@ -162,6 +155,13 @@ export default Vue.extend({
         }
       );
     },
+    relativeTime(date: Date): string {
+      return formatDistanceToNow(date, { addSuffix: true });
+    },
+    shortDate(date: Date): string {
+      return format(date, "MMM dd");
+    },
+    dateFormat,
   },
 });
 </script>

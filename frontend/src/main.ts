@@ -10,7 +10,10 @@ Vue.use(InstantSearch);
 import firebase from "./firebase";
 import App from "./App.vue";
 import router from "./router";
-import store from "./store";
+import { PiniaVuePlugin } from "pinia";
+Vue.use(PiniaVuePlugin);
+import { pinia } from "./piniainit";
+import { useStateStore } from "./stores/state";
 import { subDays } from "date-fns";
 
 let app: Vue | null = null;
@@ -44,13 +47,6 @@ firebase
         const snap = await db.collection("Profiles").doc(currentUser.uid).get();
         const profile = snap.data();
 
-        // get the expense rates and store them in the store
-        const getExpenseRates = firebase
-          .functions()
-          .httpsCallable("expenseRates");
-        const rates = await getExpenseRates();
-        store.commit("setExpenseRates", rates.data);
-
         if (
           profile !== undefined &&
           (profile.msGraphDataUpdated === undefined ||
@@ -80,24 +76,33 @@ firebase
 const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
   if (user) {
     // console.log(`${user.displayName} is logged in`);
-    // set state and user in Vuex
+    // set state and user in pinia
     const tasks = [];
+
+    // load initial state from the database
+    const store = useStateStore(pinia);
+
+    // get the expense rates and store them in the store
+    const getExpenseRates = firebase.functions().httpsCallable("expenseRates");
+    tasks.push(
+      getExpenseRates().then((result) => store.setExpenseRates(result.data))
+    );
+
     // TODO: Vuex won't survive a page reload and this code won't be
     // retriggered if the user is still signed in, meaning the state will
     // disappear breaking the app. Further since components are loaded
     // by the router, any component which depends on state will fail on
     // app load.
-    tasks.push(store.commit("setUser", firebase.auth().currentUser));
+    // TODO: avoid casting to firebase.User
+    tasks.push(store.setUser(firebase.auth().currentUser as firebase.User));
     tasks.push(
-      user
-        .getIdTokenResult()
-        .then((token) => store.commit("setClaims", token.claims))
+      user.getIdTokenResult().then((token) => store.setClaims(token.claims))
     );
     Promise.all(tasks).then(() => {
       if (!app) {
         app = new Vue({
           router,
-          store,
+          pinia,
           render: (h) => h(App), // h is an alias for createElement
         }).$mount("#app");
       }
@@ -105,6 +110,10 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
   } else {
     const provider = new firebase.auth.OAuthProvider("microsoft.com");
     provider.setCustomParameters({ tenant: "tbte.onmicrosoft.com" });
+    // https://stackoverflow.com/questions/41055699/why-does-firebase-auth-work-for-chrome-but-not-firefox
+    // signInWithRedirect can have issues in Firefox and other browsers
+    // signInWithPopup can be used instead. Disabling enhanced tracking
+    // protection in Firefox can sometimes resolve the issue.
     firebase.auth().signInWithRedirect(provider);
   }
 });

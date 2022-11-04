@@ -13,7 +13,7 @@
 import Vue from "vue";
 import ActionButton from "./ActionButton.vue";
 import { downloadBlob } from "./helpers";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 import ObjectTable from "./ObjectTable.vue";
 import { parse } from "json2csv";
@@ -21,6 +21,11 @@ import { TableData, QueryPayloadObject } from "./types";
 import { debounce } from "lodash";
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   data() {
     return {
       queryResult: undefined as TableData,
@@ -42,7 +47,7 @@ export default Vue.extend({
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     runQuery: debounce(function (this: any) {
-      store.commit("startTask", {
+      this.startTask({
         id: "runQuery",
         message: "getting data...",
       });
@@ -52,11 +57,11 @@ export default Vue.extend({
         queryData.queryValues = this.queryValues;
       return queryMySQL(queryData)
         .then((response) => {
-          store.commit("endTask", { id: "runQuery" });
+          this.endTask("runQuery");
           this.queryResult = response.data;
         })
         .catch((error) => {
-          store.commit("endTask", { id: "runQuery" });
+          this.endTask("runQuery");
           alert(`Error running query: ${error.message}`);
         });
     }, 200),

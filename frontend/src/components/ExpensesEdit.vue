@@ -253,8 +253,7 @@ import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 const storage = firebase.storage();
-import store from "../store";
-import { mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
@@ -269,6 +268,16 @@ interface HTMLInputEvent extends Event {
 }
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return {
+      startTask,
+      endTask,
+      user: store.user,
+      expenseRates: store.expenseRates,
+    };
+  },
   components: { Datepicker, ActionButton },
   props: ["id", "collection"],
   data() {
@@ -300,7 +309,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["user", "expenseRates"]),
     mileageTokensInDescWhileOtherPaymentType(): boolean {
       if (
         this.item.paymentType !== undefined &&
@@ -619,7 +627,7 @@ export default Vue.extend({
       // complete the rest. Otherwise cleanup and abort.
       let uploadFailed = false;
       if (this.newAttachment !== null) {
-        store.commit("startTask", {
+        this.startTask({
           id: `upload${this.newAttachment}`,
           message: "uploading",
         });
@@ -628,9 +636,9 @@ export default Vue.extend({
         try {
           await storage.ref(this.newAttachment).put(this.localFile);
           uploadFailed = false;
-          store.commit("endTask", { id: `upload${this.newAttachment}` });
+          this.endTask(`upload${this.newAttachment}`);
         } catch (error) {
-          store.commit("endTask", { id: `upload${this.newAttachment}` });
+          this.endTask(`upload${this.newAttachment}`);
           alert(`Attachment Upload failed: ${error}`);
           uploadFailed = true;
         }

@@ -4,14 +4,14 @@
       <span class="listheader">
         <p style="width: 100%; text-align: right">
           {{ openingOV - usedOV }} hrs Vacation & {{ openingOP - usedOP }} hrs
-          PPTO remaining as of {{ usedAsOf | shortDate }}
+          PPTO remaining as of {{ shortDate(usedAsOf) }}
         </p>
       </span>
     </div>
     <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
       <span class="listheader">
-        {{ tallies[week].weekEnding | shortDateWeekDayStart }} &mdash;
-        {{ tallies[week].weekEnding | shortDateWeekDay }}
+        {{ shortDateWeekDayStart(tallies[week].weekEnding) }} &mdash;
+        {{ shortDateWeekDay(tallies[week].weekEnding) }}
       </span>
       <div
         class="listentry"
@@ -19,7 +19,7 @@
         v-bind:key="item.id"
         v-bind:class="{ stthsday: dayIsSTThS(item) }"
       >
-        <div class="anchorbox">{{ item.date.toDate() | shortDate }}</div>
+        <div class="anchorbox">{{ shortDate(item.date.toDate()) }}</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
             <div class="headline" v-if="collection === 'TimeEntries'">
@@ -41,12 +41,12 @@
               >
                 <span class="label">
                   committed
-                  {{ item.commitTime.toDate() | shortDate }} by
+                  {{ shortDate(item.commitTime.toDate()) }} by
                   {{ item.creatorName }}
                 </span>
                 <span class="label">
                   posted
-                  {{ item.committedWeekEnding.toDate() | shortDate }}
+                  {{ shortDate(item.committedWeekEnding.toDate()) }}
                 </span>
               </template>
             </div>
@@ -61,7 +61,7 @@
             {{ item.job }} {{ item.client }}: {{ item.jobDescription }}
           </div>
           <div class="secondline">
-            {{ item | hoursString }}
+            {{ hoursString(item) }}
           </div>
           <div v-if="item.workDescription" class="thirdline">
             <span v-if="item.workrecord !== undefined">
@@ -170,39 +170,27 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { copyEntry, del } from "./helpers";
+import { shortDate, copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon } from "vue-feather-icons";
-import store from "../store";
-import { mapState } from "vuex";
+import { storeToRefs } from "pinia";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup: () => {
+    const stateStore = useStateStore();
+    const user = stateStore.user; // TODO: Why we can't use a ref here from storeToRefs
+    const { activeTasks, showTasks } = storeToRefs(stateStore);
+    const { startTask, endTask } = stateStore;
+    return { activeTasks, showTasks, user, startTask, endTask };
+  },
   props: ["collection"],
   components: {
     ActionButton,
     EditIcon,
-  },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd");
-    },
-    shortDateWeekDay(date: Date) {
-      return format(date, "EEE MMM dd");
-    },
-    shortDateWeekDayStart(date: Date) {
-      const startDate = subDays(date, 6);
-      return format(startDate, "EEE MMM dd");
-    },
-    hoursString(item: firebase.firestore.DocumentData) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
-    },
   },
   data() {
     return {
@@ -225,7 +213,7 @@ export default Vue.extend({
           "";
         this.collectionObject = db.collection(collection);
         this.$bind("items", this.collectionObject);
-        const uid = store.state.user?.uid;
+        const uid = this.user.uid;
         if (uid === undefined) {
           throw "There is no valid uid";
         }
@@ -272,7 +260,7 @@ export default Vue.extend({
   },
   methods: {
     bundle(week: Date) {
-      store.commit("startTask", {
+      this.startTask({
         id: "bundle",
         message: "verifying...",
       });
@@ -281,11 +269,11 @@ export default Vue.extend({
         .httpsCallable("bundleTimesheet");
       return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
-          store.commit("endTask", { id: "bundle" });
+          this.endTask("bundle");
           this.$router.push({ name: "Time Sheets" });
         })
         .catch((error) => {
-          store.commit("endTask", { id: "bundle" });
+          this.endTask("bundle");
           alert(`Error bundling timesheet: ${error.message}`);
         });
     },
@@ -302,17 +290,17 @@ export default Vue.extend({
       const commitTimeAmendment = firebase
         .functions()
         .httpsCallable("commitTimeAmendment");
-      store.commit("startTask", {
+      this.startTask({
         id: `commitAmendment${item.id}`,
         message: "committing",
       });
 
       return commitTimeAmendment({ id: item.id })
         .then(() => {
-          store.commit("endTask", { id: `commitAmendment${item.id}` });
+          this.endTask(`commitAmendment${item.id}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `commitAmendment${item.id}` });
+          this.endTask(`commitAmendment${item.id}`);
           alert(`Amendment commit failed: ${error}`);
         });
     },
@@ -329,10 +317,23 @@ export default Vue.extend({
           x.weekEnding.toDate().getTime() === Number(weekEnding)
       );
     },
+    hoursString(item: firebase.firestore.DocumentData) {
+      const hoursArray = [];
+      if (item.hours) hoursArray.push(item.hours + " hrs");
+      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
+      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
+      return hoursArray.join(" + ");
+    },
+    shortDateWeekDayStart(date: Date) {
+      const startDate = subDays(date, 6);
+      return format(startDate, "EEE MMM dd");
+    },
+    shortDateWeekDay(date: Date) {
+      return format(date, "EEE MMM dd");
+    },
+    shortDate,
   },
   computed: {
-    ...mapState(["activeTasks", "showTasks"]),
-
     // A an object where the keys are saturdays and the values are tallies
     // to be used in the UI
     tallies() {

@@ -20,11 +20,11 @@
           <div class="headline">{{ item.email }}</div>
           <div class="byline">
             <span v-if="item.updated">
-              {{ item.updated.toDate() | relativeTime }}
+              {{ relativeTime(item.updated.toDate()) }}
             </span>
             <span v-if="item.addedWithoutComputerLogin">
               no logins, added
-              {{ item.addedWithoutComputerLogin.toDate() | relativeTime }}
+              {{ relativeTime(item.addedWithoutComputerLogin.toDate()) }}
             </span>
           </div>
         </div>
@@ -38,8 +38,7 @@
         <div class="thirdline">
           {{
             item.created
-              ? "first seen " +
-                $options.filters.dateFormat(item.created.toDate())
+              ? "first seen " + dateFormat(item.created.toDate())
               : ""
           }}
         </div>
@@ -88,17 +87,21 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { searchString } from "./helpers";
-import store from "../store";
+import { dateFormat, searchString } from "./helpers";
+import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon } from "vue-feather-icons";
-import { format, formatDistanceToNow } from "date-fns";
-import { mapState } from "vuex";
+import { formatDistanceToNow } from "date-fns";
 import firebase from "../firebase";
 
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   props: ["query"],
   components: {
     ActionButton,
@@ -113,7 +116,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
@@ -121,14 +123,6 @@ export default Vue.extend({
           (p: firebase.firestore.DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
-    },
-  },
-  filters: {
-    dateFormat(date: Date) {
-      return format(date, "yyyy MMM dd / HH:mm:ss");
-    },
-    relativeTime(date: Date) {
-      return formatDistanceToNow(date, { addSuffix: true });
     },
   },
   created() {
@@ -176,21 +170,25 @@ export default Vue.extend({
     );
   },
   methods: {
+    dateFormat,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async editUser(verb: string, user: any) {
-      store.commit("startTask", {
+      this.startTask({
         id: `${verb}User${user.id}`,
         message: "Creating Mutation...",
       });
       const addMutation = firebase.functions().httpsCallable("addMutation");
       return addMutation({ verb, userId: user.id })
         .then(() => {
-          store.commit("endTask", { id: `${verb}User${user.id}` });
+          this.endTask(`${verb}User${user.id}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `${verb}User${user.id}` });
+          this.endTask(`${verb}User${user.id}`);
           alert(`Error creating mutation: ${error.message}`);
         });
+    },
+    relativeTime(date: Date) {
+      return formatDistanceToNow(date, { addSuffix: true });
     },
   },
 });

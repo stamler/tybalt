@@ -7,7 +7,7 @@
       v-model="search"
     />
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.created.toDate() | relativeTime }}</div>
+      <div class="anchorbox">{{ relativeTime(item.created.toDate()) }}</div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ item.givenName }} {{ item.surname }}</div>
@@ -37,7 +37,7 @@ export default Vue.extend({
         );
     },
   },
-  filters: {
+  methods: {
     relativeTime(date: Date): string {
       return formatDistanceToNow(date, { addSuffix: true });
     },

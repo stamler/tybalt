@@ -10,7 +10,7 @@
     >
       <div class="anchorbox">
         <router-link :to="[parentPath, item.id, 'details'].join('/')">
-          {{ item.weekEnding.toDate() | shortDate }}
+          {{ shortDate(item.weekEnding.toDate()) }}
         </router-link>
       </div>
       <div class="detailsbox">
@@ -134,13 +134,22 @@ import ShareModal from "./ShareModal.vue";
 import Vue from "vue";
 import firebase from "../firebase";
 import _ from "lodash";
-import { format } from "date-fns";
-import { isPayrollWeek2, recallTs, submitTs, unbundle } from "./helpers";
+import {
+  shortDate,
+  isPayrollWeek2,
+  recallTs,
+  submitTs,
+  unbundle,
+} from "./helpers";
 import ActionButton from "./ActionButton.vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    return { user: store.user };
+  },
   props: ["query", "collection"],
   computed: {
     _() {
@@ -151,11 +160,6 @@ export default Vue.extend({
     ActionButton,
     RejectModal,
     ShareModal,
-  },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd");
-    },
   },
   data() {
     return {
@@ -174,7 +178,7 @@ export default Vue.extend({
         if (this.collectionObject === null) {
           throw "There is no valid collection object";
         }
-        const uid = store.state.user?.uid;
+        const uid = this.user.uid;
         if (uid === undefined) {
           throw "There is no valid uid";
         }
@@ -239,6 +243,7 @@ export default Vue.extend({
     );
   },
   methods: {
+    shortDate,
     recallTs,
     submitTs,
     unbundle,

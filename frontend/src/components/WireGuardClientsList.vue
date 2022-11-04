@@ -48,16 +48,19 @@
 <script lang="ts">
 import Vue from "vue";
 import { searchString } from "./helpers";
-import { mapState } from "vuex";
 import firebase from "../firebase";
 import ActionButton from "./ActionButton.vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   components: { ActionButton },
   computed: {
-    ...mapState(["claims"]),
     processedItems(): firebase.firestore.DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
@@ -77,7 +80,7 @@ export default Vue.extend({
   },
   methods: {
     deleteClient(item: firebase.firestore.DocumentData) {
-      store.commit("startTask", {
+      this.startTask({
         id: `delete${item.id}`,
         message: "deleting client...",
       });
@@ -89,41 +92,41 @@ export default Vue.extend({
       ) {
         return delClient({ id: item.id })
           .then(() => {
-            store.commit("endTask", { id: `delete${item.id}` });
+            this.endTask(`delete${item.id}`);
           })
           .catch((error) => {
-            store.commit("endTask", { id: `delete${item.id}` });
+            this.endTask(`delete${item.id}`);
             alert(`Error deleting client: ${error.message}`);
           });
       }
     },
     toggle(item: firebase.firestore.DocumentData) {
       const toggle = firebase.functions().httpsCallable("wgToggleEnableClient");
-      store.commit("startTask", {
+      this.startTask({
         id: `toggle${item.id}`,
         message: "changing enable status...",
       });
       return toggle({ id: item.id })
         .then(() => {
-          store.commit("endTask", { id: `toggle${item.id}` });
+          this.endTask(`toggle${item.id}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `toggle${item.id}` });
+          this.endTask(`toggle${item.id}`);
           alert(`Error toggling status: ${error.message}`);
         });
     },
     clearKey(item: firebase.firestore.DocumentData) {
       const clearKey = firebase.functions().httpsCallable("wgClearPublicKey");
-      store.commit("startTask", {
+      this.startTask({
         id: `clearKey${item.id}`,
         message: "clearing public key...",
       });
       return clearKey({ id: item.id })
         .then(() => {
-          store.commit("endTask", { id: `clearKey${item.id}` });
+          this.endTask(`clearKey${item.id}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `clearKey${item.id}` });
+          this.endTask(`clearKey${item.id}`);
           alert(`Error clearing public key: ${error.message}`);
         });
     },

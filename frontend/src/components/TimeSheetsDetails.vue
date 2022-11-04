@@ -69,8 +69,8 @@
       />
     </div>
     <div v-if="item.weekEnding">
-      Sunday {{ weekStart | shortDate }} to Saturday
-      {{ item.weekEnding.toDate() | shortDate }}
+      Sunday {{ shortDate(weekStart) }} to Saturday
+      {{ shortDate(item.weekEnding.toDate()) }}
     </div>
     <!-- rejection reason -->
     <span v-if="item.rejected" style="color: red">
@@ -102,7 +102,7 @@
             <td>{{ entry.timetype }}</td>
             <td>{{ entry.division }}</td>
             <td>
-              {{ entry.date.toDate() | shortDate }}
+              {{ shortDate(entry.date.toDate()) }}
             </td>
             <td>{{ entry.jobHours }}</td>
             <td>{{ entry.hours }}</td>
@@ -131,16 +131,25 @@
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
 import Vue from "vue";
-import { generateTimeReportCSV, submitTs, recallTs } from "./helpers";
+import {
+  shortDate,
+  generateTimeReportCSV,
+  submitTs,
+  recallTs,
+} from "./helpers";
 import { TimeEntry } from "./types";
-import { format, subWeeks, addMilliseconds } from "date-fns";
-import { mapState } from "vuex";
+import { subWeeks, addMilliseconds } from "date-fns";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
-import store from "../store";
 import ActionButton from "./ActionButton.vue";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask, claims: store.claims, user: store.user };
+  },
   components: {
     ActionButton,
     RejectModal,
@@ -148,7 +157,6 @@ export default Vue.extend({
   },
   props: ["id", "collection"],
   computed: {
-    ...mapState(["user", "claims"]),
     offHoursSum(): number {
       let total = 0;
       if (this.item !== undefined) {
@@ -183,11 +191,6 @@ export default Vue.extend({
       item: {} as firebase.firestore.DocumentData | undefined,
     };
   },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd");
-    },
-  },
   watch: {
     id: function (id: string) {
       this.setItem(id);
@@ -200,6 +203,7 @@ export default Vue.extend({
     this.setItem(this.id);
   },
   methods: {
+    shortDate,
     generateTimeReportCSV,
     submitTs,
     recallTs,
@@ -227,7 +231,7 @@ export default Vue.extend({
       }
     },
     approveTs(timesheetId: string) {
-      store.commit("startTask", {
+      this.startTask({
         id: `approve${timesheetId}`,
         message: "approving",
       });
@@ -250,16 +254,16 @@ export default Vue.extend({
             });
         })
         .then(() => {
-          store.commit("endTask", { id: `approve${timesheetId}` });
+          this.endTask(`approve${timesheetId}`);
           this.$router.push({ name: "Time Sheets" });
         })
-        .catch(function (error) {
-          store.commit("endTask", { id: `approve${timesheetId}` });
+        .catch((error) => {
+          this.endTask(`approve${timesheetId}`);
           alert(`Approval failed: ${error}`);
         });
     },
     reviewTs(timesheetId: string) {
-      store.commit("startTask", {
+      this.startTask({
         id: `review${timesheetId}`,
         message: "marking reviewed",
       });
@@ -269,10 +273,10 @@ export default Vue.extend({
           reviewedIds: firebase.firestore.FieldValue.arrayUnion(this.user.uid),
         })
         .then(() => {
-          store.commit("endTask", { id: `review${timesheetId}` });
+          this.endTask(`review${timesheetId}`);
         })
         .catch((error) => {
-          store.commit("endTask", { id: `review${timesheetId}` });
+          this.endTask(`review${timesheetId}`);
           alert(`Error marking timesheet as reviewed: ${error}`);
         });
     },

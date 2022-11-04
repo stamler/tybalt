@@ -170,7 +170,7 @@
 import Vue from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 import Datepicker from "vuejs-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
@@ -179,6 +179,11 @@ import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
 import ActionButton from "./ActionButton.vue";
 
 export default Vue.extend({
+  setup() {
+    // user doesn't need to be reactive so no refs wanted, just the user object,
+    // so we don't use storeToRefs() to toRef()
+    return { user: useStateStore().user };
+  },
   components: { Datepicker, ActionButton },
   props: ["id", "collection"],
   data() {
@@ -203,7 +208,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["user"]),
     trainingTokensInDescriptionWhileRegularHours(): boolean {
       if (
         this.item.timetype !== undefined &&

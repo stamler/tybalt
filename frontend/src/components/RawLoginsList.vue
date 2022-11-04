@@ -10,7 +10,7 @@
       <span>{{ processedItems.length }} items</span>
     </div>
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.created.toDate() | relativeTime }}</div>
+      <div class="anchorbox">{{ relativeTime(item.created.toDate()) }}</div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ item.mfg }} {{ item.model }}</div>
@@ -75,11 +75,6 @@ export default Vue.extend({
         );
     },
   },
-  filters: {
-    relativeTime(date: Date): string {
-      return formatDistanceToNow(date, { addSuffix: true });
-    },
-  },
   data() {
     return {
       search: "",
@@ -125,6 +120,9 @@ export default Vue.extend({
       } else {
         throw new Error(`serial ${sc} or manufacturer ${mc} too short`);
       }
+    },
+    relativeTime(date: Date): string {
+      return formatDistanceToNow(date, { addSuffix: true });
     },
   },
 });

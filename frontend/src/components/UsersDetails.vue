@@ -7,12 +7,12 @@
         <div>{{ item.userSourceAnchor }}</div>
       </div>
       <div v-if="item.updated">
-        updated {{ item.updated.toDate() | dateFormat }}
+        updated {{ dateFormat(item.updated.toDate()) }}
       </div>
     </template>
     <div>Login History</div>
     <div v-for="login in logins" v-bind:key="login.id">
-      {{ login.created.toDate() | relativeTime }}
+      {{ relativeTime(login.created.toDate()) }}
       <router-link
         v-bind:to="{ name: 'Computer Details', params: { id: login.computer } }"
       >
@@ -25,7 +25,8 @@
 <script lang="ts">
 import firebase from "../firebase";
 const db = firebase.firestore();
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
+import { dateFormat } from "./helpers";
 import Vue from "vue";
 
 export default Vue.extend({
@@ -37,13 +38,11 @@ export default Vue.extend({
       logins: [],
     };
   },
-  filters: {
-    dateFormat(date: Date) {
-      return format(date, "yyyy MMM dd / HH:mm:ss");
-    },
+  methods: {
     relativeTime(date: Date) {
       return formatDistanceToNow(date, { addSuffix: true });
     },
+    dateFormat,
   },
   watch: {
     id: {

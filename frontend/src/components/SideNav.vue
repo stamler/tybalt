@@ -18,11 +18,15 @@
 <script lang="ts">
 import Vue from "vue";
 import { RouteConfig } from "vue-router";
-import { mapState } from "vuex";
+import { useStateStore } from "../stores/state";
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    return { claims: store.claims };
+  },
+
   computed: {
-    ...mapState(["user", "claims"]),
     // top level router entries that have a name property and are allowed
     links(): RouteConfig[] {
       return (

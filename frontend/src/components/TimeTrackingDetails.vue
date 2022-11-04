@@ -2,7 +2,7 @@
   <div>
     <modal ref="rejectModal" collection="TimeSheets" />
     <h4 v-if="item.weekEnding">
-      {{ weekStart | shortDate }} to {{ item.weekEnding.toDate() | shortDate }}
+      {{ shortDate(weekStart) }} to {{ shortDate(item.weekEnding.toDate()) }}
     </h4>
     <div>
       <!-- Show submitted unapproved TimeSheets -->
@@ -94,7 +94,7 @@
           <a
             :href="`mailto:${
               profile.email
-            }?subject=Please submit a timesheet for the week ending ${$options.filters.shortDate(
+            }?subject=Please submit a timesheet for the week ending ${shortDate(
               item.weekEnding.toDate()
             )}&body=Hi ${
               profile.givenName
@@ -162,10 +162,10 @@
 <script lang="ts">
 import Modal from "./RejectModal.vue";
 import Vue from "vue";
-import { format, subWeeks, addMilliseconds } from "date-fns";
-import { mapState } from "vuex";
+import { shortDate } from "./helpers";
+import { subWeeks, addMilliseconds } from "date-fns";
 import firebase from "../firebase";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 import _ from "lodash";
 
@@ -178,13 +178,17 @@ interface TimeSheetTrackingPayload {
 }
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   components: {
     ActionButton,
     Modal,
   },
   props: ["id", "collection"],
   computed: {
-    ...mapState(["user", "claims"]),
     pendingTsIdsSortedByName(): string[] {
       const pending = this?.item?.pending;
       if (pending === undefined) {
@@ -332,11 +336,6 @@ export default Vue.extend({
       profiles: [] as firebase.firestore.DocumentData[],
     };
   },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd, yyyy");
-    },
-  },
   watch: {
     id: function (id: string) {
       this.setItem(id);
@@ -356,6 +355,7 @@ export default Vue.extend({
     );
   },
   methods: {
+    shortDate,
     ignore(uid: string) {
       // add uid to notMissingUids property
       if (this.collectionObject === null) {
@@ -419,16 +419,16 @@ export default Vue.extend({
       if (
         confirm("Locking Timesheets is not reversible. Do you want to proceed?")
       ) {
-        store.commit("startTask", {
+        this.startTask({
           id: `lock${id}`,
           message: "locking + exporting",
         });
         return lockTimesheet({ id })
           .then(() => {
-            store.commit("endTask", { id: `lock${id}` });
+            this.endTask(`lock${id}`);
           })
           .catch((error) => {
-            store.commit("endTask", { id: `lock${id}` });
+            this.endTask(`lock${id}`);
             alert(`Error exporting timesheets: ${error.message}`);
           });
       }
@@ -442,16 +442,16 @@ export default Vue.extend({
           "You must check with accounting prior to unlocking. Do you want to proceed?"
         )
       ) {
-        store.commit("startTask", {
+        this.startTask({
           id: `unlock${id}`,
           message: "unlocking",
         });
         return unlockTimesheet({ id })
           .then(() => {
-            store.commit("endTask", { id: `unlock${id}` });
+            this.endTask(`unlock${id}`);
           })
           .catch((error) => {
-            store.commit("endTask", { id: `unlock${id}` });
+            this.endTask(`unlock${id}`);
             alert(`Error unlocking timesheet: ${error.message}`);
           });
       }

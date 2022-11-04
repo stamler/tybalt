@@ -3,7 +3,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 import { parse } from "json2csv";
 import ActionButton from "./ActionButton.vue";
@@ -11,6 +11,11 @@ import { QueryPayloadObject } from "./types";
 import { downloadBlob } from "./helpers";
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   props: {
     queryName: String,
     queryValues: Array,
@@ -26,7 +31,7 @@ export default Vue.extend({
       downloadBlob(blob, name);
     },
     runQuery() {
-      store.commit("startTask", {
+      this.startTask({
         id: "runQuery",
         message: "getting data...",
       });
@@ -36,11 +41,11 @@ export default Vue.extend({
         queryData.queryValues = this.queryValues;
       return queryMySQL(queryData)
         .then((response) => {
-          store.commit("endTask", { id: "runQuery" });
+          this.endTask("runQuery");
           return response.data;
         })
         .catch((error) => {
-          store.commit("endTask", { id: "runQuery" });
+          this.endTask("runQuery");
           alert(`Error running query: ${error.message}`);
         });
     },

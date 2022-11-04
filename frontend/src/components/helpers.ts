@@ -4,11 +4,13 @@ import firebase from "../firebase";
 import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
 import { parse } from "json2csv";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import router from "../router";
+import { pinia } from "../piniainit";
 
 const db = firebase.firestore();
 const storage = firebase.storage();
+const store = useStateStore(pinia);
 
 // Given a number (result of getTime() from js Date object), verify that it is
 // 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
@@ -415,16 +417,16 @@ export async function downloadAttachment(
 
 export function submitExpense(expenseId: string) {
   const submitExpense = firebase.functions().httpsCallable("submitExpense");
-  store.commit("startTask", {
+  store.startTask({
     id: `submit${expenseId}`,
     message: "submitting",
   });
   return submitExpense({ id: expenseId })
     .then(() => {
-      store.commit("endTask", { id: `submit${expenseId}` });
+      store.endTask(`submit${expenseId}`);
     })
     .catch((error) => {
-      store.commit("endTask", { id: `submit${expenseId}` });
+      store.endTask(`submit${expenseId}`);
       alert(`Error submitting expense: ${error}`);
     });
 }
@@ -443,7 +445,7 @@ export function copyEntry(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { date, ...newItem } = item;
     newItem.date = addDays(item.date.toDate(), 1);
-    store.commit("startTask", {
+    store.startTask({
       id: `copy${item.id}`,
       message: "copying",
     });
@@ -453,10 +455,10 @@ export function copyEntry(
     return collection
       .add(newItem)
       .then(() => {
-        store.commit("endTask", { id: `copy${item.id}` });
+        store.endTask(`copy${item.id}`);
       })
       .catch((error) => {
-        store.commit("endTask", { id: `copy${item.id}` });
+        store.endTask(`copy${item.id}`);
         alert(`Error copying: ${error.message}`);
       });
   }
@@ -484,7 +486,7 @@ export function recallTs(timesheetId: string) {
   // first verifying that approved is false. Similarly an approve
   // function for the approving manager must use a transaction and
   // verify that the timesheet is submitted before marking it approved
-  store.commit("startTask", {
+  store.startTask({
     id: `recall${timesheetId}`,
     message: "recalling",
   });
@@ -508,33 +510,33 @@ export function recallTs(timesheetId: string) {
         });
     })
     .then(() => {
-      store.commit("endTask", { id: `recall${timesheetId}` });
+      store.endTask(`recall${timesheetId}`);
       return unbundle(timesheetId);
     })
     .catch(function (error) {
-      store.commit("endTask", { id: `recall${timesheetId}` });
+      store.endTask(`recall${timesheetId}`);
       alert(`Recall failed: ${error}`);
     });
 }
 
 export function unbundle(timesheetId: string) {
-  store.commit("startTask", { id: "unbundle", message: "unbundling" });
+  store.startTask({ id: "unbundle", message: "unbundling" });
   const unbundleTimesheet = firebase
     .functions()
     .httpsCallable("unbundleTimesheet");
   return unbundleTimesheet({ id: timesheetId })
     .then(() => {
-      store.commit("endTask", { id: "unbundle" });
+      store.endTask("unbundle");
       router.push({ name: "Time Entries" });
     })
     .catch((error) => {
-      store.commit("endTask", { id: "unbundle" });
+      store.endTask("unbundle");
       alert(`Error unbundling timesheet: ${error.message}`);
     });
 }
 
 export function submitTs(timesheetId: string) {
-  store.commit("startTask", {
+  store.startTask({
     id: `submit${timesheetId}`,
     message: "submitting",
   });
@@ -542,11 +544,11 @@ export function submitTs(timesheetId: string) {
     .doc(timesheetId)
     .set({ submitted: true }, { merge: true })
     .then(() => {
-      store.commit("endTask", { id: `submit${timesheetId}` });
+      store.endTask(`submit${timesheetId}`);
       router.push({ name: "Time Sheets" });
     })
     .catch((error) => {
-      store.commit("endTask", { id: `submit${timesheetId}` });
+      store.endTask(`submit${timesheetId}`);
       alert(`Error submitting timesheet: ${error}`);
     });
 }
@@ -556,7 +558,7 @@ export async function generatePayablesCSVSQL(
   type: "payroll" | "weekly"
 ) {
   const start = new Date();
-  store.commit("startTask", {
+  store.startTask({
     id: `getExpensesSQL${start.getTime()}`,
     message: "Getting Expenses",
   });
@@ -607,10 +609,18 @@ export async function generatePayablesCSVSQL(
     } else {
       throw new Error("Invalid type in generatePayablesCSVSQL");
     }
-    store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+    store.endTask(`getExpensesSQL${start.getTime()}`);
     downloadBlob(blob, `${filename}.csv`);
   } catch (error) {
-    store.commit("endTask", { id: `getExpensesSQL${start.getTime()}` });
+    store.endTask(`getExpensesSQL${start.getTime()}`);
     alert(`Error: ${error}`);
   }
+}
+
+export function shortDate(date: Date) {
+  return format(date, "MMM dd");
+}
+
+export function dateFormat(date: Date): string {
+  return format(date, "yyyy MMM dd / HH:mm:ss");
 }

@@ -49,11 +49,16 @@ General Configuration steps for client
 
 <script lang="ts">
 import Vue from "vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    const { startTask, endTask } = store;
+    return { startTask, endTask };
+  },
   data() {
     return {
       parentPath: "",
@@ -71,7 +76,7 @@ export default Vue.extend({
   },
   methods: {
     async create() {
-      store.commit("startTask", {
+      this.startTask({
         id: "createClient",
         message: "creating client...",
       });
@@ -84,11 +89,11 @@ export default Vue.extend({
         computerId: this.item.device,
       })
         .then(() => {
-          store.commit("endTask", { id: "createClient" });
+          this.endTask("createClient");
           this.$router.push(this.parentPath);
         })
         .catch((error) => {
-          store.commit("endTask", { id: "createClient" });
+          this.endTask("createClient");
           alert(`Error creating client: ${error.message}`);
         });
     },

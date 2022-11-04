@@ -4,7 +4,7 @@
     <span class="listheader" v-if="approved.length > 0">Approved</span>
     <div class="listentry" v-for="item in approved" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.date.toDate() | shortDate }}
+        {{ shortDate(item.date.toDate()) }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
@@ -74,7 +74,7 @@
     </span>
     <div class="listentry" v-for="item in submitted" v-bind:key="item.id">
       <div class="anchorbox">
-        {{ item.date.toDate() | shortDate }}
+        {{ shortDate(item.date.toDate()) }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
@@ -143,24 +143,22 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { downloadAttachment } from "./helpers";
+import { downloadAttachment, shortDate } from "./helpers";
 import Modal from "./RejectModal.vue";
 import firebase from "../firebase";
-import { format } from "date-fns";
 import ActionButton from "./ActionButton.vue";
-import store from "../store";
+import { useStateStore } from "../stores/state";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const store = useStateStore();
+    return { user: store.user };
+  },
   props: ["collection"],
   components: {
     ActionButton,
     Modal,
-  },
-  filters: {
-    shortDate(date: Date) {
-      return format(date, "MMM dd");
-    },
   },
   data() {
     return {
@@ -171,6 +169,7 @@ export default Vue.extend({
     };
   },
   methods: {
+    shortDate,
     downloadAttachment,
     commitItem(
       item: firebase.firestore.DocumentData,
@@ -184,8 +183,8 @@ export default Vue.extend({
         .update({
           committed: true,
           commitTime: firebase.firestore.FieldValue.serverTimestamp(),
-          commitUid: store.state.user?.uid,
-          commitName: store.state.user?.displayName,
+          commitUid: this.user.uid,
+          commitName: this.user.displayName,
           exported: false,
         })
         .catch((error: unknown) => {
@@ -202,7 +201,7 @@ export default Vue.extend({
     if (this.collectionObject === null) {
       throw "There is no valid collection object";
     }
-    const uid = store.state.user?.uid;
+    const uid = this.user.uid;
     if (uid === undefined) {
       throw "There is no valid uid";
     }

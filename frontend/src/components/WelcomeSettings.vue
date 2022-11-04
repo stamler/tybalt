@@ -22,8 +22,9 @@
           Company policy requires the use of vacation time prior to using PPTO
         </p>
         <br />
-        <h4>
-          Mileage Claimed since {{ item.mileageClaimedSince | shortDate }}
+        <h4 v-if="item.mileageClaimedSince !== undefined">
+          Mileage Claimed since
+          {{ shortDate(item.mileageClaimedSince.toDate()) }}
         </h4>
         <p>{{ item.mileageClaimed }} km</p>
       </div>
@@ -38,7 +39,7 @@
               v-if="client.PublicKey === undefined"
               @click="generateWireguardConfigAndDownload(client)"
             />
-            <span v-else>{{ client.PublicKey | snip }}</span>
+            <span v-else>{{ snip(client.PublicKey) }}</span>
           </li>
         </ul>
       </div>
@@ -114,19 +115,26 @@
 import { LIB_VERSION } from "../version";
 import Vue from "vue";
 import { signOut } from "../main";
-import { mapState } from "vuex";
 import firebase from "../firebase";
-import { format } from "date-fns";
 import ActionButton from "./ActionButton.vue";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { generateKeypair } from "./wireguard";
-import { downloadBlob } from "./helpers";
-import store from "../store";
+import { shortDate, downloadBlob } from "./helpers";
+import { useStateStore } from "../stores/state";
 import WaitMessages from "./WaitMessages.vue";
 const db = firebase.firestore();
 
 export default Vue.extend({
+  setup() {
+    const stateStore = useStateStore();
+    const showTasks = stateStore.showTasks;
+    // TODO: similar to WelcomeSettings.vue, can't figure out why this is
+    // undefined using storeToRefs but it works this way
+    const user = stateStore.user;
+    const { startTask, endTask } = stateStore;
+    return { user, showTasks, startTask, endTask };
+  },
   components: { ActionButton, WaitMessages },
   data() {
     return {
@@ -138,7 +146,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["user", "showTasks"]),
     isManager(): boolean {
       return this.item?.customClaims?.tapr === true;
     },
@@ -152,11 +159,8 @@ export default Vue.extend({
     );
     this.setItem(this.user.uid);
   },
-  filters: {
-    shortDate(date: firebase.firestore.Timestamp | undefined): string {
-      if (date === undefined) return "";
-      return format(date.toDate(), "MMM dd");
-    },
+  methods: {
+    shortDate,
     snip(str: string): string {
       const first_n = 5;
       const last_n = 5;
@@ -164,8 +168,6 @@ export default Vue.extend({
         str.substring(0, first_n) + "..." + str.substring(str.length - last_n)
       );
     },
-  },
-  methods: {
     async generateWireguardConfigAndDownload(
       client: firebase.firestore.DocumentData
     ) {
@@ -175,7 +177,7 @@ export default Vue.extend({
       const wgSetPublicKey = firebase
         .functions()
         .httpsCallable("wgSetPublicKey");
-      store.commit("startTask", {
+      this.startTask({
         id: "setPublicKey",
         message: "setting public key...",
       });
@@ -184,10 +186,10 @@ export default Vue.extend({
         publicKey,
       })
         .then(() => {
-          store.commit("endTask", { id: "setPublicKey" });
+          this.endTask("setPublicKey");
         })
         .catch((error) => {
-          store.commit("endTask", { id: "setPublicKey" });
+          this.endTask("setPublicKey");
           alert(`Error setting public key: ${error.message}`);
         });
 
