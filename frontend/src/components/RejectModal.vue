@@ -38,7 +38,6 @@ import { mapState } from "vuex";
 const db = firebase.firestore();
 
 export default Vue.extend({
-  name: "Modal",
   props: ["collection"],
   computed: mapState(["user"]),
   data() {

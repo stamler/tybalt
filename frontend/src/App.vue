@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <SideNav />
-    <Header v-bind:class="{ slidRight: sidenav }" />
+    <app-header v-bind:class="{ slidRight: sidenav }" />
     <router-view v-bind:class="{ slidRight: sidenav }" id="main" />
   </div>
 </template>
@@ -9,13 +9,13 @@
 <script lang="ts">
 // @ is an alias to /src
 import SideNav from "./components/SideNav.vue";
-import Header from "./components/Header.vue";
+import AppHeader from "./components/AppHeader.vue";
 import { mapState } from "vuex";
 
 export default {
   components: {
     SideNav,
-    Header,
+    AppHeader,
   },
   computed: mapState(["sidenav"]),
 };

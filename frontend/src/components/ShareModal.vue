@@ -48,7 +48,6 @@ import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
 const db = firebase.firestore();
 
 export default Vue.extend({
-  name: "Modal",
   props: ["collection"],
   components: {
     PlusCircleIcon,

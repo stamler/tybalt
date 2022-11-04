@@ -2,8 +2,8 @@ import Vue from "vue";
 import Router from "vue-router";
 
 // Components
-import Main from "@/views/Main.vue";
-import Me from "@/components/Me.vue";
+import MainView from "@/views/MainView.vue";
+import WelcomeSettings from "@/components/WelcomeSettings.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
 import ExpensesList from "@/components/ExpensesList.vue";
 import ExpensesQueue from "@/components/ExpensesQueue.vue";
@@ -48,14 +48,14 @@ const router = new Router({
     },
     {
       path: "/me",
-      component: Me,
+      component: WelcomeSettings,
     },
     {
       path: "/time",
       name: "Time",
       meta: { claims: ["time"] },
       redirect: "/time/entries",
-      component: Main,
+      component: MainView,
       children: [
         {
           path: "entries",
@@ -180,7 +180,7 @@ const router = new Router({
       name: "Expense",
       meta: { claims: ["time"] },
       redirect: "/expense/entries",
-      component: Main,
+      component: MainView,
       children: [
         {
           path: "entries",
@@ -241,7 +241,7 @@ const router = new Router({
       name: "Reports",
       meta: { claims: ["reports"] },
       redirect: "/reports/time",
-      component: Main,
+      component: MainView,
       children: [
         {
           path: "time",
@@ -335,7 +335,7 @@ const router = new Router({
       path: "/admin",
       name: "Admin",
       redirect: "/admin/logins",
-      component: Main,
+      component: MainView,
       children: [
         {
           path: "logins",
