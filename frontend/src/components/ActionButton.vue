@@ -19,6 +19,7 @@
     <file-minus-icon v-if="type === 'removefile'" />
     <refresh-cw-icon v-if="type === 'refresh'" />
     <eye-icon v-if="type === 'view'" />
+    <edit-icon v-if="type === 'edit'" />
   </button>
 </template>
 
@@ -43,6 +44,7 @@ import {
   FileMinusIcon,
   RefreshCwIcon,
   EyeIcon,
+  EditIcon,
 } from "vue-feather-icons";
 
 export default Vue.extend({
@@ -77,6 +79,7 @@ export default Vue.extend({
     FileMinusIcon,
     RefreshCwIcon,
     EyeIcon,
+    EditIcon,
   },
   name: "ActionButton",
 });
