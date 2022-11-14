@@ -338,6 +338,9 @@ export default Vue.extend({
       if (keys.length === 1) {
         return keys[0];
       }
+      if (keys.length > 1) {
+        alert(`Multiple time sheet keys [${keys.join()}] found for uid ${uid}`);
+      }
       return null;
     },
     setItem(id: string) {
