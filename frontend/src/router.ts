@@ -35,6 +35,8 @@ import JobsEdit from "@/components/JobsEdit.vue";
 import JobsDetails from "@/components/JobsDetails.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
+import WireGuardClientsList from "@/components/WireGuardClientsList.vue";
+import WireGuardClientAdd from "@/components/WireGuardClientAdd.vue";
 
 Vue.use(Router);
 
@@ -536,6 +538,26 @@ const router = new Router({
               },
               name: "Job Details",
               component: JobsDetails,
+            },
+          ],
+        },
+        {
+          path: "wireguard",
+          name: "WireGuard",
+          redirect: "/admin/wireguard/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "Clients" },
+              path: "list",
+              name: "WireGuard Clients",
+              component: WireGuardClientsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add WireGuard Client",
+              component: WireGuardClientAdd,
             },
           ],
         },

@@ -128,6 +128,7 @@ body,
 #sidenav a,
 .header .link,
 .actions a,
+.actions button,
 .header a {
   margin: 0em 0.7em 0em -0.3em;
   padding: 0em 0.3em 0em;

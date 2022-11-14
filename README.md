@@ -16,6 +16,7 @@ Corporate time and expense tracking, computer asset management, and reporting in
 
     ``` bash
     firebase functions:config:set tybalt.azureuserautomation.secret="TBTAzureTenant secret" 
+    firebase functions:config:set tybalt.wireguard.secret="WireGuard server secret" 
     firebase functions:config:set tybalt.radiator.secret="tybalt secret"
     
     firebase functions:config:set algolia.apikey="algolia key with addObject and deleteObject permission"

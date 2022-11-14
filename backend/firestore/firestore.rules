@@ -631,6 +631,9 @@ service cloud.firestore {
     match /Users/{user} {
       allow read: if hasClaim("admin") || hasClaim("hr");
     }
+    match /WireGuardClients/{client} {
+      allow read: if hasClaim("admin") || uidMatches();
+    }
     match /{document=**} {
       allow read, write: if false;
     }

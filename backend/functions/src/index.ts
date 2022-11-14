@@ -28,6 +28,7 @@ export { queryMySQL } from "./endpoint";
 export { auditExportStatus } from "./audit";
 export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
+export { wgCreateKeylessClient, wgToggleEnableClient, wgDeleteClient, wgPeersIni, wgSetPublicKey, wgClearPublicKey } from "./wireguard";
 
 // send emails when timesheets are shared
 exports.emailOnTimeSheetShare = functions.firestore

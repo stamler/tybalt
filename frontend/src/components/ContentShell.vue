@@ -4,7 +4,6 @@
       <router-link
         v-for="route in siblingRoutes"
         v-bind:key="route.name"
-        class="navlink"
         v-bind:to="{ name: route.name }"
       >
         {{ route | uiLinkTitle }}

@@ -5,18 +5,12 @@
       <action-button @click="signOutWrapper" :color="'000'">
         Sign Out
       </action-button>
+      <WaitMessages v-if="showTasks" />
     </div>
     <div id="dash">
       <h2>Hi, {{ user.displayName }}</h2>
       <img alt="TBTE logo" src="../assets/logo.png" />
-      <div
-        style="
-          width: 100%;
-          padding: 0em 0.4em;
-          margin-bottom: 2em;
-          background-color: ivory;
-        "
-      >
+      <div class="infobox">
         <h3>Balances</h3>
         <h4>Available time off as of {{ item.usedAsOf | shortDate }}</h4>
         <p>Vacation: {{ item.openingOV - item.usedOV }} hr(s)</p>
@@ -29,6 +23,21 @@
           Mileage Claimed since {{ item.mileageClaimedSince | shortDate }}
         </h4>
         <p>{{ item.mileageClaimed }} km</p>
+      </div>
+      <div class="infobox" v-if="wireguardClients.length > 0">
+        <h3>WireGuard configs</h3>
+        <ul>
+          <li v-for="client in wireguardClients" :key="client.computerName">
+            {{ client.computerName }}
+            <span class="label" v-if="!client.enabled">disabled</span>
+            <action-button
+              type="download"
+              v-if="client.PublicKey === undefined"
+              @click="generateWireguardConfigAndDownload(client)"
+            />
+            <span v-else>{{ client.PublicKey | snip }}</span>
+          </li>
+        </ul>
       </div>
       <form id="editor">
         <h3>Settings</h3>
@@ -106,21 +115,27 @@ import { mapState } from "vuex";
 import firebase from "../firebase";
 import { format } from "date-fns";
 import ActionButton from "./ActionButton.vue";
-
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { generateKeypair } from "./wireguard";
+import { downloadBlob } from "./helpers";
+import store from "../store";
+import WaitMessages from "./WaitMessages.vue";
 const db = firebase.firestore();
 
 export default Vue.extend({
-  components: { ActionButton },
+  components: { ActionButton, WaitMessages },
   data() {
     return {
       VERSION: LIB_VERSION,
       item: {} as firebase.firestore.DocumentData,
       managers: [] as firebase.firestore.DocumentData[],
       divisions: [] as firebase.firestore.DocumentData[],
+      wireguardClients: [] as firebase.firestore.DocumentData[],
     };
   },
   computed: {
-    ...mapState(["user"]),
+    ...mapState(["user", "showTasks"]),
     isManager(): boolean {
       return this.item?.customClaims?.tapr === true;
     },
@@ -128,6 +143,10 @@ export default Vue.extend({
   created() {
     this.$bind("managers", db.collection("ManagerNames"));
     this.$bind("divisions", db.collection("Divisions"));
+    this.$bind(
+      "wireguardClients",
+      db.collection("WireGuardClients").where("uid", "==", this.user.uid)
+    );
     this.setItem(this.user.uid);
   },
   filters: {
@@ -135,8 +154,91 @@ export default Vue.extend({
       if (date === undefined) return "";
       return format(date.toDate(), "MMM dd");
     },
+    snip(str: string): string {
+      const first_n = 5;
+      const last_n = 5;
+      return (
+        str.substring(0, first_n) + "..." + str.substring(str.length - last_n)
+      );
+    },
   },
   methods: {
+    async generateWireguardConfigAndDownload(
+      client: firebase.firestore.DocumentData
+    ) {
+      const { privateKey, publicKey } = generateKeypair();
+
+      // Upload the public key to the server.
+      const wgSetPublicKey = firebase
+        .functions()
+        .httpsCallable("wgSetPublicKey");
+      store.commit("startTask", {
+        id: "setPublicKey",
+        message: "setting public key...",
+      });
+      await wgSetPublicKey({
+        id: client.id,
+        publicKey,
+      })
+        .then(() => {
+          store.commit("endTask", { id: "setPublicKey" });
+        })
+        .catch((error) => {
+          store.commit("endTask", { id: "setPublicKey" });
+          alert(`Error setting public key: ${error.message}`);
+        });
+
+      const configDirScript = `$configPath = "C:\\Program Files\\WireGuard\\Data\\Configurations"
+if ((Test-Path $configPath) -eq $False) { 
+  # Create directory if it doesn't exist
+  New-Item $configPath -ItemType Directory
+}
+$profileName = "TBTE"
+if ((Test-Path "$configPath\\$profileName.conf.dpapi") -eq $True) {
+  # Delete existing profile
+  Remove-Item "$configPath\\$profileName.conf.dpapi"
+}
+`;
+      // Build the config file
+      const configFile = `[Interface]
+Address = ${client.id}
+PrivateKey = ${privateKey}
+DNS = ${client.Interface.DNS}
+
+[Peer]
+PublicKey = ${client.Peer.PublicKey}
+AllowedIPs = ${client.Peer.AllowedIPs}
+Endpoint = ${client.Peer.Endpoint}
+`;
+
+      const configVarAssignment = `$configFile = "${configFile}"`;
+
+      const writeConfigFileScript = `
+$configFile | Out-File -FilePath "$configPath\\TBTE.conf" -Encoding ASCII
+Remove-Item $PSCommandPath
+`;
+
+      // Create registry keys so non-admin user can activate/deactivate tunnel
+      const nonAdminScript = `
+if ((Test-Path 'HKLM:\\Software\\WireGuard\\') -eq $False) {
+  # Create registry key if it doesn't exist
+  New-Item 'HKLM:\\Software\\WireGuard\\'
+}
+New-ItemProperty 'HKLM:\\Software\\WireGuard' -Name 'LimitedOperatorUI' -Value 1 -PropertyType 'DWord' -Force
+Add-LocalGroupMember -Group 'Network Configuration Operators' -Member 'TBTE\\${client.samAccountName}'
+`;
+      const blob = new Blob(
+        [
+          configDirScript +
+            configVarAssignment +
+            writeConfigFileScript +
+            nonAdminScript,
+        ],
+        { type: "text/plain" }
+      );
+
+      downloadBlob(blob, "SetupWireguard.ps1");
+    },
     signOut,
     async signOutWrapper() {
       // wrap the signOut because it was causing issues of not working at all
@@ -205,5 +307,14 @@ h2 {
 #spacer {
   background-color: rgb(255, 163, 51);
   flex: 0 0 3em;
+}
+.infobox {
+  width: 100%;
+  padding: 0em 0.4em;
+  margin-bottom: 2em;
+  background-color: ivory;
+}
+li {
+  list-style-type: none;
 }
 </style>
