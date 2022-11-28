@@ -317,7 +317,7 @@ export default Vue.extend({
     },
     itemsByWeekEnding(weekEnding: number) {
       return this.items.filter(
-        (x) =>
+        (x: firebase.firestore.DocumentData) =>
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().getTime() === Number(weekEnding)
       );

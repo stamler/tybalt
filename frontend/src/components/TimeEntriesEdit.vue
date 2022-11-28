@@ -349,7 +349,7 @@ export default Vue.extend({
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
-        (i) => i.id === this.item.timetype
+        (i: firebase.firestore.DocumentData) => i.id === this.item.timetype
       )[0].name;
 
       // if timetype isn't R or RT, delete disallowed properties
@@ -369,7 +369,7 @@ export default Vue.extend({
         if (this.item.division && this.item.division.length > 0) {
           // write divisionName
           this.item.divisionName = this.divisions.filter(
-            (i) => i.id === this.item.division
+            (i: firebase.firestore.DocumentData) => i.id === this.item.division
           )[0].name;
         } else {
           throw "Division Missing";
@@ -442,7 +442,7 @@ export default Vue.extend({
         try {
           // Populate the displayName, surname & givenName
           const profile = this.profiles.filter(
-            (i) => i.id === this.item.uid
+            (i: firebase.firestore.DocumentData) => i.id === this.item.uid
           )[0];
           this.item.displayName = profile.displayName;
           this.item.surname = profile.surname;

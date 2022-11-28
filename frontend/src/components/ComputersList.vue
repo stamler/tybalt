@@ -101,16 +101,23 @@ export default Vue.extend({
       if (this.retired) {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter((p) => Object.prototype.hasOwnProperty.call(p, "retired"))
+          .filter((p: firebase.firestore.DocumentData) =>
+            Object.prototype.hasOwnProperty.call(p, "retired")
+          )
           .filter(
-            (p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p: firebase.firestore.DocumentData) =>
+              searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       } else {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter((p) => !Object.prototype.hasOwnProperty.call(p, "retired"))
           .filter(
-            (p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0
+            (p: firebase.firestore.DocumentData) =>
+              !Object.prototype.hasOwnProperty.call(p, "retired")
+          )
+          .filter(
+            (p: firebase.firestore.DocumentData) =>
+              searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       }
     },

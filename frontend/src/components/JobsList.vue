@@ -50,7 +50,10 @@ export default Vue.extend({
       // https://www.npmjs.com/package/adv-firestore-functions
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-        .filter((p) => searchString(p).indexOf(this.search.toLowerCase()) >= 0)
+        .filter(
+          (p: firebase.firestore.DocumentData) =>
+            searchString(p).indexOf(this.search.toLowerCase()) >= 0
+        )
         .slice(0, 100);
     },
   },

@@ -62,7 +62,8 @@ export default Vue.extend({
     processedItems(): firebase.firestore.DocumentData[] {
       // Show only items with submitted, approved or locked TimeSheets
       return this.items.filter(
-        (x) => this.hasApproved(x) || this.hasLocked(x) || this.hasSubmitted(x)
+        (x: firebase.firestore.DocumentData) =>
+          this.hasApproved(x) || this.hasLocked(x) || this.hasSubmitted(x)
       );
     },
   },

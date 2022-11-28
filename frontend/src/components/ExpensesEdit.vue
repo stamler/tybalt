@@ -515,7 +515,9 @@ export default Vue.extend({
     setJob(id: string) {
       this.item.job = id;
       this.showSuggestions = false;
-      const job = this.jobCandidates.filter((i) => i.id === id)[0];
+      const job = this.jobCandidates.filter(
+        (i: firebase.firestore.DocumentData) => i.id === id
+      )[0];
       this.item.jobDescription = job.description;
       this.item.client = job.client;
     },
@@ -590,7 +592,7 @@ export default Vue.extend({
       if (this.item.division && this.item.division.length > 0) {
         // write divisionName
         this.item.divisionName = this.divisions.filter(
-          (i) => i.id === this.item.division
+          (i: firebase.firestore.DocumentData) => i.id === this.item.division
         )[0].name;
       } else {
         throw "Division Missing";

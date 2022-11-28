@@ -199,42 +199,89 @@ export default Vue.extend({
         return [];
       }
       return this.profiles
-        .filter((s) => this.submittedUserKeys.includes(s.id))
-        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort((a, b) => a.surname.localeCompare(b.surname));
+        .filter((s: firebase.firestore.DocumentData) =>
+          this.submittedUserKeys.includes(s.id)
+        )
+        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort(
+          (
+            a: firebase.firestore.DocumentData,
+            b: firebase.firestore.DocumentData
+          ) => a.surname.localeCompare(b.surname)
+        );
     },
     lockedProfiles(): firebase.firestore.DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter((s) => this.lockedUserKeys.includes(s.id))
-        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort((a, b) => a.surname.localeCompare(b.surname));
+        .filter((s: firebase.firestore.DocumentData) =>
+          this.lockedUserKeys.includes(s.id)
+        )
+        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort(
+          (
+            a: firebase.firestore.DocumentData,
+            b: firebase.firestore.DocumentData
+          ) => a.surname.localeCompare(b.surname)
+        );
     },
     ignoredProfiles(): firebase.firestore.DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter((p) => !this.pendingUserKeys.includes(p.id))
-        .filter((l) => !this.lockedUserKeys.includes(l.id))
-        .filter((s) => !this.submittedUserKeys.includes(s.id))
-        .filter((t) => this.item?.notMissingUids?.includes(t.id))
-        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort((a, b) => a.surname.localeCompare(b.surname));
+        .filter(
+          (p: firebase.firestore.DocumentData) =>
+            !this.pendingUserKeys.includes(p.id)
+        )
+        .filter(
+          (l: firebase.firestore.DocumentData) =>
+            !this.lockedUserKeys.includes(l.id)
+        )
+        .filter(
+          (s: firebase.firestore.DocumentData) =>
+            !this.submittedUserKeys.includes(s.id)
+        )
+        .filter((t: firebase.firestore.DocumentData) =>
+          this.item?.notMissingUids?.includes(t.id)
+        )
+        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort(
+          (
+            a: firebase.firestore.DocumentData,
+            b: firebase.firestore.DocumentData
+          ) => a.surname.localeCompare(b.surname)
+        );
     },
     missingProfiles(): firebase.firestore.DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter((p) => !this.pendingUserKeys.includes(p.id))
-        .filter((l) => !this.lockedUserKeys.includes(l.id))
-        .filter((s) => !this.submittedUserKeys.includes(s.id))
-        .filter((t) => !this.item?.notMissingUids?.includes(t.id))
-        .filter((i) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort((a, b) => a.surname.localeCompare(b.surname));
+        .filter(
+          (p: firebase.firestore.DocumentData) =>
+            !this.pendingUserKeys.includes(p.id)
+        )
+        .filter(
+          (l: firebase.firestore.DocumentData) =>
+            !this.lockedUserKeys.includes(l.id)
+        )
+        .filter(
+          (s: firebase.firestore.DocumentData) =>
+            !this.submittedUserKeys.includes(s.id)
+        )
+        .filter(
+          (t: firebase.firestore.DocumentData) =>
+            !this.item?.notMissingUids?.includes(t.id)
+        )
+        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort(
+          (
+            a: firebase.firestore.DocumentData,
+            b: firebase.firestore.DocumentData
+          ) => a.surname.localeCompare(b.surname)
+        );
     },
     pendingUserKeys() {
       let pendingUserKeys = [] as string[];
