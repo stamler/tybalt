@@ -632,7 +632,7 @@ service cloud.firestore {
       allow read: if hasClaim("admin") || hasClaim("hr");
     }
     match /WireGuardClients/{client} {
-      allow read: if hasClaim("admin") || uidMatches();
+      allow read: if hasClaim("admin") || hasClaim("hr") || uidMatches();
     }
     match /{document=**} {
       allow read, write: if false;
