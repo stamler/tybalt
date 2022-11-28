@@ -141,8 +141,10 @@ export default Vue.extend({
                   .where("computer", "==", id)
                   .orderBy("created", "desc")
                   .limit(20)
-              ).catch((error) => {
-                alert(`Can't load logins: ${error.message}`);
+              ).catch((error: unknown) => {
+                if (error instanceof Error)
+                  alert(`Can't load logins: ${error.message}`);
+                else alert(`Can't load logins: ${JSON.stringify(error)}`);
               });
             }
           });

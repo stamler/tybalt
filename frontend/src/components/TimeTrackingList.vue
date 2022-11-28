@@ -86,8 +86,10 @@ export default Vue.extend({
     this.$bind(
       "items",
       this.collectionObject.orderBy("weekEnding", "desc")
-    ).catch((error) => {
-      alert(`Can't load TimeTracking: ${error.message}`);
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load TimeTracking: ${error.message}`);
+      } else alert(`Can't load TimeTracking: ${JSON.stringify(error)}`);
     });
   },
   methods: {

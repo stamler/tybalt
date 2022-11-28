@@ -184,8 +184,11 @@ export default Vue.extend({
                   .where("locked", "==", true)
                   .where("jobNumbers", "array-contains", this.id)
                   .orderBy("weekEnding", "desc")
-              ).catch((error) => {
-                alert(`Can't load time sheets: ${error.message}`);
+              ).catch((error: unknown) => {
+                if (error instanceof Error) {
+                  alert(`Can't load time sheets: ${error.message}`);
+                } else
+                  alert(`Can't load time sheets: ${JSON.stringify(error)}`);
               });
             }
           });

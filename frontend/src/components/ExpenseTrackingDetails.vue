@@ -159,8 +159,10 @@ export default Vue.extend({
                   .collection("Expenses")
                   .where("committedWeekEnding", "==", this.item.weekEnding)
                   .where("committed", "==", true)
-              ).catch((error) => {
-                alert(`Can't load Expenses: ${error.message}`);
+              ).catch((error: unknown) => {
+                if (error instanceof Error) {
+                  alert(`Can't load Expenses: ${error.message}`);
+                } else alert(`Can't load Expenses: ${JSON.stringify(error)}`);
               });
             } else {
               // A document with this id doesn't exist in the database,

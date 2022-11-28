@@ -130,8 +130,10 @@ export default Vue.extend({
     this.$bind(
       "items",
       this.collectionObject.orderBy("payPeriodEnding", "desc")
-    ).catch((error) => {
-      alert(`Can't load ${this.collection}: ${error.message}`);
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load ${this.collection}: ${error.message}`);
+      } else alert(`Can't load ${this.collection}: ${JSON.stringify(error)}`);
     });
   },
   methods: {

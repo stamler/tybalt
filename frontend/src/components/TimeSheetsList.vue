@@ -188,8 +188,10 @@ export default Vue.extend({
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
               .orderBy("displayName", "asc")
-          ).catch((error) => {
-            alert(`Can't load Time Sheets: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Sheets: ${error.message}`);
+            } else alert(`Can't load Time Sheets: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "pending") {
           // show pending TimeSheets belonging to users that this user manages
@@ -201,8 +203,10 @@ export default Vue.extend({
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
               .orderBy("displayName", "asc")
-          ).catch((error) => {
-            alert(`Can't load Time Sheets: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Sheets: ${error.message}`);
+            } else alert(`Can't load Time Sheets: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "list") {
           // show this user's own timesheets
@@ -211,8 +215,10 @@ export default Vue.extend({
             this.collectionObject
               .where("uid", "==", uid)
               .orderBy("weekEnding", "desc")
-          ).catch((error) => {
-            alert(`Can't load Time Sheets: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Sheets: ${error.message}`);
+            } else alert(`Can't load Time Sheets: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "shared") {
           this.$bind(
@@ -222,8 +228,10 @@ export default Vue.extend({
               .where("submitted", "==", true)
               .orderBy("weekEnding", "desc")
               .orderBy("displayName", "asc")
-          ).catch((error) => {
-            alert(`Can't load Time Sheets: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Sheets: ${error.message}`);
+            } else alert(`Can't load Time Sheets: ${JSON.stringify(error)}`);
           });
         }
       },

@@ -54,9 +54,13 @@ export default Vue.extend({
         .then(() => {
           this.saveInProgress = false;
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           this.saveInProgress = false;
-          alert(`Error saving item: ${error}`);
+          if (error instanceof Error) {
+            alert(`Error saving item: ${error.message}`);
+          } else {
+            alert(`Error saving item: ${JSON.stringify(error)}`);
+          }
         });
     },
   },

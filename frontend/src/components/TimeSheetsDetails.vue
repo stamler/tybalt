@@ -208,11 +208,20 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.$bind("item", this.collectionObject.doc(id)).catch((error) => {
-          alert(
-            `Can't load ${this.collection} document ${id}: ${error.message}`
-          );
-        });
+        this.$bind("item", this.collectionObject.doc(id)).catch(
+          (error: unknown) => {
+            if (error instanceof Error) {
+              alert(
+                `Can't load ${this.collection} document ${id}: ${error.message}`
+              );
+            } else
+              alert(
+                `Can't load ${this.collection} document ${id}: ${JSON.stringify(
+                  error
+                )}`
+              );
+          }
+        );
       } else {
         this.item = {};
       }

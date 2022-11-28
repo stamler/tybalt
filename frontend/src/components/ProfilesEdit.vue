@@ -306,8 +306,12 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch((err) => {
-            alert(`Error saving item: ${err}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Error saving item: ${error.message}`);
+            } else {
+              alert(`Error saving item: ${JSON.stringify(error)}`);
+            }
           });
       } else {
         alert("New profiles can only be created by the authentication system");

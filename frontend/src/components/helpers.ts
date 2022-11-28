@@ -472,8 +472,10 @@ export function del(
   collection
     .doc(item.id)
     .delete()
-    .catch((err) => {
-      alert(`Error deleting item: ${err}`);
+    .catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Error deleting item: ${error.message}`);
+      } else alert(`Error deleting item: ${JSON.stringify(error)}`);
     });
 }
 

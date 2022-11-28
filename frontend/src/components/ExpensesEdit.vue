@@ -423,8 +423,8 @@ export default Vue.extend({
       const cleanup = firebase
         .functions()
         .httpsCallable("cleanUpUsersExpenseAttachments");
-      return cleanup().catch((error) => {
-        alert(`Attachment cleanup failed: ${error}`);
+      return cleanup().catch((error: unknown) => {
+        alert(`Attachment cleanup failed: ${JSON.stringify(error)}`);
       });
     },
     async updateAttachment(event: HTMLInputEvent) {

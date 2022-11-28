@@ -57,8 +57,10 @@ export default Vue.extend({
     this.$bind(
       "items",
       this.collectionObject.orderBy("created", "desc").limit(101)
-    ).catch((error) => {
-      alert(`Can't load Logins: ${error.message}`);
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load Logins: ${error.message}`);
+      } else alert(`Can't load Logins: ${JSON.stringify(error)}`);
     });
   },
 });

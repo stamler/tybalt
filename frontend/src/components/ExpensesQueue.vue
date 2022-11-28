@@ -188,8 +188,10 @@ export default Vue.extend({
           commitName: store.state.user?.displayName,
           exported: false,
         })
-        .catch((err) => {
-          alert(`Error committing item: ${err}`);
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Error committing item: ${error.message}`);
+          } else alert(`Error committing item: ${JSON.stringify(error)}`);
         });
     },
   },
@@ -212,8 +214,10 @@ export default Vue.extend({
         .where("approved", "==", true)
         .where("committed", "==", false)
         .orderBy("date", "desc")
-    ).catch((error) => {
-      alert(`Can't load Expenses: ${error.message}`);
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load Expenses: ${error.message}`);
+      } else alert(`Can't load Expenses: ${JSON.stringify(error)}`);
     });
 
     // populate submitted items awaiting commit
@@ -223,8 +227,10 @@ export default Vue.extend({
         .where("submitted", "==", true)
         .where("approved", "==", false)
         .orderBy("date", "desc")
-    ).catch((error) => {
-      alert(`Can't load Expenses: ${error.message}`);
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load Expenses: ${error.message}`);
+      } else alert(`Can't load Expenses: ${JSON.stringify(error)}`);
     });
   },
 });

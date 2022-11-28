@@ -239,8 +239,10 @@ export default Vue.extend({
             this.usedOP = docSnap.get("usedOP") || 0;
             this.usedAsOf = docSnap.get("usedAsOf")?.toDate() || new Date();
           })
-          .catch((err) => {
-            alert(`Error loading profile: ${err}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Error loading profile: ${error.message}`);
+            } else alert(`Error loading profile: ${JSON.stringify(error)}`);
           });
         if (this.collection === "TimeEntries") {
           this.$bind(
@@ -248,16 +250,21 @@ export default Vue.extend({
             this.collectionObject
               .where("uid", "==", uid)
               .orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Time Entries: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Entries: ${error.message}`);
+            } else alert(`Can't load Time Entries: ${JSON.stringify(error)}`);
           });
         }
         if (this.collection === "TimeAmendments") {
           this.$bind(
             "items",
             this.collectionObject.orderBy("date", "desc")
-          ).catch((error) => {
-            alert(`Can't load Time Amendments: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Time Amendments: ${error.message}`);
+            } else
+              alert(`Can't load Time Amendments: ${JSON.stringify(error)}`);
           });
         }
       },

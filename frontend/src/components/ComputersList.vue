@@ -145,8 +145,10 @@ export default Vue.extend({
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).catch((error) => {
-      alert(`Can't load computers: ${error.message}`);
+    this.$bind("items", this.collectionObject).catch((error: unknown) => {
+      if (error instanceof Error)
+        alert(`Can't load computers: ${error.message}`);
+      else alert(`Can't load computers: ${JSON.stringify(error)}`);
     });
   },
   methods: {

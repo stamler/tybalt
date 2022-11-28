@@ -385,16 +385,20 @@ export default Vue.extend({
             .where("approved", "==", this.approved)
             .where("submitted", "==", true)
             .orderBy("date", "desc")
-        ).catch((error) => {
-          alert(`Can't load Expenses: ${error.message}`);
+        ).catch((error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Can't load Expenses: ${error.message}`);
+          } else alert(`Can't load Expenses: ${JSON.stringify(error)}`);
         });
       } else {
         // approved prop not defined, get user's own expenses
         this.$bind(
           "items",
           this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
-        ).catch((error) => {
-          alert(`Can't load Expenses: ${error.message}`);
+        ).catch((error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Can't load Expenses: ${error.message}`);
+          } else alert(`Can't load Expenses: ${JSON.stringify(error)}`);
         });
       }
     },

@@ -139,8 +139,10 @@ export default Vue.extend({
       () => {
         if (this.query === "list") {
           // show all users
-          this.$bind("items", this.collectionObject).catch((error) => {
-            alert(`Can't load Users: ${error.message}`);
+          this.$bind("items", this.collectionObject).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Users: ${error.message}`);
+            } else alert(`Can't load Users: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "ad") {
           // show users that exist in active directory
@@ -150,8 +152,10 @@ export default Vue.extend({
               .where("isInOnPremisesAD", "==", true)
               .orderBy("surname", "asc")
               .orderBy("givenName", "asc")
-          ).catch((error) => {
-            alert(`Can't load Users: ${error.message}`);
+          ).catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Can't load Users: ${error.message}`);
+            } else alert(`Can't load Users: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "noad") {
           // show users that do not exist in active directory
@@ -162,7 +166,9 @@ export default Vue.extend({
               .orderBy("surname", "asc")
               .orderBy("givenName", "asc")
           ).catch((error) => {
-            alert(`Can't load Users: ${error.message}`);
+            if (error instanceof Error) {
+              alert(`Can't load Users: ${error.message}`);
+            } else alert(`Can't load Users: ${JSON.stringify(error)}`);
           });
         }
       },

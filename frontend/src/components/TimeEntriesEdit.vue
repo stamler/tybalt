@@ -470,8 +470,10 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch((error) => {
-            alert(`Failed to edit Time Entry: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Failed to edit Time Entry: ${error.message}`);
+            } else alert(`Failed to edit Time Entry: ${JSON.stringify(error)}`);
           });
       } else {
         // Creating a new item
@@ -481,8 +483,11 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch((error) => {
-            alert(`Failed to create Time Entry: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Failed to create Time Entry: ${error.message}`);
+            } else
+              alert(`Failed to create Time Entry: ${JSON.stringify(error)}`);
           });
       }
     },

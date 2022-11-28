@@ -141,8 +141,10 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch((error) => {
-            alert(`Editing failed: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Editing failed: ${error.message}`);
+            } else alert(`Editing failed: ${JSON.stringify(error)}`);
           });
       } else {
         // Creating a new item
@@ -156,8 +158,10 @@ export default Vue.extend({
             this.clearEditor();
             // notify user save is done
           })
-          .catch((error) => {
-            alert(`Creating failed: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Creating failed: ${error.message}`);
+            } else alert(`Creating failed: ${JSON.stringify(error)}`);
           });
       }
     },

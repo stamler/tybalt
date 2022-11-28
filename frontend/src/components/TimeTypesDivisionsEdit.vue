@@ -89,8 +89,10 @@ export default Vue.extend({
           .then(() => {
             this.$router.push(this.parentPath);
           })
-          .catch((error) => {
-            alert(`Save failed: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Save failed: ${error.message}`);
+            } else alert(`Save failed: ${JSON.stringify(error)}`);
           });
       } else {
         // Creating a new item
@@ -104,8 +106,10 @@ export default Vue.extend({
             this.clearEditor();
             // notify user save is done
           })
-          .catch((error) => {
-            alert(`Save failed: ${error.message}`);
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              alert(`Save failed: ${error.message}`);
+            } else alert(`Save failed: ${JSON.stringify(error)}`);
           });
       }
     },

@@ -347,9 +347,13 @@ export default Vue.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
-    this.$bind("profiles", db.collection("Profiles")).catch((error) => {
-      alert(`Can't load Profiles: ${error.message}`);
-    });
+    this.$bind("profiles", db.collection("Profiles")).catch(
+      (error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Can't load Profiles: ${error.message}`);
+        } else alert(`Can't load Profiles: ${JSON.stringify(error)}`);
+      }
+    );
   },
   methods: {
     ignore(uid: string) {
@@ -362,8 +366,10 @@ export default Vue.extend({
         .update({
           notMissingUids: firebase.firestore.FieldValue.arrayUnion(uid),
         })
-        .catch((error) => {
-          alert(`Error ignoring ${uid}: ${error.message}`);
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Error ignoring ${uid}: ${error.message}`);
+          } else alert(`Error ignoring ${uid}: ${JSON.stringify(error)}`);
         });
     },
     restore(uid: string) {
@@ -376,8 +382,10 @@ export default Vue.extend({
         .update({
           notMissingUids: firebase.firestore.FieldValue.arrayRemove(uid),
         })
-        .catch((error) => {
-          alert(`Error restoring ${uid}: ${error.message}`);
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Error restoring ${uid}: ${error.message}`);
+          } else alert(`Error restoring ${uid}: ${JSON.stringify(error)}`);
         });
     },
     tsIdForUid(uid: string, tsObj: Record<string, TimeSheetTrackingPayload>) {
@@ -394,11 +402,18 @@ export default Vue.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      this.$bind("item", this.collectionObject.doc(id)).catch((error) => {
-        alert(`Can't load TimeTracking document ${id}: ${error.message}`);
-      });
+      this.$bind("item", this.collectionObject.doc(id)).catch(
+        (error: unknown) => {
+          if (error instanceof Error) {
+            alert(`Can't load TimeTracking document ${id}: ${error.message}`);
+          } else
+            alert(
+              `Can't load TimeTracking document ${id}: ${JSON.stringify(error)}`
+            );
+        }
+      );
     },
-    lockTimesheet(id: string) {
+    async lockTimesheet(id: string) {
       const lockTimesheet = firebase.functions().httpsCallable("lockTimesheet");
       // TODO: replace confirm() with modal in Vue
       if (
