@@ -48,12 +48,22 @@ General Configuration steps for client
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { useCollection } from "vuefire";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  DocumentData,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -62,17 +72,18 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: db.collection("WireGuardClients"),
-      item: {} as firebase.firestore.DocumentData,
-      profiles: [] as firebase.firestore.DocumentData[],
-      devices: [] as firebase.firestore.DocumentData[],
+      item: {} as DocumentData,
+      profiles: useCollection(
+        query(collection(db, "Profiles"), orderBy("displayName"))
+      ),
+      devices: useCollection(
+        query(collection(db, "Computers"), orderBy("computerName"))
+      ),
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.$bind("profiles", db.collection("Profiles").orderBy("displayName"));
-    this.$bind("devices", db.collection("Computers").orderBy("computerName"));
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
   },
   methods: {
     async create() {
@@ -81,9 +92,10 @@ export default Vue.extend({
         message: "creating client...",
       });
 
-      const wgCreateKeylessClient = firebase
-        .functions()
-        .httpsCallable("wgCreateKeylessClient");
+      const wgCreateKeylessClient = httpsCallable(
+        functions,
+        "wgCreateKeylessClient"
+      );
       return wgCreateKeylessClient({
         uid: this.item.uid,
         computerId: this.item.device,

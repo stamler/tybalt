@@ -138,26 +138,38 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
+import { useCollection } from "vuefire";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import _ from "lodash";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
     return { startTask, endTask };
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      managers: [] as firebase.firestore.DocumentData[],
-      divisions: [] as firebase.firestore.DocumentData[],
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      managers: useCollection(collection(db, "ManagerNames")),
+      divisions: useCollection(collection(db, "Divisions")),
+      item: {} as DocumentData,
     };
   },
   watch: {
@@ -167,10 +179,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("managers", db.collection("ManagerNames"));
-    this.$bind("divisions", db.collection("Divisions"));
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -179,10 +189,8 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id))
+          .then((snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -221,7 +229,7 @@ export default Vue.extend({
       }
       // populate the Manager Name
       const manager = this.managers.find(
-        (m: firebase.firestore.DocumentData) => m.id === this.item.managerUid
+        (m: DocumentData) => m.id === this.item.managerUid
       );
       this.item.managerName = manager?.displayName ?? null;
       const mutation = this.id
@@ -231,7 +239,7 @@ export default Vue.extend({
         id: `${verb}User${this.id}`,
         message: "Creating Mutation...",
       });
-      const addMutation = firebase.functions().httpsCallable("addMutation");
+      const addMutation = httpsCallable(functions, "addMutation");
       return addMutation(mutation)
         .then(() => {
           this.endTask(`${verb}User${this.id}`);

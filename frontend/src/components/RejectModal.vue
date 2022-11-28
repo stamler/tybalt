@@ -30,13 +30,13 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import firebase from "../firebase";
 import { useStateStore } from "../stores/state";
 
 const db = firebase.firestore();
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -116,7 +116,7 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
   },
 });
 </script>

@@ -46,14 +46,18 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { searchString } from "./helpers";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import { useCollection } from "vuefire";
+import { getFirestore, DocumentData, collection } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import ActionButton from "./ActionButton.vue";
 import { useStateStore } from "../stores/state";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -61,11 +65,11 @@ export default Vue.extend({
   },
   components: { ActionButton },
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          (p: firebase.firestore.DocumentData) =>
+          (p: DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
@@ -74,17 +78,16 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: db.collection("WireGuardClients"),
-      items: [] as firebase.firestore.DocumentData[],
+      items: useCollection(collection(db, "WireGuardClients")),
     };
   },
   methods: {
-    deleteClient(item: firebase.firestore.DocumentData) {
+    deleteClient(item: DocumentData) {
       this.startTask({
         id: `delete${item.id}`,
         message: "deleting client...",
       });
-      const delClient = firebase.functions().httpsCallable("wgDeleteClient");
+      const delClient = httpsCallable(functions, "wgDeleteClient");
       if (
         confirm(
           "This is immediate and permanent, but the peer will be unable to connect after the next time the server requests a peer list. Do you want to proceed?"
@@ -100,8 +103,8 @@ export default Vue.extend({
           });
       }
     },
-    toggle(item: firebase.firestore.DocumentData) {
-      const toggle = firebase.functions().httpsCallable("wgToggleEnableClient");
+    toggle(item: DocumentData) {
+      const toggle = httpsCallable(functions, "wgToggleEnableClient");
       this.startTask({
         id: `toggle${item.id}`,
         message: "changing enable status...",
@@ -115,8 +118,8 @@ export default Vue.extend({
           alert(`Error toggling status: ${error.message}`);
         });
     },
-    clearKey(item: firebase.firestore.DocumentData) {
-      const clearKey = firebase.functions().httpsCallable("wgClearPublicKey");
+    clearKey(item: DocumentData) {
+      const clearKey = httpsCallable(functions, "wgClearPublicKey");
       this.startTask({
         id: `clearKey${item.id}`,
         message: "clearing public key...",
@@ -133,8 +136,7 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.$bind("items", this.collectionObject);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
   },
 });
 </script>

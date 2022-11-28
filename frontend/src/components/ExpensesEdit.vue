@@ -1,6 +1,6 @@
 <template>
   <form id="editor">
-    <span class="field">
+    <!-- <span class="field">
       <datepicker
         name="datepicker"
         input-class="calendar-input"
@@ -11,7 +11,7 @@
         :highlighted="dps.highlighted"
         v-model="item.date"
       />
-    </span>
+    </span> -->
 
     <span class="field">
       <select class="grow" name="division" v-model="item.division">
@@ -249,12 +249,28 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { defineComponent } from "vue";
+import firebase, { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+  getDoc,
+  query,
+  where,
+  limit,
+  doc,
+  documentId,
+  setDoc,
+  FirestoreError,
+} from "firebase/firestore";
+import { useCollection } from "vuefire";
+const db = getFirestore(firebaseApp);
 const storage = firebase.storage();
 import { useStateStore } from "../stores/state";
-import Datepicker from "vuejs-datepicker";
+// import Datepicker from "vuejs-datepicker";
 import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
@@ -267,7 +283,7 @@ interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -278,8 +294,8 @@ export default Vue.extend({
       expenseRates: store.expenseRates,
     };
   },
-  components: { Datepicker, ActionButton },
-  props: ["id", "collection"],
+  components: { ActionButton },
+  props: ["id", "collectionName"],
   data() {
     return {
       dps: {
@@ -293,15 +309,15 @@ export default Vue.extend({
         },
       },
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      divisions: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      divisions: useCollection(collection(db, "Divisions")),
       showSuggestions: false,
       selectedIndex: null as number | null,
-      jobCandidates: [] as firebase.firestore.DocumentData[],
-      item: {} as firebase.firestore.DocumentData,
-      profile: {} as firebase.firestore.DocumentData,
+      jobCandidates: [] as DocumentData[],
+      item: {} as DocumentData,
+      profile: {} as DocumentData,
       allowPersonalReimbursement: false,
-      //expensetypes: [] as firebase.firestore.DocumentData[],
+      //expensetypes: [] as DocumentData[],
       attachmentPreviouslyUploaded: false,
       validAttachmentType: true,
       newAttachment: null as string | null,
@@ -382,11 +398,10 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.cleanup();
     //this.$bind("expensetypes", db.collection("ExpenseTypes"));
-    this.$bind("divisions", db.collection("Divisions"));
     this.setItem(this.id);
   },
   methods: {
@@ -408,10 +423,7 @@ export default Vue.extend({
       }
       return this.expenseRates?.[dates[index]]?.[rate];
     },
-    getMileageRate(
-      date: Date | undefined,
-      profile: firebase.firestore.DocumentData
-    ) {
+    getMileageRate(date: Date | undefined, profile: DocumentData) {
       if (this.expenseRates === null) return 0;
       if (date === undefined) return 0;
       if (profile === undefined) return 0;
@@ -482,14 +494,12 @@ export default Vue.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      this.profile = await db.collection("Profiles").doc(this.user.uid).get();
+      this.profile = await getDoc(doc(db, "Profiles", this.user.uid));
       this.allowPersonalReimbursement =
         this.profile.get("allowPersonalReimbursement") || false;
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id))
+          .then((snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -524,7 +534,7 @@ export default Vue.extend({
       this.item.job = id;
       this.showSuggestions = false;
       const job = this.jobCandidates.filter(
-        (i: firebase.firestore.DocumentData) => i.id === id
+        (i: DocumentData) => i.id === id
       )[0];
       this.item.jobDescription = job.description;
       this.item.client = job.client;
@@ -554,13 +564,14 @@ export default Vue.extend({
       if (loBound.length > 0) {
         const hiBound = (e.target as HTMLInputElement).value.trim() + "\uf8ff";
         this.item.job = loBound; // preserve the value in the input field
-        this.$bind(
+        this.$firestoreBind(
           "jobCandidates",
-          db
-            .collection("Jobs")
-            .where(firebase.firestore.FieldPath.documentId(), ">=", loBound)
-            .where(firebase.firestore.FieldPath.documentId(), "<=", hiBound)
-            .limit(5)
+          query(
+            collection(db, "Jobs"),
+            where(documentId(), ">=", loBound),
+            where(documentId(), "<=", hiBound),
+            limit(5)
+          )
         );
       } else {
         this.jobCandidates = [];
@@ -600,7 +611,7 @@ export default Vue.extend({
       if (this.item.division && this.item.division.length > 0) {
         // write divisionName
         this.item.divisionName = this.divisions.filter(
-          (i: firebase.firestore.DocumentData) => i.id === this.item.division
+          (i: DocumentData) => i.id === this.item.division
         )[0].name;
       } else {
         throw "Division Missing";
@@ -646,19 +657,19 @@ export default Vue.extend({
 
       // Create or edit the document
       if (!uploadFailed) {
-        const doc = this.id
-          ? this.collectionObject.doc(this.id)
-          : this.collectionObject.doc();
+        const currentDoc = this.id
+          ? doc(this.collectionObject, this.id)
+          : doc(this.collectionObject);
 
         try {
           if (this.newAttachment !== null) {
             // a new attachment was successfully uploaded, save in document
             this.item.attachment = this.newAttachment;
           }
-          await doc.set(this.item);
+          await setDoc(currentDoc, this.item);
           this.$router.push(this.parentPath);
         } catch (error) {
-          const err = error as firebase.firestore.FirestoreError;
+          const err = error as FirestoreError;
           alert(`Failed to edit Expense Entry: ${err.message}`);
         }
       } else {

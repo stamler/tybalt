@@ -2,7 +2,7 @@
   <action-button type="download" title="download report" @click="download()" />
 </template>
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
 import firebase from "../firebase";
 import { parse } from "json2csv";
@@ -10,7 +10,7 @@ import ActionButton from "./ActionButton.vue";
 import { QueryPayloadObject } from "./types";
 import { downloadBlob } from "./helpers";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;

@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import {
   SendIcon,
   XCircleIcon,
@@ -47,7 +47,7 @@ import {
   EditIcon,
 } from "vue-feather-icons";
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     type: String,
     title: String,

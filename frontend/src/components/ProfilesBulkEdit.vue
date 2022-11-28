@@ -79,34 +79,43 @@
         </span>
       </div>
       <div class="rowactionsbox">
-        <save-box :item="item" :newOpeningDate="newOpeningDate"></save-box>
+        <save-box v-bind:item="item" v-bind:newOpeningDate="newOpeningDate" />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import SaveBox from "./SaveBox.vue";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  orderBy,
+  Timestamp,
+} from "firebase/firestore";
 import { format } from "date-fns";
 import { shortDate, payPeriodsForYear as ppGen } from "./helpers";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   components: { SaveBox },
-  props: ["collection"],
+  props: ["collectionName"],
   data() {
     return {
       newOpeningDate: undefined as Date | undefined,
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   methods: {
     shortDate,
-    fullDetailDate(date: firebase.firestore.Timestamp): string {
+    fullDetailDate(date: Timestamp): string {
       if (date) return format(date.toDate(), "yyyy MMM dd @ HH:mm:ss.SSS");
       else return "";
     },
@@ -118,15 +127,16 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject.orderBy("surname")).catch(
-      (error: unknown) => {
-        if (error instanceof Error) {
-          alert(`Can't load Profiles: ${error.message}`);
-        } else alert(`Can't load Profiles: ${JSON.stringify(error)}`);
-      }
-    );
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind(
+      "items",
+      query(this.collectionObject, orderBy("surname"))
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load Profiles: ${error.message}`);
+      } else alert(`Can't load Profiles: ${JSON.stringify(error)}`);
+    });
   },
 });
 </script>

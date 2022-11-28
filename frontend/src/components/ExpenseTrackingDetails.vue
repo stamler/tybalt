@@ -78,23 +78,35 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { shortDate, downloadAttachment } from "./helpers";
 import { subWeeks, addMilliseconds } from "date-fns";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
     return { startTask, endTask, user: store.user, claims: store.claims };
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   components: { ActionButton },
   computed: {
     weekStart(): Date {
@@ -104,11 +116,11 @@ export default Vue.extend({
         return new Date();
       }
     },
-    processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
+    processedItems(): { [uid: string]: DocumentData[] } {
       return _.groupBy(this.expenses, "uid");
     },
     countOfExpensesWithAttachments(): number {
-      return this.expenses.filter((x: firebase.firestore.DocumentData) =>
+      return this.expenses.filter((x: DocumentData) =>
         Object.prototype.hasOwnProperty.call(x, "attachment")
       ).length;
     },
@@ -116,9 +128,9 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined,
-      expenses: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData | undefined,
+      expenses: [] as DocumentData[],
     };
   },
   watch: {
@@ -128,8 +140,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -140,11 +152,9 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
-            if (snap.exists) {
+        getDoc(doc(this.collectionObject, id)).then(
+          (snap: DocumentSnapshot) => {
+            if (snap.exists()) {
               this.item = snap.data();
               if (this.item === undefined) {
                 throw "The ExpenseTracking document is empty";
@@ -152,12 +162,13 @@ export default Vue.extend({
               if (this.item.weekEnding === undefined) {
                 throw "The ExpenseTracking document is missing a week ending";
               }
-              this.$bind(
+              this.$firestoreBind(
                 "expenses",
-                db
-                  .collection("Expenses")
-                  .where("committedWeekEnding", "==", this.item.weekEnding)
-                  .where("committed", "==", true)
+                query(
+                  collection(db, "Expenses"),
+                  where("committedWeekEnding", "==", this.item.weekEnding),
+                  where("committed", "==", true)
+                )
               ).catch((error: unknown) => {
                 if (error instanceof Error) {
                   alert(`Can't load Expenses: ${error.message}`);
@@ -168,15 +179,15 @@ export default Vue.extend({
               // list instead.  TODO: show a message to the user
               this.$router.push(this.parentPath);
             }
-          });
+          }
+        );
       } else {
         this.item = {};
       }
     },
-    uncommitExpense(id: string) {
-      const uncommitExpense = firebase
-        .functions()
-        .httpsCallable("uncommitExpense");
+    async uncommitExpense(id: string) {
+      const functions = getFunctions(firebaseApp);
+      const uncommitExpense = httpsCallable(functions, "uncommitExpense");
       if (
         confirm(
           "You must check with accounting prior to uncommitting. Do you want to proceed?"

@@ -86,17 +86,27 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { dateFormat, searchString } from "./helpers";
 import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon } from "vue-feather-icons";
 import { formatDistanceToNow } from "date-fns";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  DocumentData,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -111,41 +121,45 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: db.collection("Users"),
+      collectionObject: collection(db, "Users"),
       items: [],
     };
   },
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          (p: firebase.firestore.DocumentData) =>
+          (p: DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
     this.$watch(
       "query",
       () => {
         if (this.query === "list") {
           // show all users
-          this.$bind("items", this.collectionObject).catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Can't load Users: ${error.message}`);
-            } else alert(`Can't load Users: ${JSON.stringify(error)}`);
-          });
+          this.$firestoreBind("items", this.collectionObject).catch(
+            (error: unknown) => {
+              if (error instanceof Error) {
+                alert(`Can't load Users: ${error.message}`);
+              } else alert(`Can't load Users: ${JSON.stringify(error)}`);
+            }
+          );
         } else if (this.query === "ad") {
           // show users that exist in active directory
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("isInOnPremisesAD", "==", true)
-              .orderBy("surname", "asc")
-              .orderBy("givenName", "asc")
+            query(
+              this.collectionObject,
+              where("isInOnPremisesAD", "==", true),
+              orderBy("surname", "asc"),
+              orderBy("givenName", "asc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Users: ${error.message}`);
@@ -153,12 +167,14 @@ export default Vue.extend({
           });
         } else if (this.query === "noad") {
           // show users that do not exist in active directory
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("isInOnPremisesAD", "==", false)
-              .orderBy("surname", "asc")
-              .orderBy("givenName", "asc")
+            query(
+              this.collectionObject,
+              where("isInOnPremisesAD", "==", false),
+              orderBy("surname", "asc"),
+              orderBy("givenName", "asc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Users: ${error.message}`);
@@ -177,7 +193,7 @@ export default Vue.extend({
         id: `${verb}User${user.id}`,
         message: "Creating Mutation...",
       });
-      const addMutation = firebase.functions().httpsCallable("addMutation");
+      const addMutation = httpsCallable(functions, "addMutation");
       return addMutation({ verb, userId: user.id })
         .then(() => {
           this.endTask(`${verb}User${user.id}`);

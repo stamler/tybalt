@@ -86,41 +86,48 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { format, formatDistanceToNow } from "date-fns";
 import { useStateStore } from "../stores/state";
 import { toRef } from "vue";
 import { dateFormat, searchString } from "./helpers";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup: function () {
     const store = useStateStore();
     return { claims: toRef(store, "claims") };
   },
-  props: ["retired", "collection"],
+  props: ["retired", "collectionName"],
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       if (this.retired) {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-          .filter((p: firebase.firestore.DocumentData) =>
+          .filter((p: DocumentData) =>
             Object.prototype.hasOwnProperty.call(p, "retired")
           )
           .filter(
-            (p: firebase.firestore.DocumentData) =>
+            (p: DocumentData) =>
               searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       } else {
         return this.items
           .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
           .filter(
-            (p: firebase.firestore.DocumentData) =>
+            (p: DocumentData) =>
               !Object.prototype.hasOwnProperty.call(p, "retired")
           )
           .filter(
-            (p: firebase.firestore.DocumentData) =>
+            (p: DocumentData) =>
               searchString(p).indexOf(this.search.toLowerCase()) >= 0
           );
       }
@@ -130,25 +137,29 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject).catch((error: unknown) => {
-      if (error instanceof Error)
-        alert(`Can't load computers: ${error.message}`);
-      else alert(`Can't load computers: ${JSON.stringify(error)}`);
-    });
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind("items", this.collectionObject).catch(
+      (error: unknown) => {
+        if (error instanceof Error)
+          alert(`Can't load computers: ${error.message}`);
+        else alert(`Can't load computers: ${JSON.stringify(error)}`);
+      }
+    );
   },
   methods: {
     assign(computerId: string, userSourceAnchor: string) {
-      const assignComputerToUser = firebase
-        .functions()
-        .httpsCallable("assignComputerToUser");
+      const functions = getFunctions(firebaseApp);
+      const assignComputerToUser = httpsCallable(
+        functions,
+        "assignComputerToUser"
+      );
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
         (error) => {
           alert(`Computer assignment failed: ${error}`);

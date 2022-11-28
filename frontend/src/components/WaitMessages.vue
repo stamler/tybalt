@@ -9,18 +9,18 @@
 </template>
 
 <script lang="ts">
-import { HalfCircleSpinner } from "epic-spinners";
+// import { HalfCircleSpinner } from "epic-spinners";
 import { useStateStore } from "../stores/state";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { oneMessage: store.oneMessage };
   },
 
   components: {
-    HalfCircleSpinner,
+    // HalfCircleSpinner,
   },
 });
 </script>

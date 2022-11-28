@@ -50,22 +50,31 @@
 </template>
 
 <script lang="ts">
-import firebase from "../firebase";
-import Vue from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
 import { exportDate, generatePayablesCSVSQL } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
     return { startTask, endTask, claims: store.claims };
   },
-  props: ["collection"],
+  props: ["collectionName"],
   components: { ActionButton, DownloadIcon },
   computed: {
     canRefresh(): boolean {
@@ -78,23 +87,25 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
+      collectionObject: null as CollectionReference | null,
       items: [],
     };
   },
   methods: {
     exportDate,
     generatePayablesCSVSQL,
-    hasLink(item: firebase.firestore.DocumentData, property: string) {
+    hasLink(item: DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
       );
     },
-    async generateAttachmentZip(item: firebase.firestore.DocumentData) {
-      const generateExpenseAttachmentArchive = firebase
-        .functions()
-        .httpsCallable("generateExpenseAttachmentArchive");
+    async generateAttachmentZip(item: DocumentData) {
+      const functions = getFunctions(firebaseApp);
+      const generateExpenseAttachmentArchive = httpsCallable(
+        functions,
+        "generateExpenseAttachmentArchive"
+      );
       this.startTask({
         id: `generateAttachments${item.id}`,
         message: "Generating Attachments",
@@ -109,11 +120,11 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind(
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind(
       "items",
-      this.collectionObject.orderBy("weekEnding", "desc")
+      query(this.collectionObject, orderBy("weekEnding", "desc"))
     ).catch((error: unknown) => {
       if (error instanceof Error) {
         alert(`Can't load ExpenseTracking: ${error.message}`);

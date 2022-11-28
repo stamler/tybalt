@@ -19,20 +19,29 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { searchString } from "./helpers";
 import { formatDistanceToNow } from "date-fns";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  orderBy,
+  limit,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
-  props: ["collection"],
+export default defineComponent({
+  props: ["collectionName"],
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          (p: firebase.firestore.DocumentData) =>
+          (p: DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
@@ -46,17 +55,17 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind(
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind(
       "items",
-      this.collectionObject.orderBy("created", "desc").limit(101)
+      query(this.collectionObject, orderBy("created", "desc"), limit(101))
     ).catch((error: unknown) => {
       if (error instanceof Error) {
         alert(`Can't load Logins: ${error.message}`);

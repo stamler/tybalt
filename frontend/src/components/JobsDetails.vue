@@ -8,7 +8,7 @@
     <div>status: {{ item.status }}</div>
     <h4>Time Entries</h4>
     <form id="editor">
-      <span class="field">
+      <!-- <span class="field">
         <label for="startDate">from</label>
         <datepicker
           name="startDate"
@@ -33,7 +33,7 @@
           :highlighted="dps.highlighted"
           v-model="endDate"
         />
-      </span>
+      </span> -->
       <span class="field" v-if="isTopLevelJob(id)">
         <label for="subJobs">sub jobs?</label>
         <input name="subJobs" type="checkbox" v-model="subJobs" />
@@ -93,23 +93,35 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 import { formatDistanceToNow } from "date-fns";
 import { useStateStore } from "../stores/state";
-import Datepicker from "vuejs-datepicker";
+// import Datepicker from "vuejs-datepicker";
 import QueryBox from "./QueryBox.vue";
 import DownloadQueryLink from "./DownloadQueryLink.vue";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { claims: store.claims };
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   components: {
-    Datepicker,
+    // Datepicker,
     QueryBox,
     DownloadQueryLink,
   },
@@ -129,8 +141,8 @@ export default Vue.extend({
       subJobs: false,
       fullReportSubJobs: false,
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData,
       timeSheets: [],
     };
   },
@@ -147,8 +159,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -162,10 +174,8 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id)).then(
+          (snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -176,13 +186,14 @@ export default Vue.extend({
               // If the user has the report claim, load the time sheets.
               // Otherwise don't because they're not allowed to see them.
               if (this.claims.report !== true) return;
-              this.$bind(
+              this.$firestoreBind(
                 "timeSheets",
-                db
-                  .collection("TimeSheets")
-                  .where("locked", "==", true)
-                  .where("jobNumbers", "array-contains", this.id)
-                  .orderBy("weekEnding", "desc")
+                query(
+                  collection(db, "TimeSheets"),
+                  where("locked", "==", true),
+                  where("jobNumbers", "array-contains", this.id),
+                  orderBy("weekEnding", "desc")
+                )
               ).catch((error: unknown) => {
                 if (error instanceof Error) {
                   alert(`Can't load time sheets: ${error.message}`);
@@ -190,7 +201,8 @@ export default Vue.extend({
                   alert(`Can't load time sheets: ${JSON.stringify(error)}`);
               });
             }
-          });
+          }
+        );
       } else {
         this.item = {};
       }

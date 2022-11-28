@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { useStateStore } from "../stores/state";
@@ -43,7 +43,7 @@ import { EditIcon } from "vue-feather-icons";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { user: store.user };
@@ -62,7 +62,7 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
     this.setup();
   },
   methods: {

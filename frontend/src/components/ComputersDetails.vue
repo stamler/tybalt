@@ -55,19 +55,33 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+const db = getFirestore(firebaseApp);
 import { dateFormat } from "./helpers";
 import { formatDistanceToNow } from "date-fns";
 
-export default Vue.extend({
-  props: ["id", "collection"],
+export default defineComponent({
+  props: ["id", "collectionName"],
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData,
       logins: [],
     };
   },
@@ -78,8 +92,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -117,10 +131,8 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id)).then(
+          (snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -128,28 +140,32 @@ export default Vue.extend({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
-              this.$bind(
+              this.$firestoreBind(
                 "logins",
-                db
-                  .collection("Logins")
-                  .where("computer", "==", id)
-                  .orderBy("created", "desc")
-                  .limit(20)
+                query(
+                  collection(db, "Logins"),
+                  where("computer", "==", id),
+                  orderBy("created", "desc"),
+                  limit(20)
+                )
               ).catch((error: unknown) => {
                 if (error instanceof Error)
                   alert(`Can't load logins: ${error.message}`);
                 else alert(`Can't load logins: ${JSON.stringify(error)}`);
               });
             }
-          });
+          }
+        );
       } else {
         this.item = {};
       }
     },
-    assign(computerId: string, userSourceAnchor: string) {
-      const assignComputerToUser = firebase
-        .functions()
-        .httpsCallable("assignComputerToUser");
+    async assign(computerId: string, userSourceAnchor: string) {
+      const functions = getFunctions(firebaseApp);
+      const assignComputerToUser = httpsCallable(
+        functions,
+        "assignComputerToUser"
+      );
       return assignComputerToUser({ computerId, userSourceAnchor }).catch(
         (error) => {
           alert(`Computer assignment failed: ${error}`);

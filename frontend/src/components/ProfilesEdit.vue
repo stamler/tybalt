@@ -13,7 +13,7 @@
         v-model.number="item.tbtePayrollId"
       />
     </span>
-    <span class="field">
+    <!-- <span class="field">
       <label for="datepicker">Vehicle Insurance Expiry</label>
       <datepicker
         name="datepicker"
@@ -23,7 +23,7 @@
         :inline="false"
         v-model="item.personalVehicleInsuranceExpiry"
       />
-    </span>
+    </span> -->
     <span class="field">
       <label for="salary">Salary</label>
       <input class="grow" type="checkbox" name="salary" v-model="item.salary" />
@@ -169,27 +169,38 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import { useCollection } from "vuefire";
+import {
+  updateDoc,
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
-import Datepicker from "vuejs-datepicker";
+// import Datepicker from "vuejs-datepicker";
 
-export default Vue.extend({
+export default defineComponent({
   components: {
-    Datepicker,
+    // Datepicker,
     PlusCircleIcon,
     XCircleIcon,
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData,
       newClaim: "",
-      managers: [] as firebase.firestore.DocumentData[],
-      divisions: [] as firebase.firestore.DocumentData[],
+      managers: useCollection(collection(db, "ManagerNames")),
+      divisions: useCollection(collection(db, "Divisions")),
     };
   },
   watch: {
@@ -199,10 +210,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("managers", db.collection("ManagerNames"));
-    this.$bind("divisions", db.collection("Divisions"));
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -211,10 +220,8 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id))
+          .then((snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -234,7 +241,8 @@ export default Vue.extend({
       }
     },
     addClaim(claim: string) {
-      this.$set(this.item.customClaims, claim, true);
+      this.item.customClaims[claim] = true;
+      // this.$set(this.item.customClaims, claim, true);
       this.newClaim = "";
     },
     save() {
@@ -300,9 +308,7 @@ export default Vue.extend({
           obj.personalVehicleInsuranceExpiry =
             this.item.personalVehicleInsuranceExpiry;
         }
-        this.collectionObject
-          .doc(this.id)
-          .update(obj)
+        updateDoc(doc(this.collectionObject, this.id), obj)
           .then(() => {
             this.$router.push(this.parentPath);
           })

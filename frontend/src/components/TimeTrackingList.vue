@@ -44,24 +44,32 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { exportDate, generateTimeReportCSV } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  orderBy,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
-  props: ["collection"], // a string, the Firestore Collection name
+export default defineComponent({
+  props: ["collectionName"], // a string, the Firestore Collection name
   components: {
     ActionButton,
     DownloadIcon,
   },
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       // Show only items with submitted, approved or locked TimeSheets
       return this.items.filter(
-        (x: firebase.firestore.DocumentData) =>
+        (x: DocumentData) =>
           this.hasApproved(x) || this.hasLocked(x) || this.hasSubmitted(x)
       );
     },
@@ -69,17 +77,17 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
+      collectionObject: null as CollectionReference | null,
       items: [],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind(
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind(
       "items",
-      this.collectionObject.orderBy("weekEnding", "desc")
+      query(this.collectionObject, orderBy("weekEnding", "desc"))
     ).catch((error: unknown) => {
       if (error instanceof Error) {
         alert(`Can't load TimeTracking: ${error.message}`);
@@ -89,25 +97,25 @@ export default Vue.extend({
   methods: {
     exportDate,
     generateTimeReportCSV,
-    hasLink(item: firebase.firestore.DocumentData, property: string) {
+    hasLink(item: DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
       );
     },
-    hasSubmitted(item: firebase.firestore.DocumentData) {
+    hasSubmitted(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "submitted") &&
         Object.keys(item.submitted).length > 0
       );
     },
-    hasApproved(item: firebase.firestore.DocumentData) {
+    hasApproved(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "pending") &&
         Object.keys(item.pending).length > 0
       );
     },
-    hasLocked(item: firebase.firestore.DocumentData) {
+    hasLocked(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
         Object.keys(item.timeSheets).length > 0

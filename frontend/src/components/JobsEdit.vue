@@ -72,12 +72,12 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import _ from "lodash";
 import firebase from "../firebase";
 const db = firebase.firestore();
 
-export default Vue.extend({
+export default defineComponent({
   props: ["id", "collection"],
   data() {
     return {
@@ -98,7 +98,7 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.setItem(this.id);
   },

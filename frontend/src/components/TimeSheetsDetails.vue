@@ -130,7 +130,7 @@
 <script lang="ts">
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import {
   shortDate,
   generateTimeReportCSV,
@@ -140,11 +140,22 @@ import {
 import { TimeEntry } from "./types";
 import { subWeeks, addMilliseconds } from "date-fns";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  arrayUnion,
+  runTransaction,
+  getFirestore,
+  collection,
+  doc,
+  updateDoc,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+} from "firebase/firestore";
 import ActionButton from "./ActionButton.vue";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -155,7 +166,7 @@ export default Vue.extend({
     RejectModal,
     ShareModal,
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   computed: {
     offHoursSum(): number {
       let total = 0;
@@ -187,8 +198,8 @@ export default Vue.extend({
     return {
       rejectionReason: "",
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData | undefined,
     };
   },
   watch: {
@@ -198,8 +209,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -212,17 +223,17 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.$bind("item", this.collectionObject.doc(id)).catch(
+        this.$firestoreBind("item", doc(this.collectionObject, id)).catch(
           (error: unknown) => {
             if (error instanceof Error) {
               alert(
-                `Can't load ${this.collection} document ${id}: ${error.message}`
+                `Can't load ${this.collectionName} document ${id}: ${error.message}`
               );
             } else
               alert(
-                `Can't load ${this.collection} document ${id}: ${JSON.stringify(
-                  error
-                )}`
+                `Can't load ${
+                  this.collectionName
+                } document ${id}: ${JSON.stringify(error)}`
               );
           }
         );
@@ -235,24 +246,21 @@ export default Vue.extend({
         id: `approve${timesheetId}`,
         message: "approving",
       });
-      const timesheet = db.collection("TimeSheets").doc(timesheetId);
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(timesheet)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `A timesheet with id ${timesheetId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (data !== undefined && data.submitted === true) {
-                // timesheet is approvable because it has been submitted
-                transaction.update(timesheet, { approved: true });
-              } else {
-                throw "The timesheet has not been submitted";
-              }
-            });
-        })
+      const timesheet = doc(collection(db, "TimeSheets"), timesheetId);
+      return runTransaction(db, async (transaction) => {
+        return transaction.get(timesheet).then((tsDoc: DocumentSnapshot) => {
+          if (!tsDoc.exists) {
+            throw `A timesheet with id ${timesheetId} doesn't exist.`;
+          }
+          const data = tsDoc?.data() ?? undefined;
+          if (data !== undefined && data.submitted === true) {
+            // timesheet is approvable because it has been submitted
+            transaction.update(timesheet, { approved: true });
+          } else {
+            throw "The timesheet has not been submitted";
+          }
+        });
+      })
         .then(() => {
           this.endTask(`approve${timesheetId}`);
           this.$router.push({ name: "Time Sheets" });
@@ -267,11 +275,9 @@ export default Vue.extend({
         id: `review${timesheetId}`,
         message: "marking reviewed",
       });
-      db.collection("TimeSheets")
-        .doc(timesheetId)
-        .update({
-          reviewedIds: firebase.firestore.FieldValue.arrayUnion(this.user.uid),
-        })
+      updateDoc(doc(collection(db, "TimeSheets"), timesheetId), {
+        reviewedIds: arrayUnion(this.user.uid),
+      })
         .then(() => {
           this.endTask(`review${timesheetId}`);
         })
@@ -280,20 +286,20 @@ export default Vue.extend({
           alert(`Error marking timesheet as reviewed: ${error}`);
         });
     },
-    belongsToMe(item: firebase.firestore.DocumentData) {
+    belongsToMe(item: DocumentData) {
       return this.user.uid === item.uid;
     },
-    canApprove(item: firebase.firestore.DocumentData): boolean {
+    canApprove(item: DocumentData): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true &&
         this.user.uid === item.managerUid
       );
     },
-    isReviewedByMe(item: firebase.firestore.DocumentData): boolean {
+    isReviewedByMe(item: DocumentData): boolean {
       return item.reviewedIds && item.reviewedIds.includes(this.user.uid);
     },
-    canReview(item: firebase.firestore.DocumentData): boolean {
+    canReview(item: DocumentData): boolean {
       return (
         Object.prototype.hasOwnProperty.call(this.claims, "tapr") &&
         this.claims["tapr"] === true &&
@@ -301,7 +307,7 @@ export default Vue.extend({
         item.viewerIds.includes(this.user.uid)
       );
     },
-    canReject(item: firebase.firestore.DocumentData): boolean {
+    canReject(item: DocumentData): boolean {
       return (
         this.canApprove(item) ||
         (Object.prototype.hasOwnProperty.call(this.claims, "tsrej") &&

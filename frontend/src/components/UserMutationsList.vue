@@ -70,14 +70,18 @@
   </div>
 </template>
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
+import { useCollection } from "vuefire";
+import { firebaseApp } from "../firebase";
+import { getFirestore, collection, DocumentData } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import ActionButton from "./ActionButton.vue";
 import { searchString } from "./helpers";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -90,8 +94,7 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: db.collection("UserMutations"),
-      items: [],
+      items: useCollection(collection(db, "UserMutations")),
     };
   },
   methods: {
@@ -107,9 +110,7 @@ export default Vue.extend({
         id: `approvingMutation${item.id}`,
         message: "Approving...",
       });
-      const approvingMutation = firebase
-        .functions()
-        .httpsCallable("approveMutation");
+      const approvingMutation = httpsCallable(functions, "approveMutation");
       return (
         approvingMutation({ id: item.id })
           .then(() => {
@@ -128,9 +129,7 @@ export default Vue.extend({
         id: `deleteMutation${item.id}`,
         message: "Deleting...",
       });
-      const deleteMutation = firebase
-        .functions()
-        .httpsCallable("deleteMutation");
+      const deleteMutation = httpsCallable(functions, "deleteMutation");
       return deleteMutation({ id: item.id })
         .then(() => {
           this.endTask(`deleteMutation${item.id}`);
@@ -142,19 +141,18 @@ export default Vue.extend({
     },
   },
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          (p: firebase.firestore.DocumentData) =>
+          (p: DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         );
     },
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.$bind("items", this.collectionObject);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
   },
 });
 </script>

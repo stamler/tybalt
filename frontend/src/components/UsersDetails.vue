@@ -23,18 +23,31 @@
 </template>
 
 <script lang="ts">
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  DocumentData,
+  DocumentSnapshot,
+  QuerySnapshot,
+  query,
+  getDocs,
+  where,
+  orderBy,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 import { formatDistanceToNow } from "date-fns";
 import { dateFormat } from "./helpers";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   props: ["id"],
   data() {
     return {
-      collection: db.collection("Users"),
-      item: {} as firebase.firestore.DocumentData | undefined,
+      collectionObject: collection(db, "Users"),
+      item: {} as DocumentData | undefined,
       logins: [],
     };
   },
@@ -49,60 +62,63 @@ export default Vue.extend({
       immediate: true,
       handler(id) {
         if (id) {
-          this.collection
-            .doc(id)
-            .get()
-            .then((snap: firebase.firestore.DocumentSnapshot) => {
-              if (snap.exists) {
+          getDoc(doc(this.collectionObject, id)).then(
+            (snap: DocumentSnapshot) => {
+              if (snap.exists()) {
                 this.item = snap.data();
                 const usa = this?.item?.userSourceAnchor ?? false;
                 if (usa) {
-                  this.$bind(
+                  this.$firestoreBind(
                     "logins",
-                    db
-                      .collection("Logins")
-                      .where("userSourceAnchor", "==", usa)
-                      .orderBy("created", "desc")
+                    query(
+                      collection(db, "Logins"),
+                      where("userSourceAnchor", "==", usa),
+                      orderBy("created", "desc")
+                    )
                   );
                 }
               } else {
                 // The provided id is either a userSourceAnchor or the actual
                 // object id. Since the object id doesn't exist, try the
                 // userSourceAnchor before failing.
-                this.collection
-                  .where("userSourceAnchor", "==", id)
-                  .get()
-                  .then((snap: firebase.firestore.QuerySnapshot) => {
-                    if (snap.size !== 1) {
-                      // Either doesn't exist or multiple exist,
-                      if (snap.size > 1) {
-                        throw new Error(
-                          `Multiple Users have the userSourceAnchor ${id}. ` +
-                            "Please alert your System Administrator."
-                        );
-                      }
-                      // TODO: crashlytics? Is there a way to record this
-                      // in the back end?
-                      // Silently redirect to the Users path since the
-                      // userSourceAnchor wasn't found.
-                      this.$router.push({ name: "Users" });
-                    } else {
-                      this.item = snap.docs[0].data();
-                      this.$bind(
-                        "logins",
-                        db
-                          .collection("Logins")
-                          .where(
-                            "userSourceAnchor",
-                            "==",
-                            this.item.userSourceAnchor
-                          )
-                          .orderBy("created", "desc")
+                getDocs(
+                  query(
+                    this.collectionObject,
+                    where("userSourceAnchor", "==", id)
+                  )
+                ).then((snap: QuerySnapshot) => {
+                  if (snap.size !== 1) {
+                    // Either doesn't exist or multiple exist,
+                    if (snap.size > 1) {
+                      throw new Error(
+                        `Multiple Users have the userSourceAnchor ${id}. ` +
+                          "Please alert your System Administrator."
                       );
                     }
-                  });
+                    // TODO: crashlytics? Is there a way to record this
+                    // in the back end?
+                    // Silently redirect to the Users path since the
+                    // userSourceAnchor wasn't found.
+                    this.$router.push({ name: "Users" });
+                  } else {
+                    this.item = snap.docs[0].data();
+                    this.$firestoreBind(
+                      "logins",
+                      query(
+                        collection(db, "Logins"),
+                        where(
+                          "userSourceAnchor",
+                          "==",
+                          this.item.userSourceAnchor
+                        ),
+                        orderBy("created", "desc")
+                      )
+                    );
+                  }
+                });
               }
-            });
+            }
+          );
         } else {
           this.item = {};
         }

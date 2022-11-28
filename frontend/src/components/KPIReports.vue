@@ -12,11 +12,11 @@
   </div>
 </template>
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import QueryBox from "./QueryBox.vue";
 import { TableData } from "./types";
 
-export default Vue.extend({
+export default defineComponent({
   components: { QueryBox },
   data() {
     return {

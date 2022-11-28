@@ -161,15 +161,28 @@
 
 <script lang="ts">
 import Modal from "./RejectModal.vue";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { shortDate } from "./helpers";
 import { subWeeks, addMilliseconds } from "date-fns";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import { useCollection } from "vuefire";
+import {
+  getFirestore,
+  collection,
+  doc,
+  updateDoc,
+  CollectionReference,
+  arrayUnion,
+  arrayRemove,
+  DocumentData,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 import _ from "lodash";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
 interface TimeSheetTrackingPayload {
   displayName: string;
@@ -177,7 +190,7 @@ interface TimeSheetTrackingPayload {
   uid: string;
 }
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
@@ -187,7 +200,7 @@ export default Vue.extend({
     ActionButton,
     Modal,
   },
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   computed: {
     pendingTsIdsSortedByName(): string[] {
       const pending = this?.item?.pending;
@@ -198,93 +211,54 @@ export default Vue.extend({
         pending[a].displayName.localeCompare(pending[b].displayName)
       );
     },
-    submittedProfiles(): firebase.firestore.DocumentData[] {
+    submittedProfiles(): DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter((s: firebase.firestore.DocumentData) =>
-          this.submittedUserKeys.includes(s.id)
-        )
-        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort(
-          (
-            a: firebase.firestore.DocumentData,
-            b: firebase.firestore.DocumentData
-          ) => a.surname.localeCompare(b.surname)
+        .filter((s: DocumentData) => this.submittedUserKeys.includes(s.id))
+        .filter((i: DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a: DocumentData, b: DocumentData) =>
+          a.surname.localeCompare(b.surname)
         );
     },
-    lockedProfiles(): firebase.firestore.DocumentData[] {
+    lockedProfiles(): DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter((s: firebase.firestore.DocumentData) =>
-          this.lockedUserKeys.includes(s.id)
-        )
-        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort(
-          (
-            a: firebase.firestore.DocumentData,
-            b: firebase.firestore.DocumentData
-          ) => a.surname.localeCompare(b.surname)
+        .filter((s: DocumentData) => this.lockedUserKeys.includes(s.id))
+        .filter((i: DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a: DocumentData, b: DocumentData) =>
+          a.surname.localeCompare(b.surname)
         );
     },
-    ignoredProfiles(): firebase.firestore.DocumentData[] {
+    ignoredProfiles(): DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter(
-          (p: firebase.firestore.DocumentData) =>
-            !this.pendingUserKeys.includes(p.id)
-        )
-        .filter(
-          (l: firebase.firestore.DocumentData) =>
-            !this.lockedUserKeys.includes(l.id)
-        )
-        .filter(
-          (s: firebase.firestore.DocumentData) =>
-            !this.submittedUserKeys.includes(s.id)
-        )
-        .filter((t: firebase.firestore.DocumentData) =>
-          this.item?.notMissingUids?.includes(t.id)
-        )
-        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort(
-          (
-            a: firebase.firestore.DocumentData,
-            b: firebase.firestore.DocumentData
-          ) => a.surname.localeCompare(b.surname)
+        .filter((p: DocumentData) => !this.pendingUserKeys.includes(p.id))
+        .filter((l: DocumentData) => !this.lockedUserKeys.includes(l.id))
+        .filter((s: DocumentData) => !this.submittedUserKeys.includes(s.id))
+        .filter((t: DocumentData) => this.item?.notMissingUids?.includes(t.id))
+        .filter((i: DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a: DocumentData, b: DocumentData) =>
+          a.surname.localeCompare(b.surname)
         );
     },
-    missingProfiles(): firebase.firestore.DocumentData[] {
+    missingProfiles(): DocumentData[] {
       if (this?.item === undefined) {
         return [];
       }
       return this.profiles
-        .filter(
-          (p: firebase.firestore.DocumentData) =>
-            !this.pendingUserKeys.includes(p.id)
-        )
-        .filter(
-          (l: firebase.firestore.DocumentData) =>
-            !this.lockedUserKeys.includes(l.id)
-        )
-        .filter(
-          (s: firebase.firestore.DocumentData) =>
-            !this.submittedUserKeys.includes(s.id)
-        )
-        .filter(
-          (t: firebase.firestore.DocumentData) =>
-            !this.item?.notMissingUids?.includes(t.id)
-        )
-        .filter((i: firebase.firestore.DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
-        .sort(
-          (
-            a: firebase.firestore.DocumentData,
-            b: firebase.firestore.DocumentData
-          ) => a.surname.localeCompare(b.surname)
+        .filter((p: DocumentData) => !this.pendingUserKeys.includes(p.id))
+        .filter((l: DocumentData) => !this.lockedUserKeys.includes(l.id))
+        .filter((s: DocumentData) => !this.submittedUserKeys.includes(s.id))
+        .filter((t: DocumentData) => !this.item?.notMissingUids?.includes(t.id))
+        .filter((i: DocumentData) => i.msGraphDataUpdated) // surname isn't populated until msGraph update
+        .sort((a: DocumentData, b: DocumentData) =>
+          a.surname.localeCompare(b.surname)
         );
     },
     pendingUserKeys() {
@@ -331,9 +305,9 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined,
-      profiles: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData | undefined,
+      profiles: useCollection(collection(db, "Profiles")),
     };
   },
   watch: {
@@ -343,50 +317,37 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
-    this.$bind("profiles", db.collection("Profiles")).catch(
-      (error: unknown) => {
-        if (error instanceof Error) {
-          alert(`Can't load Profiles: ${error.message}`);
-        } else alert(`Can't load Profiles: ${JSON.stringify(error)}`);
-      }
-    );
   },
   methods: {
     shortDate,
-    ignore(uid: string) {
+    async ignore(uid: string) {
       // add uid to notMissingUids property
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      return this.collectionObject
-        .doc(this.id)
-        .update({
-          notMissingUids: firebase.firestore.FieldValue.arrayUnion(uid),
-        })
-        .catch((error: unknown) => {
-          if (error instanceof Error) {
-            alert(`Error ignoring ${uid}: ${error.message}`);
-          } else alert(`Error ignoring ${uid}: ${JSON.stringify(error)}`);
-        });
+      return updateDoc(doc(this.collectionObject, this.id), {
+        notMissingUids: arrayUnion(uid),
+      }).catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Error ignoring ${uid}: ${error.message}`);
+        } else alert(`Error ignoring ${uid}: ${JSON.stringify(error)}`);
+      });
     },
     restore(uid: string) {
       // remove uid from notMissingUids property
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      return this.collectionObject
-        .doc(this.id)
-        .update({
-          notMissingUids: firebase.firestore.FieldValue.arrayRemove(uid),
-        })
-        .catch((error: unknown) => {
-          if (error instanceof Error) {
-            alert(`Error restoring ${uid}: ${error.message}`);
-          } else alert(`Error restoring ${uid}: ${JSON.stringify(error)}`);
-        });
+      return updateDoc(doc(this.collectionObject, this.id), {
+        notMissingUids: arrayRemove(uid),
+      }).catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Error restoring ${uid}: ${error.message}`);
+        } else alert(`Error restoring ${uid}: ${JSON.stringify(error)}`);
+      });
     },
     tsIdForUid(uid: string, tsObj: Record<string, TimeSheetTrackingPayload>) {
       const keys = Object.keys(_.pickBy(tsObj, (i) => i.uid === uid));
@@ -402,7 +363,7 @@ export default Vue.extend({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
-      this.$bind("item", this.collectionObject.doc(id)).catch(
+      this.$firestoreBind("item", doc(this.collectionObject, id)).catch(
         (error: unknown) => {
           if (error instanceof Error) {
             alert(`Can't load TimeTracking document ${id}: ${error.message}`);
@@ -414,7 +375,7 @@ export default Vue.extend({
       );
     },
     async lockTimesheet(id: string) {
-      const lockTimesheet = firebase.functions().httpsCallable("lockTimesheet");
+      const lockTimesheet = httpsCallable(functions, "lockTimesheet");
       // TODO: replace confirm() with modal in Vue
       if (
         confirm("Locking Timesheets is not reversible. Do you want to proceed?")
@@ -434,9 +395,7 @@ export default Vue.extend({
       }
     },
     unlockTimesheet(id: string) {
-      const unlockTimesheet = firebase
-        .functions()
-        .httpsCallable("unlockTimesheet");
+      const unlockTimesheet = httpsCallable(functions, "unlockTimesheet");
       if (
         confirm(
           "You must check with accounting prior to unlocking. Do you want to proceed?"

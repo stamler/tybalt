@@ -80,7 +80,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import {
   generatePayablesCSVSQL,
   downloadBlob,
@@ -100,18 +100,29 @@ import {
 } from "./types";
 import ActionButton from "./ActionButton.vue";
 import { DownloadIcon } from "vue-feather-icons";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  Timestamp,
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { parse } from "json2csv";
 import _ from "lodash";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
     return { startTask, endTask };
   },
-  props: ["collection"], // a string, the Firestore Collection name
+  props: ["collectionName"], // a string, the Firestore Collection name
   components: {
     ActionButton,
     DownloadIcon,
@@ -119,21 +130,22 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind(
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind(
       "items",
-      this.collectionObject.orderBy("payPeriodEnding", "desc")
+      query(this.collectionObject, orderBy("payPeriodEnding", "desc"))
     ).catch((error: unknown) => {
       if (error instanceof Error) {
-        alert(`Can't load ${this.collection}: ${error.message}`);
-      } else alert(`Can't load ${this.collection}: ${JSON.stringify(error)}`);
+        alert(`Can't load ${this.collectionName}: ${error.message}`);
+      } else
+        alert(`Can't load ${this.collectionName}: ${JSON.stringify(error)}`);
     });
   },
   methods: {
@@ -142,25 +154,25 @@ export default Vue.extend({
     exportDate,
     exportDateWeekStart,
     foldAmendments,
-    hasLink(item: firebase.firestore.DocumentData, property: string) {
+    hasLink(item: DocumentData, property: string) {
       return (
         Object.prototype.hasOwnProperty.call(item, property) &&
         item[property].length > 32
       );
     },
-    hasSubmitted(item: firebase.firestore.DocumentData) {
+    hasSubmitted(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "submitted") &&
         Object.keys(item.submitted).length > 0
       );
     },
-    hasPending(item: firebase.firestore.DocumentData) {
+    hasPending(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "pending") &&
         Object.keys(item.pending).length > 0
       );
     },
-    hasLocked(item: firebase.firestore.DocumentData) {
+    hasLocked(item: DocumentData) {
       return (
         Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
         Object.keys(item.timeSheets).length > 0
@@ -182,10 +194,7 @@ export default Vue.extend({
       if (candidate.length < 1) return false; // it's a blank string
       return !isNaN(Number(candidate)) ? Number(candidate) : input;
     },
-    async generateSQLPayrollCSVForWeek(
-      timestamp: firebase.firestore.Timestamp,
-      week1 = false
-    ) {
+    async generateSQLPayrollCSVForWeek(timestamp: Timestamp, week1 = false) {
       let weekEndingTbay = utcToZonedTime(
         timestamp.toDate(),
         "America/Thunder_Bay"
@@ -198,7 +207,7 @@ export default Vue.extend({
         );
       }
       const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
-      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      const queryMySQL = httpsCallable(functions, "queryMySQL");
       try {
         const response = await queryMySQL({
           queryName: "payrollReport-FoldedAmendments",
@@ -222,7 +231,7 @@ export default Vue.extend({
         */
         // post-processing of response data for CSV conversion
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dat = response.data.map((x: any) => {
+        const dat = (response.data as Array<any>).map((x: any) => {
           const processed = x;
           // set salary (string) to boolean
           processed.salary = x.salary === 0 ? false : true;
@@ -383,38 +392,36 @@ export default Vue.extend({
         "salary",
       ];
       const opts = { fields, withBOM: true };
-      const timesheetRecords = items.map(
-        (x: firebase.firestore.DocumentData) => {
-          if (!isTimeSheet(x)) {
-            throw new Error(
-              "(Payroll)There was an error validating the timesheet"
-            );
-          }
-          const item = _.pick(x, [
-            "weekEnding",
-            "surname",
-            "givenName",
-            "displayName",
-            "managerName",
-            "mealsHoursTally",
-            "offRotationDaysTally",
-            "payoutRequest",
-            "hasAmendmentsForWeeksEnding",
-            "salary",
-            "tbtePayrollId",
-          ]) as PayrollReportRecord;
-          item.weekEnding = format(
-            utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
-            "yyyy MMM dd"
+      const timesheetRecords = items.map((x: DocumentData) => {
+        if (!isTimeSheet(x)) {
+          throw new Error(
+            "(Payroll)There was an error validating the timesheet"
           );
-          item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
-          item.RB = x.bankedHours;
-          for (const key in x.nonWorkHoursTally) {
-            item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
-          }
-          return item;
         }
-      );
+        const item = _.pick(x, [
+          "weekEnding",
+          "surname",
+          "givenName",
+          "displayName",
+          "managerName",
+          "mealsHoursTally",
+          "offRotationDaysTally",
+          "payoutRequest",
+          "hasAmendmentsForWeeksEnding",
+          "salary",
+          "tbtePayrollId",
+        ]) as PayrollReportRecord;
+        item.weekEnding = format(
+          utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
+          "yyyy MMM dd"
+        );
+        item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
+        item.RB = x.bankedHours;
+        for (const key in x.nonWorkHoursTally) {
+          item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
+        }
+        return item;
+      });
       const amendmentRecords = amendments.map((x: Amendment) => {
         const item: PayrollReportRecord = {
           hasAmendmentsForWeeksEnding: [x.weekEnding],
@@ -460,10 +467,11 @@ export default Vue.extend({
         )}.csv`
       );
     },
-    async generateAttachmentZip(item: firebase.firestore.DocumentData) {
-      const generateExpenseAttachmentArchive = firebase
-        .functions()
-        .httpsCallable("generateExpenseAttachmentArchive");
+    async generateAttachmentZip(item: DocumentData) {
+      const generateExpenseAttachmentArchive = httpsCallable(
+        functions,
+        "generateExpenseAttachmentArchive"
+      );
       const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
       if (item.zip !== undefined) {
         return;

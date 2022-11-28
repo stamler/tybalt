@@ -12,7 +12,7 @@ import "firebase/compat/analytics";
 // authDomain is set to match the actual custom URL of the site, replacing
 // charade-ca63f.firebaseapp.com with tybalt.tbte.ca and the Azure App
 // registration configuration matches.
-firebase.initializeApp({
+export const firebaseApp = firebase.initializeApp({
   apiKey: "AIzaSyCZpTxn-kK2zEpG7rlXn_eGsFHa4xmuVPM",
   authDomain: "tybalt.tbte.ca", // include https://tybalt.tbte.ca/__/auth/handler in Azure App registration "Redirect URIs"
   databaseURL: "https://charade-ca63f.firebaseio.com",

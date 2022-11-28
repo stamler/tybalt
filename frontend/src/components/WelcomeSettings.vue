@@ -113,9 +113,21 @@
 </template>
 <script lang="ts">
 import { LIB_VERSION } from "../version";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { signOut } from "../main";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  doc,
+  getDoc,
+  setDoc,
+  DocumentData,
+} from "firebase/firestore";
+import { User } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import ActionButton from "./ActionButton.vue";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -123,9 +135,10 @@ import { generateKeypair } from "./wireguard";
 import { shortDate, downloadBlob } from "./helpers";
 import { useStateStore } from "../stores/state";
 import WaitMessages from "./WaitMessages.vue";
-const db = firebase.firestore();
+import { useCollection } from "vuefire";
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const stateStore = useStateStore();
     const showTasks = stateStore.showTasks;
@@ -134,15 +147,23 @@ export default Vue.extend({
     const user = stateStore.user;
     const { startTask, endTask } = stateStore;
     return { user, showTasks, startTask, endTask };
+    // user has no type information when accessing this.user.uid below
+    // this discussion may be relevant:
+    // https://github.com/vuejs/pinia/discussions/1178
   },
   components: { ActionButton, WaitMessages },
   data() {
     return {
       VERSION: LIB_VERSION,
-      item: {} as firebase.firestore.DocumentData,
-      managers: [] as firebase.firestore.DocumentData[],
-      divisions: [] as firebase.firestore.DocumentData[],
-      wireguardClients: [] as firebase.firestore.DocumentData[],
+      item: {} as DocumentData,
+      managers: useCollection(collection(db, "ManagerNames")),
+      divisions: useCollection(collection(db, "Divisions")),
+      wireguardClients: useCollection(
+        query(
+          collection(db, "WireGuardClients"),
+          where("uid", "==", (this.user as unknown as User).uid) // TODO: why is this.user of type never here?
+        )
+      ),
     };
   },
   computed: {
@@ -151,12 +172,6 @@ export default Vue.extend({
     },
   },
   created() {
-    this.$bind("managers", db.collection("ManagerNames"));
-    this.$bind("divisions", db.collection("Divisions"));
-    this.$bind(
-      "wireguardClients",
-      db.collection("WireGuardClients").where("uid", "==", this.user.uid)
-    );
     this.setItem(this.user.uid);
   },
   methods: {
@@ -168,15 +183,12 @@ export default Vue.extend({
         str.substring(0, first_n) + "..." + str.substring(str.length - last_n)
       );
     },
-    async generateWireguardConfigAndDownload(
-      client: firebase.firestore.DocumentData
-    ) {
+    async generateWireguardConfigAndDownload(client: DocumentData) {
       const { privateKey, publicKey } = generateKeypair();
 
       // Upload the public key to the server.
-      const wgSetPublicKey = firebase
-        .functions()
-        .httpsCallable("wgSetPublicKey");
+      const functions = getFunctions(firebaseApp);
+      const wgSetPublicKey = httpsCallable(functions, "wgSetPublicKey");
       this.startTask({
         id: "setPublicKey",
         message: "setting public key...",
@@ -253,10 +265,8 @@ Add-LocalGroupMember -Group 'Network Configuration Operators' -Member 'TBTE\\${c
     },
     setItem(id: string) {
       if (id) {
-        db.collection("Profiles")
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(db, "Profiles", id))
+          .then((snap) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -291,10 +301,11 @@ Add-LocalGroupMember -Group 'Network Configuration Operators' -Member 'TBTE\\${c
       if (typeof this.item.alternateManager === "string") {
         obj.alternateManager = this.item.alternateManager;
       }
-      db.collection("Profiles")
-        .doc(this.user.uid)
-        .set(obj, { merge: true })
-        .then(signOut);
+      setDoc(doc(db, "Profiles", this.user.uid), obj, { merge: true })
+        .then(signOut)
+        .catch((error) => {
+          alert(`Error saving profile: ${error.message}`);
+        });
     },
   },
 });

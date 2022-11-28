@@ -1,6 +1,6 @@
 <template>
   <form id="editor">
-    <span class="field" v-if="collection === 'TimeAmendments'">
+    <span class="field" v-if="collectionName === 'TimeAmendments'">
       <select class="grow" name="uid" v-model="item.uid">
         <option disabled selected value="">-- choose an employee --</option>
         <option v-for="p in profiles" :value="p.id" v-bind:key="p.id">
@@ -11,6 +11,15 @@
     <span class="field">
       <datepicker
         name="datepicker"
+        placeholder="Date"
+        :auto-apply="true"
+        :min-date="dps.disabled.to"
+        :max-date="dps.disabled.from"
+        :highlight="dps.highlighted.dates"
+        v-model="item.date"
+      />
+      <!-- <datepicker
+        name="datepicker"
         input-class="calendar-input"
         wrapper-class="calendar-wrapper"
         placeholder="Date"
@@ -18,7 +27,7 @@
         :disabledDates="dps.disabled"
         :highlighted="dps.highlighted"
         v-model="item.date"
-      />
+      /> -->
     </span>
     <span class="field">
       <select class="grow" name="timetype" v-model="item.timetype">
@@ -167,25 +176,37 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { defineComponent } from "vue";
+import firebase, { firebaseApp } from "../firebase";
+import { useCollection } from "vuefire";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  CollectionReference,
+  DocumentSnapshot,
+  DocumentData,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 import { useStateStore } from "../stores/state";
-import Datepicker from "vuejs-datepicker";
+import Datepicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 import { addWeeks, subWeeks } from "date-fns";
 import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
 import ActionButton from "./ActionButton.vue";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     // user doesn't need to be reactive so no refs wanted, just the user object,
     // so we don't use storeToRefs() to toRef()
     return { user: useStateStore().user };
   },
-  components: { Datepicker, ActionButton },
-  props: ["id", "collection"],
+  components: { ActionButton, Datepicker },
+  props: ["id", "collectionName"],
   data() {
     return {
       dps: {
@@ -199,11 +220,11 @@ export default Vue.extend({
         },
       },
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      divisions: [] as firebase.firestore.DocumentData[],
-      timetypes: [] as firebase.firestore.DocumentData[],
-      profiles: [] as firebase.firestore.DocumentData[],
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      divisions: useCollection(collection(db, "Divisions")),
+      timetypes: useCollection(collection(db, "TimeTypes")),
+      profiles: useCollection(collection(db, "Profiles")),
+      item: {} as DocumentData,
       job: undefined as string | undefined,
     };
   },
@@ -255,20 +276,16 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("divisions", db.collection("Divisions"));
-    this.$bind("timetypes", db.collection("TimeTypes"));
-    this.$bind("profiles", db.collection("Profiles"));
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
-    this.setup();
+    this.setupInit();
   },
   methods: {
-    async setup() {
-      const profileSecrets = await db
-        .collection("ProfileSecrets")
-        .doc(this.user.uid)
-        .get();
+    async setupInit() {
+      const profileSecrets = await getDoc(
+        doc(db, "ProfileSecrets", this.user.uid)
+      );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const writeJobToItem = (values: any) => {
         this.job = values.objectID;
@@ -315,10 +332,8 @@ export default Vue.extend({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id))
+          .then((snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -334,17 +349,14 @@ export default Vue.extend({
             this.$router.push(this.parentPath);
           });
       } else {
-        const profile = await db
-          .collection("Profiles")
-          .doc(this.user.uid)
-          .get();
+        const profile = await getDoc(doc(db, "Profiles", this.user.uid));
         const defaultDivision = profile.get("defaultDivision");
         this.item = {
           date: new Date(),
           timetype: "R",
           division: defaultDivision ?? "",
         };
-        if (this.collection === "TimeAmendments") {
+        if (this.collectionName === "TimeAmendments") {
           // setting the uid blank surfaces the choose option in the UI
           this.item.uid = "";
         }
@@ -353,7 +365,7 @@ export default Vue.extend({
     save() {
       // Populate the Time Type Name
       this.item.timetypeName = this.timetypes.filter(
-        (i: firebase.firestore.DocumentData) => i.id === this.item.timetype
+        (i: DocumentData) => i.id === this.item.timetype
       )[0].name;
 
       // if timetype isn't R or RT, delete disallowed properties
@@ -373,7 +385,7 @@ export default Vue.extend({
         if (this.item.division && this.item.division.length > 0) {
           // write divisionName
           this.item.divisionName = this.divisions.filter(
-            (i: firebase.firestore.DocumentData) => i.id === this.item.division
+            (i: DocumentData) => i.id === this.item.division
           )[0].name;
         } else {
           throw "Division Missing";
@@ -429,7 +441,7 @@ export default Vue.extend({
 
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
-      if (this.collection === "TimeEntries") {
+      if (this.collectionName === "TimeEntries") {
         // include uid of the creating user
         this.item.uid = this.user.uid;
       }
@@ -442,11 +454,11 @@ export default Vue.extend({
       // If we're creating an Amendment rather than a TimeEntry, add a creator
       // and creator name, set the displayName from the uid given in the UI,
       // and add a sentinel for the server timestamp
-      if (this.collection === "TimeAmendments") {
+      if (this.collectionName === "TimeAmendments") {
         try {
           // Populate the displayName, surname & givenName
           const profile = this.profiles.filter(
-            (i: firebase.firestore.DocumentData) => i.id === this.item.uid
+            (i: DocumentData) => i.id === this.item.uid
           )[0];
           this.item.displayName = profile.displayName;
           this.item.surname = profile.surname;
@@ -468,9 +480,7 @@ export default Vue.extend({
 
       if (this.id) {
         // Editing an existing item
-        this.collectionObject
-          .doc(this.id)
-          .set(this.item)
+        setDoc(doc(this.collectionObject, this.id), this.item)
           .then(() => {
             this.$router.push(this.parentPath);
           })
@@ -481,9 +491,7 @@ export default Vue.extend({
           });
       } else {
         // Creating a new item
-        this.collectionObject
-          .doc()
-          .set(this.item)
+        setDoc(doc(this.collectionObject), this.item)
           .then(() => {
             this.$router.push(this.parentPath);
           })

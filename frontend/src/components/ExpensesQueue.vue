@@ -142,20 +142,32 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { downloadAttachment, shortDate } from "./helpers";
 import Modal from "./RejectModal.vue";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  CollectionReference,
+  DocumentData,
+  collection,
+  query,
+  where,
+  orderBy,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from "firebase/firestore";
 import ActionButton from "./ActionButton.vue";
 import { useStateStore } from "../stores/state";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { user: store.user };
   },
-  props: ["collection"],
+  props: ["collectionName"],
   components: {
     ActionButton,
     Modal,
@@ -163,7 +175,7 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
+      collectionObject: null as CollectionReference | null,
       approved: [],
       submitted: [],
     };
@@ -171,33 +183,27 @@ export default Vue.extend({
   methods: {
     shortDate,
     downloadAttachment,
-    commitItem(
-      item: firebase.firestore.DocumentData,
-      collection: firebase.firestore.CollectionReference
-    ) {
+    commitItem(item: DocumentData, collection: CollectionReference) {
       if (collection === null) {
         throw "There is no valid collection object";
       }
-      collection
-        .doc(item.id)
-        .update({
-          committed: true,
-          commitTime: firebase.firestore.FieldValue.serverTimestamp(),
-          commitUid: this.user.uid,
-          commitName: this.user.displayName,
-          exported: false,
-        })
-        .catch((error: unknown) => {
-          if (error instanceof Error) {
-            alert(`Error committing item: ${error.message}`);
-          } else alert(`Error committing item: ${JSON.stringify(error)}`);
-        });
+      updateDoc(doc(collection, item.id), {
+        committed: true,
+        commitTime: serverTimestamp(),
+        commitUid: this.user.uid,
+        commitName: this.user.displayName,
+        exported: false,
+      }).catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Error committing item: ${error.message}`);
+        } else alert(`Error committing item: ${JSON.stringify(error)}`);
+      });
     },
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     if (this.collectionObject === null) {
       throw "There is no valid collection object";
     }
@@ -207,12 +213,14 @@ export default Vue.extend({
     }
 
     // populate approved items awaiting commit
-    this.$bind(
+    this.$firestoreBind(
       "approved",
-      this.collectionObject
-        .where("approved", "==", true)
-        .where("committed", "==", false)
-        .orderBy("date", "desc")
+      query(
+        this.collectionObject,
+        where("approved", "==", true),
+        where("committed", "==", false),
+        orderBy("date", "desc")
+      )
     ).catch((error: unknown) => {
       if (error instanceof Error) {
         alert(`Can't load Expenses: ${error.message}`);
@@ -220,12 +228,14 @@ export default Vue.extend({
     });
 
     // populate submitted items awaiting commit
-    this.$bind(
+    this.$firestoreBind(
       "submitted",
-      this.collectionObject
-        .where("submitted", "==", true)
-        .where("approved", "==", false)
-        .orderBy("date", "desc")
+      query(
+        this.collectionObject,
+        where("submitted", "==", true),
+        where("approved", "==", false),
+        orderBy("date", "desc")
+      )
     ).catch((error: unknown) => {
       if (error instanceof Error) {
         alert(`Can't load Expenses: ${error.message}`);

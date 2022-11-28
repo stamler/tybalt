@@ -41,14 +41,23 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import firebase from "../firebase";
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  updateDoc,
+  collection,
+  doc,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { useCollection } from "vuefire";
 import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
-  props: ["collection"],
+export default defineComponent({
+  props: ["collectionName"],
   components: {
     PlusCircleIcon,
     XCircleIcon,
@@ -60,16 +69,17 @@ export default Vue.extend({
       itemId: "",
       newViewer: "",
       viewerIds: [] as string[],
-      managers: [] as firebase.firestore.DocumentData[],
+      managers: useCollection(
+        query(collection(db, "ManagerNames"), orderBy("displayName"))
+      ),
     };
   },
   methods: {
     async saveThenClose() {
       try {
-        await db
-          .collection(this.collection)
-          .doc(this.itemId)
-          .update({ viewerIds: this.viewerIds });
+        await updateDoc(doc(this.collectionName, this.itemId), {
+          viewerIds: this.viewerIds,
+        });
         this.closeModal();
       } catch (error) {
         alert(`Update sharing failed: ${error}`);
@@ -96,12 +106,8 @@ export default Vue.extend({
     },
   },
   created() {
-    this.$bind(
-      "managers",
-      db.collection("ManagerNames").orderBy("displayName")
-    );
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
   },
 });
 </script>

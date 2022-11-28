@@ -216,24 +216,36 @@ import {
   downloadAttachment,
 } from "./helpers";
 import Modal from "./RejectModal.vue";
-import firebase from "../firebase";
-import Vue from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  CollectionReference,
+  DocumentData,
+  DocumentSnapshot,
+  doc,
+  runTransaction,
+  query,
+  where,
+  orderBy,
+  collection,
+} from "firebase/firestore";
+import { defineComponent } from "vue";
 import { format, addDays } from "date-fns";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon, ClockIcon, DollarSignIcon } from "vue-feather-icons";
 import { useStateStore } from "../stores/state";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
     return { user: store.user, startTask, endTask };
   },
-  props: ["approved", "collection"],
+  props: ["approved", "collectionName"],
   computed: {
-    processedItems(): { [uid: string]: firebase.firestore.DocumentData[] } {
+    processedItems(): { [uid: string]: DocumentData[] } {
       return _.groupBy(this.items, (x) =>
         nextSaturday(x.date.toDate()).getTime()
       );
@@ -249,8 +261,8 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   methods: {
@@ -268,25 +280,22 @@ export default Vue.extend({
         id: `recall${expenseId}`,
         message: "recalling",
       });
-      const expense = db.collection("Expenses").doc(expenseId);
+      const expense = doc(db, "Expenses", expenseId);
 
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(expense)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `An expense with id ${expenseId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (data !== undefined && data.approved === false) {
-                // timesheet is recallable because it hasn't yet been approved
-                transaction.update(expense, { submitted: false });
-              } else {
-                throw "The expense was already approved by a manager";
-              }
-            });
-        })
+      return runTransaction(db, async (transaction) => {
+        return transaction.get(expense).then((tsDoc: DocumentSnapshot) => {
+          if (!tsDoc.exists) {
+            throw `An expense with id ${expenseId} doesn't exist.`;
+          }
+          const data = tsDoc?.data() ?? undefined;
+          if (data !== undefined && data.approved === false) {
+            // timesheet is recallable because it hasn't yet been approved
+            transaction.update(expense, { submitted: false });
+          } else {
+            throw "The expense was already approved by a manager";
+          }
+        });
+      })
         .then(() => {
           this.endTask(`recall${expenseId}`);
         })
@@ -300,24 +309,21 @@ export default Vue.extend({
         id: `approve${itemId}`,
         message: "approving",
       });
-      const item = db.collection("Expenses").doc(itemId);
-      return db
-        .runTransaction(function (transaction) {
-          return transaction
-            .get(item)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `An expense with id ${itemId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (data !== undefined && data.submitted === true) {
-                // timesheet is approvable because it has been submitted
-                transaction.update(item, { approved: true, committed: false });
-              } else {
-                throw "The expense has not been submitted";
-              }
-            });
-        })
+      const item = doc(db, "Expenses", itemId);
+      return runTransaction(db, async (transaction) => {
+        return transaction.get(item).then((tsDoc: DocumentSnapshot) => {
+          if (!tsDoc.exists) {
+            throw `An expense with id ${itemId} doesn't exist.`;
+          }
+          const data = tsDoc?.data() ?? undefined;
+          if (data !== undefined && data.submitted === true) {
+            // timesheet is approvable because it has been submitted
+            transaction.update(item, { approved: true, committed: false });
+          } else {
+            throw "The expense has not been submitted";
+          }
+        });
+      })
         .then(() => {
           this.endTask(`approve${itemId}`);
           this.$router.push({ name: "Expenses Pending" });
@@ -336,7 +342,7 @@ export default Vue.extend({
         await submitExpense(id);
       }
     },
-    commitMessage(item: firebase.firestore.DocumentData) {
+    commitMessage(item: DocumentData) {
       if (item.payPeriodEnding) {
         return `Reimbursed on ${format(
           addDays(item.payPeriodEnding.toDate(), 13),
@@ -349,7 +355,7 @@ export default Vue.extend({
         return "Reimbused on payroll";
       }
     },
-    lateCommitMessage(item: firebase.firestore.DocumentData) {
+    lateCommitMessage(item: DocumentData) {
       return `Committed ${format(
         item.commitTime.toDate(),
         "MMM dd"
@@ -361,7 +367,7 @@ export default Vue.extend({
         "MMM dd"
       )}`;
     },
-    originalPayPeriod(item: firebase.firestore.DocumentData) {
+    originalPayPeriod(item: DocumentData) {
       const date = nextSaturday(item.date.toDate());
       if (isPayrollWeek2(date)) {
         return date;
@@ -380,13 +386,15 @@ export default Vue.extend({
       if (typeof this.approved === "boolean") {
         // approved prop is defined, show pending or approved TimeSheets
         // belonging to users that this user manages
-        this.$bind(
+        this.$firestoreBind(
           "items",
-          this.collectionObject
-            .where("managerUid", "==", uid)
-            .where("approved", "==", this.approved)
-            .where("submitted", "==", true)
-            .orderBy("date", "desc")
+          query(
+            this.collectionObject,
+            where("managerUid", "==", uid),
+            where("approved", "==", this.approved),
+            where("submitted", "==", true),
+            orderBy("date", "desc")
+          )
         ).catch((error: unknown) => {
           if (error instanceof Error) {
             alert(`Can't load Expenses: ${error.message}`);
@@ -394,9 +402,13 @@ export default Vue.extend({
         });
       } else {
         // approved prop not defined, get user's own expenses
-        this.$bind(
+        this.$firestoreBind(
           "items",
-          this.collectionObject.where("uid", "==", uid).orderBy("date", "desc")
+          query(
+            this.collectionObject,
+            where("uid", "==", uid),
+            orderBy("date", "desc")
+          )
         ).catch((error: unknown) => {
           if (error instanceof Error) {
             alert(`Can't load Expenses: ${error.message}`);
@@ -407,8 +419,8 @@ export default Vue.extend({
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.$watch("approved", this.updateItems, { immediate: true });
   },
 });

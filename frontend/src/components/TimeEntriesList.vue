@@ -22,19 +22,19 @@
         <div class="anchorbox">{{ shortDate(item.date.toDate()) }}</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
-            <div class="headline" v-if="collection === 'TimeEntries'">
+            <div class="headline" v-if="collectionName === 'TimeEntries'">
               {{
                 item.timetype === "R" ? item.divisionName : item.timetypeName
               }}
             </div>
-            <div class="headline" v-if="collection === 'TimeAmendments'">
+            <div class="headline" v-if="collectionName === 'TimeAmendments'">
               {{ item.displayName }} -
               {{
                 item.timetype === "R" ? item.divisionName : item.timetypeName
               }}
               <template
                 v-if="
-                  collection === 'TimeAmendments' &&
+                  collectionName === 'TimeAmendments' &&
                   item.committed &&
                   item.committedWeekEnding
                 "
@@ -71,7 +71,7 @@
           </div>
         </div>
         <div class="rowactionsbox">
-          <template v-if="collection === 'TimeAmendments'">
+          <template v-if="collectionName === 'TimeAmendments'">
             <template v-if="item.committed === false">
               <action-button type="approve" @click="commit(item)" />
               <router-link
@@ -107,7 +107,7 @@
           </template>
         </div>
       </div>
-      <div class="listsummary" v-if="collection === 'TimeEntries'">
+      <div class="listsummary" v-if="collectionName === 'TimeEntries'">
         <div class="anchorbox">Totals</div>
         <div class="detailsbox">
           <div class="headline_wrapper">
@@ -169,17 +169,30 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { shortDate, copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import ActionButton from "./ActionButton.vue";
 import { EditIcon } from "vue-feather-icons";
 import { storeToRefs } from "pinia";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  CollectionReference,
+  query,
+  where,
+  orderBy,
+  DocumentData,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup: () => {
     const stateStore = useStateStore();
     const user = stateStore.user; // TODO: Why we can't use a ref here from storeToRefs
@@ -187,7 +200,7 @@ export default Vue.extend({
     const { startTask, endTask } = stateStore;
     return { activeTasks, showTasks, user, startTask, endTask };
   },
-  props: ["collection"],
+  props: ["collectionName"],
   components: {
     ActionButton,
     EditIcon,
@@ -195,8 +208,8 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
       openingOV: 0,
       openingOP: 0,
       usedOP: 0,
@@ -205,21 +218,18 @@ export default Vue.extend({
     };
   },
   watch: {
-    collection: {
+    collectionName: {
       immediate: true,
-      handler(collection) {
+      handler(collectionName) {
         this.parentPath =
-          this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ??
-          "";
-        this.collectionObject = db.collection(collection);
-        this.$bind("items", this.collectionObject);
+          this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+        this.collectionObject = collection(db, collectionName);
+        // this.$firestoreBind("items", this.collectionObject);
         const uid = this.user.uid;
         if (uid === undefined) {
           throw "There is no valid uid";
         }
-        db.collection("Profiles")
-          .doc(uid)
-          .get()
+        getDoc(doc(db, "Profiles", uid))
           .then((docSnap) => {
             this.openingOV = docSnap.get("openingOV") || 0;
             this.openingOP = docSnap.get("openingOP") || 0;
@@ -232,22 +242,24 @@ export default Vue.extend({
               alert(`Error loading profile: ${error.message}`);
             } else alert(`Error loading profile: ${JSON.stringify(error)}`);
           });
-        if (this.collection === "TimeEntries") {
-          this.$bind(
+        if (this.collectionName === "TimeEntries") {
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("uid", "==", uid)
-              .orderBy("date", "desc")
+            query(
+              this.collectionObject,
+              where("uid", "==", uid),
+              orderBy("date", "desc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Entries: ${error.message}`);
             } else alert(`Can't load Time Entries: ${JSON.stringify(error)}`);
           });
         }
-        if (this.collection === "TimeAmendments") {
-          this.$bind(
+        if (this.collectionName === "TimeAmendments") {
+          this.$firestoreBind(
             "items",
-            this.collectionObject.orderBy("date", "desc")
+            query(this.collectionObject, orderBy("date", "desc"))
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Amendments: ${error.message}`);
@@ -264,9 +276,7 @@ export default Vue.extend({
         id: "bundle",
         message: "verifying...",
       });
-      const bundleTimesheet = firebase
-        .functions()
-        .httpsCallable("bundleTimesheet");
+      const bundleTimesheet = httpsCallable(functions, "bundleTimesheet");
       return bundleTimesheet({ weekEnding: week.getTime() })
         .then(() => {
           this.endTask("bundle");
@@ -279,17 +289,18 @@ export default Vue.extend({
     },
     copyEntry,
     del,
-    dayIsSTThS(item: firebase.firestore.DocumentData): boolean {
+    dayIsSTThS(item: DocumentData): boolean {
       // return true if day is Sunday, Tuesday, Thursday or Saturday
       if (item.date.toDate().getDay() % 2 === 0) {
         return true;
       }
       return false;
     },
-    commit(item: firebase.firestore.DocumentData) {
-      const commitTimeAmendment = firebase
-        .functions()
-        .httpsCallable("commitTimeAmendment");
+    commit(item: DocumentData) {
+      const commitTimeAmendment = httpsCallable(
+        functions,
+        "commitTimeAmendment"
+      );
       this.startTask({
         id: `commitAmendment${item.id}`,
         message: "committing",
@@ -312,12 +323,12 @@ export default Vue.extend({
     },
     itemsByWeekEnding(weekEnding: number) {
       return this.items.filter(
-        (x: firebase.firestore.DocumentData) =>
+        (x: DocumentData) =>
           Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
           x.weekEnding.toDate().getTime() === Number(weekEnding)
       );
     },
-    hoursString(item: firebase.firestore.DocumentData) {
+    hoursString(item: DocumentData) {
       const hoursArray = [];
       if (item.hours) hoursArray.push(item.hours + " hrs");
       if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
@@ -339,8 +350,8 @@ export default Vue.extend({
     tallies() {
       interface WeekTally {
         weekEnding: Date;
-        bankEntries: firebase.firestore.DocumentData[];
-        payoutRequests: firebase.firestore.DocumentData[];
+        bankEntries: DocumentData[];
+        payoutRequests: DocumentData[];
         offRotationDates: number[];
         offWeek: number[];
         nonWorkHoursTally: { [timetype: string]: number; total: number };

@@ -16,11 +16,11 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import { RouteConfig } from "vue-router";
+import { defineComponent } from "vue";
+import { RouteRecordRaw } from "vue-router";
 import { useStateStore } from "../stores/state";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { claims: store.claims };
@@ -28,9 +28,9 @@ export default Vue.extend({
 
   computed: {
     // top level router entries that have a name property and are allowed
-    links(): RouteConfig[] {
+    links(): RouteRecordRaw[] {
       return (
-        this?.$router?.options?.routes?.filter((x: RouteConfig) => {
+        this?.$router?.options?.routes?.filter((x: RouteRecordRaw) => {
           if (x.name) {
             // filter out entries we don't have claims for if
             // next line is false to enable UI filtering by claims
@@ -43,9 +43,13 @@ export default Vue.extend({
               if (x.meta && x.meta?.claims) {
                 // There are claims requirements for this route, validate
                 // them by getting intersect of link.claims & this.claims
-                const intersect = x.meta?.claims.filter((y: string) =>
-                  Object.prototype.hasOwnProperty.call(this.claims, y)
-                );
+                let intersect = [];
+                if (Array.isArray(x.meta?.claims)) {
+                  const requiredClaims = x.meta?.claims as string[];
+                  intersect = requiredClaims.filter((y: string) =>
+                    Object.prototype.hasOwnProperty.call(this.claims, y)
+                  );
+                }
                 // ensure the value of at least one item is true
                 return intersect.some((y: string) => this.claims[y] === true);
               } else {

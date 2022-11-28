@@ -15,12 +15,12 @@
 </template>
 
 <script lang="ts">
-import { RouteConfig } from "vue-router";
-import Vue from "vue";
+import { RouteRecordRaw } from "vue-router";
+import { defineComponent } from "vue";
 import WaitMessages from "./WaitMessages.vue";
 import { storeToRefs } from "pinia";
 import { useStateStore } from "../stores/state";
-export default Vue.extend({
+export default defineComponent({
   setup: () => {
     const store = useStateStore();
     const { showTasks } = storeToRefs(store);
@@ -28,9 +28,9 @@ export default Vue.extend({
   },
   components: { WaitMessages },
   computed: {
-    siblingRoutes(): RouteConfig[] | null {
+    siblingRoutes(): RouteRecordRaw[] | null {
       const parentPath =
-        this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path;
+        this?.$route?.matched[this.$route.matched.length - 2]?.path;
       const currentRoute = this.getCurrentRoute(
         parentPath,
         this.$router.options.routes
@@ -39,13 +39,13 @@ export default Vue.extend({
     },
   },
   methods: {
-    uiLinkTitle(item: RouteConfig): string {
-      return item.meta?.uiName ?? item.name;
+    uiLinkTitle(item: RouteRecordRaw): string {
+      return (item.meta?.uiName as string) ?? (item.name as string);
     },
     // return true if the item has a showInUi property with a value
     // of true AND, if requiredClaims are present in the router, the user has
     // at least one of those claims. Return false otherwise.
-    filterUIRoutes(item: RouteConfig) {
+    filterUIRoutes(item: RouteRecordRaw) {
       const requiredClaims = item.meta?.requiredClaims;
       if (
         requiredClaims &&
@@ -74,8 +74,8 @@ export default Vue.extend({
     //https://github.com/vuejs/vue-router/issues/1149
     getCurrentRoute(
       path: string | undefined,
-      children: RouteConfig[] | undefined
-    ): RouteConfig | null {
+      children: readonly RouteRecordRaw[] | undefined
+    ): RouteRecordRaw | null {
       if (path && children) {
         for (const child of children) {
           if (path.length === 0 && child.path.length === 0) {

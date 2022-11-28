@@ -21,12 +21,12 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import firebase from "../firebase";
-import { HalfCircleSpinner } from "epic-spinners";
+// import { HalfCircleSpinner } from "epic-spinners";
 
-export default Vue.extend({
-  components: { HalfCircleSpinner },
+export default defineComponent({
+  // components: { HalfCircleSpinner },
   props: ["item", "newOpeningDate"],
   data() {
     return {

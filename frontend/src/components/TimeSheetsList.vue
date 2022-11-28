@@ -131,8 +131,17 @@
 <script lang="ts">
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
-import Vue from "vue";
-import firebase from "../firebase";
+import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 import _ from "lodash";
 import {
   shortDate,
@@ -143,14 +152,14 @@ import {
 } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { useStateStore } from "../stores/state";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     return { user: store.user };
   },
-  props: ["query", "collection"],
+  props: ["query", "collectionName"],
   computed: {
     _() {
       return _;
@@ -164,14 +173,14 @@ export default Vue.extend({
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
+      collectionObject: null as CollectionReference | null,
       items: [],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
     this.$watch(
       "query",
       () => {
@@ -184,14 +193,16 @@ export default Vue.extend({
         }
         if (this.query === "approved") {
           // show approved TimeSheets belonging to users that this user manages
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("managerUid", "==", uid)
-              .where("approved", "==", true)
-              .where("submitted", "==", true)
-              .orderBy("weekEnding", "desc")
-              .orderBy("displayName", "asc")
+            query(
+              this.collectionObject,
+              where("managerUid", "==", uid),
+              where("approved", "==", true),
+              where("submitted", "==", true),
+              orderBy("weekEnding", "desc"),
+              orderBy("displayName", "asc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Sheets: ${error.message}`);
@@ -199,14 +210,16 @@ export default Vue.extend({
           });
         } else if (this.query === "pending") {
           // show pending TimeSheets belonging to users that this user manages
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("managerUid", "==", uid)
-              .where("approved", "==", false)
-              .where("submitted", "==", true)
-              .orderBy("weekEnding", "desc")
-              .orderBy("displayName", "asc")
+            query(
+              this.collectionObject,
+              where("managerUid", "==", uid),
+              where("approved", "==", false),
+              where("submitted", "==", true),
+              orderBy("weekEnding", "desc"),
+              orderBy("displayName", "asc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Sheets: ${error.message}`);
@@ -214,24 +227,28 @@ export default Vue.extend({
           });
         } else if (this.query === "list") {
           // show this user's own timesheets
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("uid", "==", uid)
-              .orderBy("weekEnding", "desc")
+            query(
+              this.collectionObject,
+              where("uid", "==", uid),
+              orderBy("weekEnding", "desc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Sheets: ${error.message}`);
             } else alert(`Can't load Time Sheets: ${JSON.stringify(error)}`);
           });
         } else if (this.query === "shared") {
-          this.$bind(
+          this.$firestoreBind(
             "items",
-            this.collectionObject
-              .where("viewerIds", "array-contains", uid)
-              .where("submitted", "==", true)
-              .orderBy("weekEnding", "desc")
-              .orderBy("displayName", "asc")
+            query(
+              this.collectionObject,
+              where("viewerIds", "array-contains", uid),
+              where("submitted", "==", true),
+              orderBy("weekEnding", "desc"),
+              orderBy("displayName", "asc")
+            )
           ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Time Sheets: ${error.message}`);
@@ -248,21 +265,21 @@ export default Vue.extend({
     submitTs,
     unbundle,
     isPayrollWeek2,
-    unreviewed(item: firebase.firestore.DocumentData) {
+    unreviewed(item: DocumentData) {
       if (item.viewers) {
         return _.omit(item.viewers, item.reviewedIds);
       } else {
         return {};
       }
     },
-    reviewed(item: firebase.firestore.DocumentData) {
+    reviewed(item: DocumentData) {
       if (item.viewers) {
         return _.pick(item.viewers, item.reviewedIds);
       } else {
         return {};
       }
     },
-    hoursWorked(item: firebase.firestore.DocumentData) {
+    hoursWorked(item: DocumentData) {
       let workedHours = 0;
       workedHours += item.workHoursTally.hours;
       workedHours += item.workHoursTally.jobHours;
@@ -272,7 +289,7 @@ export default Vue.extend({
         return "no work";
       }
     },
-    hoursOff(item: firebase.firestore.DocumentData) {
+    hoursOff(item: DocumentData) {
       let hoursOff = 0;
       for (const timetype in item.nonWorkHoursTally) {
         hoursOff += item.nonWorkHoursTally[timetype];
@@ -283,7 +300,7 @@ export default Vue.extend({
         return "no time off";
       }
     },
-    jobs(item: firebase.firestore.DocumentData) {
+    jobs(item: DocumentData) {
       const jobs = Object.keys(item.jobsTally).sort().join(", ");
       if (jobs.length > 0) {
         return `jobs: ${jobs}`;
@@ -291,7 +308,7 @@ export default Vue.extend({
         return;
       }
     },
-    divisions(item: firebase.firestore.DocumentData) {
+    divisions(item: DocumentData) {
       const divisions = Object.keys(item.divisionsTally).sort().join(", ");
       if (divisions.length > 0) {
         return `divisions: ${divisions}`;

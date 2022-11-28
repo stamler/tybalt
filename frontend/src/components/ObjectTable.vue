@@ -40,13 +40,13 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import _ from "lodash";
 import { ArrowUpIcon, ArrowDownIcon } from "vue-feather-icons";
 import { TableData } from "./types";
 import ActionButton from "./ActionButton.vue";
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     ActionButton,
     ArrowUpIcon,

@@ -10,7 +10,7 @@
   </div>
 </template>
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import ActionButton from "./ActionButton.vue";
 import { downloadBlob } from "./helpers";
 import { useStateStore } from "../stores/state";
@@ -20,7 +20,7 @@ import { parse } from "json2csv";
 import { TableData, QueryPayloadObject } from "./types";
 import { debounce } from "lodash";
 
-export default Vue.extend({
+export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;

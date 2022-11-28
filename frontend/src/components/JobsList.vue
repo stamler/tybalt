@@ -29,18 +29,24 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { searchString } from "./helpers";
 import { EditIcon } from "vue-feather-icons";
-import firebase from "../firebase";
-const db = firebase.firestore();
-export default Vue.extend({
-  props: ["collection"],
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  CollectionReference,
+  DocumentData,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
+export default defineComponent({
+  props: ["collectionName"],
   components: {
     EditIcon,
   },
   computed: {
-    processedItems(): firebase.firestore.DocumentData[] {
+    processedItems(): DocumentData[] {
       // display maximum of 100 items though there may be way more
       // TODO: don't pull more than 50 items from the server at a time
       // scroll to the bottom to load more (infinite scroll)
@@ -49,7 +55,7 @@ export default Vue.extend({
       return this.items
         .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
         .filter(
-          (p: firebase.firestore.DocumentData) =>
+          (p: DocumentData) =>
             searchString(p).indexOf(this.search.toLowerCase()) >= 0
         )
         .slice(0, 100);
@@ -59,15 +65,15 @@ export default Vue.extend({
     return {
       search: "",
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [] as firebase.firestore.DocumentData[],
+      collectionObject: null as CollectionReference | null,
+      items: [] as DocumentData[],
     };
   },
   created() {
     this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
-    this.$bind("items", this.collectionObject);
+      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    this.collectionObject = collection(db, this.collectionName);
+    this.$firestoreBind("items", this.collectionObject);
   },
 });
 </script>

@@ -1,6 +1,24 @@
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { format, addDays, subDays, differenceInDays } from "date-fns";
-import firebase from "../firebase";
+import firebase, { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  deleteDoc,
+  DocumentData,
+  CollectionReference,
+  DocumentSnapshot,
+  runTransaction,
+  Timestamp,
+} from "firebase/firestore";
+import {
+  getFunctions,
+  httpsCallable,
+  HttpsCallableResult,
+} from "firebase/functions";
 import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
 import { parse } from "json2csv";
@@ -8,7 +26,8 @@ import { useStateStore } from "../stores/state";
 import router from "../router";
 import { pinia } from "../piniainit";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 const storage = firebase.storage();
 const store = useStateStore(pinia);
 
@@ -214,7 +233,7 @@ export function foldAmendments(items: (TimeSheet | Amendment)[]) {
 }
 
 export async function generateTimeReportCSV(
-  urlOrFirestoreTimeSheet: string | firebase.firestore.DocumentData
+  urlOrFirestoreTimeSheet: string | DocumentData
 ) {
   let items: (TimeSheet | Amendment)[];
   let amendments: Amendment[];
@@ -400,7 +419,7 @@ export function downloadBlob(blob: Blob, filename: string, inline = false) {
 }
 
 export async function downloadAttachment(
-  item: firebase.firestore.DocumentData,
+  item: DocumentData,
   sameTab?: boolean
 ) {
   const url = await storage.ref(item.attachment).getDownloadURL();
@@ -416,7 +435,7 @@ export async function downloadAttachment(
 }
 
 export function submitExpense(expenseId: string) {
-  const submitExpense = firebase.functions().httpsCallable("submitExpense");
+  const submitExpense = httpsCallable(functions, "submitExpense");
   store.startTask({
     id: `submit${expenseId}`,
     message: "submitting",
@@ -431,16 +450,13 @@ export function submitExpense(expenseId: string) {
     });
 }
 
-export function searchString(item: firebase.firestore.DocumentData) {
+export function searchString(item: DocumentData) {
   const fields = Object.values(item);
   fields.push(item.id);
   return fields.join(",").toLowerCase();
 }
 
-export function copyEntry(
-  item: firebase.firestore.DocumentData,
-  collection: firebase.firestore.CollectionReference
-) {
+export function copyEntry(item: DocumentData, collection: CollectionReference) {
   if (confirm("Want to copy this entry to tomorrow?")) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { date, ...newItem } = item;
@@ -452,8 +468,7 @@ export function copyEntry(
     if (collection === null) {
       throw "There is no valid collection object";
     }
-    return collection
-      .add(newItem)
+    return addDoc(collection, newItem)
       .then(() => {
         store.endTask(`copy${item.id}`);
       })
@@ -464,21 +479,15 @@ export function copyEntry(
   }
 }
 
-export function del(
-  item: firebase.firestore.DocumentData,
-  collection: firebase.firestore.CollectionReference
-) {
+export function del(item: DocumentData, collection: CollectionReference) {
   if (collection === null) {
     throw "There is no valid collection object";
   }
-  collection
-    .doc(item.id)
-    .delete()
-    .catch((error: unknown) => {
-      if (error instanceof Error) {
-        alert(`Error deleting item: ${error.message}`);
-      } else alert(`Error deleting item: ${JSON.stringify(error)}`);
-    });
+  deleteDoc(doc(collection, item.id)).catch((error: unknown) => {
+    if (error instanceof Error) {
+      alert(`Error deleting item: ${error.message}`);
+    } else alert(`Error deleting item: ${JSON.stringify(error)}`);
+  });
 }
 
 export function recallTs(timesheetId: string) {
@@ -490,40 +499,36 @@ export function recallTs(timesheetId: string) {
     id: `recall${timesheetId}`,
     message: "recalling",
   });
-  const timesheet = db.collection("TimeSheets").doc(timesheetId);
+  const timesheet = doc(collection(db, "TimeSheets"), timesheetId);
 
-  return db
-    .runTransaction(function (transaction) {
-      return transaction
-        .get(timesheet)
-        .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-          if (!tsDoc.exists) {
-            throw `A timesheet with id ${timesheetId} doesn't exist.`;
-          }
-          const data = tsDoc?.data() ?? undefined;
-          if (data !== undefined && data.approved === false) {
-            // timesheet is recallable because it hasn't yet been approved
-            transaction.update(timesheet, { submitted: false });
-          } else {
-            throw "The timesheet was already approved by a manager";
-          }
-        });
-    })
+  return runTransaction(db, async (transaction) => {
+    return transaction.get(timesheet).then((tsDoc: DocumentSnapshot) => {
+      if (!tsDoc.exists) {
+        throw `A timesheet with id ${timesheetId} doesn't exist.`;
+      }
+      const data = tsDoc?.data() ?? undefined;
+      if (data !== undefined && data.approved === false) {
+        // timesheet is recallable because it hasn't yet been approved
+        transaction.update(timesheet, { submitted: false });
+      } else {
+        throw "The timesheet was already approved by a manager";
+      }
+    });
+  })
     .then(() => {
       store.endTask(`recall${timesheetId}`);
       return unbundle(timesheetId);
     })
-    .catch(function (error) {
+    .catch((error: unknown) => {
       store.endTask(`recall${timesheetId}`);
-      alert(`Recall failed: ${error}`);
+      if (error instanceof Error) alert(`Recall failed: ${error.message}`);
+      else alert(`Recall failed: ${JSON.stringify(error)}`);
     });
 }
 
-export function unbundle(timesheetId: string) {
+export async function unbundle(timesheetId: string) {
   store.startTask({ id: "unbundle", message: "unbundling" });
-  const unbundleTimesheet = firebase
-    .functions()
-    .httpsCallable("unbundleTimesheet");
+  const unbundleTimesheet = httpsCallable(functions, "unbundleTimesheet");
   return unbundleTimesheet({ id: timesheetId })
     .then(() => {
       store.endTask("unbundle");
@@ -540,9 +545,11 @@ export function submitTs(timesheetId: string) {
     id: `submit${timesheetId}`,
     message: "submitting",
   });
-  db.collection("TimeSheets")
-    .doc(timesheetId)
-    .set({ submitted: true }, { merge: true })
+  setDoc(
+    doc(db, "TimeSheets", timesheetId),
+    { submitted: true },
+    { merge: true }
+  )
     .then(() => {
       store.endTask(`submit${timesheetId}`);
       router.push({ name: "Time Sheets" });
@@ -554,7 +561,7 @@ export function submitTs(timesheetId: string) {
 }
 
 export async function generatePayablesCSVSQL(
-  timestamp: firebase.firestore.Timestamp,
+  timestamp: Timestamp,
   type: "payroll" | "weekly"
 ) {
   const start = new Date();
@@ -567,9 +574,9 @@ export async function generatePayablesCSVSQL(
     "America/Thunder_Bay"
   );
   const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
-  const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+  const queryMySQL = httpsCallable(functions, "queryMySQL");
   try {
-    let response;
+    let response: HttpsCallableResult;
     // type determines whether we push out one or two weeks of data.
     if (type === "payroll") {
       response = await queryMySQL({
@@ -586,7 +593,7 @@ export async function generatePayablesCSVSQL(
     }
     // post-processing of response data for CSV conversion
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dat = response.data.map((x: any) => {
+    const dat = (response.data as Array<any>).map((x: any) => {
       const processed = x;
       // Coerce number-like payrollID strings to numbers
       if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID

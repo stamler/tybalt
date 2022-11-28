@@ -1,22 +1,22 @@
 import Vue from "vue";
-import { firestorePlugin } from "vuefire";
-import InstantSearch from "vue-instantsearch";
+import { App, createApp } from "vue";
+import { VueFire, VueFireFirestoreOptionsAPI } from "vuefire";
+import InstantSearch from "vue-instantsearch/vue3/es";
 
 Vue.config.productionTip = false;
-Vue.use(firestorePlugin);
 Vue.use(InstantSearch);
 
 // first import is here to initializeApp()
 import firebase from "./firebase";
-import App from "./App.vue";
+import AppRootComponent from "./App.vue";
 import router from "./router";
-import { PiniaVuePlugin } from "pinia";
-Vue.use(PiniaVuePlugin);
+// import { PiniaVuePlugin } from "pinia";
+// Vue.use(PiniaVuePlugin);
 import { pinia } from "./piniainit";
 import { useStateStore } from "./stores/state";
 import { subDays } from "date-fns";
 
-let app: Vue | null = null;
+let app: App;
 
 // https://github.com/firebase/quickstart-js/blob/master/auth/microsoft-redirect.html
 /* Handle the redirect extracting a token if it exists */
@@ -100,11 +100,12 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
     );
     Promise.all(tasks).then(() => {
       if (!app) {
-        app = new Vue({
-          router,
-          pinia,
-          render: (h) => h(App), // h is an alias for createElement
-        }).$mount("#app");
+        app = createApp(AppRootComponent);
+        app.use(router);
+        app.use(pinia);
+        app.use(InstantSearch);
+        app.use(VueFire, { modules: [VueFireFirestoreOptionsAPI()] }); // Use this module for $firestoreBind
+        app.mount("#app");
       }
     });
   } else {
