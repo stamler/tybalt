@@ -29,6 +29,9 @@
         </div>
         <span class="field">
           <label class="labels" for="openingOV">Opening Vacation Hours:</label>
+          <span class="label" v-if="typeof item.openingOV !== 'number'">
+            missing
+          </span>
           <input
             style="width: 5em; display: inline"
             type="number"
@@ -50,6 +53,9 @@
         </span>
         <span>
           <label class="labels" for="openingOP">Opening PPTO Hours:</label>
+          <span class="label" v-if="typeof item.openingOP !== 'number'">
+            missing
+          </span>
           <input
             style="width: 5em; display: inline"
             type="number"

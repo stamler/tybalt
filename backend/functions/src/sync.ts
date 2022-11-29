@@ -546,7 +546,13 @@ export async function exportProfiles() {
     // except that on the UPSERT if the data already exists and isn't changed
     // then the timestamp won't be updated.
     profile.timestamp = now;
-    profile.openingDateTimeOff = format(utcToZonedTime(profile.openingDateTimeOff.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd")
+    // if openingDateTimeOff is null, log a warning and skip this profile
+    const stamp = profile.openingDateTimeOff;
+    if (stamp === null || stamp === undefined) {
+      functions.logger.warn(`${profile.displayName}'s profile ${profile.id} has null or undefined openingDateTimeOff and will not be exported.`);
+      return;
+    }
+    profile.openingDateTimeOff = format(utcToZonedTime(stamp.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd")
     return profilesFields.map(x => profile[x]);
   });
   // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been
