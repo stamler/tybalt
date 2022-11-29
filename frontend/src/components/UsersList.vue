@@ -165,7 +165,7 @@ export default Vue.extend({
               .where("isInOnPremisesAD", "==", false)
               .orderBy("surname", "asc")
               .orderBy("givenName", "asc")
-          ).catch((error) => {
+          ).catch((error: unknown) => {
             if (error instanceof Error) {
               alert(`Can't load Users: ${error.message}`);
             } else alert(`Can't load Users: ${JSON.stringify(error)}`);

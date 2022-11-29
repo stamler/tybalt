@@ -123,8 +123,10 @@ export default Vue.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject.orderBy("surname")).catch(
-      (error) => {
-        alert(`Can't load Profiles: ${error.message}`);
+      (error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Can't load Profiles: ${error.message}`);
+        } else alert(`Can't load Profiles: ${JSON.stringify(error)}`);
       }
     );
   },

@@ -53,7 +53,7 @@ export default Vue.extend({
           this.collection
             .doc(id)
             .get()
-            .then((snap) => {
+            .then((snap: firebase.firestore.DocumentSnapshot) => {
               if (snap.exists) {
                 this.item = snap.data();
                 const usa = this?.item?.userSourceAnchor ?? false;
@@ -73,7 +73,7 @@ export default Vue.extend({
                 this.collection
                   .where("userSourceAnchor", "==", id)
                   .get()
-                  .then((snap) => {
+                  .then((snap: firebase.firestore.QuerySnapshot) => {
                     if (snap.size !== 1) {
                       // Either doesn't exist or multiple exist,
                       if (snap.size > 1) {

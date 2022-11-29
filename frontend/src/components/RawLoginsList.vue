@@ -93,8 +93,10 @@ export default Vue.extend({
       this?.$route?.matched[this.$route.matched.length - 1]?.parent?.path ?? "";
     this.collectionObject = db.collection(this.collection);
     this.$bind("items", this.collectionObject.orderBy("created", "desc")).catch(
-      (error) => {
-        alert(`Can't load Raw Logins: ${error.message}`);
+      (error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Can't load Raw Logins: ${error.message}`);
+        } else alert(`Can't load Raw Logins: ${JSON.stringify(error)}`);
       }
     );
   },

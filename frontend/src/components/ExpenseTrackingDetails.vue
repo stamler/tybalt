@@ -105,7 +105,7 @@ export default Vue.extend({
       return _.groupBy(this.expenses, "uid");
     },
     countOfExpensesWithAttachments(): number {
-      return this.expenses.filter((x) =>
+      return this.expenses.filter((x: firebase.firestore.DocumentData) =>
         Object.prototype.hasOwnProperty.call(x, "attachment")
       ).length;
     },
@@ -144,7 +144,7 @@ export default Vue.extend({
         this.collectionObject
           .doc(id)
           .get()
-          .then((snap) => {
+          .then((snap: firebase.firestore.DocumentSnapshot) => {
             if (snap.exists) {
               this.item = snap.data();
               if (this.item === undefined) {

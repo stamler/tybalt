@@ -120,7 +120,7 @@ export default Vue.extend({
     return {
       parentPath: "",
       collectionObject: null as firebase.firestore.CollectionReference | null,
-      items: [],
+      items: [] as firebase.firestore.DocumentData[],
     };
   },
   created() {
@@ -383,36 +383,38 @@ export default Vue.extend({
         "salary",
       ];
       const opts = { fields, withBOM: true };
-      const timesheetRecords = items.map((x) => {
-        if (!isTimeSheet(x)) {
-          throw new Error(
-            "(Payroll)There was an error validating the timesheet"
+      const timesheetRecords = items.map(
+        (x: firebase.firestore.DocumentData) => {
+          if (!isTimeSheet(x)) {
+            throw new Error(
+              "(Payroll)There was an error validating the timesheet"
+            );
+          }
+          const item = _.pick(x, [
+            "weekEnding",
+            "surname",
+            "givenName",
+            "displayName",
+            "managerName",
+            "mealsHoursTally",
+            "offRotationDaysTally",
+            "payoutRequest",
+            "hasAmendmentsForWeeksEnding",
+            "salary",
+            "tbtePayrollId",
+          ]) as PayrollReportRecord;
+          item.weekEnding = format(
+            utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
+            "yyyy MMM dd"
           );
+          item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
+          item.RB = x.bankedHours;
+          for (const key in x.nonWorkHoursTally) {
+            item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
+          }
+          return item;
         }
-        const item = _.pick(x, [
-          "weekEnding",
-          "surname",
-          "givenName",
-          "displayName",
-          "managerName",
-          "mealsHoursTally",
-          "offRotationDaysTally",
-          "payoutRequest",
-          "hasAmendmentsForWeeksEnding",
-          "salary",
-          "tbtePayrollId",
-        ]) as PayrollReportRecord;
-        item.weekEnding = format(
-          utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
-          "yyyy MMM dd"
-        );
-        item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
-        item.RB = x.bankedHours;
-        for (const key in x.nonWorkHoursTally) {
-          item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
-        }
-        return item;
-      });
+      );
       const amendmentRecords = amendments.map((x: Amendment) => {
         const item: PayrollReportRecord = {
           hasAmendmentsForWeeksEnding: [x.weekEnding],
@@ -439,7 +441,8 @@ export default Vue.extend({
         return item;
       });
       // Sort the records by tbtePayrollId ascending
-      const joined = timesheetRecords.concat(amendmentRecords);
+      const joined: PayrollReportRecord[] =
+        timesheetRecords.concat(amendmentRecords);
       joined.sort((a, b) => {
         const aval = Number(a.tbtePayrollId);
         const bval = Number(b.tbtePayrollId);
