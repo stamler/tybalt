@@ -156,6 +156,9 @@ export async function createProfile(user: admin.auth.UserRecord) {
       customClaims,
       ...mutationProps,
       timeSheetExpected: true,
+      openingDateTimeOff: admin.firestore.FieldValue.serverTimestamp(),
+      openingOV: 0,
+      openingOP: 0,
     }, { merge: true });
     return batch.commit();
   } catch (error) {
