@@ -309,9 +309,10 @@ export async function tallyAndValidate(
 
   // throw if openingDateTimeOff is after the weekEnding value. This will
   // prevent submission of an old timesheet if the openingDateTimeOff value has
-  // already been updated to the next fiscal year.
+  // already been updated to the next fiscal year. This error is only triggered
+  // if PPTO or Vacation are claimed on this timesheet.
   const opdate: Date = profile.get("openingDateTimeOff").toDate();
-  if (opdate > weekEnding) {
+  if (discretionaryTimeOff > 0 && opdate > weekEnding) {
     throw new functions.https.HttpsError(
       "failed-precondition",
       `Your opening balances were set effective ${opdate.toISOString()} but you are submitting a timesheet for a period prior to that. Have accounting revert to earlier values prior to submitting this timesheet.`
@@ -327,16 +328,18 @@ export async function tallyAndValidate(
   // isn't, then the opening balances are out of date and the timesheet cannot
   // be submitted until the opening balances are updated by accounting. This is
   // to prevent the user from claiming expired time off from a previous year on
-  // a timesheet in the following year.
+  // a timesheet in the following year. This error is only triggered if PPTO or
+  // Vacation are claimed on this timesheet.
   const annualDates = await db.collection("Config").doc("AnnualDates").get()
   const timeOffResetDates: admin.firestore.Timestamp[] = annualDates.get("timeOffResetDates");
   const mostRecentResetDate: admin.firestore.Timestamp = timeOffResetDates.reduce((a, b) => {
-    return (a > b && a.toDate() < weekEnding) ? a : b;
-  });
-  if (mostRecentResetDate.toDate() > opdate) {
+    return (b.toDate() < weekEnding && b.toDate() > a.toDate()) ? b : a;
+  }, admin.firestore.Timestamp.fromDate(new Date(0)));
+  
+  if (discretionaryTimeOff > 0 && mostRecentResetDate.toDate() > opdate) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      `Your opening balances were set effective ${opdate.toISOString()} but you are submitting a timesheet for the time-off period accounting beginning on ${mostRecentResetDate.toDate().toISOString()}. Please contact accounting to have your opening balances updated for the new period prior to submitting a timesheet for this period.`
+      `Your opening balances were set effective ${opdate.toISOString()} but you are submitting a timesheet for the time-off accounting period beginning on ${mostRecentResetDate.toDate().toISOString()}. Please contact accounting to have your opening balances updated for the new period prior to submitting a timesheet for this period.`
     )
   }
 
