@@ -307,6 +307,39 @@ export async function tallyAndValidate(
     )
   }
 
+  // throw if openingDateTimeOff is after the weekEnding value. This will
+  // prevent submission of an old timesheet if the openingDateTimeOff value has
+  // already been updated to the next fiscal year.
+  const opdate: Date = profile.get("openingDateTimeOff").toDate();
+  if (opdate > weekEnding) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Your opening balances were set effective ${opdate.toISOString()} but you are submitting a timesheet for a period prior to that. Have accounting revert to earlier values prior to submitting this timesheet.`
+    )
+  }
+
+  // tybalt stores a timeOffResetDates array in the AnnualDates document within
+  // the Config collection. The dates in this array represent moment when the
+  // PPTO and Vacation balances are reset each year. Each timesheet submission
+  // is checked against this array to find the most recent date that is less
+  // than the weekEnding date of that timesheet. This most recent date must be
+  // less than or equal to the openingDateTimeOff value in the profile. If it
+  // isn't, then the opening balances are out of date and the timesheet cannot
+  // be submitted until the opening balances are updated by accounting. This is
+  // to prevent the user from claiming expired time off from a previous year on
+  // a timesheet in the following year.
+  const annualDates = await db.collection("Config").doc("AnnualDates").get()
+  const timeOffResetDates: admin.firestore.Timestamp[] = annualDates.get("timeOffResetDates");
+  const mostRecentResetDate: admin.firestore.Timestamp = timeOffResetDates.reduce((a, b) => {
+    return (a > b && a.toDate() < weekEnding) ? a : b;
+  });
+  if (mostRecentResetDate.toDate() > opdate) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Your opening balances were set effective ${opdate.toISOString()} but you are submitting a timesheet for the time-off period accounting beginning on ${mostRecentResetDate.toDate().toISOString()}. Please contact accounting to have your opening balances updated for the new period prior to submitting a timesheet for this period.`
+    )
+  }
+
   // throw if OP balance is unavailable
   const openingOP = profile.get("openingOP")
   if (typeof openingOP !== "number" || openingOP < 0) {
