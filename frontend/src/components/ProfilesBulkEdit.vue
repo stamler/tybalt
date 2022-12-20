@@ -42,7 +42,7 @@
             max="240"
             placeholder="123.45"
           />
-          <span v-if="item.openingOV > 0" style="margin-left: 0.5em">
+          <span v-if="item.openingOV >= 0" style="margin-left: 0.5em">
             <span class="labels">
               used: {{ item.usedOV }} hrs to {{ item.usedAsOf | shortDate }}
             </span>
@@ -66,7 +66,7 @@
             max="332"
             placeholder="48"
           />
-          <span v-if="item.openingOV > 0" style="margin-left: 0.5em">
+          <span v-if="item.openingOP >= 0" style="margin-left: 0.5em">
             <span class="labels">
               used: {{ item.usedOP }} hrs to {{ item.usedAsOf | shortDate }}
             </span>
