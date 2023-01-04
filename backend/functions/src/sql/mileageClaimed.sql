@@ -4,6 +4,6 @@ SELECT e.uid, e.surname, SUM(e.distance) mileageClaimed, r.date mileageClaimedSi
  * 1000 jsDate
 FROM Expenses e
 LEFT JOIN MileageResetDates r ON r.date = (SELECT MAX(date) FROM MileageResetDates k WHERE k.date <= e.date)
-WHERE paymentType= "Mileage" AND r.date = (SELECT MAX(date) FROM MileageResetDates)
+WHERE paymentType= "Mileage" AND r.date = (SELECT MAX(date) FROM MileageResetDates WHERE date < NOW())
 GROUP BY e.uid, r.date
 ORDER BY r.date DESC, mileageClaimed DESC
