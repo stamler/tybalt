@@ -76,7 +76,7 @@ export function thisTimeNextWeekInTimeZone(
 // Date objects for the specified year but no later than today.
 export function* payPeriodsForYear(year: number): Generator<Date, void, void> {
   const now = new Date();
-  const firstSat = nextSaturday(new Date(year, 0, 0, 0, 0));
+  const firstSat = nextSaturday(new Date(year - 1, 0, 0, 0, 0));
   let period = isPayrollWeek2(firstSat)
     ? firstSat
     : thisTimeNextWeekInTimeZone(firstSat, "America/Thunder_Bay");
