@@ -616,9 +616,27 @@ export async function writebackProfiles() {
   
     functions.logger.debug(`${mileageRows.length} mileage values and ${timeOffRows.length} time off values returned from SQL queries`);
     // The mileageClaimedSince property is set to the reset date in SQL. Since
-    // this is the same for every row, we can get it here then use it
-    // throughout the rest of the function.
-    mileageClaimedSince = new Date(mileageRows[0].jsDate);
+    // this is the same for every row, we can get it here then use it throughout
+    // the rest of the function. However, if there are no rows in the mileage
+    // query, then we can't get the value and we'll have to manually get it from
+    // the MileageResetDates table in MySQL.
+    if (mileageRows.length > 0) {
+      mileageClaimedSince = new Date(mileageRows[0].jsDate);
+    } else {
+      const mileageResetSql = "SELECT MAX(date) FROM MileageResetDates WHERE date < NOW()";
+      const [rr, _fields2] = await connection.query(mileageResetSql);
+      const resetRows = rr as RowDataPacket[];
+      if (resetRows.length === 1) {
+        functions.logger.debug(`mileageClaimedSince set to ${resetRows[0]["MAX(date)"]} from SQL query`);
+        mileageClaimedSince = new Date(resetRows[0]["MAX(date)"]);
+        // NOTE: at this point mileageClaimedSince isn't set to 11:59:59.999 PM
+        // on the date in EST but it will likely suffice as a temporary date
+        // since as soon as actual data is being synced the date will be
+        // updated.
+      } else {
+        throw new Error(`Expected 1 row from MileageResetDates query, got ${resetRows.length}`);
+      }
+    }
 
     // For each profile, check whether it has a matching row in each of the SQL
     // queries. If not, set the corresponding values to 0.
