@@ -25,7 +25,23 @@ export const syncToSQL = functions
     await cleanupExport("Expenses");
     await exportExpenses();
     await exportProfiles();
-    await writebackProfiles();
+    try {
+      await writebackProfiles();
+    } catch (error) {
+      await db.collection("Emails").add({
+        toUids: ["UAmV8K6DcXVhSrMAtZua0OmCUPu2"],
+        message: {
+          subject: `Profile writeback failed during syncToSQL()`,
+          text: 
+            `Hi,\n\n` +
+            `The scheduled syncToSQL() taks failed to writeback profile changes. ` +
+            `The error is\n ${
+              JSON.stringify(error)
+            }\n. Please solve this issue\n\n` +
+            "- Tybalt",
+        },
+      });
+    }
     return;
   });
 
