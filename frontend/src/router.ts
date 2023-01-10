@@ -9,6 +9,7 @@ import ExpensesList from "@/components/ExpensesList.vue";
 import ExpensesQueue from "@/components/ExpensesQueue.vue";
 import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
+import TimeOff from "@/components/TimeOff.vue";
 import TimeSheetsList from "@/components/TimeSheetsList.vue";
 import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import PayrollTrackingList from "@/components/PayrollTrackingList.vue";
@@ -174,6 +175,12 @@ const router = new Router({
               component: TimeEntriesEdit,
             },
           ],
+        },
+        {
+          path: "off",
+          name: "Time Off",
+          component: TimeOff,
+          meta: { uiName: "Time Off" },
         },
       ],
     },
