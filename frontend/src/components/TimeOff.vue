@@ -5,7 +5,6 @@
       <table>
         <thead>
           <tr>
-            <!-- <th>Since</th> -->
             <th>Last</th>
             <th>Vacation</th>
             <th>PPTO</th>
@@ -13,8 +12,7 @@
         </thead>
         <tbody>
           <tr>
-            <!-- <td>{{ formatDate(profile.openingDateTimeOff.toDate()) }}</td> -->
-            <td>{{ formatDate(profile.usedAsOf.toDate()) }}</td>
+            <td>{{ formatDate(profile.usedAsOf) }}</td>
             <td>{{ profile.openingOV - profile.usedOV }}</td>
             <td>{{ profile.openingOP - profile.usedOP }}</td>
           </tr>
@@ -25,7 +23,7 @@
       <p>Your time off is not tracked</p>
     </template>
 
-    <template v-if="claims.tapr">
+    <template v-if="claims.tapr && reports.length > 0">
       <h1>Your Reports</h1>
       <table>
         <thead>
@@ -40,8 +38,7 @@
         <tbody>
           <tr v-for="report in reports" v-bind:key="report.id">
             <td>{{ report.displayName }}</td>
-            <!-- <td>{{ formatDate(report.openingDateTimeOff.toDate()) }}</td> -->
-            <td>{{ formatDate(report.usedAsOf.toDate()) }}</td>
+            <td>{{ formatDate(report.usedAsOf) }}</td>
             <td>{{ report.openingOV - report.usedOV }}</td>
             <td>{{ report.openingOP - report.usedOP }}</td>
           </tr>
@@ -76,8 +73,11 @@ export default Vue.extend({
     );
   },
   methods: {
-    formatDate(date: Date) {
-      return format(date, "yyyy MMM dd");
+    formatDate(date: firebase.firestore.Timestamp) {
+      if (date === undefined || date === null) {
+        return "unknown";
+      }
+      return format(date.toDate(), "yyyy MMM dd");
     },
   },
 });

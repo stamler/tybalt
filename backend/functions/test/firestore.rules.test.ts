@@ -227,6 +227,12 @@ describe("Other Firestore Rules", function () {
       const doc = timeDb.collection("Profiles").doc("bob");
       await firebase.assertFails(doc.get());
     });
+    it("allows a user to read someone else's profile if they are that other person's manager", async () => {
+      const aliceDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true, tapr: true } }).firestore();
+      await profiles.doc("bob").update({managerUid: "alice"});
+      const doc = aliceDb.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(doc.get());
+    });
     it("requires a tbtePayrollId to be present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

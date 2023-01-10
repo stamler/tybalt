@@ -359,7 +359,7 @@ service cloud.firestore {
       allow read: if hasClaim("admin");
     }
     match /Profiles/{profileId} {
-      allow read: if request.auth.uid == profileId || hasClaim("report") || hasClaim("admin");
+      allow read: if request.auth.uid == profileId || hasClaim("tapr") && managerUidMatches() || hasClaim("report") || hasClaim("admin");
       // admins can update all profiles
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
