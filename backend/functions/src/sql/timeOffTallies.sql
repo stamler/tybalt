@@ -19,7 +19,7 @@ UNION
 SELECT a.id,
 a.uid,
 TRUE AS amendment,
-a.committedWeekEnding weekEnding,
+a.weekEnding weekEnding,
 a.surname,
 a.givenName,
 CASE WHEN a.timetype = "OP" THEN a.hours END OP,
@@ -27,6 +27,19 @@ CASE WHEN a.timetype = "OV" THEN a.hours END OV
 FROM TimeAmendments a
 WHERE (a.timetype = "OP" OR a.timetype = "OV")
 )
+
+/* The entries table now contains all OP and OV entries for a user whether
+regular time or amendment. For Amendments, the weekEnding column is the
+weekEnding column from the TimeAmendments table, NOT the committedWeekEnding.
+This is because we may retroactively create amendments to amend time off in a
+previous period (year) and we don't want this amendment to be applied to the
+current period (year) */
+
+/*
+We need to ensure that all of the entries are in the current period (year).
+Specifically, we ensure that only the entries which are after the
+openingDateTimeOff are included
+*/
 
 SELECT e.uid,
 e.surname,
