@@ -35,7 +35,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="report in reports" v-bind:key="report.id">
+          <!-- filter out reports that are not expected to report time -->
+          <tr
+            v-for="report in reports.filter(
+              (r) => r.timeSheetExpected === true
+            )"
+            v-bind:key="report.id"
+          >
             <td>
               {{ report.displayName }}
               <span v-if="report.salary !== true" class="label">hourly</span>
