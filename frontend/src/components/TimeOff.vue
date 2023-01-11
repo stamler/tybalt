@@ -29,7 +29,6 @@
         <thead>
           <tr>
             <th>Name</th>
-            <!-- <th>Since</th> -->
             <th>Last</th>
             <th>Vacation</th>
             <th>PPTO</th>
@@ -37,7 +36,10 @@
         </thead>
         <tbody>
           <tr v-for="report in reports" v-bind:key="report.id">
-            <td>{{ report.displayName }}</td>
+            <td>
+              {{ report.displayName }}
+              <span v-if="report.salary !== true" class="label">hourly</span>
+            </td>
             <td>{{ formatDate(report.usedAsOf) }}</td>
             <td>{{ report.openingOV - report.usedOV }}</td>
             <td>{{ report.openingOP - report.usedOP }}</td>
