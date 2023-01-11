@@ -53,9 +53,9 @@
       :dlFileName="`${id}_JobEntriesSummary.csv`"
     />
 
-    <!-- Link to related TimeSheets for context. Available to report
+    <!-- Link to related TimeSheets for context. Available to report or tapr
     claimholders only -->
-    <div v-if="claims.report === true">
+    <div v-if="claims.report === true || claims.tapr === true">
       <h5>
         Full Report
         <download-query-link
@@ -73,7 +73,8 @@
           v-model="fullReportSubJobs"
         />
       </span>
-
+    </div>
+    <div v-if="claims.report === true">
       <h4>Time Sheets</h4>
       <div v-for="timeSheet in timeSheets" v-bind:key="timeSheet.id">
         {{ timeSheet.weekEnding.toDate() | relativeTime }} -
@@ -177,6 +178,9 @@ export default Vue.extend({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
+              // If the user has the report claim, load the time sheets.
+              // Otherwise don't because they're not allowed to see them.
+              if (this.claims.report !== true) return;
               this.$bind(
                 "timeSheets",
                 db

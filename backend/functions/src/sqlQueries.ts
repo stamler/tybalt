@@ -13,8 +13,8 @@ import * as functions from "firebase-functions";
 export const queries = [
   { name: "jobEntriesSummary-startsWith", authorizedClaims: ["time"] },
   { name: "jobEntriesSummary", authorizedClaims: ["time"] },
-  { name: "jobReport-startsWith", authorizedClaims: ["report"] },
-  { name: "jobReport", authorizedClaims: ["report"] },
+  { name: "jobReport-startsWith", authorizedClaims: ["report", "tapr"] },
+  { name: "jobReport", authorizedClaims: ["report", "tapr"] },
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },
   { name: "payrollReport-FoldedAmendments", authorizedClaims: ["report"], valueMutator: (x: any)=>[x,x,x] },
   { name: "utilizationRate", authorizedClaims: ["kpi"] },
