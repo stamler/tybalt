@@ -78,7 +78,7 @@
                 :to="[parentPath, item.id, 'edit'].join('/')"
                 title="edit"
               >
-                <edit-icon></edit-icon>
+                <Icon icon="feather:edit" width="24px" />
               </router-link>
               <action-button
                 type="delete"
@@ -97,7 +97,7 @@
               :to="[parentPath, item.id, 'edit'].join('/')"
               title="edit"
             >
-              <edit-icon></edit-icon>
+              <Icon icon="feather:edit" width="24px" />
             </router-link>
             <action-button
               type="delete"
@@ -173,7 +173,7 @@ import { defineComponent } from "vue";
 import { shortDate, copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import ActionButton from "./ActionButton.vue";
-import { EditIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { storeToRefs } from "pinia";
 import { useStateStore } from "../stores/state";
 import { firebaseApp } from "../firebase";
@@ -203,7 +203,7 @@ export default defineComponent({
   props: ["collectionName"],
   components: {
     ActionButton,
-    EditIcon,
+    Icon,
   },
   data() {
     return {

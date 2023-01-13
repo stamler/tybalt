@@ -19,7 +19,7 @@
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-          <edit-icon></edit-icon>
+          <Icon icon="feather:edit" width="24px" />
         </router-link>
       </div>
     </div>
@@ -29,7 +29,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { searchString } from "./helpers";
-import { EditIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -42,7 +42,7 @@ const db = getFirestore(firebaseApp);
 export default defineComponent({
   props: ["collectionName"], // a string, the Firestore Collection name
   components: {
-    EditIcon,
+    Icon,
   },
   computed: {
     processedItems(): DocumentData[] {
@@ -63,7 +63,7 @@ export default defineComponent({
     };
   },
   watch: {
-    collection: {
+    collectionName: {
       immediate: true,
       handler(collectionName) {
         this.parentPath =

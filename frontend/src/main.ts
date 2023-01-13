@@ -1,10 +1,10 @@
-import Vue from "vue";
+// import Vue from "vue";
 import { App, createApp } from "vue";
 import { VueFire, VueFireFirestoreOptionsAPI } from "vuefire";
 import InstantSearch from "vue-instantsearch/vue3/es";
 
-Vue.config.productionTip = false;
-Vue.use(InstantSearch);
+// Vue.config.productionTip = false;
+// Vue.use(InstantSearch);
 
 // first import is here to initializeApp()
 import firebase from "./firebase";

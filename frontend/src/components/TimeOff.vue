@@ -57,15 +57,24 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import { mapState } from "vuex";
-import firebase from "../firebase";
+import { defineComponent } from "vue";
+import { useStateStore } from "../stores/state";
+import { firebaseApp } from "../firebase";
+import {
+  doc,
+  collection,
+  getFirestore,
+  query,
+  where,
+  Timestamp,
+} from "firebase/firestore";
 import { format } from "date-fns";
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
-export default Vue.extend({
-  computed: {
-    ...mapState(["user", "claims"]),
+export default defineComponent({
+  setup: () => {
+    const stateStore = useStateStore();
+    return { user: stateStore.user, claims: stateStore.claims };
   },
   data() {
     return {
@@ -74,14 +83,20 @@ export default Vue.extend({
     };
   },
   created() {
-    this.$bind("profile", db.collection("Profiles").doc(this.user?.uid));
-    this.$bind(
+    this.$firestoreBind(
+      "profile",
+      doc(collection(db, "Profiles"), this.user?.uid)
+    );
+    this.$firestoreBind(
       "reports",
-      db.collection("Profiles").where("managerUid", "==", this.user?.uid)
+      query(
+        collection(db, "Profiles"),
+        where("managerUid", "==", this.user?.uid)
+      )
     );
   },
   methods: {
-    formatDate(date: firebase.firestore.Timestamp) {
+    formatDate(date: Timestamp) {
       if (date === undefined || date === null) {
         return "unknown";
       }

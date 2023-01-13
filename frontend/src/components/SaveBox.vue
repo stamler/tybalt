@@ -1,8 +1,9 @@
 <template>
   <div>
     <span v-if="saveInProgress">
-      <half-circle-spinner v-bind:size="25" color="#000000">
-      </half-circle-spinner>
+      <div class="lds-ring">
+        <div></div>
+      </div>
     </span>
     <span v-else>
       <button
@@ -23,10 +24,8 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import firebase from "../firebase";
-// import { HalfCircleSpinner } from "epic-spinners";
 
 export default defineComponent({
-  // components: { HalfCircleSpinner },
   props: ["item", "newOpeningDate"],
   data() {
     return {
@@ -66,3 +65,6 @@ export default defineComponent({
   },
 });
 </script>
+<style scoped>
+@import "./lds-ring.css";
+</style>

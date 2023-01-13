@@ -139,12 +139,12 @@
       >
         {{ claim }}
         <span v-on:click="$delete(item.customClaims, claim)">
-          <x-circle-icon></x-circle-icon>
+          <Icon icon="feather:x-circle" width="24px" />
         </span>
       </span>
       <span><input type="text" name="newClaim" v-model="newClaim" /></span>
       <span v-on:click="addClaim(newClaim)">
-        <plus-circle-icon></plus-circle-icon>
+        <Icon icon="feather:plus-circle" width="24px" />
       </span>
     </span>
     <span class="field">
@@ -183,14 +183,13 @@ import {
   DocumentSnapshot,
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
-import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 // import Datepicker from "vuejs-datepicker";
 
 export default defineComponent({
   components: {
     // Datepicker,
-    PlusCircleIcon,
-    XCircleIcon,
+    Icon,
   },
   props: ["id", "collectionName"],
   data() {

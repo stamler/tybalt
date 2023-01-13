@@ -160,11 +160,6 @@ export default defineComponent({
     return { user: store.user };
   },
   props: ["query", "collectionName"],
-  computed: {
-    _() {
-      return _;
-    },
-  },
   components: {
     ActionButton,
     RejectModal,

@@ -6,29 +6,35 @@
     >
       <ais-search-box id="searchbox" placeholder="search..." />
       <ais-hits>
-        <div class="listentry" slot="item" slot-scope="{ item }">
-          <div class="anchorbox">
-            <router-link :to="[parentPath, item.objectID, 'details'].join('/')">
-              {{ item.objectID }}
-            </router-link>
-          </div>
-          <div class="detailsbox">
-            <div class="headline_wrapper">
-              <div class="headline">{{ item.client }}</div>
-              <div class="byline">{{ item.description }}</div>
+        <template v-slot:item="{ item }">
+          <div class="listentry">
+            <div class="anchorbox">
+              <router-link
+                :to="[parentPath, item.objectID, 'details'].join('/')"
+              >
+                {{ item.objectID }}
+              </router-link>
             </div>
-            <div class="firstline">{{ item.manager }}</div>
-            <div class="secondline">{{ item.proposal }} {{ item.status }}</div>
-            <div v-if="item.clientContact" class="thirdline">
-              Contact: {{ item.clientContact }}
+            <div class="detailsbox">
+              <div class="headline_wrapper">
+                <div class="headline">{{ item.client }}</div>
+                <div class="byline">{{ item.description }}</div>
+              </div>
+              <div class="firstline">{{ item.manager }}</div>
+              <div class="secondline">
+                {{ item.proposal }} {{ item.status }}
+              </div>
+              <div v-if="item.clientContact" class="thirdline">
+                Contact: {{ item.clientContact }}
+              </div>
+            </div>
+            <div class="rowactionsbox">
+              <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
+                <Icon icon="feather:edit" width="24px" />
+              </router-link>
             </div>
           </div>
-          <div class="rowactionsbox">
-            <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
-              <edit-icon></edit-icon>
-            </router-link>
-          </div>
-        </div>
+        </template>
       </ais-hits>
     </ais-instant-search>
   </div>
@@ -39,7 +45,7 @@ import { defineComponent } from "vue";
 import firebase from "../firebase";
 const db = firebase.firestore();
 import { useStateStore } from "../stores/state";
-import { EditIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
 
@@ -50,7 +56,7 @@ export default defineComponent({
   },
 
   components: {
-    EditIcon,
+    Icon,
   },
   data() {
     return {

@@ -129,14 +129,14 @@
               v-bind:title="lateCommitMessage(item)"
               class="attention"
             >
-              <clock-icon></clock-icon>
+              <Icon icon="feather:clock" width="24px" />
             </span>
             <span
               v-else
               style="color: rgba(16, 200, 214, 1)"
               v-bind:title="commitMessage(item)"
             >
-              <dollar-sign-icon></dollar-sign-icon>
+              <Icon icon="feather:dollar-sign" width="24px" />
             </span>
           </template>
           <!-- The template for users -->
@@ -153,7 +153,7 @@
                 @click="del(item, collectionObject)"
               />
               <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-                <edit-icon></edit-icon>
+                <Icon icon="feather:edit" width="24px" />
               </router-link>
               <action-button type="send" @click="submitExpense(item.id)" />
             </template>
@@ -233,7 +233,7 @@ import { defineComponent } from "vue";
 import { format, addDays } from "date-fns";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
-import { EditIcon, ClockIcon, DollarSignIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { useStateStore } from "../stores/state";
 const db = getFirestore(firebaseApp);
 
@@ -254,9 +254,7 @@ export default defineComponent({
   components: {
     ActionButton,
     Modal,
-    EditIcon,
-    ClockIcon,
-    DollarSignIcon,
+    Icon,
   },
   data() {
     return {

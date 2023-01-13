@@ -1,51 +1,31 @@
 <template>
-  <button @click.prevent="$emit('click')" :title="title" :style="cssProps">
+  <button @click.stop :title="title" :style="cssProps">
     <slot />
-    <send-icon v-if="type === 'send'" />
-    <x-circle-icon v-if="type === 'delete'" />
-    <check-circle-icon v-if="type === 'approve'" />
-    <archive-icon v-if="type === 'archive'" />
-    <rewind-icon v-if="type === 'recall'" />
-    <lock-icon v-if="type === 'lock'" />
-    <unlock-icon v-if="type === 'unlock'" />
-    <user-minus-icon v-if="type === 'removeuser'" />
-    <user-plus-icon v-if="type === 'adduser'" />
-    <download-icon v-if="type === 'download'" />
-    <plus-circle-icon v-if="type === 'add'" />
-    <copy-icon v-if="type === 'copy'" />
-    <share-icon v-if="type === 'share'" />
-    <clipboard-icon v-if="type === 'clipboard'" />
-    <key-icon v-if="type === 'key'" />
-    <file-minus-icon v-if="type === 'removefile'" />
-    <refresh-cw-icon v-if="type === 'refresh'" />
-    <eye-icon v-if="type === 'view'" />
-    <edit-icon v-if="type === 'edit'" />
+    <Icon icon="feather:send" width="24px" v-if="type === 'send'" />
+    <Icon icon="feather:x-circle" width="24px" v-if="type === 'delete'" />
+    <Icon icon="feather:check-circle" width="24px" v-if="type === 'approve'" />
+    <Icon icon="feather:archive" width="24px" v-if="type === 'archive'" />
+    <Icon icon="feather:rewind" width="24px" v-if="type === 'recall'" />
+    <Icon icon="feather:lock" width="24px" v-if="type === 'lock'" />
+    <Icon icon="feather:unlock" width="24px" v-if="type === 'unlock'" />
+    <Icon icon="feather:user-minus" width="24px" v-if="type === 'removeuser'" />
+    <Icon icon="feather:user-plus" width="24px" v-if="type === 'adduser'" />
+    <Icon icon="feather:download" width="24px" v-if="type === 'download'" />
+    <Icon icon="feather:plus-circle" width="24px" v-if="type === 'add'" />
+    <Icon icon="feather:copy" width="24px" v-if="type === 'copy'" />
+    <Icon icon="feather:share" width="24px" v-if="type === 'share'" />
+    <Icon icon="feather:clipboard" width="24px" v-if="type === 'clipboard'" />
+    <Icon icon="feather:key" width="24px" v-if="type === 'key'" />
+    <Icon icon="feather:file-minus" width="24px" v-if="type === 'removefile'" />
+    <Icon icon="feather:refresh-cw" width="24px" v-if="type === 'refresh'" />
+    <Icon icon="feather:eye" width="24px" v-if="type === 'view'" />
+    <Icon icon="feather:edit" width="24px" v-if="type === 'edit'" />
   </button>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  SendIcon,
-  XCircleIcon,
-  CheckCircleIcon,
-  ArchiveIcon,
-  RewindIcon,
-  LockIcon,
-  UnlockIcon,
-  UserMinusIcon,
-  UserPlusIcon,
-  DownloadIcon,
-  PlusCircleIcon,
-  CopyIcon,
-  ShareIcon,
-  ClipboardIcon,
-  KeyIcon,
-  FileMinusIcon,
-  RefreshCwIcon,
-  EyeIcon,
-  EditIcon,
-} from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 
 export default defineComponent({
   props: {
@@ -60,27 +40,7 @@ export default defineComponent({
       };
     },
   },
-  components: {
-    SendIcon,
-    XCircleIcon,
-    CheckCircleIcon,
-    ArchiveIcon,
-    RewindIcon,
-    LockIcon,
-    UnlockIcon,
-    UserMinusIcon,
-    UserPlusIcon,
-    DownloadIcon,
-    PlusCircleIcon,
-    CopyIcon,
-    ShareIcon,
-    ClipboardIcon,
-    KeyIcon,
-    FileMinusIcon,
-    RefreshCwIcon,
-    EyeIcon,
-    EditIcon,
-  },
+  components: { Icon },
   name: "ActionButton",
 });
 </script>

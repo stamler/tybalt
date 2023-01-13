@@ -29,7 +29,7 @@
           download
           :href="item['json']"
         >
-          json<download-icon></download-icon>
+          json<Icon icon="feather:download" width="24px" />
         </a>
         <action-button
           v-if="hasLink(item, 'json')"
@@ -47,7 +47,7 @@
 import { defineComponent } from "vue";
 import { exportDate, generateTimeReportCSV } from "./helpers";
 import ActionButton from "./ActionButton.vue";
-import { DownloadIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -63,7 +63,7 @@ export default defineComponent({
   props: ["collectionName"], // a string, the Firestore Collection name
   components: {
     ActionButton,
-    DownloadIcon,
+    Icon,
   },
   computed: {
     processedItems(): DocumentData[] {

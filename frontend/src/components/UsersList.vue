@@ -53,7 +53,7 @@
             }"
             title="Edit the user"
           >
-            <edit-icon />
+            <Icon icon="feather:edit" width="24px" />
           </router-link>
           <action-button
             v-if="
@@ -90,7 +90,7 @@ import { defineComponent } from "vue";
 import { dateFormat, searchString } from "./helpers";
 import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
-import { EditIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { formatDistanceToNow } from "date-fns";
 import { firebaseApp } from "../firebase";
 import {
@@ -115,7 +115,7 @@ export default defineComponent({
   props: ["query"],
   components: {
     ActionButton,
-    EditIcon,
+    Icon,
   },
   data() {
     return {

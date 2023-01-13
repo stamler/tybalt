@@ -18,7 +18,7 @@
       </div>
       <div class="rowactionsbox">
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
-          attachments.zip<download-icon />
+          attachments.zip<Icon icon="feather:download" width="24px" />
         </a>
         <action-button
           v-if="canRefresh"
@@ -26,7 +26,7 @@
           @click="generateAttachmentZip(item)"
         />
         <a v-if="hasLink(item, 'json')" download v-bind:href="item['json']">
-          .json<download-icon />
+          .json<Icon icon="feather:download" width="24px" />
         </a>
         <!--
           REMOVED AND REPLACED WITH generatePayablesCSVSQL
@@ -64,7 +64,7 @@ import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
 import { exportDate, generatePayablesCSVSQL } from "./helpers";
 import ActionButton from "./ActionButton.vue";
-import { DownloadIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 
 const db = getFirestore(firebaseApp);
 
@@ -75,7 +75,7 @@ export default defineComponent({
     return { startTask, endTask, claims: store.claims };
   },
   props: ["collectionName"],
-  components: { ActionButton, DownloadIcon },
+  components: { ActionButton, Icon },
   computed: {
     canRefresh(): boolean {
       return (

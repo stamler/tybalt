@@ -14,7 +14,7 @@
             <span
               v-on:click="$delete(viewerIds, viewerIds.indexOf(managerUid))"
             >
-              <x-circle-icon></x-circle-icon>
+              <Icon icon="feather:x-circle" width="24px" />
             </span>
           </span>
 
@@ -27,7 +27,7 @@
               </option>
             </select>
             <span v-on:click="addViewer()">
-              <plus-circle-icon></plus-circle-icon>
+              <Icon icon="feather:plus-circle" width="24px" />
             </span>
           </span>
         </div>
@@ -52,16 +52,13 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { useCollection } from "vuefire";
-import { PlusCircleIcon, XCircleIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   props: ["collectionName"],
-  components: {
-    PlusCircleIcon,
-    XCircleIcon,
-  },
+  components: { Icon },
   data() {
     return {
       parentPath: "",

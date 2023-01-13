@@ -70,7 +70,7 @@
       </div>
       <div class="rowactionsbox">
         <router-link :to="[parentPath, item.id, 'edit'].join('/')">
-          <edit-icon></edit-icon>
+          <Icon icon="feather:edit" width="24px" />
         </router-link>
       </div>
     </div>
@@ -90,12 +90,12 @@ import {
   orderBy,
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
-import { EditIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 
 export default defineComponent({
   props: ["collectionName"],
   components: {
-    EditIcon,
+    Icon,
   },
   methods: {
     shortDate,

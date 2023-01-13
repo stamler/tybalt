@@ -14,11 +14,11 @@
                 <template v-if="sortColumn === col">
                   <template v-if="order === 2">
                     <!-- DESCENDING -->
-                    <arrow-down-icon></arrow-down-icon>
+                    <Icon icon="feather:arrow-down" width="24px" />
                   </template>
                   <template v-else-if="order === 1">
                     <!-- ASCENDING -->
-                    <arrow-up-icon></arrow-up-icon>
+                    <Icon icon="feather:arrow-up" width="24px" />
                   </template>
                   <template v-else><!--- UNSORTED --></template>
                 </template>
@@ -42,15 +42,14 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import _ from "lodash";
-import { ArrowUpIcon, ArrowDownIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { TableData } from "./types";
 import ActionButton from "./ActionButton.vue";
 
 export default defineComponent({
   components: {
     ActionButton,
-    ArrowUpIcon,
-    ArrowDownIcon,
+    Icon,
   },
   props: { tableData: Array },
   data() {

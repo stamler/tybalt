@@ -72,7 +72,7 @@
           expensesSQL
         </action-button>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
-          attachments.zip<download-icon></download-icon>
+          attachments.zip<Icon icon="feather:download" width="24px" />
         </a>
       </div>
     </div>
@@ -99,7 +99,7 @@ import {
   TimeOffTypes,
 } from "./types";
 import ActionButton from "./ActionButton.vue";
-import { DownloadIcon } from "vue-feather-icons";
+import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
 import {
   Timestamp,
@@ -125,7 +125,7 @@ export default defineComponent({
   props: ["collectionName"], // a string, the Firestore Collection name
   components: {
     ActionButton,
-    DownloadIcon,
+    Icon,
   },
   data() {
     return {
