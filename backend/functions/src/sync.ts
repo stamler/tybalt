@@ -648,7 +648,8 @@ export async function writebackProfiles() {
         // NOTE: at this point mileageClaimedSince isn't set to 11:59:59.999 PM
         // on the date in EST but it will likely suffice as a temporary date
         // since as soon as actual data is being synced the date will be
-        // updated.
+        // updated.  TODO: set mileageClaimedSince to 11:59:59.999 PM on the
+        // date in EST
       } else {
         throw new Error(`Expected 1 row from MileageResetDates query, got ${resetRows.length}`);
       }
@@ -662,6 +663,9 @@ export async function writebackProfiles() {
       const mileageClaimed = mileageRow ? mileageRow.mileageClaimed : 0;
       const usedOV = timeOffRow ? timeOffRow.usedOV : 0;
       const usedOP = timeOffRow ? timeOffRow.usedOP : 0;
+
+      // The UI must handle a null value for usedAsOf. This is to be interpreted
+      // as no time off has been used since the last reset.
       const usedAsOf = timeOffRow ? new Date(timeOffRow.jsDateWeekEnding) : null;
 
       // functions.logger.debug(`Updating ${profile.id} with mileageClaimed=${mileageClaimed}, usedOV=${usedOV}, usedOP=${usedOP}, mileageClaimedSince=${mileageClaimedSince}, usedAsOf=${usedAsOf}`);
