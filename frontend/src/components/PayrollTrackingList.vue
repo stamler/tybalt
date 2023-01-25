@@ -25,28 +25,28 @@
           type="download"
           @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)"
         >
-          week1SQL
+          week1
         </action-button>
         <action-button
           type="download"
           @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
         >
-          week2SQL
+          week2
         </action-button>
-        <action-button
+        <!-- <action-button
           v-if="hasLink(item, 'week1TimeJson')"
           type="download"
           @click="generatePayrollCSV(item['week1TimeJson'])"
         >
           week1
-        </action-button>
-        <action-button
+        </action-button> -->
+        <!-- <action-button
           v-if="hasLink(item, 'week2TimeJson')"
           type="download"
           @click="generatePayrollCSV(item['week2TimeJson'])"
         >
           week2
-        </action-button>
+        </action-button> -->
         <!--
         REMOVED AND REPLACED WITH generatePayablesCSVSQL
           <action-button
@@ -69,7 +69,7 @@
             )
           "
         >
-          expensesSQL
+          expenses
         </action-button>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<Icon icon="feather:download" width="24px" />
@@ -91,13 +91,13 @@ import {
 import { format, subDays } from "date-fns";
 import { useStateStore } from "../stores/state";
 import { utcToZonedTime } from "date-fns-tz";
-import {
-  PayrollReportRecord,
-  isTimeSheet,
-  TimeSheet,
-  Amendment,
-  TimeOffTypes,
-} from "./types";
+// import {
+//   PayrollReportRecord,
+//   isTimeSheet,
+//   TimeSheet,
+//   Amendment,
+//   TimeOffTypes,
+// } from "./types";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
@@ -112,7 +112,7 @@ import {
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { parse } from "json2csv";
-import _ from "lodash";
+// import _ from "lodash";
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
 
@@ -252,221 +252,221 @@ export default defineComponent({
         alert(`Error: ${error}`);
       }
     },
-    async generatePayrollCSV(url: string) {
-      const response = await fetch(url);
-      const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
-      const { timesheets: items, amendments } =
-        this.foldAmendments(inputObject);
+    // async generatePayrollCSV(url: string) {
+    //   const response = await fetch(url);
+    //   const inputObject = (await response.json()) as (TimeSheet | Amendment)[];
+    //   const { timesheets: items, amendments } =
+    //     this.foldAmendments(inputObject);
 
-      // since all entries have the same week ending, pull from the first entry
-      let weekEnding;
-      if (items.length > 0) {
-        weekEnding = new Date(items[0].weekEnding);
-      } else {
-        weekEnding = new Date(amendments[0].committedWeekEnding);
-      }
-      const fields = [
-        "tbtePayrollId",
-        "weekEnding",
-        {
-          label: "surname",
-          value: "surname",
-        },
-        {
-          label: "givenName",
-          value: "givenName",
-        },
-        {
-          label: "name",
-          value: "displayName",
-        },
-        {
-          label: "manager",
-          value: "managerName",
-        },
-        {
-          label: "meals",
-          value: "mealsHoursTally",
-        },
-        {
-          label: "days off rotation",
-          value: "offRotationDaysTally",
-        },
-        {
-          label: "hours worked",
-          value: "R",
-        },
-        {
-          label: "salaryHoursOver44",
-          value: (row: PayrollReportRecord) => {
-            if (row.salary && row.R) {
-              return row.R > 44 ? row.R - 44 : 0;
-            }
-            return 0;
-          },
-        },
-        {
-          label: "adjustedHoursWorked",
-          value: (row: PayrollReportRecord) => {
-            const reg = row.R || 0;
-            if (row.salary) {
-              const stat = row.OH || 0;
-              const bereavement = row.OB || 0;
-              const workWeekHours = row.workWeekHours || 40;
-              return reg + stat + bereavement > workWeekHours
-                ? workWeekHours - stat - bereavement
-                : reg;
-            } else {
-              return reg > 44 ? 44 : reg;
-            }
-          },
-        },
-        {
-          label: "total overtime hours",
-          value: (row: PayrollReportRecord) => {
-            if (!row.salary) {
-              const reg = row.R || 0;
-              return reg > 44 ? reg - 44 : 0;
-            }
-            return 0;
-          },
-        },
-        {
-          label: "overtime hours to pay",
-          value: (row: PayrollReportRecord) => {
-            if (!row.salary) {
-              const reg = row.R || 0;
-              const ot = reg > 44 ? reg - 44 : 0;
-              const rb = row.RB || 0;
-              return rb > 0 ? ot - rb : ot;
-            }
-            return 0;
-          },
-        },
-        {
-          label: "Bereavement",
-          value: "OB",
-        },
-        {
-          label: "Stat Holiday",
-          value: "OH",
-        },
-        {
-          label: "PPTO",
-          value: "OP",
-        },
-        {
-          label: "Sick",
-          value: "OS",
-        },
-        {
-          label: "Vacation",
-          value: "OV",
-        },
-        {
-          label: "overtime hours to bank",
-          value: "RB",
-        },
-        {
-          label: "Overtime Payout Requested",
-          value: "payoutRequest",
-        },
-        {
-          label: "hasAmendmentsForWeeksEnding",
-          value: (row: PayrollReportRecord) => {
-            if (Array.isArray(row.hasAmendmentsForWeeksEnding)) {
-              const deduplicated = Array.from(
-                new Set(row.hasAmendmentsForWeeksEnding)
-              );
-              const dates = deduplicated.map((x) =>
-                format(
-                  utcToZonedTime(new Date(x), "America/Thunder_Bay"),
-                  "yyyy MMM dd"
-                )
-              );
-              return dates;
-            }
-            return "";
-          },
-        },
-        "salary",
-      ];
-      const opts = { fields, withBOM: true };
-      const timesheetRecords = items.map((x: DocumentData) => {
-        if (!isTimeSheet(x)) {
-          throw new Error(
-            "(Payroll)There was an error validating the timesheet"
-          );
-        }
-        const item = _.pick(x, [
-          "weekEnding",
-          "surname",
-          "givenName",
-          "displayName",
-          "managerName",
-          "mealsHoursTally",
-          "offRotationDaysTally",
-          "payoutRequest",
-          "hasAmendmentsForWeeksEnding",
-          "salary",
-          "tbtePayrollId",
-        ]) as PayrollReportRecord;
-        item.weekEnding = format(
-          utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
-          "yyyy MMM dd"
-        );
-        item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
-        item.RB = x.bankedHours;
-        for (const key in x.nonWorkHoursTally) {
-          item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
-        }
-        return item;
-      });
-      const amendmentRecords = amendments.map((x: Amendment) => {
-        const item: PayrollReportRecord = {
-          hasAmendmentsForWeeksEnding: [x.weekEnding],
-          weekEnding: x.committedWeekEnding,
-          displayName: x.displayName,
-          surname: x.surname,
-          givenName: x.givenName,
-          managerName: x.creatorName,
-          mealsHoursTally: x.mealsHours || 0,
-          salary: x.salary,
-          tbtePayrollId: x.tbtePayrollId,
-        };
-        if (["R", "RT"].includes(x.timetype)) {
-          item["R"] = (x.hours || 0) + (x.jobHours || 0);
-        } else {
-          if (!x.hours) {
-            throw new Error(
-              "generatePayrollCSV: The Amendment is of type nonWorkHours but no hours are present"
-            );
-          }
-          item[x.timetype as TimeOffTypes] = x.hours;
-        }
+    //   // since all entries have the same week ending, pull from the first entry
+    //   let weekEnding;
+    //   if (items.length > 0) {
+    //     weekEnding = new Date(items[0].weekEnding);
+    //   } else {
+    //     weekEnding = new Date(amendments[0].committedWeekEnding);
+    //   }
+    //   const fields = [
+    //     "tbtePayrollId",
+    //     "weekEnding",
+    //     {
+    //       label: "surname",
+    //       value: "surname",
+    //     },
+    //     {
+    //       label: "givenName",
+    //       value: "givenName",
+    //     },
+    //     {
+    //       label: "name",
+    //       value: "displayName",
+    //     },
+    //     {
+    //       label: "manager",
+    //       value: "managerName",
+    //     },
+    //     {
+    //       label: "meals",
+    //       value: "mealsHoursTally",
+    //     },
+    //     {
+    //       label: "days off rotation",
+    //       value: "offRotationDaysTally",
+    //     },
+    //     {
+    //       label: "hours worked",
+    //       value: "R",
+    //     },
+    //     {
+    //       label: "salaryHoursOver44",
+    //       value: (row: PayrollReportRecord) => {
+    //         if (row.salary && row.R) {
+    //           return row.R > 44 ? row.R - 44 : 0;
+    //         }
+    //         return 0;
+    //       },
+    //     },
+    //     {
+    //       label: "adjustedHoursWorked",
+    //       value: (row: PayrollReportRecord) => {
+    //         const reg = row.R || 0;
+    //         if (row.salary) {
+    //           const stat = row.OH || 0;
+    //           const bereavement = row.OB || 0;
+    //           const workWeekHours = row.workWeekHours || 40;
+    //           return reg + stat + bereavement > workWeekHours
+    //             ? workWeekHours - stat - bereavement
+    //             : reg;
+    //         } else {
+    //           return reg > 44 ? 44 : reg;
+    //         }
+    //       },
+    //     },
+    //     {
+    //       label: "total overtime hours",
+    //       value: (row: PayrollReportRecord) => {
+    //         if (!row.salary) {
+    //           const reg = row.R || 0;
+    //           return reg > 44 ? reg - 44 : 0;
+    //         }
+    //         return 0;
+    //       },
+    //     },
+    //     {
+    //       label: "overtime hours to pay",
+    //       value: (row: PayrollReportRecord) => {
+    //         if (!row.salary) {
+    //           const reg = row.R || 0;
+    //           const ot = reg > 44 ? reg - 44 : 0;
+    //           const rb = row.RB || 0;
+    //           return rb > 0 ? ot - rb : ot;
+    //         }
+    //         return 0;
+    //       },
+    //     },
+    //     {
+    //       label: "Bereavement",
+    //       value: "OB",
+    //     },
+    //     {
+    //       label: "Stat Holiday",
+    //       value: "OH",
+    //     },
+    //     {
+    //       label: "PPTO",
+    //       value: "OP",
+    //     },
+    //     {
+    //       label: "Sick",
+    //       value: "OS",
+    //     },
+    //     {
+    //       label: "Vacation",
+    //       value: "OV",
+    //     },
+    //     {
+    //       label: "overtime hours to bank",
+    //       value: "RB",
+    //     },
+    //     {
+    //       label: "Overtime Payout Requested",
+    //       value: "payoutRequest",
+    //     },
+    //     {
+    //       label: "hasAmendmentsForWeeksEnding",
+    //       value: (row: PayrollReportRecord) => {
+    //         if (Array.isArray(row.hasAmendmentsForWeeksEnding)) {
+    //           const deduplicated = Array.from(
+    //             new Set(row.hasAmendmentsForWeeksEnding)
+    //           );
+    //           const dates = deduplicated.map((x) =>
+    //             format(
+    //               utcToZonedTime(new Date(x), "America/Thunder_Bay"),
+    //               "yyyy MMM dd"
+    //             )
+    //           );
+    //           return dates;
+    //         }
+    //         return "";
+    //       },
+    //     },
+    //     "salary",
+    //   ];
+    //   const opts = { fields, withBOM: true };
+    //   const timesheetRecords = items.map((x: DocumentData) => {
+    //     if (!isTimeSheet(x)) {
+    //       throw new Error(
+    //         "(Payroll)There was an error validating the timesheet"
+    //       );
+    //     }
+    //     const item = _.pick(x, [
+    //       "weekEnding",
+    //       "surname",
+    //       "givenName",
+    //       "displayName",
+    //       "managerName",
+    //       "mealsHoursTally",
+    //       "offRotationDaysTally",
+    //       "payoutRequest",
+    //       "hasAmendmentsForWeeksEnding",
+    //       "salary",
+    //       "tbtePayrollId",
+    //     ]) as PayrollReportRecord;
+    //     item.weekEnding = format(
+    //       utcToZonedTime(new Date(item.weekEnding), "America/Thunder_Bay"),
+    //       "yyyy MMM dd"
+    //     );
+    //     item.R = x.workHoursTally.jobHours + x.workHoursTally.hours;
+    //     item.RB = x.bankedHours;
+    //     for (const key in x.nonWorkHoursTally) {
+    //       item[key as TimeOffTypes] = x.nonWorkHoursTally[key];
+    //     }
+    //     return item;
+    //   });
+    //   const amendmentRecords = amendments.map((x: Amendment) => {
+    //     const item: PayrollReportRecord = {
+    //       hasAmendmentsForWeeksEnding: [x.weekEnding],
+    //       weekEnding: x.committedWeekEnding,
+    //       displayName: x.displayName,
+    //       surname: x.surname,
+    //       givenName: x.givenName,
+    //       managerName: x.creatorName,
+    //       mealsHoursTally: x.mealsHours || 0,
+    //       salary: x.salary,
+    //       tbtePayrollId: x.tbtePayrollId,
+    //     };
+    //     if (["R", "RT"].includes(x.timetype)) {
+    //       item["R"] = (x.hours || 0) + (x.jobHours || 0);
+    //     } else {
+    //       if (!x.hours) {
+    //         throw new Error(
+    //           "generatePayrollCSV: The Amendment is of type nonWorkHours but no hours are present"
+    //         );
+    //       }
+    //       item[x.timetype as TimeOffTypes] = x.hours;
+    //     }
 
-        return item;
-      });
-      // Sort the records by tbtePayrollId ascending
-      const joined: PayrollReportRecord[] =
-        timesheetRecords.concat(amendmentRecords);
-      joined.sort((a, b) => {
-        const aval = Number(a.tbtePayrollId);
-        const bval = Number(b.tbtePayrollId);
-        if (!isNaN(aval) && !isNaN(bval)) return aval - bval;
-        if (!isNaN(aval)) return -1;
-        if (!isNaN(bval)) return 1;
-        return 0;
-      });
-      const csv = parse(joined, opts);
-      const blob = new Blob([csv], { type: "text/csv" });
-      this.downloadBlob(
-        blob,
-        `payroll_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
-          weekEnding
-        )}.csv`
-      );
-    },
+    //     return item;
+    //   });
+    //   // Sort the records by tbtePayrollId ascending
+    //   const joined: PayrollReportRecord[] =
+    //     timesheetRecords.concat(amendmentRecords);
+    //   joined.sort((a, b) => {
+    //     const aval = Number(a.tbtePayrollId);
+    //     const bval = Number(b.tbtePayrollId);
+    //     if (!isNaN(aval) && !isNaN(bval)) return aval - bval;
+    //     if (!isNaN(aval)) return -1;
+    //     if (!isNaN(bval)) return 1;
+    //     return 0;
+    //   });
+    //   const csv = parse(joined, opts);
+    //   const blob = new Blob([csv], { type: "text/csv" });
+    //   this.downloadBlob(
+    //     blob,
+    //     `payroll_${this.exportDateWeekStart(weekEnding)}-${this.exportDate(
+    //       weekEnding
+    //     )}.csv`
+    //   );
+    // },
     async generateAttachmentZip(item: DocumentData) {
       const generateExpenseAttachmentArchive = httpsCallable(
         functions,

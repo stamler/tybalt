@@ -163,10 +163,11 @@ interface UserMutationRequestEdit {
 type UserMutationRequest = UserMutationRequestWithoutData | UserMutationRequestCreate | UserMutationRequestEdit;
 // UserMutations must conform to the following type.
 type UserMutation = UserMutationRequest & {
-  status: "unapproved" | "pending" | "dispatched" | "completed" | "error";
+  status: "unapproved" | "pending" | "dispatched" | "completed" | "error" | "onPremEdited" | "onPremCreated";
   surname: string;
   givenName: string;
   created: admin.firestore.Timestamp | admin.firestore.FieldValue;
+  statusUpdated: admin.firestore.Timestamp | admin.firestore.FieldValue;
   creatorUid: string;
   creatorName: string;
   userSourceAnchor?: string;
@@ -271,6 +272,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
       status: "unapproved",
       surname, givenName,
       created: admin.firestore.FieldValue.serverTimestamp(),
+      statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
       creatorUid: auth.uid,
       creatorName,
       userSourceAnchor,
@@ -289,6 +291,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
       givenName: mutationRequest.data.givenName,
       data: mutationDataFromFields(mutationRequest.data),
       created: admin.firestore.FieldValue.serverTimestamp(),
+      statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
       creatorUid: auth?.uid,
       creatorName,
     };

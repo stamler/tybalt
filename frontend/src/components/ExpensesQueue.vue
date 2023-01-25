@@ -1,6 +1,6 @@
 <template>
   <div id="list">
-    <modal ref="rejectModal" collection="Expenses" />
+    <reject-modal ref="rejectModal" collectionName="Expenses" />
     <span class="listheader" v-if="approved.length > 0">Approved</span>
     <div class="listentry" v-for="item in approved" v-bind:key="item.id">
       <div class="anchorbox">
@@ -144,7 +144,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { downloadAttachment, shortDate } from "./helpers";
-import Modal from "./RejectModal.vue";
+import RejectModal from "./RejectModal.vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -170,7 +170,7 @@ export default defineComponent({
   props: ["collectionName"],
   components: {
     ActionButton,
-    Modal,
+    RejectModal,
   },
   data() {
     return {

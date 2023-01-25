@@ -1,7 +1,7 @@
 <template>
   <div>
-    <reject-modal ref="rejectModal" collection="TimeSheets" />
-    <share-modal ref="shareModal" collection="TimeSheets" />
+    <reject-modal ref="rejectModal" collectionName="TimeSheets" />
+    <share-modal ref="shareModal" collectionName="TimeSheets" />
     <div>
       {{ item.displayName }} (reports to {{ item.managerName }})
 

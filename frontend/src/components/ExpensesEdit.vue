@@ -1,18 +1,18 @@
 <template>
   <form id="editor">
-    <!-- <span class="field">
-      <datepicker
-        name="datepicker"
-        input-class="calendar-input"
-        wrapper-class="calendar-wrapper"
-        placeholder="Date"
-        :inline="false"
-        :disabledDates="dps.disabled"
-        :highlighted="dps.highlighted"
-        v-model="item.date"
-      />
-    </span> -->
-
+    <datepicker
+      name="datepicker"
+      placeholder="Date"
+      :auto-apply="true"
+      :min-date="dps.disabled.to"
+      :max-date="dps.disabled.from"
+      :highlight="dps.highlighted.dates"
+      :enable-time-picker="false"
+      :format="shortDateWithWeekday"
+      hide-input-icon
+      input-class-name="field"
+      v-model="item.date"
+    />
     <span class="field">
       <select class="grow" name="division" v-model="item.division">
         <option disabled selected value="">-- choose division --</option>
@@ -270,14 +270,14 @@ import { useCollection } from "vuefire";
 const db = getFirestore(firebaseApp);
 const storage = firebase.storage();
 import { useStateStore } from "../stores/state";
-// import Datepicker from "vuejs-datepicker";
+import Datepicker from "@vuepic/vue-datepicker";
 import { addWeeks } from "date-fns";
 import { isInteger, pickBy, debounce, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import ActionButton from "./ActionButton.vue";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
-import { downloadAttachment } from "./helpers";
+import { downloadAttachment, shortDateWithWeekday } from "./helpers";
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
@@ -294,7 +294,7 @@ export default defineComponent({
       expenseRates: store.expenseRates,
     };
   },
-  components: { ActionButton },
+  components: { ActionButton, Datepicker },
   props: ["id", "collectionName"],
   data() {
     return {
@@ -406,6 +406,7 @@ export default defineComponent({
   },
   methods: {
     downloadAttachment,
+    shortDateWithWeekday,
     // get the value of an expense rate on a specified date
     getExpenseRate(rate: string, date: Date | undefined) {
       if (this.expenseRates === null) return 0;

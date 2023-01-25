@@ -74,7 +74,7 @@ export default defineComponent({
   methods: {
     async saveThenClose() {
       try {
-        await updateDoc(doc(this.collectionName, this.itemId), {
+        await updateDoc(doc(collection(db, this.collectionName), this.itemId), {
           viewerIds: this.viewerIds,
         });
         this.closeModal();

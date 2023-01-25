@@ -1,7 +1,7 @@
 <template>
   <div id="list">
-    <reject-modal ref="rejectModal" collection="TimeSheets" />
-    <share-modal ref="shareModal" collection="TimeSheets" />
+    <reject-modal ref="rejectModal" collectionName="TimeSheets" />
+    <share-modal ref="shareModal" collectionName="TimeSheets" />
     <div
       class="listentry"
       v-for="item in items"

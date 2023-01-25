@@ -78,7 +78,7 @@ import firebase from "../firebase";
 const db = firebase.firestore();
 
 export default defineComponent({
-  props: ["id", "collection"],
+  props: ["id", "collectionName"],
   data() {
     return {
       parentPath: "",
@@ -99,7 +99,7 @@ export default defineComponent({
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = db.collection(this.collection);
+    this.collectionObject = db.collection(this.collectionName);
     this.setItem(this.id);
   },
   methods: {

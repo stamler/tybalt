@@ -1,7 +1,7 @@
 <template>
   <div>
-    <modal ref="rejectModal" collection="TimeSheets" />
-    <h4 v-if="item.weekEnding">
+    <reject-modal ref="rejectModal" collectionName="TimeSheets" />
+    <h4 v-if="item?.weekEnding">
       {{ shortDate(weekStart) }} to {{ shortDate(item.weekEnding.toDate()) }}
     </h4>
     <div>
@@ -87,27 +87,31 @@
             missingProfiles.filter((t) => t.timeSheetExpected).length
           }})
         </h5>
-        <p
-          v-for="profile in missingProfiles.filter((t) => t.timeSheetExpected)"
-          v-bind:key="profile.id"
-        >
-          <a
-            :href="`mailto:${
-              profile.email
-            }?subject=Please submit a timesheet for the week ending ${shortDate(
-              item.weekEnding.toDate()
-            )}&body=Hi ${
-              profile.givenName
-            }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting https://tybalt.tbte.ca.`"
+        <template v-if="item?.weekEnding !== undefined">
+          <p
+            v-for="profile in missingProfiles.filter(
+              (t) => t.timeSheetExpected
+            )"
+            v-bind:key="profile.id"
           >
-            {{ profile.surname }}, {{ profile.givenName }}
-          </a>
-          <action-button
-            type="removeuser"
-            :title="`Ignore ${profile.displayName} this week`"
-            @click="ignore(profile.id)"
-          />
-        </p>
+            <a
+              :href="`mailto:${
+                profile.email
+              }?subject=Please submit a timesheet for the week ending ${shortDate(
+                item.weekEnding.toDate()
+              )}&body=Hi ${
+                profile.givenName
+              }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting https://tybalt.tbte.ca.`"
+            >
+              {{ profile.surname }}, {{ profile.givenName }}
+            </a>
+            <action-button
+              type="removeuser"
+              :title="`Ignore ${profile.displayName} this week`"
+              @click="ignore(profile.id)"
+            />
+          </p>
+        </template>
         <br />
       </div>
 
@@ -160,7 +164,7 @@
 </template>
 
 <script lang="ts">
-import Modal from "./RejectModal.vue";
+import RejectModal from "./RejectModal.vue";
 import { defineComponent } from "vue";
 import { shortDate } from "./helpers";
 import { subWeeks, addMilliseconds } from "date-fns";
@@ -198,7 +202,7 @@ export default defineComponent({
   },
   components: {
     ActionButton,
-    Modal,
+    RejectModal,
   },
   props: ["id", "collectionName"],
   computed: {

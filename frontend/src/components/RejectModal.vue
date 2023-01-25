@@ -8,7 +8,7 @@
           <h5>{{ itemId }}</h5>
         </div>
         <div class="modal__body">
-          <p>What's wrong with this {{ collection }} document?</p>
+          <p>What's wrong with this {{ collectionName }} document?</p>
           <textarea
             placeholder="give a reason at least 6 characters long"
             id="rejectionInput"
@@ -42,7 +42,7 @@ export default defineComponent({
     const { startTask, endTask } = store;
     return { startTask, endTask, user: store.user };
   },
-  props: ["collection"],
+  props: ["collectionName"],
   data() {
     return {
       parentPath: "",
@@ -53,7 +53,11 @@ export default defineComponent({
   },
   methods: {
     async rejectThenRedirect() {
-      await this.rejectDoc(this.itemId, this.rejectionReason, this.collection);
+      await this.rejectDoc(
+        this.itemId,
+        this.rejectionReason,
+        this.collectionName
+      );
       this.closeModal();
       this.$router.push(this.parentPath);
     },
@@ -68,12 +72,12 @@ export default defineComponent({
       this.itemId = id;
       //document.querySelector("body")?.classList.add("overflow-hidden");
     },
-    rejectDoc(docId: string, reason: string, collection: string) {
+    rejectDoc(docId: string, reason: string, collectionName: string) {
       this.startTask({
         id: `reject${docId}`,
         message: "rejecting",
       });
-      const docRef = db.collection(collection).doc(docId);
+      const docRef = db.collection(collectionName).doc(docId);
       return db
         .runTransaction((transaction) => {
           return transaction
@@ -84,10 +88,10 @@ export default defineComponent({
               }
               const data = tsDoc?.data() ?? undefined;
               if (
-                (collection === "TimeSheets" &&
+                (collectionName === "TimeSheets" &&
                   data?.submitted === true &&
                   data?.locked === false) ||
-                (collection === "Expenses" &&
+                (collectionName === "Expenses" &&
                   data?.submitted === true &&
                   (data?.committed === false || data?.committed === undefined))
               ) {

@@ -8,6 +8,7 @@
 
 <script lang="ts">
 // @ is an alias to /src
+import "@vuepic/vue-datepicker/dist/main.css";
 import SideNav from "./components/SideNav.vue";
 import AppHeader from "./components/AppHeader.vue";
 import { useStateStore } from "./stores/state";
@@ -422,5 +423,19 @@ button {
 /* horizontal scrolling of wide components that need more space */
 .horizontalScroll {
   overflow-x: auto;
+}
+
+/* override "@vuepic/vue-datepicker/dist/main.css" */
+.dp__input {
+  border: none;
+  /* border-bottom: 1px solid #e6e6e6; */
+  /* border-radius: 0; */
+  /* line-height: 1.4em; */
+  /* font-size: 1.2em; */
+  padding-bottom: 0.1em;
+  padding-top: 0.1em;
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
 }
 </style>

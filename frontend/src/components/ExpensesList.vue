@@ -1,6 +1,6 @@
 <template>
   <div id="list">
-    <modal ref="rejectModal" collection="Expenses" />
+    <reject-modal ref="rejectModal" collectionName="Expenses" />
     <div
       v-for="(expenses, weekEnding) in processedItems"
       v-bind:key="weekEnding"
@@ -215,7 +215,7 @@ import {
   del,
   downloadAttachment,
 } from "./helpers";
-import Modal from "./RejectModal.vue";
+import RejectModal from "./RejectModal.vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -246,14 +246,24 @@ export default defineComponent({
   props: ["approved", "collectionName"],
   computed: {
     processedItems(): { [uid: string]: DocumentData[] } {
-      return _.groupBy(this.items, (x) =>
+      // Filter out items if they are committed and their commitTime is more
+      // than 1 year ago
+      const now = new Date();
+      const oneYearAgo = addDays(now, -365);
+      const currentItems = this.items.filter((x) => {
+        if (x.committed === true) {
+          return x.commitTime.toDate().getTime() > oneYearAgo.getTime();
+        }
+        return true;
+      });
+      return _.groupBy(currentItems, (x) =>
         nextSaturday(x.date.toDate()).getTime()
       );
     },
   },
   components: {
     ActionButton,
-    Modal,
+    RejectModal,
     Icon,
   },
   data() {

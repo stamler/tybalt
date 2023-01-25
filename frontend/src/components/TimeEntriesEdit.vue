@@ -8,27 +8,19 @@
         </option>
       </select>
     </span>
-    <span class="field">
-      <datepicker
-        name="datepicker"
-        placeholder="Date"
-        :auto-apply="true"
-        :min-date="dps.disabled.to"
-        :max-date="dps.disabled.from"
-        :highlight="dps.highlighted.dates"
-        v-model="item.date"
-      />
-      <!-- <datepicker
-        name="datepicker"
-        input-class="calendar-input"
-        wrapper-class="calendar-wrapper"
-        placeholder="Date"
-        :inline="false"
-        :disabledDates="dps.disabled"
-        :highlighted="dps.highlighted"
-        v-model="item.date"
-      /> -->
-    </span>
+    <datepicker
+      name="datepicker"
+      placeholder="Date"
+      :auto-apply="true"
+      :min-date="dps.disabled.to"
+      :max-date="dps.disabled.from"
+      :highlight="dps.highlighted.dates"
+      :enable-time-picker="false"
+      :format="shortDateWithWeekday"
+      hide-input-icon
+      input-class-name="field"
+      v-model="item.date"
+    />
     <span class="field">
       <select class="grow" name="timetype" v-model="item.timetype">
         <option v-for="t in timetypes" :value="t.id" v-bind:key="t.id">
@@ -60,7 +52,7 @@
       </span>
       <span class="field" v-show="job !== undefined">
         <span class="grow">
-          <action-button type="delete" @click="job = undefined" />
+          <action-button type="delete" @click.prevent="job = undefined" />
           {{ job }} / {{ item.client }}:{{ item.jobDescription }}
         </span>
       </span>
@@ -192,8 +184,8 @@ import {
 const db = getFirestore(firebaseApp);
 import { useStateStore } from "../stores/state";
 import Datepicker from "@vuepic/vue-datepicker";
-import "@vuepic/vue-datepicker/dist/main.css";
 import { addWeeks, subWeeks } from "date-fns";
+import { shortDateWithWeekday } from "./helpers";
 import _ from "lodash";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
@@ -282,6 +274,7 @@ export default defineComponent({
     this.setupInit();
   },
   methods: {
+    shortDateWithWeekday,
     async setupInit() {
       const profileSecrets = await getDoc(
         doc(db, "ProfileSecrets", this.user.uid)

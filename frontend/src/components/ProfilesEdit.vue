@@ -13,17 +13,19 @@
         v-model.number="item.tbtePayrollId"
       />
     </span>
-    <!-- <span class="field">
+    <span class="field">
       <label for="datepicker">Vehicle Insurance Expiry</label>
       <datepicker
         name="datepicker"
-        input-class="calendar-input"
-        wrapper-class="calendar-wrapper"
         placeholder="Date"
-        :inline="false"
+        :auto-apply="true"
+        :enable-time-picker="false"
+        :format="shortDateWithYear"
+        hide-input-icon
+        input-class-name="field"
         v-model="item.personalVehicleInsuranceExpiry"
       />
-    </span> -->
+    </span>
     <span class="field">
       <label for="salary">Salary</label>
       <input class="grow" type="checkbox" name="salary" v-model="item.salary" />
@@ -172,6 +174,7 @@
 import { defineComponent } from "vue";
 import { firebaseApp } from "../firebase";
 import { useCollection } from "vuefire";
+import { shortDateWithYear } from "./helpers";
 import {
   updateDoc,
   getFirestore,
@@ -184,11 +187,11 @@ import {
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 import { Icon } from "@iconify/vue";
-// import Datepicker from "vuejs-datepicker";
+import Datepicker from "@vuepic/vue-datepicker";
 
 export default defineComponent({
   components: {
-    // Datepicker,
+    Datepicker,
     Icon,
   },
   props: ["id", "collectionName"],
@@ -214,6 +217,7 @@ export default defineComponent({
     this.setItem(this.id);
   },
   methods: {
+    shortDateWithYear,
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";

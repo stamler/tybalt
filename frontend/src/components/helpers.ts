@@ -379,8 +379,7 @@ export function exportDate(date: Date) {
 }
 
 export function exportDateWeekStart(date: Date) {
-  const startDate = subDays(date, 6);
-  return format(startDate, "yyyy MMM dd");
+  return shortDateWithYear(subDays(date, 6));
 }
 
 // Force the download of a blob to a file by creating an
@@ -626,6 +625,14 @@ export async function generatePayablesCSVSQL(
 
 export function shortDate(date: Date) {
   return format(date, "MMM dd");
+}
+
+export function shortDateWithYear(date: Date) {
+  return format(date, "yyyy MMM dd");
+}
+
+export function shortDateWithWeekday(date: Date) {
+  return format(date, "EEE MMM dd");
 }
 
 export function dateFormat(date: Date): string {

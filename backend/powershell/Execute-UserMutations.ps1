@@ -269,6 +269,40 @@ function Offboard-User {
   Write-Output "account archived for user with userSourceAnchor $UserSourceAnchor"
 }
 
+# TODO: COMPLETE THIS Add function to offboard a user where the mailbox is turned into a
+# shared mailbox
+function Offboard-ShareMail {
+  try {
+    #Disable the account
+    $adUser | Set-ADUser -Enabled $false
+    
+    # Reset the password
+    $adUser | Set-ADAccountPassword -Reset -NewPassword $pwobject.encrypted
+    
+    # Remove group memberships except for group "Domain Users"
+    $groups = $adUser | Get-ADPrincipalGroupMembership
+    foreach ($group in $groups) {
+      if ($group.name -eq "Domain Users") {
+        Continue
+      }
+      Remove-ADGroupMember -Identity $group -Members $adUser -Confirm:$False
+    }
+    
+    #Move to DisabledUsersSharedMailbox OU
+    $adUser | Move-ADObject -TargetPath "OU=DisabledUsersSharedMailbox,DC=main,DC=tbte,DC=ca"
+
+    # The shared mailbox converion must be performed in the Azure Set the result
+    # to onSiteComplete then a further process will check for this result and do
+    # the conversion in Azure.
+
+    # The sharing of the mailbox will need to be completed manually in Azure
+    # after this is complete.
+
+    # We must also ensure that licenses are removed from these users after they
+    # are converted to shared mailboxes.
+  }
+}
+
 # The result of Invoke-RestMethod will automatically be converted to a PSObject
 $response = Invoke-RestMethod -Uri $dispatchUri -Headers $headers -Method Get -ContentType "application/json"
 
