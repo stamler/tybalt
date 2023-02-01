@@ -6,6 +6,9 @@ yarn-debug.log*
 yarn-error.log*
 firebase-debug.log*
 
+# CSV data
+*.csv
+
 # Exported Firestore test data for import into emulator
 local_test_data/
 # Firebase cache
@@ -75,3 +78,4 @@ node_modules/
 backend/functions/src/dev_creds.ts
 frontend/testdocs/
 *.http
+.ipynb_checkpoints
