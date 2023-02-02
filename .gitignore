@@ -79,3 +79,8 @@ backend/functions/src/dev_creds.ts
 frontend/testdocs/
 *.http
 .ipynb_checkpoints
+
+# The copy of the config file that is used by the frontend and backend during
+# build from the project root
+frontend/src/config.ts
+backend/functions/src/config.ts

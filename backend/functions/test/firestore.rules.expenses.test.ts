@@ -450,7 +450,8 @@ describe("Firestore Rules (Expenses)", function () {
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
-      await firebase.assertSucceeds(doc.update({ 
+      await firebase.assertSucceeds(doc.update({
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",
@@ -462,12 +463,14 @@ describe("Firestore Rules (Expenses)", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "alice",
         commitName: "Bob Example",
       }));
       await firebase.assertSucceeds(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",
@@ -479,6 +482,7 @@ describe("Firestore Rules (Expenses)", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",
@@ -486,6 +490,7 @@ describe("Firestore Rules (Expenses)", function () {
       }));
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ submitted: true, approved: true, managerUid: "alice" });
       await firebase.assertSucceeds(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",
@@ -520,6 +525,7 @@ describe("Firestore Rules (Expenses)", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "bob",...bob, eapr: true } }).firestore();
       const doc = db.collection("Expenses").doc("F3312A64Lein7bRiC5HG");
       await firebase.assertFails(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",
@@ -527,6 +533,7 @@ describe("Firestore Rules (Expenses)", function () {
       }));
       await adminDb.collection("Expenses").doc("F3312A64Lein7bRiC5HG").update({ date: subDays(new Date(), 1) , submitted: true, approved: true, managerUid: "alice" });
       await firebase.assertSucceeds(doc.update({ 
+        exported: false,
         committed: true,
         commitTime: firebase.firestore.FieldValue.serverTimestamp(),
         commitUid: "bob",

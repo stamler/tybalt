@@ -12,8 +12,8 @@
       <img alt="TBTE logo" src="../assets/logo.png" />
       <div class="infobox">
         <h3>Balances</h3>
-        <h4 v-if="item.usedAsOf !== null">
-          Available time off as of {{ item.usedAsOf | shortDate }}
+        <h4 v-if="item.usedAsOf !== undefined">
+          Available time off as of {{ shortDate(item.usedAsOf.toDate()) }}
         </h4>
         <h4 v-else>Available time off</h4>
         <p>Vacation: {{ item.openingOV - item.usedOV }} hr(s)</p>

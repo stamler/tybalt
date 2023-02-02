@@ -32,10 +32,20 @@ describe("tallyAndValidate", async () => {
 
   const workDescription = "Generic Description";
 
+  // contents of the AnnualDates document in the Config collection
+  const annualDates = { 
+    openingMileageDate: admin.firestore.Timestamp.fromDate(new Date(2022,4,1)),
+    timeOffResetDates: [
+      admin.firestore.Timestamp.fromDate(new Date(2022,0,8)),
+      admin.firestore.Timestamp.fromDate(new Date(2023,0,7)),
+    ],
+  };
+
   describe("timesheet with no job numbers or chargeable time", async () => {
     const fullITDay = { division: "CI", divisionName: "Information Technology", timetype: "R", timetypeName: "Hours Worked", hours: 8, workDescription };
     beforeEach("reset data", async () => {
       await cleanupFirestore(projectId);
+      await db.collection("Config").doc("AnnualDates").set({ ...annualDates });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,4), uid: alice.uid, weekEnding, ...fullITDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,5), uid: alice.uid, weekEnding, ...fullITDay });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,6), uid: alice.uid, weekEnding, ...fullITDay });
@@ -132,6 +142,7 @@ describe("tallyAndValidate", async () => {
     });
     it("tallies and validates for hourly staff member with a Full Week Off Entry", async () => {
       await cleanupFirestore(projectId);
+      await db.collection("Config").doc("AnnualDates").set({ ...annualDates });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -180,6 +191,7 @@ describe("tallyAndValidate", async () => {
     });
     it("rejects for hourly staff with more than one Full Week Off (OW) entry", async () => {
       await cleanupFirestore(projectId);
+      await db.collection("Config").doc("AnnualDates").set({ ...annualDates });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,7), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       const timeEntries = await db
@@ -197,6 +209,7 @@ describe("tallyAndValidate", async () => {
     });
     it("rejects for salaried staff member with a Full Week Off (OW) entry", async () => {
       await cleanupFirestore(projectId);
+      await db.collection("Config").doc("AnnualDates").set({ ...annualDates });
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype: "OW", timetypeName: "Full Week Off" });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -680,6 +693,7 @@ describe("tallyAndValidate", async () => {
     const fullEEDay = { division: "EE", divisionName: "Environmental", timetype: "R", timetypeName: "Hours Worked", hours: 4, workDescription, ...jobPartial };
     beforeEach("reset data", async () => {
       await cleanupFirestore(projectId);
+      await db.collection("Config").doc("AnnualDates").set({ ...annualDates });
       await db.collection("Jobs").doc("25-001").set({ client: "Superman", description: "Earth Rotation", manager: "Joe Schmoe", status: "Active" });
       await db.collection("Jobs").doc("25-002").set({ client: "Lex Luthor", description: "Counter-Earth Rotation", manager: "Joe Schmoe", status: "Active" });
       await db.collection("Jobs").doc("25-003").set({ client: "Lex Luthor", description: "Neuralize Superman", manager: "Joe Schmoe", status: "Cancelled" });
