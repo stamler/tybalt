@@ -5,6 +5,7 @@
   },
   "description": "Cloud Functions for Firebase",
   "scripts": {
+    "prebuild": "cp ../../config.ts src/config.ts",
     "clean": "rimraf lib/",
     "copyfiles": "copyfiles -u 1 src/**/*.sql lib",
     "postbuild": "npm run copyfiles",

@@ -9,7 +9,7 @@
     </div>
     <div id="dash">
       <h2>Hi, {{ user.displayName }}</h2>
-      <img alt="TBTE logo" src="../assets/logo.png" />
+      <img alt="Company logo" src="../assets/logo.png" />
       <div class="infobox">
         <h3>Balances</h3>
         <h4 v-if="item.usedAsOf !== undefined">
@@ -136,6 +136,7 @@ import { shortDate, downloadBlob } from "./helpers";
 import { useStateStore } from "../stores/state";
 import WaitMessages from "./WaitMessages.vue";
 import { useCollection } from "vuefire";
+import { COMPANY_SHORTNAME } from "../config";
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
@@ -210,7 +211,7 @@ if ((Test-Path $configPath) -eq $False) {
   # Create directory if it doesn't exist
   New-Item $configPath -ItemType Directory
 }
-$profileName = "TBTE"
+$profileName = "${COMPANY_SHORTNAME}"
 if ((Test-Path "$configPath\\$profileName.conf.dpapi") -eq $True) {
   # Delete existing profile
   Remove-Item "$configPath\\$profileName.conf.dpapi"
@@ -231,7 +232,7 @@ Endpoint = ${client.Peer.Endpoint}
       const configVarAssignment = `$configFile = "${configFile}"`;
 
       const writeConfigFileScript = `
-$configFile | Out-File -FilePath "$configPath\\TBTE.conf" -Encoding ASCII
+$configFile | Out-File -FilePath "$configPath\\${COMPANY_SHORTNAME}.conf" -Encoding ASCII
 Remove-Item $PSCommandPath
 `;
 
@@ -242,7 +243,7 @@ if ((Test-Path 'HKLM:\\Software\\WireGuard\\') -eq $False) {
   New-Item 'HKLM:\\Software\\WireGuard\\'
 }
 New-ItemProperty 'HKLM:\\Software\\WireGuard' -Name 'LimitedOperatorUI' -Value 1 -PropertyType 'DWord' -Force
-Add-LocalGroupMember -Group 'Network Configuration Operators' -Member 'TBTE\\${client.samAccountName}'
+Add-LocalGroupMember -Group 'Network Configuration Operators' -Member '${COMPANY_SHORTNAME}\\${client.samAccountName}'
 `;
       const blob = new Blob(
         [

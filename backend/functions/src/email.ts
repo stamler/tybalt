@@ -3,6 +3,7 @@ import * as functions from "firebase-functions";
 import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
 import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
+import { APP_URL } from "./config";
 import * as _ from "lodash";
 
 // Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
@@ -29,7 +30,7 @@ export const scheduledSubmitReminder = functions.pubsub
             `Hi ${ profile.get("givenName")},\n\n` +
             `Your time sheet for the week ending ${
               format(utcToZonedTime(lastWeek,"America/Thunder_Bay"), "MMMM d")
-            } is due. Please submit one as soon as possible by visiting https://tybalt.tbte.ca/time/entries/list\n\n` +
+            } is due. Please submit one as soon as possible by visiting ${APP_URL}/time/entries/list\n\n` +
             "- Tybalt",
         },
       });
@@ -67,7 +68,7 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
             `One or more of the staff who report to you have submitted ` +
             `expenses requiring your approval. Please approve them at your ` + 
             `earliest convenience by visiting ` + 
-            `https://tybalt.tbte.ca/expense/entries/pending\n\n` +
+            `${APP_URL}/expense/entries/pending\n\n` +
             "- Tybalt",
         },
       });
@@ -103,7 +104,7 @@ export const scheduledTimeSheetApprovalReminder = functions.pubsub
           `One or more of the staff who report to you have submitted ` +
           `time sheets requiring your approval. Please approve them at your ` + 
           `earliest convenience by visiting ` + 
-          `https://tybalt.tbte.ca/time/sheets/pending\n\n` +
+          `${APP_URL}/time/sheets/pending\n\n` +
           "- Tybalt",
       },
     });
@@ -167,7 +168,7 @@ export async function emailOnReject(
         `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
         afterData.rejectorName }. The following reason was provided: \n\n"${
         afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
-        ` soon as possible by visiting https://tybalt.tbte.ca/time/sheets/list\n\n- Tybalt`,
+        ` soon as possible by visiting ${APP_URL}/time/sheets/list\n\n- Tybalt`,
       },
     });
 
@@ -210,7 +211,7 @@ export async function emailOnReject(
         `Your expense with payment type ${afterData.paymentType} dated ${
         expenseDateString } was rejected by ${ afterData.rejectorName }. ` +
         `The following reason was provided: \n\n"${
-        afterData.rejectionReason }"\n\nPlease edit your expense as required by visiting https://tybalt.tbte.ca/expense/entries/list` +
+        afterData.rejectionReason }"\n\nPlease edit your expense as required by visiting ${APP_URL}/expense/entries/list` +
         "\n\n- Tybalt",
       },
     });
@@ -286,7 +287,7 @@ export async function emailOnShare(
           `${profile.get("displayName")}'s time sheet for the week ending ${ 
           weekEndingString } has been shared with you by ${ profile.get("managerName") 
           }. You can review timesheets that have been shared with you by` +
-          ` visiting https://tybalt.tbte.ca/time/sheets/shared\n\n- Tybalt`,
+          ` visiting ${APP_URL}/time/sheets/shared\n\n- Tybalt`,
         },
       });
     }

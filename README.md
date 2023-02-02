@@ -15,7 +15,7 @@ Corporate time and expense tracking, computer asset management, and reporting in
 2. Set environment variables
 
     ``` bash
-    firebase functions:config:set tybalt.azureuserautomation.secret="TBTAzureTenant secret" 
+    firebase functions:config:set tybalt.azureuserautomation.secret="COMPANYAzureTenant secret" 
     firebase functions:config:set tybalt.wireguard.secret="WireGuard server secret" 
     firebase functions:config:set tybalt.radiator.secret="tybalt secret"
     
@@ -34,7 +34,7 @@ Corporate time and expense tracking, computer asset management, and reporting in
     firebase functions:config:set mysqlSSH.pass="mysql ssh tunnel password"
     ```
 
-3. Setup credential in Azure Automation account with username *TBTAzureTenant* and secret matching the secret in step 2. This is used for dumping AD to Tybalt cloud function.
+3. Setup credential in Azure Automation account with username *COMPANYAzureTenant* and secret matching the secret in step 2. This is used for dumping AD to Tybalt cloud function.
 
 4. Setup the "Trigger Email" extension in firebase. The email documents collection is `Emails` and the users collection is `Profiles`. Also set an appropriate FROM address and SMTP connection URI.  
 

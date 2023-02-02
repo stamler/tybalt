@@ -13,7 +13,7 @@ Set-Acl $path $acl
 
 $path2 = "C:\Packages\Plugins\Microsoft.Azure.Automation.HybridWorker.HybridWorkerForWindows\0.1.0.22\HybridWorkerPackage\HybridWorkerAgent"
 $acl = Get-Acl $path2
-$ar = New-Object System.Security.AccessControl.FileSystemAccessRule("TBTE\hybridworker", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+$ar = New-Object System.Security.AccessControl.FileSystemAccessRule($user, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
 $acl.SetAccessRule($ar)
 Set-Acl $path2 $acl
 

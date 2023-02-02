@@ -256,6 +256,32 @@ describe("Other Firestore Rules", function () {
         })
       );
     });
+    it("rejects if payrollId is present but does not match tbtePayrollId", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob");
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          payrollId: 28,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          tbtePayrollId: 28,
+          payrollId: 29,
+          defaultDivision: "ABC",
+          salary: false,
+        })
+      );
+    });
     it("requires offRotation to be boolean or missing", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

@@ -994,7 +994,7 @@ export default Vue.extend({
             firestoreDoc ? entry.date.toDate() : entry.date
           );
           const line = {
-            client: "TBTE",
+            client: COMPANY_SHORTNAME,
             job: "", // the job number
             division: entry.division,
             timetype: entry.timetype,
@@ -1030,7 +1030,7 @@ export default Vue.extend({
         // TODO: verify that time zone conversion isn't needed here
         const date = new Date(entry.date);
         const line = {
-          client: "TBTE",
+          client: COMPANY_SHORTNAME,
           job: "", // the job number
           division: entry.division,
           timetype: entry.timetype,

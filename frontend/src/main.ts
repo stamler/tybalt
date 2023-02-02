@@ -2,7 +2,7 @@
 import { App, createApp } from "vue";
 import { VueFire, VueFireFirestoreOptionsAPI } from "vuefire";
 import InstantSearch from "vue-instantsearch/vue3/es";
-
+import { MICROSOFT_TENANT_ID } from "./config";
 // Vue.config.productionTip = false;
 // Vue.use(InstantSearch);
 
@@ -110,7 +110,7 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
     });
   } else {
     const provider = new firebase.auth.OAuthProvider("microsoft.com");
-    provider.setCustomParameters({ tenant: "tbte.onmicrosoft.com" });
+    provider.setCustomParameters({ tenant: MICROSOFT_TENANT_ID });
     // https://stackoverflow.com/questions/41055699/why-does-firebase-auth-work-for-chrome-but-not-firefox
     // signInWithRedirect can have issues in Firefox and other browsers
     // signInWithPopup can be used instead. Disabling enhanced tracking

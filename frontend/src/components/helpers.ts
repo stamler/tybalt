@@ -1,6 +1,7 @@
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { format, addDays, subDays, differenceInDays } from "date-fns";
 import firebase, { firebaseApp } from "../firebase";
+import { COMPANY_SHORTNAME } from "../config";
 import {
   getFirestore,
   collection,
@@ -298,7 +299,7 @@ export async function generateTimeReportCSV(
       // TODO: verify that time zone conversion isn't needed here
       const date = new Date(firestoreDoc ? entry.date.toDate() : entry.date);
       const line = {
-        client: "TBTE",
+        client: COMPANY_SHORTNAME,
         job: "", // the job number
         division: entry.division,
         timetype: entry.timetype,
@@ -334,7 +335,7 @@ export async function generateTimeReportCSV(
     // TODO: verify that time zone conversion isn't needed here
     const date = new Date(entry.date);
     const line = {
-      client: "TBTE",
+      client: COMPANY_SHORTNAME,
       job: "", // the job number
       division: entry.division,
       timetype: entry.timetype,

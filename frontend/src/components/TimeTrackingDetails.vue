@@ -101,7 +101,7 @@
                 item.weekEnding.toDate()
               )}&body=Hi ${
                 profile.givenName
-              }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting https://tybalt.tbte.ca.`"
+              }, you have not yet submitted a timesheet. Please submit a timesheet as soon as possible by visiting ${APP_URL}.`"
             >
               {{ profile.surname }}, {{ profile.givenName }}
             </a>
@@ -167,6 +167,7 @@
 import RejectModal from "./RejectModal.vue";
 import { defineComponent } from "vue";
 import { shortDate } from "./helpers";
+import { APP_URL } from "../config";
 import { subWeeks, addMilliseconds } from "date-fns";
 import { firebaseApp } from "../firebase";
 import { useCollection } from "vuefire";
@@ -308,6 +309,7 @@ export default defineComponent({
   },
   data() {
     return {
+      APP_URL,
       parentPath: "",
       collectionObject: null as CollectionReference | null,
       item: {} as DocumentData | undefined,

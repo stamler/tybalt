@@ -4,17 +4,17 @@ import "firebase/compat/firestore";
 import "firebase/compat/auth";
 import "firebase/compat/storage";
 import "firebase/compat/analytics";
-
+import { APP_HOSTNAME } from "./config";
 // Initialize Firebase
 
 // Dynamic State Partitioning breaks the login flow and causes an endless loop
 // if "isolate other cross-site cookies" is enabled in Firefox settings. The
 // authDomain is set to match the actual custom URL of the site, replacing
-// charade-ca63f.firebaseapp.com with tybalt.tbte.ca and the Azure App
+// firebaseApp-ca99XX.firebaseapp.com with APP_HOSTNAME and the Azure App
 // registration configuration matches.
 export const firebaseApp = firebase.initializeApp({
   apiKey: "AIzaSyCZpTxn-kK2zEpG7rlXn_eGsFHa4xmuVPM",
-  authDomain: "tybalt.tbte.ca", // include https://tybalt.tbte.ca/__/auth/handler in Azure App registration "Redirect URIs"
+  authDomain: APP_HOSTNAME, // include https://APP_HOSTNAME/__/auth/handler in Azure App registration "Redirect URIs"
   databaseURL: "https://charade-ca63f.firebaseio.com",
   projectId: "charade-ca63f",
   storageBucket: "charade-ca63f.appspot.com",
