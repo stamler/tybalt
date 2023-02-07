@@ -134,6 +134,7 @@ export async function exportTime() {
       surname: snapData.surname,
       managerUid: snapData.managerUid,
       managerName: snapData.managerName,
+      payrollId: snapData.tbtePayrollId,
       tbtePayrollId: snapData.tbtePayrollId,
       workWeekHours,
       salary: snapData.salary,
@@ -159,7 +160,7 @@ export async function exportTime() {
     try {
       await Promise.all([tsSQLResponse, entriesSQLResponse]);
     } catch (error) {
-      functions.logger.error(`Failed to export TimeSheets document ${timeSheet.id} ${timeSheet.tbtePayrollId}`);
+      functions.logger.error(`Failed to export TimeSheets document ${timeSheet.id} ${timeSheet.payrollId}`);
       throw error
     }
 
