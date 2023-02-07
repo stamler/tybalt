@@ -1,4 +1,4 @@
-SELECT tbtePayrollId,
+SELECT payrollId,
   weekEnding,
   surname,
   givenName,
@@ -48,7 +48,7 @@ FROM (
         ELSE 0
       END AS totalOvertimeHours
     FROM (
-        SELECT TimeSheets.tbtePayrollId AS tbtePayrollId,
+        SELECT TimeSheets.payrollId AS payrollId,
           TimeSheets.weekEnding AS weekEnding,
           TimeSheets.surname AS surname,
           TimeSheets.givenName AS givenName,

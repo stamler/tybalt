@@ -18,7 +18,7 @@ will be the only behaviour in Tybalt payroll reports.
 
 /* The outside query does math for some additional columns and sorts and aliases
  them for presentation to the user */
-SELECT tbtePayrollId,
+SELECT payrollId,
   DATE_FORMAT(weekEnding,"%Y %b %d") weekEnding,
   surname,
   givenName,
@@ -130,7 +130,7 @@ FROM (
              ability to have DISTINCT inside it */
             SELECT *
             FROM (
-                SELECT tbtePayrollId,
+                SELECT tbtePayrollId "payrollId",
                   workWeekHours,
                   committedWeekEnding weekEnding,
                   surname,
@@ -168,7 +168,7 @@ FROM (
              created for committedWeekEnding, the second uid column, and
              hasAmendmentsForWeekEnding since these columns only appear in the
              first subquery of the UNION */
-            SELECT tbtePayrollId,
+            SELECT payrollId,
               workWeekHours,
               weekEnding,
               surname,
@@ -190,4 +190,4 @@ FROM (
           ) BASE
         GROUP BY primaryUid
       ) MIDDLE
-  ) FINAL ORDER BY LENGTH(tbtePayrollId), tbtePayrollId;
+  ) FINAL ORDER BY LENGTH(payrollId), payrollId;
