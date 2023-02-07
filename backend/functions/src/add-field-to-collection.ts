@@ -17,20 +17,20 @@ async function addFieldToCollection(fieldname: string, collection: string) {
     querySnap = runCount > 0 ?
       await db
         .collection(collection)
-        .where("committed", "==", true) // CUSTOMIZATION POINT
+        .orderBy("tbtePayrollId") // CUSTOMIZATION POINT
         .startAfter(last)
         .limit(500) // limit 500 writes per batch request
         .get() :
       await db
         .collection(collection)
-        .where("committed", "==", true) // CUSTOMIZATION POINT
+        .orderBy("tbtePayrollId") // CUSTOMIZATION POINT
         .limit(500) // limit 500 writes per batch request
         .get();
     const batch = db.batch();
 
     querySnap.forEach((docSnap) => {
       batch.update(docSnap.ref, {
-        [fieldname]: false, // CUSTOMIZATION POINT
+        [fieldname]: docSnap.get("tbtePayrollId"), // CUSTOMIZATION POINT
       });
     });
     last = querySnap.docs[querySnap.docs.length - 1];

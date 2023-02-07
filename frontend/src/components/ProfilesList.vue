@@ -23,9 +23,7 @@
           <span v-else class="attention">Missing Manager</span>
         </div>
         <div class="thirdline">
-          <span v-if="item.tbtePayrollId">
-            /Payroll ID: {{ item.tbtePayrollId }}
-          </span>
+          <span v-if="item.payrollId"> /Payroll ID: {{ item.payrollId }} </span>
           <span v-else class="attention"> Missing Payroll ID </span>
           <span v-if="typeof item.salary === 'boolean'">
             /Wage:
