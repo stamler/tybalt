@@ -12,7 +12,7 @@
       <img alt="Company logo" src="../assets/logo.png" />
       <div class="infobox">
         <h3>Balances</h3>
-        <h4 v-if="item.usedAsOf !== undefined">
+        <h4 v-if="item.usedAsOf !== undefined && item.usedAsOf !== null">
           Available time off as of {{ shortDate(item.usedAsOf.toDate()) }}
         </h4>
         <h4 v-else>Available time off</h4>
@@ -22,7 +22,12 @@
           Company policy requires the use of vacation time prior to using PPTO
         </p>
         <br />
-        <h4 v-if="item.mileageClaimedSince !== undefined">
+        <h4
+          v-if="
+            item.mileageClaimedSince !== undefined &&
+            item.mileageClaimedSince !== null
+          "
+        >
           Mileage Claimed since
           {{ shortDate(item.mileageClaimedSince.toDate()) }}
         </h4>
