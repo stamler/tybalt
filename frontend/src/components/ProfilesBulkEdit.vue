@@ -18,7 +18,7 @@
     <div class="listentry" v-for="item in items" v-bind:key="item.id">
       <div class="anchorbox">
         {{ item.displayName }}
-        {{ item.tbtePayrollId }}
+        {{ item.payrollId }}
       </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
@@ -43,7 +43,7 @@
             placeholder="123.45"
           />
           <span v-if="item.openingOV >= 0" style="margin-left: 0.5em">
-            <span class="labels">
+            <span class="labels" v-if="item.usedOV">
               used: {{ item.usedOV }} hrs to
               {{ shortDate(item.usedAsOf.toDate()) }}
             </span>
@@ -68,7 +68,7 @@
             placeholder="48"
           />
           <span v-if="item.openingOP >= 0" style="margin-left: 0.5em">
-            <span class="labels">
+            <span class="labels" v-if="item.usedOP">
               used: {{ item.usedOP }} hrs to
               {{ shortDate(item.usedAsOf.toDate()) }}
             </span>
