@@ -115,7 +115,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
 
   // Pull data from the UserMutation collection, matching on the email address,
-  // to populate salary, defaultDivision, tbtePayrollId, managerUid, managerName
+  // to populate salary, defaultDivision, payrollId, managerUid, managerName
   const mutationQuery = await db.collection("UserMutations")
     .where("status", "==", "onPremCreated")
     .where("returnedData.email", "==", user.email)
@@ -126,6 +126,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
     salary: false,
     defaultDivision: null,
     tbtePayrollId: null,
+    payrollId: null,
     managerUid: null,
     managerName: null,
   };
@@ -137,7 +138,8 @@ export async function createProfile(user: admin.auth.UserRecord) {
     mutationProps = {
       salary: data.remuneration === "Salary" ? true : false,
       defaultDivision: data.defaultDivision || null,
-      tbtePayrollId: data.tbtePayrollId || null,
+      tbtePayrollId: data.payrollId || null,
+      payrollId: data.payrollId || null,
       managerUid: data.managerUid || null,
       managerName: data.managerName || null,
     }

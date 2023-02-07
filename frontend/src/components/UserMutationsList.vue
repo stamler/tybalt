@@ -51,8 +51,8 @@
             {{ item.data.title }}, {{ item.data.department }} //
             {{ item.data.telephoneNumber }} // {{ item.data.remuneration }} //
             defaultDivision:{{ item.data.defaultDivision }} // manager:
-            {{ item.data.managerName }} // tbtePayrollId:
-            {{ item.data.tbtePayrollId }}
+            {{ item.data.managerName }} // payrollId:
+            {{ item.data.payrollId }}
           </div>
         </div>
         <div class="rowactionsbox">

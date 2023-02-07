@@ -5,12 +5,12 @@
       <span>{{ id }}</span>
     </span>
     <span class="field">
-      <label for="tbtePayrollId">Payroll ID</label>
+      <label for="payrollId">Payroll ID</label>
       <input
         class="grow"
         type="number"
-        name="tbtePayrollId"
-        v-model.number="item.tbtePayrollId"
+        name="payrollId"
+        v-model.number="item.payrollId"
       />
     </span>
     <span class="field">
@@ -274,6 +274,7 @@ export default defineComponent({
           allowPersonalReimbursement?: boolean;
           untrackedTimeOff?: boolean;
           tbtePayrollId?: number;
+          payrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
           displayName: this.item.displayName,
@@ -304,8 +305,9 @@ export default defineComponent({
         if (typeof this.item.workWeekHours === "number") {
           obj.workWeekHours = this.item.workWeekHours;
         }
-        if (this.item.tbtePayrollId) {
-          obj.tbtePayrollId = this.item.tbtePayrollId;
+        if (this.item.payrollId) {
+          obj.payrollId = this.item.payrollId;
+          obj.tbtePayrollId = this.item.payrollId;
         }
         if (this.item.personalVehicleInsuranceExpiry) {
           obj.personalVehicleInsuranceExpiry =

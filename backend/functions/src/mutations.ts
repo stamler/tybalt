@@ -67,7 +67,7 @@ interface NewADUserData extends ExistingADUserData {
   license: string;
   managerUid: string;
   managerName: string;
-  tbtePayrollId: string;
+  payrollId: string;
 }
 
 // Type Guard for ADUserData
@@ -99,7 +99,7 @@ function isNewADUserData(data: any): data is NewADUserData {
       typeof data.title === "string" &&
       typeof data.managerUid === "string" && data.managerUid.length > 12 &&
       typeof data.managerName === "string" && data.managerName.length > 5 &&
-      typeof data.tbtePayrollId === "string" && data.tbtePayrollId.length > 0 &&
+      typeof data.payrollId === "string" && data.payrollId.length > 0 &&
       areaCodeInt > 199 && areaCodeInt < 1000 &&
       centralOfficeInt > 199 && centralOfficeInt < 1000 &&
       stationInt > 0 && stationInt < 10000 &&
@@ -124,7 +124,7 @@ function mutationDataFromFields(fields: NewADUserData | ExistingADUserData) {
       remuneration: fields.remuneration,
       managerUid: fields.managerUid,
       managerName: fields.managerName,
-      tbtePayrollId: fields.tbtePayrollId,
+      payrollId: fields.payrollId,
       telephoneNumber: `+1 (${fields.areaCode}) ${fields.centralOffice}-${fields.station}`,
       license: fields.license,
     };
@@ -602,7 +602,7 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
         // password and upn and email to the UserMutation document under the
         // "returnedData" property then set the status to "onPremCreated". 
 
-        // TODO: Upon first user login, the createProfile function will be
+        // Upon first user login, the createProfile function will be
         // called to create the user profile using the data from the
         // UserMutation document. createProfile will then set the status
         // of the UserMutations document to "complete".

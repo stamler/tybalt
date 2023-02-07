@@ -64,12 +64,12 @@
       </select>
     </span>
     <span class="field">
-      <label for="tbtePayrollId">Payroll ID</label>
+      <label for="payrollId">Payroll ID</label>
       <input
         class="grow"
         type="text"
-        name="tbtePayrollId"
-        v-model.trim="item.tbtePayrollId"
+        name="payrollId"
+        v-model.trim="item.payrollId"
         placeholder="900"
       />
     </span>
