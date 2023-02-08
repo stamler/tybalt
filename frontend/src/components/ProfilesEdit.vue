@@ -274,7 +274,6 @@ export default defineComponent({
           timeSheetExpected: boolean;
           allowPersonalReimbursement?: boolean;
           untrackedTimeOff?: boolean;
-          tbtePayrollId?: number;
           payrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
@@ -308,7 +307,6 @@ export default defineComponent({
         }
         if (this.item.payrollId) {
           obj.payrollId = this.item.payrollId;
-          obj.tbtePayrollId = this.item.payrollId;
         }
         if (this.item.personalVehicleInsuranceExpiry) {
           obj.personalVehicleInsuranceExpiry =

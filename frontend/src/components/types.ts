@@ -108,7 +108,7 @@ export interface Amendment {
   workrecord?: string;
   jobHours?: number;
   salary?: boolean;
-  tbtePayrollId: number | string;
+  payrollId: number | string;
 }
 
 export type TimeOffTypes = "OB" | "OH" | "OP" | "OS" | "OV";
@@ -174,7 +174,7 @@ export function isTimeSheet(data: unknown): data is TimeSheet {
 //   payoutRequest?: number;
 //   hasAmendmentsForWeeksEnding?: string[];
 //   salary?: boolean;
-//   tbtePayrollId: number | string;
+//   payrollId: number | string;
 // }
 
 interface ExpenseCommon {

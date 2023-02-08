@@ -4,7 +4,7 @@ import { addDays } from "date-fns";
 
 const projectId = "test-app-id";
 
-const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7), salary: false, tbtePayrollId: 28 };
+const alice = { displayName: "Alice Example", timeSheetExpected: false, email: "alice@example.com", personalVehicleInsuranceExpiry: addDays(new Date(), 7), salary: false, payrollId: 28 };
 const bob = { displayName: "Bob Example", email: "bob@example.com", timeSheetExpected: true };
 const adminDb = firebase.initializeAdminApp({ projectId }).firestore();
 const timeDb = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, time: true } }).firestore();

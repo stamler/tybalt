@@ -688,7 +688,7 @@ export default Vue.extend({
     //   }
 
     //   const fields = [
-    //     "tbtePayrollId",
+    //     "payrollId",
     //     {
     //       label: "Acct/Visa/Exp",
     //       value: "paymentType",
@@ -892,8 +892,8 @@ export default Vue.extend({
         const dat = response.data.map((x: any) => {
           const processed = x;
           // Coerce number-like payrollID strings to numbers
-          if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID
-          processed.tbtePayrollId = Number(x.tbtePayrollId);
+          if (isNaN(x.payrollId)) return processed; // string payroll ID
+          processed.payrollId = Number(x.payrollId);
           return processed;
         });
         const csv = parse(dat);

@@ -233,7 +233,7 @@ describe("Other Firestore Rules", function () {
       const doc = aliceDb.collection("Profiles").doc("bob");
       await firebase.assertSucceeds(doc.get());
     });
-    it("requires a tbtePayrollId to be present", async () => {
+    it("requires a payrollId to be present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");
       await firebase.assertFails(

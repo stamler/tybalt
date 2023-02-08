@@ -525,7 +525,6 @@ export default defineComponent({
           managerName: this.profile.get("managerName"),
           managerUid: this.profile.get("managerUid"),
           division: this.profile.get("defaultDivision"),
-          tbtePayrollId: this.profile.get("payrollId"),
           payrollId: this.profile.get("payrollId"),
           paymentType: "Allowance",
           submitted: false,
