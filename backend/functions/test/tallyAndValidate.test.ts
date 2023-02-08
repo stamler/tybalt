@@ -28,7 +28,7 @@ describe("tallyAndValidate", async () => {
 
   // a mock profile object
   const openingVals = { openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 113, openingOP: 80 };
-  const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+  const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
 
   const workDescription = "Generic Description";
 
@@ -94,7 +94,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       assert.equal(timeEntries.size,5);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "The TimeEntry is missing an hours field"
@@ -113,7 +113,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       assert.equal(timeEntries.size,5);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: true, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: true, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
@@ -133,7 +133,7 @@ describe("tallyAndValidate", async () => {
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Salaried staff need permission to claim Off Rotation Entries. Speak with your manager."
       );
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: false, salary: true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, offRotation: false, salary: true, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
         "Salaried staff need permission to claim Off Rotation Entries. Speak with your manager."
@@ -150,7 +150,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,1);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,0,"hours tally doesn't match");
@@ -182,7 +182,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,5);
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -200,7 +200,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,2);
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -236,7 +236,7 @@ describe("tallyAndValidate", async () => {
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "You must have a minimum of 40 hours on each time sheet."
       );
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, skipMinTimeCheckOnNextBundle: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, skipMinTimeCheckOnNextBundle: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,4);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
@@ -253,7 +253,7 @@ describe("tallyAndValidate", async () => {
         .get();
 
       assert.equal(timeEntries.size,5);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
 
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
 
@@ -269,7 +269,7 @@ describe("tallyAndValidate", async () => {
         .get();
 
       assert.equal(timeEntries.size,4);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:34, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
 
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -285,7 +285,7 @@ describe("tallyAndValidate", async () => {
         .get();
 
       assert.equal(timeEntries.size,4);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:0, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, workWeekHours:0, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
 
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -334,35 +334,35 @@ describe("tallyAndValidate", async () => {
       await tallyAndValidate(auth, profile, timeEntries, weekEnding);
 
       // openingOP missing (must be a number)
-      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 20, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 20, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile2, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a valid openingOP value"
       );
       
       // openingDateTimeOff missing (must be a date)
-      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingOV: 120, usedOV: 20, openingOP: 80, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingOV: 120, usedOV: 20, openingOP: 80, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile3, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a valid openingDateTimeOff value"
       );
 
       // usedOP not positive number
-      const profile4 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:-4, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile4 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:-4, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile4, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a valid usedOP value"
       );
 
       // openingOV missing (must be a number)
-      const profile5 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), usedOV: 20, openingOP: 80, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile5 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), usedOV: 20, openingOP: 80, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile5, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a valid openingOV value"
       );
 
       // usedOV not positive number
-      const profile6 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: "5", openingOP: 80, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile6 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: "5", openingOP: 80, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile6, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a valid usedOV value"
@@ -381,19 +381,19 @@ describe("tallyAndValidate", async () => {
 
       // available OP balance is openingOP - usedOP
       // throw if available OP balance < nonWorkHoursTally.OP
-      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:73, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Your PPTO claim exceeds your available PPTO balance."
       );
 
       // if usedOP is undefined available OP balance should be openingOP
-      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally = await tallyAndValidate(auth, profile2, timeEntries, weekEnding);
       assert.equal(tally.nonWorkHoursTally.OP,8, "PPTO tally doesn't match");
 
       // usedOP is defined and balances work
-      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:72, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:72, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally2 = await tallyAndValidate(auth, profile3, timeEntries, weekEnding);
       assert.equal(tally2.nonWorkHoursTally.OP,8, "PPTO tally doesn't match");
     });
@@ -410,19 +410,19 @@ describe("tallyAndValidate", async () => {
 
       // available OV balance is openingOV - usedOV
       // throw if available OP balance < nonWorkHoursTally.OV
-      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, usedOP:73, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profile, timeEntries, weekEnding),
         "Your Vacation claim exceeds your available Vacation balance."
       );
 
       // if usedOV is undefined available OV balance should be openingOV
-      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, openingOP: 80, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, openingOP: 80, usedOP:73, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally = await tallyAndValidate(auth, profile2, timeEntries, weekEnding);
       assert.equal(tally.nonWorkHoursTally.OV,8, "Vacation tally doesn't match");
 
       // usedOV is defined and balances work
-      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 112, openingOP: 80, usedOP:73, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 112, openingOP: 80, usedOP:73, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally2 = await tallyAndValidate(auth, profile3, timeEntries, weekEnding);
       assert.equal(tally2.nonWorkHoursTally.OV,8, "Vacation tally doesn't match");
     });
@@ -437,7 +437,7 @@ describe("tallyAndValidate", async () => {
       assert.equal(timeEntries.size,5);
 
       // ensure PPTO isn't being claimed when it should be Vacation
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 112, openingOP: 80, usedOP:72, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 112, openingOP: 80, usedOP:72, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
         "You must exhaust your Vacation balance prior to claiming PPTO per company policy."
@@ -445,7 +445,7 @@ describe("tallyAndValidate", async () => {
     });
     it("rejects for salaried staff member with untrackedTimeOff:true who claims any OB, OH, OP, OV timetype(s)", async () => {
       // verify each rejection
-      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       for (let timetype of ["OB", "OH", "OP", "OV"]) {
         await db.collection("TimeEntries").doc(timetype).set({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, timetype, timetypeName: "Testing Placeholder", hours: 8 });
         let timeEntries = await db
@@ -470,7 +470,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,5);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
@@ -486,7 +486,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,5);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
@@ -504,7 +504,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,7);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,48,"hours tally doesn't match");
@@ -541,7 +541,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
 
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,8);
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -558,7 +558,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
 
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,6);
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
@@ -591,14 +591,14 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
 
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28},"Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, managerUid: "bob", managerName: "Bob Example", payrollId: 28},"Profiles/alice");
       assert.equal(timeEntries.size,6);
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
         "Only one payout request entry can exist on a timesheet."
       )
     });
-    it("rejects if missing tbtePayrollId", async () => {
+    it("rejects if missing payrollId", async () => {
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullITDay });
       const timeEntries = await db
         .collection("TimeEntries")
@@ -612,11 +612,11 @@ describe("tallyAndValidate", async () => {
       const profileC = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example"}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
-        "The Profile for this user doesn't contain a tbtePayrollId"
+        "The Profile for this user doesn't contain a payrollId"
       );
       await assert.isRejected(
         tallyAndValidate(auth, profileC, timeEntries, weekEnding),
-        "The Profile for this user doesn't contain a tbtePayrollId"
+        "The Profile for this user doesn't contain a payrollId"
       );
     });
     it("rejects if missing managerUid", async () => {
@@ -629,8 +629,8 @@ describe("tallyAndValidate", async () => {
         .get();
 
       assert.equal(timeEntries.size,5);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, tbtePayrollId: 28}, "Profiles/alice");
-      const profileC = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, payrollId: 28}, "Profiles/alice");
+      const profileC = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, payrollId: 28}, "Profiles/alice");
       await assert.isRejected(
         tallyAndValidate(auth, profileB, timeEntries, weekEnding),
         "The Profile for this user doesn't contain a managerUid"
@@ -647,7 +647,7 @@ describe("tallyAndValidate", async () => {
         .where("weekEnding", "==", weekEnding)
         .orderBy("date", "asc")
         .get();
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: false, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       assert.equal(timeEntries.size,4);
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,32,"hours tally doesn't match");
@@ -735,7 +735,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       assert.equal(timeEntries.size,4);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, ...openingVals, managerUid: "bob", managerName: "Bob Example", tbtePayrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,16, "jobHours tally doesn't match");

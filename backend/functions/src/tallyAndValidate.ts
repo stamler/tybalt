@@ -443,14 +443,14 @@ export async function tallyAndValidate(
   }
 
   // get manager information from profile
-  // managerUid and tbtePayroll Uid have initial values of null to allow
+  // managerUid and payrollId can have initial values of null to allow
   // editing by users of default division
   const managerUid = profile.get("managerUid");
-  const tbtePayrollId = profile.get("tbtePayrollId");
-  if (tbtePayrollId === undefined || tbtePayrollId === null) {
+  const payrollId = profile.get("payrollId");
+  if (payrollId === undefined || payrollId === null) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "The Profile for this user doesn't contain a tbtePayrollId"
+      "The Profile for this user doesn't contain a payrollId"
     );
   }
   if (managerUid === undefined || managerUid === null) {
@@ -469,7 +469,7 @@ export async function tallyAndValidate(
     displayName: profile.get("displayName"),
     managerName: profile.get("managerName"),
     salary: profile.get("salary"),
-    tbtePayrollId,
+    payrollId,
     weekEnding,
     managerUid,
     locked: false,

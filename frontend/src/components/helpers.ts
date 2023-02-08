@@ -596,8 +596,8 @@ export async function generatePayablesCSVSQL(
     const dat = (response.data as Array<any>).map((x: any) => {
       const processed = x;
       // Coerce number-like payrollID strings to numbers
-      if (isNaN(x.tbtePayrollId)) return processed; // string payroll ID
-      processed.tbtePayrollId = Number(x.tbtePayrollId);
+      if (isNaN(x.payrollId)) return processed; // string payroll ID
+      processed.payrollId = Number(x.payrollId);
       return processed;
     });
     const csv = parse(dat);
