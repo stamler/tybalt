@@ -130,7 +130,7 @@ FROM (
              ability to have DISTINCT inside it */
             SELECT *
             FROM (
-                SELECT tbtePayrollId "payrollId",
+                SELECT payrollId,
                   workWeekHours,
                   committedWeekEnding weekEnding,
                   surname,
