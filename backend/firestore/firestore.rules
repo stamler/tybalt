@@ -119,7 +119,7 @@ service cloud.firestore {
         
         // required fields
         newDoc.keys().hasAll(["date", "uid", "displayName",
-          "surname", "givenName", "submitted", "approved", "tbtePayrollId",
+          "surname", "givenName", "submitted", "approved", "payrollId",
           "managerUid", "managerName", "division", "divisionName", "paymentType"]) &&
 
         // description is present except for Allowance
@@ -128,14 +128,14 @@ service cloud.firestore {
           isMissing("description") && newDoc.paymentType in ["Allowance", "FuelOnAccount"]
         ) &&
 
-        // tbtePayrollId matches that on the profile
-        get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.tbtePayrollId == newDoc.tbtePayrollId &&
+        // payrollId matches that on the profile
+        get(/databases/$(database)/documents/Profiles/$(request.auth.uid)).data.payrollId == newDoc.payrollId &&
 
-        // tbtePayrollId is not null
-        newDoc.tbtePayrollId != null &&
+        // payrollId is not null
+        newDoc.payrollId != null &&
         
         (
-          isMissing("payrollId") || newDoc().payrollId == newDoc().tbtePayrollId
+          isMissing("tbtePayrollId") || newDoc().tbtePayrollId == newDoc().payrollId
         ) &&
 
         // the following list has "FuelOnAccount" removed to disable it
@@ -368,7 +368,7 @@ service cloud.firestore {
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
         hasClaim("admin") &&
-        newDoc().keys().hasAll(["email", "displayName", "tbtePayrollId", "salary"]) &&
+        newDoc().keys().hasAll(["email", "displayName", "payrollId", "salary"]) &&
         newDoc().diff(resource.data).affectedKeys().hasOnly([
           "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "tbtePayrollId", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff", "workWeekHours"
         ]) &&
@@ -382,13 +382,13 @@ service cloud.firestore {
           isMissing("workWeekHours")
         ) &&
         (
-          (newDoc().tbtePayrollId is int &&
-          newDoc().tbtePayrollId > 0) ||
-          (newDoc().tbtePayrollId is string &&
-          newDoc().tbtePayrollId.matches('CMS[0-9]{1,2}'))
+          (newDoc().payrollId is int &&
+          newDoc().payrollId > 0) ||
+          (newDoc().payrollId is string &&
+          newDoc().payrollId.matches('CMS[0-9]{1,2}'))
         ) && 
         (
-          isMissing("payrollId") || newDoc().payrollId == newDoc().tbtePayrollId
+          isMissing("tbtePayrollId") || newDoc().tbtePayrollId == newDoc().payrollId
         ) &&
         (
           newDoc().personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
