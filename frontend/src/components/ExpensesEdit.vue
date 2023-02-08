@@ -9,6 +9,7 @@
       :highlight="dps.highlighted.dates"
       :enable-time-picker="false"
       :format="shortDateWithWeekday"
+      week-start="0"
       hide-input-icon
       input-class-name="field"
       v-model="item.date"

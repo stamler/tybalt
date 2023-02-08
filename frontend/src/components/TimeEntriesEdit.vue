@@ -19,6 +19,7 @@
       :format="shortDateWithWeekday"
       hide-input-icon
       input-class-name="field"
+      week-start="0"
       v-model="item.date"
     />
     <span class="field">
