@@ -1,7 +1,7 @@
 /* A query to replace generatePayablesCSV() in the old backend. This is the
 highest-level query that outputs the CSV and relies on views with manipulate the
 underlying data */
-SELECT tbtePayrollId,
+SELECT payrollId,
   paymentType "Acct/Visa/Exp",
   job "Job #",
   client Client,

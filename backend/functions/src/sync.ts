@@ -478,7 +478,7 @@ export async function exportExpenses() {
   const exportSuccessBatch = db.batch();
 
   // Iterate over the Expenses documents, INSERTing them into MySQL table
-  const expensesFields = ["id", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "tbtePayrollId", "total", "uid", "unitNumber", "vendorName"];
+  const expensesFields = ["id", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "payrollId", "total", "uid", "unitNumber", "vendorName"];
   const insertValues = expenseDocSnaps.map((expenseSnap) => {
     const expense = expenseSnap.data();
     expense.id = expenseSnap.id;
