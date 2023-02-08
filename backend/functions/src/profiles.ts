@@ -125,7 +125,6 @@ export async function createProfile(user: admin.auth.UserRecord) {
   let mutationProps = {
     salary: false,
     defaultDivision: null,
-    tbtePayrollId: null,
     payrollId: null,
     managerUid: null,
     managerName: null,
@@ -138,7 +137,6 @@ export async function createProfile(user: admin.auth.UserRecord) {
     mutationProps = {
       salary: data.remuneration === "Salary" ? true : false,
       defaultDivision: data.defaultDivision || null,
-      tbtePayrollId: data.payrollId || null,
       payrollId: data.payrollId || null,
       managerUid: data.managerUid || null,
       managerName: data.managerName || null,
