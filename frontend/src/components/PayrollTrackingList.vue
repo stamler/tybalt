@@ -112,6 +112,7 @@ import {
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { parse } from "json2csv";
+import { APP_NATIVE_TZ } from "../config";
 // import _ from "lodash";
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
@@ -195,14 +196,11 @@ export default defineComponent({
       return !isNaN(Number(candidate)) ? Number(candidate) : input;
     },
     async generateSQLPayrollCSVForWeek(timestamp: Timestamp, week1 = false) {
-      let weekEndingTbay = utcToZonedTime(
-        timestamp.toDate(),
-        "America/Thunder_Bay"
-      );
+      let weekEndingTbay = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
       if (week1) {
         // must calculate the week1 ending and run the query
         weekEndingTbay = subDays(
-          utcToZonedTime(timestamp.toDate(), "America/Thunder_Bay"),
+          utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ),
           7
         );
       }

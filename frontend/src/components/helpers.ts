@@ -1,7 +1,7 @@
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { format, addDays, subDays, differenceInDays } from "date-fns";
 import firebase, { firebaseApp } from "../firebase";
-import { COMPANY_SHORTNAME } from "../config";
+import { COMPANY_SHORTNAME, APP_NATIVE_TZ, PAYROLL_EPOCH } from "../config";
 import {
   getFirestore,
   collection,
@@ -33,18 +33,16 @@ const storage = firebase.storage();
 const store = useStateStore(pinia);
 
 // Given a number (result of getTime() from js Date object), verify that it is
-// 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
-// week 2 of a payroll at TBT Engineering. The definition of this is an
-// integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
+// 23:59:59 in APP_NATIVE_TZ on a saturday and that the saturday is a
+// week 2 of a payroll at this organization. The definition of this is an
+// integer multiple of 14 days after PAYROLL_EPOCH.
 // NB: THIS FUNCTION ALSO IN BACKEND utilities.ts
 export function isPayrollWeek2(weekEnding: Date): boolean {
-  const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
-
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
-  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, "America/Thunder_Bay");
-  const tbayWeekEnding = utcToZonedTime(weekEnding, "America/Thunder_Bay");
+  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
+  const tbayWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
   const difference = differenceInDays(tbayWeekEnding, tbayEpoch);
 
   return difference % 14 === 0 ? true : false;
@@ -52,7 +50,7 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
 
 export function nextSaturday(date: Date): Date {
   let calculatedSaturday;
-  const zonedTime = utcToZonedTime(date, "America/Thunder_Bay");
+  const zonedTime = utcToZonedTime(date, APP_NATIVE_TZ);
   if (zonedTime.getDay() === 6) {
     calculatedSaturday = zonedTimeToUtc(
       new Date(
@@ -64,7 +62,7 @@ export function nextSaturday(date: Date): Date {
         59,
         999
       ),
-      "America/Thunder_Bay"
+      APP_NATIVE_TZ
     );
   } else {
     const nextsat = new Date(zonedTime.getTime());
@@ -79,7 +77,7 @@ export function nextSaturday(date: Date): Date {
         59,
         999
       ),
-      "America/Thunder_Bay"
+      APP_NATIVE_TZ
     );
   }
   return calculatedSaturday;
@@ -101,12 +99,12 @@ export function* payPeriodsForYear(year: number): Generator<Date, void, void> {
   const firstSat = nextSaturday(new Date(year - 1, 0, 0, 0, 0));
   let period = isPayrollWeek2(firstSat)
     ? firstSat
-    : thisTimeNextWeekInTimeZone(firstSat, "America/Thunder_Bay");
+    : thisTimeNextWeekInTimeZone(firstSat, APP_NATIVE_TZ);
   while (period.getFullYear() <= year && period < now) {
     yield period;
     period = thisTimeNextWeekInTimeZone(
-      thisTimeNextWeekInTimeZone(period, "America/Thunder_Bay"),
-      "America/Thunder_Bay"
+      thisTimeNextWeekInTimeZone(period, APP_NATIVE_TZ),
+      APP_NATIVE_TZ
     );
   }
 }
@@ -569,10 +567,7 @@ export async function generatePayablesCSVSQL(
     id: `getExpensesSQL${start.getTime()}`,
     message: "Getting Expenses",
   });
-  const weekEndingTbay = utcToZonedTime(
-    timestamp.toDate(),
-    "America/Thunder_Bay"
-  );
+  const weekEndingTbay = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
   const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
   try {

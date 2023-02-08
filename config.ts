@@ -9,5 +9,7 @@ export const APP_URL = APP_PROTOCOL + "://" + APP_HOSTNAME;
 export const UPN_SUFFIX = "@tbte.ca";
 export const COMPANY_SHORTNAME = "TBTE";
 export const MICROSOFT_TENANT_ID = "tbte.onmicrosoft.com";
+export const APP_NATIVE_TZ = "America/Thunder_Bay";
+export const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
 export const APP_DOC_URL =
   "https://github.com/tbt-eng/docs/blob/master/tybalt.md";

@@ -832,7 +832,7 @@ export default Vue.extend({
     //     x["committedWeekEnding"] = format(
     //       utcToZonedTime(
     //         new Date(x.committedWeekEnding),
-    //         "America/Thunder_Bay"
+    //         APP_NATIVE_TZ
     //       ),
     //       "yyyy MMM dd"
     //     );
@@ -867,7 +867,7 @@ export default Vue.extend({
       });
       const weekEndingTbay = utcToZonedTime(
         timestamp.toDate(),
-        "America/Thunder_Bay"
+        APP_NATIVE_TZ
       );
       const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
       const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
