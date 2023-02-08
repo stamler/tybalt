@@ -627,7 +627,6 @@ export async function commitTimeAmendment(data: unknown, context: functions.http
       commitUid,
       commitName,
       salary: profile.salary,
-      tbtePayrollId: profile.payrollId,
       payrollId: profile.payrollId,
       // NB: The workWeekHours value on the profile may not be the same as the
       // value at the time of the amendment.
