@@ -135,7 +135,6 @@ export async function exportTime() {
       managerUid: snapData.managerUid,
       managerName: snapData.managerName,
       payrollId: snapData.payrollId,
-      tbtePayrollId: snapData.payrollId,
       workWeekHours,
       salary: snapData.salary,
       weekEnding: format(utcToZonedTime(snapData.weekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd"),
