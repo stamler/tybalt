@@ -5,20 +5,22 @@
     </div>
     <div class="linksend">
       <router-link to="/me">{{ user.displayName }}</router-link>
-      <a
-        href="https://github.com/tbt-eng/docs/blob/master/tybalt.md"
-        target="_blank"
-        >Help</a
-      >
+      <a :href="APP_DOC_URL" target="_blank">Help</a>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import { APP_DOC_URL } from "../config";
 import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
 
 export default {
+  data() {
+    return {
+      APP_DOC_URL,
+    };
+  },
   components: { ActionButton },
   setup: () => {
     const store = useStateStore();
