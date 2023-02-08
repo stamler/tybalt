@@ -155,27 +155,27 @@ export function isTimeSheet(data: unknown): data is TimeSheet {
   return optionalStringVals && stringVals && numVals;
 }
 
-export interface PayrollReportRecord {
-  weekEnding: string;
-  workWeekHours?: number;
-  displayName: string;
-  surname: string;
-  givenName: string;
-  managerName: string;
-  mealsHoursTally?: number;
-  offRotationDaysTally?: number;
-  R?: number;
-  OB?: number;
-  OH?: number;
-  OP?: number;
-  OS?: number;
-  OV?: number;
-  RB?: number;
-  payoutRequest?: number;
-  hasAmendmentsForWeeksEnding?: string[];
-  salary?: boolean;
-  tbtePayrollId: number | string;
-}
+// export interface PayrollReportRecord {
+//   weekEnding: string;
+//   workWeekHours?: number;
+//   displayName: string;
+//   surname: string;
+//   givenName: string;
+//   managerName: string;
+//   mealsHoursTally?: number;
+//   offRotationDaysTally?: number;
+//   R?: number;
+//   OB?: number;
+//   OH?: number;
+//   OP?: number;
+//   OS?: number;
+//   OV?: number;
+//   RB?: number;
+//   payoutRequest?: number;
+//   hasAmendmentsForWeeksEnding?: string[];
+//   salary?: boolean;
+//   tbtePayrollId: number | string;
+// }
 
 interface ExpenseCommon {
   uid: string;
