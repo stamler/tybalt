@@ -163,7 +163,7 @@ export const updateTimeTracking = functions.firestore
     }
 
     const timeTrackingDocRef = await getTrackingDoc(weekEnding,"TimeTracking","weekEnding");
-
+    functions.logger.info("TimeTracking doc ref: ", timeTrackingDocRef.id);
     if (
       afterData &&
       afterData.submitted === true &&
@@ -173,6 +173,7 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just approved
       // add summary of newly approved TimeSheet to pending, remove from submitted
+      functions.logger.debug(`just approved: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
@@ -211,6 +212,7 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just submitted
       // add the document to submitted
+      functions.logger.debug(`just submitted: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
           [`submitted.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, managerName: afterData.managerName },
@@ -225,6 +227,7 @@ export const updateTimeTracking = functions.firestore
     ) {
       // just recalled or rejected after being approved
       // remove the document from submitted
+      functions.logger.debug(`just recalled: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
           [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
@@ -247,6 +250,7 @@ export const updateTimeTracking = functions.firestore
       //   functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
       // }
       // remove document from pending and add it to timeSheets
+      functions.logger.debug(`just locked: ${afterData.id} for ${afterData.uid}`);
       await timeTrackingDocRef.update(
         {
           [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
