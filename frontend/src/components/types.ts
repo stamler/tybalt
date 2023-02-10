@@ -232,6 +232,13 @@ export interface ExpenseAllowance extends ExpenseCommon {
   lodging: boolean;
 }
 
+export interface MissingTimeSheetRecord {
+  displayName: string;
+  uid: string;
+  tsid: string;
+  status: "submitted" | "approved" | "locked" | "other";
+}
+
 export type Expense =
   | ExpenseRegular
   | ExpenseMileage
@@ -353,4 +360,28 @@ export function isExpense(data: unknown): data is Expense {
     isExpenseMeals(data) ||
     isExpenseAllowance(data)
   );
+}
+
+export function isMissingTimeSheetRecord(
+  data: unknown
+): data is MissingTimeSheetRecord {
+  if (!isObject(data)) {
+    return false;
+  }
+  // if every property is a string, return true
+  return ["displayName", "uid", "tsid", "status"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "string")
+    .every((x) => x === true);
+}
+
+export function isMissingTimeSheetRecords(
+  array: unknown
+): array is MissingTimeSheetRecord[] {
+  if (!Array.isArray(array)) {
+    return false;
+  }
+  if (array.length === 0) {
+    return true;
+  }
+  return isMissingTimeSheetRecord(array[0]);
 }

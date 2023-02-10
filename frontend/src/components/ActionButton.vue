@@ -20,6 +20,7 @@
     <Icon icon="feather:refresh-cw" width="24px" v-if="type === 'refresh'" />
     <Icon icon="feather:eye" width="24px" v-if="type === 'view'" />
     <Icon icon="feather:edit" width="24px" v-if="type === 'edit'" />
+    <Icon icon="feather:frown" width="24px" v-if="type === 'problem'" />
   </button>
 </template>
 

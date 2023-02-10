@@ -4,6 +4,13 @@
     <h4 v-if="item?.weekEnding">
       {{ shortDate(weekStart) }} to {{ shortDate(item.weekEnding.toDate()) }}
     </h4>
+    <router-link
+      v-bind:to="{ name: 'Time Tracking Audit' }"
+      title="is something wrong with this report?"
+    >
+      <Icon icon="feather:frown" width="24px" />
+    </router-link>
+
     <div>
       <!-- Show submitted unapproved TimeSheets -->
       <div v-if="submittedProfiles.length > 0">
@@ -164,6 +171,7 @@
 </template>
 
 <script lang="ts">
+import { Icon } from "@iconify/vue";
 import RejectModal from "./RejectModal.vue";
 import { defineComponent } from "vue";
 import { shortDate } from "./helpers";
@@ -202,6 +210,7 @@ export default defineComponent({
     return { startTask, endTask };
   },
   components: {
+    Icon,
     ActionButton,
     RejectModal,
   },
@@ -328,6 +337,23 @@ export default defineComponent({
     this.setItem(this.id);
   },
   methods: {
+    async audit() {
+      const id = this.id;
+      const auditTimeTracking = httpsCallable(functions, "auditTimeTracking");
+      this.startTask({
+        id: `audit${id}`,
+        message: "auditing TimeTracking...",
+      });
+      return auditTimeTracking({ id })
+        .then((data) => {
+          this.endTask(`audit${id}`);
+          console.log(JSON.stringify(data.data));
+        })
+        .catch((error) => {
+          this.endTask(`audit${id}`);
+          alert(`Error auditing TimeTracking: ${error.message}`);
+        });
+    },
     shortDate,
     async ignore(uid: string) {
       // add uid to notMissingUids property

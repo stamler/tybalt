@@ -655,3 +655,91 @@ function buildPendingObj(data: admin.firestore.DocumentData ) {
   }
   return pendingObj;
 }
+
+// report information that is missing from the TimeTracking document
+export const auditTimeTracking = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  const db = admin.firestore();
+
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context, ["report"]);
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
+
+  const trackingSnapshot = await db
+  .collection("TimeTracking")
+  .doc(data.id)
+  .get();
+
+  if (!trackingSnapshot.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "The provided document id is not in the TimeTracking collection"
+    );
+  }
+
+  // get the weekEnding date from the TimeTracking document
+  const weekEndingTimeStamp = trackingSnapshot.get("weekEnding")
+
+  // get the TimeSheets for the weekEnding date
+  const timeSheetsSnapshot = await db
+  .collection("TimeSheets")
+  .where("weekEnding", "==", weekEndingTimeStamp)
+  .get();
+
+  functions.logger.info(`Auditing ${timeSheetsSnapshot.size} TimeSheets for weekEnding ${weekEndingTimeStamp.toDate()}`);
+
+  // iterate over each TimeSheet document in the timesSheetsSnapshot verifying
+  // that it is represented in the TimeTracking document in the correct map.
+  // Maps are submitted (not approved), pending (submitted and approved), and
+  // timeSheets (locked)
+  const timeSheetsNotInTracking = timeSheetsSnapshot.docs.filter((timeSheetSnap) => {
+    const timeSheet = timeSheetSnap.data();
+    const id = timeSheetSnap.id;
+    // if the timesheet is submitted, check that it is represented in the
+    // submitted map on the TimeTracking document
+    if (timeSheet.submitted === true && timeSheet.approved === false) {
+      const submittedMap = trackingSnapshot.get("submitted");
+      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - submittedMap:${JSON.stringify(Object.keys(submittedMap))}`);
+      if (id in submittedMap) {
+        return false;
+      }
+    }
+    // if the timesheet is approved, check that it is represented in the
+    // pending map on the TimeTracking document
+    if (timeSheet.submitted === true && timeSheet.approved === true) {
+      const pendingMap = trackingSnapshot.get("pending");
+      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - pendingMap:${JSON.stringify(Object.keys(pendingMap))}`);
+      if (id in pendingMap) {
+        return false;
+      }
+    }
+    // if the timesheet is locked, check that it is represented in the
+    // timeSheets map on the TimeTracking document
+    if (timeSheet.locked === true) {
+      const timeSheetsMap = trackingSnapshot.get("timeSheets");
+      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - timeSheetsMap:${JSON.stringify(Object.keys(timeSheetsMap))}`);
+      if (id in timeSheetsMap) {
+        return false;
+      }
+    }
+    // The timesheet is not represented in the correct map, return true
+    functions.logger.debug(`timeSheet: ${id} for ${timeSheet.displayName} not in TimeTracking document`);
+    return true;
+  });
+  return timeSheetsNotInTracking.map(x => {
+    const props = x.data();
+    return {
+      displayName: props.displayName,
+      uid: props.uid,
+      tsid: x.id,
+      status: props.locked ? "locked" : props.approved && props.submitted ? "approved" : props.submitted ? "submitted" : "other",
+    }
+  });
+});

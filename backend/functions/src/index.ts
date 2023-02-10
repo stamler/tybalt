@@ -17,7 +17,7 @@ import { updateAlgoliaIndex } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
 export { currentADDump } from "./syncUsersFromOnPrem";
-export { updateTimeTracking, updateViewers } from "./timesheets";
+export { updateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking, expenseRates, uncommitExpense/*, updateMileageClaimed */} from "./expenses";
 export { writeFileLinks } from "./utilities";

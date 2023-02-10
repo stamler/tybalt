@@ -14,6 +14,7 @@ import TimeSheetsDetails from "@/components/TimeSheetsDetails.vue";
 import PayrollTrackingList from "@/components/PayrollTrackingList.vue";
 import TimeTrackingList from "@/components/TimeTrackingList.vue";
 import TimeTrackingDetails from "@/components/TimeTrackingDetails.vue";
+import TimeTrackingAudit from "@/components/TimeTrackingAudit.vue";
 import ExpenseTrackingList from "@/components/ExpenseTrackingList.vue";
 import ExpenseTrackingDetails from "@/components/ExpenseTrackingDetails.vue";
 import LoginsList from "@/components/LoginsList.vue";
@@ -271,6 +272,14 @@ const router = createRouter({
               },
               name: "Time Tracking Details",
               component: TimeTrackingDetails,
+            },
+            {
+              path: ":id/audit",
+              props: (route) => {
+                return { id: route.params.id };
+              },
+              name: "Time Tracking Audit",
+              component: TimeTrackingAudit,
             },
           ],
         },
