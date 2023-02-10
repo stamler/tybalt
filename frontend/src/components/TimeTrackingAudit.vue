@@ -83,6 +83,25 @@ export default defineComponent({
   },
   methods: {
     shortDate,
+    async updateTimeTracking(tsid: string) {
+      const manuallyUpdateTimeTracking = httpsCallable(
+        functions,
+        "manuallyUpdateTimeTracking"
+      );
+      this.startTask({
+        id: `update${tsid}`,
+        message: `updating TimeTracking...`,
+      });
+      return manuallyUpdateTimeTracking({ id: tsid })
+        .then(() => {
+          this.endTask(`update${tsid}`);
+          this.audit();
+        })
+        .catch((error) => {
+          this.endTask(`update${tsid}`);
+          alert(`Error updating TimeTracking: ${error.message}`);
+        });
+    },
     async audit() {
       const id = this.id;
       const auditTimeTracking = httpsCallable(functions, "auditTimeTracking");

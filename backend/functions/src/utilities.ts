@@ -139,6 +139,113 @@ export function createPersistentDownloadUrl(bucket: string, pathToFile: string, 
   )}?alt=media&token=${downloadToken}`;
 };
 
+// This is a superset of the interface in types.ts in the frontend
+export interface TimeSheet {
+  // required properties always
+  uid: string;
+  displayName: string;
+  surname: string;
+  givenName: string;
+  managerUid: string;
+  bankedHours: number;
+  mealsHoursTally: number;
+  divisionsTally: { [x: string]: string };
+  jobsTally: {
+    [job: string]: {
+      description: string;
+      client: string;
+      hours: number;
+      jobHours: number;
+      manager?: string;
+      proposal?: string;
+      status?: string;
+      clientContact?: string;
+    };
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  entries: any[];
+
+  submitted: boolean;
+  approved: boolean;
+  locked: boolean;
+  // others to be filled in later
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [x: string]: any;
+}
+export interface SubmittedTimeSheet extends TimeSheet {
+  submitted: true;
+  approved: false;
+  locked: false;
+}
+export interface ApprovedTimeSheet extends TimeSheet {
+  submitted: true;
+  approved: true;
+  locked: false;
+}
+export interface LockedTimeSheet extends TimeSheet {
+  submitted: true;
+  approved: true;
+  locked: true;
+}
+
+// Type Guards
+function isObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x != null;
+}
+export function isTimeSheet(data: unknown): data is TimeSheet {
+  if (!isObject(data)) {
+    return false;
+  }
+  // check boolean properties exist and have correct type
+  const boolVals = ["submitted", "approved", "locked"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "boolean")
+    .every((x) => x === true);
+  // check optional string properties have correct type
+  const optionalStringVals = ["surname", "givenName"]
+    .map((x) => data[x] === undefined || typeof data[x] === "string")
+    .every((x) => x === true);
+  // check string properties exist and have correct type
+  const stringVals = ["uid", "displayName", "managerUid"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "string")
+    .every((x) => x === true);
+  // check number properties exist and have correct type
+  const numVals = ["bankedHours", "mealsHoursTally"]
+    .map((x) => data[x] !== undefined && typeof data[x] === "number")
+    .every((x) => x === true);
+  // check the divisions tally, return false on first type mismatch
+  if (!isObject(data.divisionsTally)) {
+    return false;
+  }
+  for (const key in data.divisionsTally) {
+    if (typeof key !== "string") {
+      return false;
+    }
+    if (typeof data.divisionsTally[key] !== "string") {
+      return false;
+    }
+  }
+  // check the jobs tally, return false on first type mismatch of key
+  // TODO: implement checking value
+  if (!isObject(data.jobsTally)) {
+    return false;
+  }
+  for (const key in data.jobsTally) {
+    if (typeof key !== "string") {
+      return false;
+    }
+  }
+  return boolVals && optionalStringVals && stringVals && numVals;
+}
+export function isSubmittedTimeSheet(data: unknown): data is SubmittedTimeSheet {
+  return isTimeSheet(data) && data.submitted === true && data.approved === false && data.locked === false;
+}
+export function isApprovedTimeSheet(data: unknown): data is ApprovedTimeSheet {
+  return isTimeSheet(data) && data.submitted === true && data.approved === true && data.locked === false;
+}
+export function isLockedTimeSheet(data: unknown): data is LockedTimeSheet {
+  return isTimeSheet(data) && data.submitted === true && data.approved === true && data.locked === true;
+}
+
 // If a file object's metadata changes, ensure that the links to it
 // inside corresponding TimeTracking or ExpenseTracking doc are updated so that
 // downloads continue to work. This allows us to update the token in

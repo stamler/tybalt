@@ -337,23 +337,6 @@ export default defineComponent({
     this.setItem(this.id);
   },
   methods: {
-    async audit() {
-      const id = this.id;
-      const auditTimeTracking = httpsCallable(functions, "auditTimeTracking");
-      this.startTask({
-        id: `audit${id}`,
-        message: "auditing TimeTracking...",
-      });
-      return auditTimeTracking({ id })
-        .then((data) => {
-          this.endTask(`audit${id}`);
-          console.log(JSON.stringify(data.data));
-        })
-        .catch((error) => {
-          this.endTask(`audit${id}`);
-          alert(`Error auditing TimeTracking: ${error.message}`);
-        });
-    },
     shortDate,
     async ignore(uid: string) {
       // add uid to notMissingUids property

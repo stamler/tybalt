@@ -29,7 +29,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as _ from "lodash";
-import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc } from "./utilities";
+import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc, isTimeSheet, isApprovedTimeSheet, isSubmittedTimeSheet, isLockedTimeSheet } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 // import { updateProfileTallies } from "./profiles";
 
@@ -127,24 +127,103 @@ export async function unbundleTimesheet(
   If a timesheet is manually unlocked, make sure that it is removed from the
   timeSheets property and added back to the pending property of the TimeTracking
   document for the corresponding weekEnding.
+
+  Two functions are used to handle these cases because in cases where the 
+  onWrite handler wasn't triggered we must manually update the TimeTracking doc.
  */
+export const manuallyUpdateTimeTracking = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context, ["admin"]);
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
+
+  // Get the TimeSheet and extract the data
+  const db = admin.firestore();
+  const tsDocSnap = await db.collection("TimeSheets").doc(data.id).get();
+  if (!tsDocSnap.exists) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `There is no matching TimeSheet document for id ${data.id}`
+    )
+  }
+  const tsData = tsDocSnap.data();
+  const tsId = tsDocSnap.id;
+  if (!isTimeSheet(tsData)) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `The document with id ${tsId} is not a TimeSheet`
+    )
+  }
+  const weekEnding = tsData.weekEnding.toDate();
+
+  // Get the corresponding TimeTracking document
+  const timeTrackingDocRef = await getTrackingDoc(weekEnding,"TimeTracking","weekEnding");
+
+  // Update the TimeTracking document based on the status of the TimeSheet
+  if (isSubmittedTimeSheet(tsData)) {
+    // The TimeSheet is submitted, add it to the submitted property of the
+    // TimeTracking doc
+    return timeTrackingDocRef.update(
+      {
+        [`submitted.${tsId}`]: { displayName: tsData.displayName, uid: tsData.uid, managerName: tsData.managerName },
+      }
+    );
+  } else if (isApprovedTimeSheet(tsData)) {
+    // The TimeSheet is approved, add it to the pending property of the
+    // TimeTracking doc and remove it from the submitted property
+    return timeTrackingDocRef.update(
+      {
+        [`pending.${tsId}`]: buildPendingObj(tsData),
+        [`submitted.${tsId}`]: admin.firestore.FieldValue.delete(),
+      }
+    );
+  } else if (isLockedTimeSheet(tsData)) {
+    // The TimeSheet is locked, add it to the timeSheets property of the
+    // TimeTracking doc and remove it from the pending property
+    return timeTrackingDocRef.update(
+      {
+        [`pending.${tsId}`]: admin.firestore.FieldValue.delete(),
+        [`timeSheets.${tsId}`]: buildPendingObj(tsData),
+      }
+    );
+  } else {
+    // The TimeSheet isn't submitted, approved, or locked, remove it from the
+    // TimeTracking doc
+    return timeTrackingDocRef.update(
+      {
+        [`submitted.${tsId}`]: admin.firestore.FieldValue.delete(),
+        [`pending.${tsId}`]: admin.firestore.FieldValue.delete(),
+        [`timeSheets.${tsId}`]: admin.firestore.FieldValue.delete(),
+      }
+    );
+  }
+});
+
 export const updateTimeTracking = functions.firestore
   .document("TimeSheets/{timesheetId}")
   .onWrite(async (change, context) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
+    const tsId = change.after.ref.id;
     let beforeSubmitted: boolean;
     let beforeApproved: boolean;
     let beforeLocked: boolean;
     let weekEnding: Date;
-    if (beforeData) {
+    if (beforeData !== undefined) {
       // the TimeSheet was updated
       beforeSubmitted = beforeData.submitted
       beforeApproved = beforeData.approved
       beforeLocked = beforeData.locked
       weekEnding = beforeData.weekEnding.toDate();
     }
-    else if (afterData) {
+    else if (afterData !== undefined) {
       // the TimeSheet was just created
       beforeSubmitted = false;
       beforeApproved = false;
@@ -176,8 +255,8 @@ export const updateTimeTracking = functions.firestore
       functions.logger.debug(`just approved: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
-          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`pending.${tsId}`]: buildPendingObj(afterData),
+          [`submitted.${tsId}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else if (
@@ -196,11 +275,11 @@ export const updateTimeTracking = functions.firestore
       // }
       // remove the *manually* unlocked Time Sheet from timeSheets 
       // and add it to pending
-      functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} has been manually unlocked.`);
+      functions.logger.info(`updateTimeTracking() TimeSheet ${tsId} has been manually unlocked.`);
       await timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: buildPendingObj(afterData),
-          [`timeSheets.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`pending.${tsId}`]: buildPendingObj(afterData),
+          [`timeSheets.${tsId}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else if (
@@ -215,7 +294,7 @@ export const updateTimeTracking = functions.firestore
       functions.logger.debug(`just submitted: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
-          [`submitted.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, managerName: afterData.managerName },
+          [`submitted.${tsId}`]: { displayName: afterData.displayName, uid: afterData.uid, managerName: afterData.managerName },
         }
       );
     } else if (
@@ -230,8 +309,8 @@ export const updateTimeTracking = functions.firestore
       functions.logger.debug(`just recalled: ${afterData.id} for ${afterData.uid}`);
       return timeTrackingDocRef.update(
         {
-          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
-          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`submitted.${tsId}`]: admin.firestore.FieldValue.delete(),
+          [`pending.${tsId}`]: admin.firestore.FieldValue.delete(),
         }
       );
     } else if (
@@ -253,8 +332,8 @@ export const updateTimeTracking = functions.firestore
       functions.logger.debug(`just locked: ${afterData.id} for ${afterData.uid}`);
       await timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
-          [`timeSheets.${change.after.ref.id}`]: buildPendingObj(afterData),
+          [`pending.${tsId}`]: admin.firestore.FieldValue.delete(),
+          [`timeSheets.${tsId}`]: buildPendingObj(afterData),
         }
       );
     } else if (!_.isEqual(afterData?.viewerIds, beforeData?.viewerIds)) {
@@ -277,11 +356,11 @@ export const updateTimeTracking = functions.firestore
       // caught in the else clauses above. 
       // TODO: We should check to see which fields changed and if 
       // it wasn't locked, approved, or submitted we should do nothing here
-      functions.logger.info(`updateTimeTracking() TimeSheet ${change.after.ref.id} default condition, removing entries.`);
+      functions.logger.info(`updateTimeTracking() TimeSheet ${tsId} default condition, removing entries.`);
       return timeTrackingDocRef.update(
         {
-          [`pending.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
-          [`submitted.${change.after.ref.id}`]: admin.firestore.FieldValue.delete(),
+          [`pending.${tsId}`]: admin.firestore.FieldValue.delete(),
+          [`submitted.${tsId}`]: admin.firestore.FieldValue.delete(),
         },
       );
     }
