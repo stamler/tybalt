@@ -209,8 +209,14 @@
     >
       <label for="attachment">Attachment</label>
       <span v-if="item.attachment">
-        <action-button type="download" @click="downloadAttachment(item)" />
-        <action-button type="removefile" @click="$delete(item, 'attachment')" />
+        <action-button
+          type="download"
+          @click.prevent="downloadAttachment(item)"
+        />
+        <action-button
+          type="removefile"
+          @click.prevent="delete item.attachment"
+        />
       </span>
       <span v-else>
         <input

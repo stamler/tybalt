@@ -141,7 +141,7 @@
         v-bind:key="claim"
       >
         {{ claim }}
-        <span v-on:click="$delete(item.customClaims, claim)">
+        <span v-on:click="delete item.customClaims[claim]">
           <Icon icon="feather:x-circle" width="24px" />
         </span>
       </span>
