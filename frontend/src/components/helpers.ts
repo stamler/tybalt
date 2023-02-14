@@ -634,3 +634,44 @@ export function shortDateWithWeekday(date: Date) {
 export function dateFormat(date: Date): string {
   return format(date, "yyyy MMM dd / HH:mm:ss");
 }
+
+export async function generateAttachmentZip(
+  item: DocumentData,
+  kind: "payPeriod" | "weekEnding" = "weekEnding",
+  regenerate = false
+) {
+  const functions = getFunctions(firebaseApp);
+  const generateExpenseAttachmentArchive = httpsCallable(
+    functions,
+    "generateExpenseAttachmentArchive"
+  );
+  const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
+
+  // If the document already specifies a zip file, we don't need to generate it
+  // again unless the user has requested a regeneration.
+  if (item.zip !== undefined) {
+    if (!regenerate) {
+      return;
+    }
+    // If the user has requested a regeneration, we need to delete the old zip
+    // file from storage and remove the reference from the document. Because the
+    // filenames are deterministic, we can do nothing and the old zip file will
+    // be overwritten.
+    // TODO: verify that this is true
+  }
+
+  store.startTask({
+    id: `generateAttachments${item.id}`,
+    message: "Generating Attachments",
+  });
+  try {
+    if (kind === "payPeriod") {
+      await generateExpenseAttachmentArchive({ payPeriodEnding });
+    } else {
+      await generateExpenseAttachmentArchive({ id: item.id });
+    }
+  } catch (error) {
+    alert(error);
+  }
+  store.endTask(`generateAttachments${item.id}`);
+}

@@ -65,7 +65,7 @@
           type="download"
           @click="
             generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
-              generateAttachmentZip(item)
+              generateAttachmentZip(item, 'payPeriod')
             )
           "
         >
@@ -74,6 +74,12 @@
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
           attachments.zip<Icon icon="feather:download" width="24px" />
         </a>
+        <!-- Regenerate the attachments file -->
+        <action-button
+          v-if="hasLink(item, 'zip')"
+          type="refresh"
+          @click="generateAttachmentZip(item, 'payPeriod', true)"
+        />
       </div>
     </div>
   </div>
@@ -87,6 +93,7 @@ import {
   exportDate,
   exportDateWeekStart,
   foldAmendments,
+  generateAttachmentZip,
 } from "./helpers";
 import { format, subDays } from "date-fns";
 import { useStateStore } from "../stores/state";
@@ -250,27 +257,27 @@ export default defineComponent({
         alert(`Error: ${error}`);
       }
     },
-
-    async generateAttachmentZip(item: DocumentData) {
-      const generateExpenseAttachmentArchive = httpsCallable(
-        functions,
-        "generateExpenseAttachmentArchive"
-      );
-      const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
-      if (item.zip !== undefined) {
-        return;
-      }
-      this.startTask({
-        id: `generateAttachments${payPeriodEnding}`,
-        message: "Generating Attachments",
-      });
-      try {
-        await generateExpenseAttachmentArchive({ payPeriodEnding });
-      } catch (error) {
-        alert(error);
-      }
-      this.endTask(`generateAttachments${payPeriodEnding}`);
-    },
+    generateAttachmentZip,
+    // async generateAttachmentZip(item: DocumentData) {
+    //   const generateExpenseAttachmentArchive = httpsCallable(
+    //     functions,
+    //     "generateExpenseAttachmentArchive"
+    //   );
+    //   const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
+    //   if (item.zip !== undefined) {
+    //     return;
+    //   }
+    //   this.startTask({
+    //     id: `generateAttachments${payPeriodEnding}`,
+    //     message: "Generating Attachments",
+    //   });
+    //   try {
+    //     await generateExpenseAttachmentArchive({ payPeriodEnding });
+    //   } catch (error) {
+    //     alert(error);
+    //   }
+    //   this.endTask(`generateAttachments${payPeriodEnding}`);
+    // },
     // REMOVED AND REPLACED WITH generatePayablesCSVSQL
     // async getPayPeriodExpenses(week: Date) {
     //   const getPayPeriodExpenses = firebase
