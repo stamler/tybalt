@@ -72,7 +72,7 @@
           expenses
         </action-button>
         <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
-          attachments.zip<Icon icon="feather:download" width="24px" />
+          receipts<Icon icon="feather:download" width="24px" />
         </a>
         <!-- Regenerate the attachments file -->
         <action-button
