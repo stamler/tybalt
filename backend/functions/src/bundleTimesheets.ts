@@ -55,6 +55,34 @@ export async function bundleTimesheet(
   const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
 
   // Throw if a timesheet already exists for this week
+
+  // This function must be idempotent because sometimes it is triggered
+  // more than once. In a transaction, we first CONFIRM that a document with the
+  // id auth.uid doesn't exist in "Locks". If it does, we throw. Otherwise
+  // create a document in "Locks" with the id auth.uid and a description stating
+  // "Timesheet bundling in progress" along with a timestamp. Then we do the
+  // work of bundling the timesheets. If the work is successful, we delete the
+  // document in "Locks" with the id auth.uid in the batch that does the
+  // bundling. If the work fails, we make sure to delete the document in "Locks"
+  // where the failure occurred then throw any errors.
+  await db.runTransaction(async (t) => {
+    const lockDoc = await t.get(db.collection("Locks").doc(auth.uid));
+    if (lockDoc.exists) {
+      functions.logger.warn(`Lock document exists for ${auth.uid}`);
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "A timesheet bundling operation is already in progress for this user."
+        );
+    }
+    return t.set(db.collection("Locks").doc(auth.uid), {
+      description: "Timesheet bundling in progress",
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+  // At this point, other instances of this function will throw because a lock
+  // document exists for this user. We must delete the lock document in the
+  // batch that does the bundling or in the catch block if the bundling fails.
+
   let timeSheets;
   if (EXACT_TIME_SEARCH) {
     timeSheets = await db
@@ -71,6 +99,9 @@ export async function bundleTimesheet(
       .get();    
   }
   if (!timeSheets.empty) {
+    // delete the lock document
+    await db.collection("Locks").doc(auth.uid).delete();
+
     throw new functions.https.HttpsError(
       "failed-precondition",
       "Only one time sheet can exist for a week. Please edit the existing one."
@@ -95,6 +126,9 @@ export async function bundleTimesheet(
       .get();
   }
   if (timeEntries.empty) {
+    // delete the lock document
+    await db.collection("Locks").doc(auth.uid).delete();
+
     throw new functions.https.HttpsError(
       "failed-precondition",
       `There are no entries for the week ending ${format(week, "yyyy MMM dd")}`
@@ -102,6 +136,9 @@ export async function bundleTimesheet(
   }
   // Outstanding TimeEntries exist, start the bundling process
   const batch = db.batch();
+
+  // delete the lock document
+  batch.delete(db.collection("Locks").doc(auth.uid));
 
   // Load the profile for the user to get manager and salary information
   const profile = await db.collection("Profiles").doc(auth.uid).get();
@@ -160,6 +197,8 @@ export async function bundleTimesheet(
     batch.set(tsRef, timesheetData);
     return batch.commit();
   } else {
+    // delete the lock document
+    await db.collection("Locks").doc(auth.uid).delete();
     throw new functions.https.HttpsError(
       "failed-precondition",
       `${managerProfile.get("displayName")} doesn't have required permissions`

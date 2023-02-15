@@ -190,7 +190,7 @@ export interface LockedTimeSheet extends TimeSheet {
 
 // Type Guards
 function isObject(x: unknown): x is Record<string, unknown> {
-  return typeof x === "object" && x != null;
+  return typeof x === "object" && x !== null;
 }
 export function isTimeSheet(data: unknown): data is TimeSheet {
   if (!isObject(data)) {
