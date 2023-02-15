@@ -16,7 +16,6 @@ CREATE TABLE `TimeSheets` (
   `surname` varchar(32) NOT NULL,
   `managerUid` varchar(128) NOT NULL DEFAULT '',
   `managerName` varchar(80) NOT NULL DEFAULT '',
-  `tbtePayrollId` varchar(6) NOT NULL DEFAULT '',
   `payrollId` varchar(6) NOT NULL DEFAULT '',
   `workWeekHours` int(11) NOT NULL DEFAULT '40',
   `salary` tinyint(1) NOT NULL,
