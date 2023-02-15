@@ -16,10 +16,16 @@
       <div v-if="submittedProfiles.length > 0">
         <h5>Submitted ({{ submittedProfiles.length }})</h5>
         <p v-for="profile in submittedProfiles" v-bind:key="profile.id">
-          {{ profile.surname }}, {{ profile.givenName }} awaiting approval by
-          {{
-            item.submitted[tsIdForUid(profile.id, item.submitted)].managerName
-          }}
+          {{ profile.surname }}, {{ profile.givenName }}
+          <template v-if="tsIdForUid(profile.id, item.submitted) === null">
+            <span class="attention">MORE THAN 1 TIMESHEET FOR THIS WEEK</span>
+          </template>
+          <template v-else>
+            awaiting approval by
+            {{
+              item.submitted[tsIdForUid(profile.id, item.submitted)].managerName
+            }}
+          </template>
         </p>
         <br />
       </div>
