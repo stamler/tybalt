@@ -113,7 +113,7 @@ service cloud.firestore {
           "surname", "givenName", "total", "submitted", "approved",
           "managerUid", "managerName", "division", "divisionName", "paymentType",
           "unitNumber", "breakfast", "lunch", "dinner", "lodging",
-          "vendorName", "distance", "ccLast4digits", "tbtePayrollId", "payrollId",
+          "vendorName", "distance", "ccLast4digits", "payrollId",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed" ]) &&
         
@@ -134,10 +134,6 @@ service cloud.firestore {
         // payrollId is not null
         newDoc.payrollId != null &&
         
-        (
-          isMissing("tbtePayrollId") || newDoc().tbtePayrollId == newDoc().payrollId
-        ) &&
-
         // the following list has "FuelOnAccount" removed to disable it
         newDoc.paymentType in ["Expense", "CorporateCreditCard", "Mileage", "FuelCard", "Allowance", "PersonalReimbursement"] &&
         isInCollection("division","Divisions") &&
