@@ -4,7 +4,7 @@ import * as path from "path";
 import * as _ from "lodash";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
-import { APP_NATIVE_TZ } from "./config";
+import { PAYROLL_EPOCH, APP_NATIVE_TZ } from "./config";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -461,13 +461,11 @@ export function nextSaturday(date: Date): Date {
 }
 
 // Given a number (result of getTime() from js Date object), verify that it is
-// 23:59:59 in APP_NATIVE_TZ on a saturday and that the saturday is a
-// week 2 of a payroll at TBT Engineering. The definition of this is an
-// integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
-// NB: THIS FUNCTION ALSO IN FRONTEND helpers.ts
+// 23:59:59 in APP_NATIVE_TZ on a saturday and that the saturday is a week 2 of
+// a payroll at this organization. The definition of this is an integer multiple
+// of 14 days after PAYROLL_EPOCH. NB: THIS FUNCTION ALSO IN
+// FRONTEND helpers.ts
 export function isPayrollWeek2(weekEnding: Date): boolean {
-  const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
-  
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
