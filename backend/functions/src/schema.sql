@@ -59,7 +59,6 @@ CREATE TABLE `TimeAmendments` (
   `uid` varchar(128) NOT NULL DEFAULT '',
   `givenName` varchar(48) NOT NULL DEFAULT '',
   `surname` varchar(32) NOT NULL DEFAULT '',
-  `tbtePayrollId` varchar(6) NOT NULL DEFAULT '',
   `payrollId` varchar(6) NOT NULL DEFAULT '',
   `workWeekHours` int(11) NOT NULL DEFAULT '40',
   `salary` tinyint(1) NOT NULL,
