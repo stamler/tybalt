@@ -263,10 +263,10 @@ export async function exportJson(data: unknown) {
 //   adding and committing of expenses up to a full week following the end of
 //   the pay period to be paid out during that period
 //   */
-//   if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, "America/Thunder_Bay")) {
+//   if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, APP_NATIVE_TZ)) {
 //     const tbay_week = utcToZonedTime(
 //       new Date(data.weekEnding),
-//       "America/Thunder_Bay"
+//       APP_NATIVE_TZ
 //     );  
 //     throw new functions.https.HttpsError(
 //       "invalid-argument",
@@ -498,7 +498,7 @@ export const uncommitExpense = functions.https.onCall(async (data: unknown, cont
 
 // export const updateMileageClaimed = functions.pubsub
 //   .schedule("17 12,15,18 * * *") // 12:17, 15:17, 18:17 daily
-//   .timeZone("America/Thunder_Bay")
+//   .timeZone(APP_NATIVE_TZ)
 //   .onRun(async (context) => {
 //     // Load and run the query
 //     const sql = loadSQLFileToString("mileageClaimed");

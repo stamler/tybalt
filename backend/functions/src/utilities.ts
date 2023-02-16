@@ -4,6 +4,7 @@ import * as path from "path";
 import * as _ from "lodash";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
+import { APP_NATIVE_TZ } from "./config";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -331,7 +332,7 @@ export async function writeWeekEnding(
         : null;
 
       // Calculate the correct saturday of the weekEnding
-      // (in America/Thunder_Bay timezone)
+      // (in APP_NATIVE_TZ timezone)
       const calculatedSaturday = nextSaturday(date);
 
       // update the Document only if required
@@ -391,7 +392,7 @@ export async function writeExpensePayPeriodEnding(
   const payPeriodEnding = afterData.payPeriodEnding?.toDate();
 
   // Calculate the correct payPeriodEnding based on commitTime AND date
-  // (in America/Thunder_Bay timezone)
+  // (in APP_NATIVE_TZ timezone)
   let calculatedPayPeriodEnding
   if (isPayrollWeek2(committedWeekEnding)) {
     calculatedPayPeriodEnding = committedWeekEnding;
@@ -399,12 +400,12 @@ export async function writeExpensePayPeriodEnding(
     // committedWeekEnding is week1 of this pay period
     // if the expense date is before the end of the last pay period set 
     // calculatedPayPeriodEnding to the previous one
-    const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+    const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
     if (date.getTime() <= lastPayPeriodEnding ) {
       calculatedPayPeriodEnding = lastPayPeriodEnding;
     } else {
       // the date is after the end of the last pay period
-      calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, "America/Thunder_Bay");
+      calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
     }
   }
   
@@ -422,11 +423,11 @@ export async function writeExpensePayPeriodEnding(
   return null;
   };
 
-// Calculate the correct saturday of the weekEnding in America/Thunder_Bay 
-// assuming input is in America/Thunder_Bay timezone as well.
+// Calculate the correct saturday of the weekEnding in APP_NATIVE_TZ 
+// assuming input is in APP_NATIVE_TZ timezone as well.
 export function nextSaturday(date: Date): Date {
   let calculatedSaturday;
-  const zonedTime = utcToZonedTime(date, "America/Thunder_Bay"); 
+  const zonedTime = utcToZonedTime(date, APP_NATIVE_TZ); 
   if (zonedTime.getDay() === 6) {
     calculatedSaturday = zonedTimeToUtc(
       new Date(
@@ -438,7 +439,7 @@ export function nextSaturday(date: Date): Date {
         59,
         999
       ),
-      "America/Thunder_Bay"
+      APP_NATIVE_TZ
     );
   } else {
     const nextsat = new Date(zonedTime.getTime());
@@ -453,14 +454,14 @@ export function nextSaturday(date: Date): Date {
         59,
         999
       ),
-      "America/Thunder_Bay"
+      APP_NATIVE_TZ
     );
   }
   return calculatedSaturday;
 }
 
 // Given a number (result of getTime() from js Date object), verify that it is
-// 23:59:59 in America/Thunder_bay on a saturday and that the saturday is a
+// 23:59:59 in APP_NATIVE_TZ on a saturday and that the saturday is a
 // week 2 of a payroll at TBT Engineering. The definition of this is an
 // integer multiple of 14 days after Dec 26, 2020 at 23:59:59.999 EST
 // NB: THIS FUNCTION ALSO IN FRONTEND helpers.ts
@@ -470,11 +471,11 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
-  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, "America/Thunder_Bay");
-  const tbayWeekEnding = utcToZonedTime(weekEnding, "America/Thunder_Bay");
+  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
+  const tbayWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
   const difference = differenceInCalendarDays(tbayWeekEnding, tbayEpoch);
   
-  // confirm the time of weekEnding is 23:59:59.999 in Thunder Bay
+  // confirm the time of weekEnding is 23:59:59.999 in APP_NATIVE_TZ
   const isLastMillisecondOfDay = tbayWeekEnding.getHours() === 23 && tbayWeekEnding.getMinutes() === 59 && tbayWeekEnding.getSeconds() === 59 && tbayWeekEnding.getMilliseconds() === 999;
   const isSaturday = tbayWeekEnding.getDay() === 6;
 
@@ -491,7 +492,7 @@ export function getPayPeriodFromWeekEnding(weekEnding: Date): Date {
   // and checking if there result is a week2 ending. If it is
   // return the result, otherwise throw because the weekEnding
   // isn't valid
-  const week2candidate = thisTimeNextWeekInTimeZone(weekEnding, "America/Thunder_Bay");
+  const week2candidate = thisTimeNextWeekInTimeZone(weekEnding, APP_NATIVE_TZ);
   if (isPayrollWeek2(week2candidate)) {
     return week2candidate;
   }
@@ -518,7 +519,7 @@ export async function getTrackingDoc(date: Date, collection: string, property: s
   // TODO: remove dependencies on default properties in other code
 
   if (!isPayrollWeek2(date)) {
-    if (!isPayrollWeek2(thisTimeNextWeekInTimeZone(date,"America/Thunder_Bay"))) {
+    if (!isPayrollWeek2(thisTimeNextWeekInTimeZone(date,APP_NATIVE_TZ))) {
       throw new Error("The provided date is not a valid week ending");
     }
   }

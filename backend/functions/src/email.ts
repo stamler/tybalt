@@ -3,16 +3,16 @@ import * as functions from "firebase-functions";
 import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
 import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
-import { APP_URL } from "./config";
+import { APP_URL, APP_NATIVE_TZ } from "./config";
 import * as _ from "lodash";
 
 // Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
   .schedule("0 8 * * 2,3,4")
-  .timeZone("America/Thunder_Bay")
+  .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const db = admin.firestore();
-    const lastWeek = thisTimeLastWeekInTimeZone(nextSaturday(new Date()),"America/Thunder_Bay");
+    const lastWeek = thisTimeLastWeekInTimeZone(nextSaturday(new Date()),APP_NATIVE_TZ);
     functions.logger.info(`creating reminders for week ending ${lastWeek}`);
     const profiles = await db.collection("Profiles").where("timeSheetExpected", "==", true).get();
     const submittedTimesheets = await db.collection("TimeSheets")
@@ -29,7 +29,7 @@ export const scheduledSubmitReminder = functions.pubsub
           text: 
             `Hi ${ profile.get("givenName")},\n\n` +
             `Your time sheet for the week ending ${
-              format(utcToZonedTime(lastWeek,"America/Thunder_Bay"), "MMMM d")
+              format(utcToZonedTime(lastWeek,APP_NATIVE_TZ), "MMMM d")
             } is due. Please submit one as soon as possible by visiting ${APP_URL}/time/entries/list\n\n` +
             "- Tybalt",
         },
@@ -40,7 +40,7 @@ export const scheduledSubmitReminder = functions.pubsub
 // Send reminder emails to managers who have submitted expenses they must approve at 9am on Thu and Fri "0 12 * * 4,5"
 export const scheduledExpenseApprovalReminder = functions.pubsub
   .schedule("0 9 * * 4,5")
-  .timeZone("America/Thunder_Bay")
+  .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const db = admin.firestore();
     const pendingDocuments = await db.collection("Expenses")
@@ -78,7 +78,7 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
 // Send reminder emails to managers who have submitted timesheets they must approve at 9am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledTimeSheetApprovalReminder = functions.pubsub
 .schedule("0 12 * * 2,3,4")
-.timeZone("America/Thunder_Bay")
+.timeZone(APP_NATIVE_TZ)
 .onRun(async (context) => {
   const db = admin.firestore();
   const pendingDocuments = await db.collection("TimeSheets")
@@ -117,7 +117,7 @@ export const scheduledTimeSheetApprovalReminder = functions.pubsub
 // operations
 export const scheduledEmailCleanup = functions.pubsub
   .schedule("0 0 * * *")
-  .timeZone("America/Thunder_Bay")
+  .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const OLD_AGE_DAYS = 30;
     functions.logger.info(`Cleaning up emails older than ${OLD_AGE_DAYS} days`);
@@ -157,7 +157,7 @@ export async function emailOnReject(
   const db = admin.firestore();
 
   if (collection === "TimeSheets") {
-    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+    const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),APP_NATIVE_TZ), "MMMM d");
     
     // generate the user email
     await db.collection("Emails").add({
@@ -200,7 +200,7 @@ export async function emailOnReject(
 
 
   } else if (collection === "Expenses") {
-    const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),"America/Thunder_Bay"), "MMMM d");
+    const expenseDateString = format(utcToZonedTime(afterData.date.toDate(),APP_NATIVE_TZ), "MMMM d");
 
     // generate the user email
     await db.collection("Emails").add({
@@ -276,7 +276,7 @@ export async function emailOnShare(
     const viewerProfile = await db.collection("Profiles").doc(viewerId).get();
 
     if (collection === "TimeSheets") {
-      const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),"America/Thunder_Bay"), "MMMM d");
+      const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),APP_NATIVE_TZ), "MMMM d");
       
       // generate the user email
       await db.collection("Emails").add({

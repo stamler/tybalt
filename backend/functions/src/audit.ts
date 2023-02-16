@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-
+import { APP_NATIVE_TZ } from "./config";
 const db = admin.firestore();
 
 // Log the export status of all locked TimeSheets Wednesdays at 10pm
@@ -8,7 +8,7 @@ export const auditExportStatus = functions
   .runWith({memory: "1GB", timeoutSeconds: 120})
   .pubsub
   .schedule("30 12,17 * * 1-5") // M-F 12:30 & 5:30pm, 10 times per week
-  .timeZone("America/Thunder_Bay")
+  .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const lockedTimesheets = await db.collection("TimeSheets")
       .where("locked", "==", true)

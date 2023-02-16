@@ -3,6 +3,7 @@ import * as functions from "firebase-functions";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { TimeEntry } from "./utilities";
+import { APP_NATIVE_TZ } from "./config";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket } from "mysql2";
@@ -16,7 +17,7 @@ export const syncToSQL = functions
   .pubsub
   .schedule("0 12,17 * * 1-5") // M-F noon & 5pm, 10 times per week
 //  .schedule("0 * * * *") // every hour
-  .timeZone("America/Thunder_Bay")
+  .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     await cleanupTime();
     await exportTime();
@@ -137,7 +138,7 @@ export async function exportTime() {
       payrollId: snapData.payrollId,
       workWeekHours,
       salary: snapData.salary,
-      weekEnding: format(utcToZonedTime(snapData.weekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd"),
+      weekEnding: format(utcToZonedTime(snapData.weekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd"),
     };
 
     // Insert the TimeSheet-level data into the TimeSheets table first
@@ -150,7 +151,7 @@ export async function exportTime() {
       const cleaned: any = entry;
       delete cleaned.weekEnding;
       cleaned.tsid = tsSnap.id;
-      cleaned.date = format(utcToZonedTime(entry.date.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd")
+      cleaned.date = format(utcToZonedTime(entry.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
       return timeEntriesFields.map(x => cleaned[x]);
     });
     const q = `INSERT INTO TimeEntries (${timeEntriesFields.toString()}) VALUES ?`;
@@ -320,9 +321,9 @@ export async function exportAmendments() {
     amendment.id = amendSnap.id;
     amendment.commitTime = amendment.commitTime.toDate();
     amendment.created = amendment.created.toDate();
-    amendment.committedWeekEnding = format(utcToZonedTime(amendment.committedWeekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
-    amendment.weekEnding = format(utcToZonedTime(amendment.weekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
-    amendment.date = format(utcToZonedTime(amendment.date.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    amendment.committedWeekEnding = format(utcToZonedTime(amendment.committedWeekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+    amendment.weekEnding = format(utcToZonedTime(amendment.weekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+    amendment.date = format(utcToZonedTime(amendment.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
     // VALUEs were included in the data set for this doc, include it in success batch
     exportSuccessBatch.update(amendSnap.ref, {
       exported: true,
@@ -482,9 +483,9 @@ export async function exportExpenses() {
     const expense = expenseSnap.data();
     expense.id = expenseSnap.id;
     expense.commitTime = expense.commitTime.toDate();
-    expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
-    expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
-    expense.date = format(utcToZonedTime(expense.date.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd");
+    expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+    expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+    expense.date = format(utcToZonedTime(expense.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
     // VALUEs were included in the data set for this doc, include it in success batch
     exportSuccessBatch.update(expenseSnap.ref, {
       exported: true,
@@ -568,7 +569,7 @@ export async function exportProfiles() {
       functions.logger.warn(`${profile.displayName}'s profile ${profile.id} has null or undefined openingDateTimeOff and will not be exported.`);
       return;
     }
-    profile.openingDateTimeOff = format(utcToZonedTime(stamp.toDate(),"America/Thunder_Bay"), "yyyy-MM-dd")
+    profile.openingDateTimeOff = format(utcToZonedTime(stamp.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
     return profilesFields.map(x => profile[x]);
   });
   // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been

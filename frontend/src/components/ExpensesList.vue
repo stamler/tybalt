@@ -215,6 +215,7 @@ import {
   del,
   downloadAttachment,
 } from "./helpers";
+import { APP_NATIVE_TZ } from "../config";
 import RejectModal from "./RejectModal.vue";
 import { firebaseApp } from "../firebase";
 import {
@@ -380,7 +381,7 @@ export default defineComponent({
       if (isPayrollWeek2(date)) {
         return date;
       } else {
-        return thisTimeNextWeekInTimeZone(date, "America/Thunder_Bay");
+        return thisTimeNextWeekInTimeZone(date, APP_NATIVE_TZ);
       }
     },
     updateItems() {

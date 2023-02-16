@@ -4,6 +4,7 @@ import { getAuthObject, isWeekReference } from "./utilities";
 import { tallyAndValidate } from "./tallyAndValidate";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { format, subMilliseconds, addMilliseconds } from "date-fns";
+import { APP_NATIVE_TZ } from "./config";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -33,17 +34,14 @@ export async function bundleTimesheet(
   // have no associated time zone info. To determine time zone dependent
   // facts like whether a day is a saturday or to set the time specific to
   // eastern time as desired (for week endings), we must interpret date
-  // in a time zone. Hre we rebase time objects to America/Thunder_Bay to
+  // in a time zone. Hre we rebase time objects to APP_NATIVE_TZ to
   // do manipulations and validate week days, then we change it back.
-  const tbay_week = utcToZonedTime(
-    new Date(data.weekEnding),
-    "America/Thunder_Bay"
-  );
+  const tbay_week = utcToZonedTime(new Date(data.weekEnding), APP_NATIVE_TZ);
 
-  // Overwrite the time to 23:59:59.999 in America/Thunder_Bay time zone
+  // Overwrite the time to 23:59:59.999 in APP_NATIVE_TZ time zone
   tbay_week.setHours(23, 59, 59, 999);
 
-  // verify tbay_week is a Saturday in America/Thunder_Bay time zone
+  // verify tbay_week is a Saturday in APP_NATIVE_TZ time zone
   if (tbay_week.getDay() !== 6) {
     throw new functions.https.HttpsError(
       "invalid-argument",
@@ -52,7 +50,7 @@ export async function bundleTimesheet(
   }
 
   // Convert back to UTC for queries against firestore
-  const week = zonedTimeToUtc(new Date(tbay_week), "America/Thunder_Bay");
+  const week = zonedTimeToUtc(new Date(tbay_week), APP_NATIVE_TZ);
 
   // Throw if a timesheet already exists for this week
 
