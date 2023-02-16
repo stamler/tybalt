@@ -36,13 +36,13 @@ export async function bundleTimesheet(
   // eastern time as desired (for week endings), we must interpret date
   // in a time zone. Hre we rebase time objects to APP_NATIVE_TZ to
   // do manipulations and validate week days, then we change it back.
-  const tbay_week = utcToZonedTime(new Date(data.weekEnding), APP_NATIVE_TZ);
+  const zoned_week = utcToZonedTime(new Date(data.weekEnding), APP_NATIVE_TZ);
 
   // Overwrite the time to 23:59:59.999 in APP_NATIVE_TZ time zone
-  tbay_week.setHours(23, 59, 59, 999);
+  zoned_week.setHours(23, 59, 59, 999);
 
-  // verify tbay_week is a Saturday in APP_NATIVE_TZ time zone
-  if (tbay_week.getDay() !== 6) {
+  // verify zoned_week is a Saturday in APP_NATIVE_TZ time zone
+  if (zoned_week.getDay() !== 6) {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "The week ending specified is not a Saturday"
@@ -50,7 +50,7 @@ export async function bundleTimesheet(
   }
 
   // Convert back to UTC for queries against firestore
-  const week = zonedTimeToUtc(new Date(tbay_week), APP_NATIVE_TZ);
+  const week = zonedTimeToUtc(new Date(zoned_week), APP_NATIVE_TZ);
 
   // Throw if a timesheet already exists for this week
 

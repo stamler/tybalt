@@ -41,9 +41,9 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
-  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
-  const tbayWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
-  const difference = differenceInDays(tbayWeekEnding, tbayEpoch);
+  const zonedEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
+  const zonedWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
+  const difference = differenceInDays(zonedWeekEnding, zonedEpoch);
 
   return difference % 14 === 0 ? true : false;
 }
@@ -567,8 +567,8 @@ export async function generatePayablesCSVSQL(
     id: `getExpensesSQL${start.getTime()}`,
     message: "Getting Expenses",
   });
-  const weekEndingTbay = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
-  const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+  const weekEndingZoned = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
+  const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
   try {
     let response: HttpsCallableResult;
@@ -602,12 +602,12 @@ export async function generatePayablesCSVSQL(
     let filename: string;
     if (type === "payroll") {
       filename = `SQLExpensesForPayPeriod_${exportDateWeekStart(
-        subDays(weekEndingTbay, 7)
-      )}-${exportDate(weekEndingTbay)}`;
+        subDays(weekEndingZoned, 7)
+      )}-${exportDate(weekEndingZoned)}`;
     } else if (type === "weekly") {
       filename = `SQLPayables_${exportDateWeekStart(
-        weekEndingTbay
-      )}-${exportDate(weekEndingTbay)}`;
+        weekEndingZoned
+      )}-${exportDate(weekEndingZoned)}`;
     } else {
       throw new Error("Invalid type in generatePayablesCSVSQL");
     }

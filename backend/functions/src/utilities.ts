@@ -471,13 +471,13 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
-  const tbayEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
-  const tbayWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
-  const difference = differenceInCalendarDays(tbayWeekEnding, tbayEpoch);
+  const zonedEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
+  const zonedWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
+  const difference = differenceInCalendarDays(zonedWeekEnding, zonedEpoch);
   
   // confirm the time of weekEnding is 23:59:59.999 in APP_NATIVE_TZ
-  const isLastMillisecondOfDay = tbayWeekEnding.getHours() === 23 && tbayWeekEnding.getMinutes() === 59 && tbayWeekEnding.getSeconds() === 59 && tbayWeekEnding.getMilliseconds() === 999;
-  const isSaturday = tbayWeekEnding.getDay() === 6;
+  const isLastMillisecondOfDay = zonedWeekEnding.getHours() === 23 && zonedWeekEnding.getMinutes() === 59 && zonedWeekEnding.getSeconds() === 59 && zonedWeekEnding.getMilliseconds() === 999;
+  const isSaturday = zonedWeekEnding.getDay() === 6;
 
   // confirm difference in calendar days from the epoch modulo 14 is 0
   return difference % 14 === 0 && isLastMillisecondOfDay && isSaturday ? true : false;

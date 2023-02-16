@@ -203,15 +203,15 @@ export default defineComponent({
       return !isNaN(Number(candidate)) ? Number(candidate) : input;
     },
     async generateSQLPayrollCSVForWeek(timestamp: Timestamp, week1 = false) {
-      let weekEndingTbay = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
+      let weekEndingZoned = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
       if (week1) {
         // must calculate the week1 ending and run the query
-        weekEndingTbay = subDays(
+        weekEndingZoned = subDays(
           utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ),
           7
         );
       }
-      const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+      const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
       const queryMySQL = httpsCallable(functions, "queryMySQL");
       try {
         const response = await queryMySQL({
@@ -250,8 +250,8 @@ export default defineComponent({
         this.downloadBlob(
           blob,
           `SQLpayroll_${this.exportDateWeekStart(
-            weekEndingTbay
-          )}-${this.exportDate(weekEndingTbay)}.csv`
+            weekEndingZoned
+          )}-${this.exportDate(weekEndingZoned)}.csv`
         );
       } catch (error) {
         alert(`Error: ${error}`);

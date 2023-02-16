@@ -264,13 +264,13 @@ export async function exportJson(data: unknown) {
 //   the pay period to be paid out during that period
 //   */
 //   if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, APP_NATIVE_TZ)) {
-//     const tbay_week = utcToZonedTime(
+//     const zoned_week = utcToZonedTime(
 //       new Date(data.weekEnding),
 //       APP_NATIVE_TZ
 //     );  
 //     throw new functions.https.HttpsError(
 //       "invalid-argument",
-//       `Wait until ${format(addDays(tbay_week,8), "MMM dd")} to process expenses for pay period ending ${format(tbay_week, "MMM dd")}`
+//       `Wait until ${format(addDays(zoned_week,8), "MMM dd")} to process expenses for pay period ending ${format(zoned_week, "MMM dd")}`
 //     )
 //   }
 

@@ -865,11 +865,11 @@ export default Vue.extend({
         id: `getExpensesSQL${start.getTime()}`,
         message: "Getting Expenses",
       });
-      const weekEndingTbay = utcToZonedTime(
+      const weekEndingZoned = utcToZonedTime(
         timestamp.toDate(),
         APP_NATIVE_TZ
       );
-      const queryValues = [format(weekEndingTbay, "yyyy-MM-dd")];
+      const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
       const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
       try {
         let response;
@@ -903,12 +903,12 @@ export default Vue.extend({
         let filename: string;
         if (type === "payroll") {
           filename = `SQLExpensesForPayPeriod_${this.exportDateWeekStart(
-            subDays(weekEndingTbay, 7)
-          )}-${this.exportDate(weekEndingTbay)}`;
+            subDays(weekEndingZoned, 7)
+          )}-${this.exportDate(weekEndingZoned)}`;
         } else if (type === "weekly") {
           filename = `SQLPayables_${this.exportDateWeekStart(
-            weekEndingTbay
-          )}-${this.exportDate(weekEndingTbay)}`;
+            weekEndingZoned
+          )}-${this.exportDate(weekEndingZoned)}`;
         } else {
           throw new Error("Invalid type in generatePayablesCSVSQL");
         }
