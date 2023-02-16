@@ -68,11 +68,35 @@ export async function bundleTimesheet(
   await db.runTransaction(async (t) => {
     const lockDoc = await t.get(db.collection("Locks").doc(auth.uid));
     if (lockDoc.exists) {
-      functions.logger.warn(`Lock document exists for ${auth.uid}`);
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "A timesheet bundling operation is already in progress for this user."
-        );
+      // Check if the lock document is older than 1 minute. If it is not, throw.
+      // If it is, continue with the bundling process. This is to prevent a
+      // failure of tybalt to delete the lock document in a prior run from
+      // blocking the bundling process. TODO: This is a temporary solution until
+      // we can figure out why tybalt is failing to delete the lock document
+      // sometimes.
+      const TIMEOUT = 30000;
+      const lockDocTimestamp = lockDoc.get("timestamp");
+      if (lockDocTimestamp !== undefined) {
+        const lms = lockDocTimestamp.toDate().getTime();
+        const nms = (new Date()).getTime();
+        if (nms - lms < TIMEOUT) {
+          functions.logger.warn(`Fresh lock doc exists for ${auth.uid}`);
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `A timesheet bundling operation is already in progress for this user. Please wait ${TIMEOUT / 1000} sec  before trying again.`
+          );
+        } else {
+          // A previous lock document wasn't properly deleted. This is due to a
+          // failure of tybalt to delete the lock document in a prior run. Log a
+          // warning and continue with the bundling process. It's possible that
+          // a prior tally and validate failed and the lock document wasn't
+          // deleted. But there is possibly another error that caused the lock
+          // document to not be deleted. This is a temporary solution until we
+          // can figure out why tybalt is failing to delete the lock document
+          // sometimes.
+          functions.logger.warn(`Old lock doc from ${lockDocTimestamp.toDate().toISOString()} exists for ${auth.uid} but will be overwritten. This is a bug.`);
+        }
+      }
     }
     return t.set(db.collection("Locks").doc(auth.uid), {
       description: "Timesheet bundling in progress",
@@ -83,21 +107,21 @@ export async function bundleTimesheet(
   // document exists for this user. We must delete the lock document in the
   // batch that does the bundling or in the catch block if the bundling fails.
 
-  let timeSheets;
+  // Verify that no timesheet exists for this week
+  let timeSheetsQuery;
   if (EXACT_TIME_SEARCH) {
-    timeSheets = await db
+    timeSheetsQuery = db
       .collection("TimeSheets")
       .where("uid", "==", auth.uid)
-      .where("weekEnding", "==", week)
-      .get();
+      .where("weekEnding", "==", week);
   } else {
-    timeSheets = await db
+    timeSheetsQuery = db
       .collection("TimeSheets")
       .where("uid", "==", auth.uid)
       .where("weekEnding", ">", subMilliseconds(week, WITHIN_MSEC))
-      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC))
-      .get();    
+      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC));
   }
+  const timeSheets = await timeSheetsQuery.get();
   if (!timeSheets.empty) {
     // delete the lock document
     await db.collection("Locks").doc(auth.uid).delete();
@@ -109,26 +133,24 @@ export async function bundleTimesheet(
   }
 
   // Look for TimeEntries to bundle
-  let timeEntries;
+  let timeEntriesQuery;
   if (EXACT_TIME_SEARCH) {
-    timeEntries = await db
+    timeEntriesQuery = db
       .collection("TimeEntries")
       .where("uid", "==", auth.uid)
       .where("weekEnding", "==", week)
-      .orderBy("date", "asc")
-      .get();
+      .orderBy("date", "asc");
   } else {
-    timeEntries = await db
+    timeEntriesQuery = db
       .collection("TimeEntries")
       .where("uid", "==", auth.uid)
       .where("weekEnding", ">", subMilliseconds(week, WITHIN_MSEC))
-      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC))
-      .get();
+      .where("weekEnding", "<", addMilliseconds(week, WITHIN_MSEC));
   }
+  const timeEntries = await timeEntriesQuery.get();
   if (timeEntries.empty) {
     // delete the lock document
     await db.collection("Locks").doc(auth.uid).delete();
-
     throw new functions.https.HttpsError(
       "failed-precondition",
       `There are no entries for the week ending ${format(week, "yyyy MMM dd")}`
@@ -143,6 +165,8 @@ export async function bundleTimesheet(
   // Load the profile for the user to get manager and salary information
   const profile = await db.collection("Profiles").doc(auth.uid).get();
   if (!profile.exists) {
+    // delete the lock document
+    await db.collection("Locks").doc(auth.uid).delete();
     throw new functions.https.HttpsError(
       "not-found",
       "A Profile doesn't exist for this user"
@@ -160,7 +184,8 @@ export async function bundleTimesheet(
     managerProfile = await db.collection("Profiles").doc(profile.get("managerUid")).get();
   } catch (error: unknown) {
     const typedError = error as Error;
-
+    // delete the lock document
+    await db.collection("Locks").doc(auth.uid).delete();
     // The Profile for this user likely specifies an identifier
     // (managerUid) that doesn't correspond to valid User Record.
     throw new functions.https.HttpsError("internal", typedError.message);
@@ -180,12 +205,16 @@ export async function bundleTimesheet(
         const alternateProfile = await db.collection("ManagerNames").doc(alternate).get();
         const displayName = alternateProfile.get("displayName")
         if (displayName !== undefined) {
+          // delete the lock document
+          await db.collection("Locks").doc(auth.uid).delete();
           throw new functions.https.HttpsError(
             "failed-precondition",
             `${managerProfile.get("displayName")} is not accepting submissions but has specified ${displayName} as their alternate manager. Please choose another manager.`
           )
         }
       }
+      // delete the lock document
+      await db.collection("Locks").doc(auth.uid).delete();
       throw new functions.https.HttpsError(
         "failed-precondition",
         `${managerProfile.get("displayName")} is not accepting submissions. Please choose another manager.`
