@@ -109,7 +109,6 @@ CREATE TABLE `Expenses` (
   `paymentType` varchar(24) NOT NULL,
   `po` varchar(128) DEFAULT NULL,
   `surname` varchar(32) NOT NULL,
-  `tbtePayrollId` varchar(6) NOT NULL,
   `payrollId` varchar(6) NOT NULL,
   `total` decimal(9,2) DEFAULT NULL,
   `uid` varchar(128) NOT NULL DEFAULT '',
