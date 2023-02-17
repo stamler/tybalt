@@ -40,4 +40,6 @@ Corporate time and expense tracking, computer asset management, and reporting in
 
 5. rename config.ts.template to config.ts and set the required values.
 
-6. `firebase deploy`
+6. Add the Variables in the Automation account in Azure. Variables are in Execute-UserMutations.ps1 and Dump-ADUsersToTybalt.ps1
+
+7. `firebase deploy`

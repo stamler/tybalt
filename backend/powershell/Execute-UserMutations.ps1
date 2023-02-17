@@ -12,6 +12,15 @@
 
 $dispatchUri = Get-AutomationVariable -Name "dispatchMutationsURI"
 $completeUri = Get-AutomationVariable -Name "completeMutationsURI"
+$essentialsGroup = Get-AutomationVariable -Name "O365_BUSINESS_ESSENTIALS_GROUP"
+$premiumGroup = Get-AutomationVariable -Name "O365_BUSINESS_PREMIUM_GROUP"
+$spbGroup = Get-AutomationVariable -Name "SPB_GROUP"
+$upnSuffix = Get-AutomationVariable -Name "UPN_SUFFIX"
+$companyName = Get-AutomationVariable -Name "COMPANY_NAME"
+$newUsersGroup = Get-AutomationVariable -Name "NEW_USERS_GROUP"
+$newUsersOU = Get-AutomationVariable -Name "NEW_USERS_OU"
+$disabledUsersOU = Get-AutomationVariable -Name "DISABLED_USERS_OU"
+$disabledSharedMailboxUsersOU = Get-AutomationVariable -Name "DISABLED_SHARED_MAILBOX_USERS_OU"
 $credential = Get-AutomationPSCredential -Name "TybaltUserMutationCredentials"
 
 $headers = @{
@@ -72,7 +81,7 @@ function Create-User {
     [Parameter(Mandatory=$true)]
     [String]$TelephoneNumber,
     [Parameter(Mandatory=$true)]
-    [String]$Group = "TBTE_Mobile_Software"
+    [String]$Group = $essentialsGroup
   )
 
   # create the SamAccountName
@@ -95,7 +104,7 @@ function Create-User {
     return;
   } catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException] {
     # The account doesn't already exist, we can use this samAccountName
-    $upn = $samAccountName + "@tbte.ca"
+    $upn = $samAccountName + "@" + $upnSuffix
   }
   
   $pwobject = Generate-Password
@@ -103,8 +112,8 @@ function Create-User {
   try {
     $user = New-ADUser `
     -Name "$GivenName $Surname" `
-    -Path "OU=Human Users,DC=main,DC=tbte,DC=ca" `
-    -Company "TBT Engineering Limited" `
+    -Path $newUsersOU `
+    -Company $companyName `
     -GivenName $GivenName `
     -Surname $Surname `
     -SamAccountName $samAccountName `
@@ -130,7 +139,7 @@ function Create-User {
   }
 
   # Add user to groups
-  Add-ADGroupMember -Identity "TBTE_General" -Members $samAccountName
+  Add-ADGroupMember -Identity $newUsersGroup -Members $samAccountName
   Add-ADGroupMember -Identity $Group -Members $samAccountName
 
   # send the result to the mutationComplete endpoint here.
@@ -242,7 +251,7 @@ function Offboard-User {
     }
     
     #Move to disabled users OU
-    $adUser | Move-ADObject -TargetPath "OU=Disabled Users,DC=main,DC=tbte,DC=ca"
+    $adUser | Move-ADObject -TargetPath $disabledUsersOU
   }
   catch {
     $body = @{
@@ -289,7 +298,7 @@ function Offboard-ShareMail {
     }
     
     #Move to DisabledUsersSharedMailbox OU
-    $adUser | Move-ADObject -TargetPath "OU=DisabledUsersSharedMailbox,DC=main,DC=tbte,DC=ca"
+    $adUser | Move-ADObject -TargetPath $disabledSharedMailboxUsersOU
 
     # The shared mailbox converion must be performed in the Azure Set the result
     # to onSiteComplete then a further process will check for this result and do
@@ -311,10 +320,10 @@ foreach ($mutation in $response.mutations) {
   # The value for license won't match the on-premises group name, so we need to
   # replace it with the on-premises group name here.
   $group = switch($mutation.data.license) {
-    O365_BUSINESS_PREMIUM { "TBTE_Desktop_Software" }
-    O365_BUSINESS_ESSENTIALS { "TBTE_Mobile_Software" }
-    SPB { "TBTE_Premium_Software" }
-    Default { "TBTE_Mobile_Software" }
+    O365_BUSINESS_PREMIUM { $premiumGroup }
+    O365_BUSINESS_ESSENTIALS { $essentialsGroup }
+    SPB { $spbGroup }
+    Default { $essentialsGroup }
   }
 
   # Choose which function to execute based on the verb
