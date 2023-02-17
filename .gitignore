@@ -84,3 +84,6 @@ frontend/testdocs/
 # build from the project root
 frontend/src/config.ts
 backend/functions/src/config.ts
+
+# The config file for a specific deployment
+config.ts
