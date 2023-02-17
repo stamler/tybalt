@@ -20,3 +20,13 @@ export const APP_NATIVE_TZ = "America/Thunder_Bay";
 export const PAYROLL_EPOCH = new Date(Date.UTC(2020, 11, 27, 4, 59, 59, 999));
 export const APP_DOC_URL =
   "https://company.ca/tybalt-docs";
+export const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCZpTxn-ksfepG7rlXn_eGsFHa4xmuVPM",
+  authDomain: APP_HOSTNAME, // include https://APP_HOSTNAME/__/auth/handler in Azure App registration "Redirect URIs"
+  databaseURL: "https://app-name.firebaseio.com",
+  projectId: "app-name",
+  storageBucket: "app-name.appspot.com",
+  messagingSenderId: "10194810293",
+  appId: "1:115342344488:web:825382993e12cd44db595",
+  measurementId: "G-Y8GRFSJLK",
+}
