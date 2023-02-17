@@ -1,3 +1,10 @@
+/*
+ * @Author: Dean Stamler 
+ * @Date: 2018-01-01 12:00:00 
+ * @Last Modified by: Dean Stamler
+ * @Last Modified time: 2023-02-17 12:55:05
+ */
+
 // Entry point for tybalt app
 
 import * as functions from "firebase-functions";

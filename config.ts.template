@@ -1,3 +1,10 @@
+/*
+ * @Author: Dean Stamler 
+ * @Date: 2018-01-01 12:00:00 
+ * @Last Modified by:   Dean Stamler 
+ * @Last Modified time: 2023-02-17 12:58:45 
+ */
+
 // This is the global configuration file for the application. During frontend
 // build, this file is copied into frontend/src directory by the copyconfig
 // script which is called by the prebuild script. During backend build, this
