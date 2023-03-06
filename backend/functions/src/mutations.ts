@@ -103,7 +103,7 @@ function isNewADUserData(data: any): data is NewADUserData {
       areaCodeInt > 199 && areaCodeInt < 1000 &&
       centralOfficeInt > 199 && centralOfficeInt < 1000 &&
       stationInt > 0 && stationInt < 10000 &&
-      typeof data.defaultDivision === "string" && data.defaultDivision.length > 1 &&
+      typeof data.defaultDivision === "string" && data.defaultDivision.length > 0 &&
       (data.remuneration === "Hourly" || data.remuneration === "Salary") &&
       (data.license === "O365_BUSINESS_ESSENTIALS" || data.license === "O365_BUSINESS_PREMIUM" || data.license === "SPB")
     ) {
