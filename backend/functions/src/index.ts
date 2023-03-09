@@ -32,6 +32,7 @@ export { algoliaUpdateSecuredAPIKey, updateOpeningValues /*, getMileageForUids*/
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
+export { newAiChat, deleteChat, aiResponder, retryAiChat } from "./ai";
 export { auditExportStatus } from "./audit";
 export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";

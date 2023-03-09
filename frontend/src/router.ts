@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router";
-
+import { v4 as uuidv4 } from "uuid";
 // Components
 import MainView from "@/views/MainView.vue";
 import WelcomeSettings from "@/components/WelcomeSettings.vue";
+import AIChat from "@/components/AIChat.vue";
+import AIChatsList from "@/components/AIChatsList.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
 import ExpensesList from "@/components/ExpensesList.vue";
 import ExpensesQueue from "@/components/ExpensesQueue.vue";
@@ -240,6 +242,44 @@ const router = createRouter({
               name: "Expenses Approved",
               props: { approved: true, collectionName: "Expenses" },
               component: ExpensesList,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      path: "/ai",
+      name: "AI",
+      redirect: "/ai/tibby",
+      component: MainView,
+      children: [
+        {
+          path: "tibby",
+          name: "Tibby",
+          redirect: "/ai/tibby/chat",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "chats",
+              name: "Tibby History",
+              component: AIChatsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Chat" },
+              path: "chat",
+              name: "New Tibby Chat",
+              redirect() {
+                return { name: "Tibby Chat", params: { id: uuidv4() } };
+              },
+            },
+            {
+              path: ":id/chat",
+              props: (route) => {
+                return { id: route.params.id };
+              },
+              name: "Tibby Chat",
+              component: AIChat,
             },
           ],
         },

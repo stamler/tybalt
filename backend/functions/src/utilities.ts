@@ -9,6 +9,11 @@ import { PAYROLL_EPOCH, APP_NATIVE_TZ } from "./config";
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
 
+// This is the type of the data object that is passed to the chatEndpoint
+interface ChatPayload {
+  content: string;
+};
+
 // The auth property of functions.https.CallableContext
 export interface AuthObject {
   uid: string;
@@ -190,7 +195,7 @@ export interface LockedTimeSheet extends TimeSheet {
 }
 
 // Type Guards
-function isObject(x: unknown): x is Record<string, unknown> {
+export function isObject(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null;
 }
 export function isTimeSheet(data: unknown): data is TimeSheet {
@@ -245,6 +250,17 @@ export function isApprovedTimeSheet(data: unknown): data is ApprovedTimeSheet {
 }
 export function isLockedTimeSheet(data: unknown): data is LockedTimeSheet {
   return isTimeSheet(data) && data.submitted === true && data.approved === true && data.locked === true;
+}
+
+// This TypeGuard checks if the data object is a ChatPayload object
+export function isChatPayloadObject(data: unknown): data is ChatPayload {
+  if (!isObject(data)) {
+    return false;
+  }
+  return (
+    typeof data.content === "string" &&
+    data.content.length > 0
+  );
 }
 
 // If a file object's metadata changes, ensure that the links to it

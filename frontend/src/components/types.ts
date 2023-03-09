@@ -251,6 +251,17 @@ function isObject(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x != null;
 }
 
+interface DocIdObject {
+  // the id of a document
+  id: string;
+}
+export function isDocIdObject(data: unknown): data is DocIdObject {
+  if (!isObject(data)) {
+    return false;
+  }
+  return typeof data.id === "string";
+}
+
 function isExpenseCommon(data: unknown): data is ExpenseCommon {
   if (!isObject(data)) {
     return false;
