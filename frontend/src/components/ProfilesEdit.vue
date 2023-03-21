@@ -113,6 +113,10 @@
       </select>
     </span>
     <span class="field">
+      <label for="bot">AI Bot</label>
+      <input class="grow" type="text" name="bot" v-model="item.bot" />
+    </span>
+    <span class="field">
       <label for="displayName">Name</label>
       <input
         class="grow"
@@ -274,6 +278,7 @@ export default defineComponent({
           timeSheetExpected: boolean;
           allowPersonalReimbursement?: boolean;
           untrackedTimeOff?: boolean;
+          bot?: string;
           payrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
         } = {
@@ -307,6 +312,9 @@ export default defineComponent({
         }
         if (this.item.payrollId) {
           obj.payrollId = this.item.payrollId;
+        }
+        if (this.item.bot && this.item.bot.length > 2) {
+          obj.bot = this.item.bot;
         }
         if (this.item.personalVehicleInsuranceExpiry) {
           obj.personalVehicleInsuranceExpiry =
