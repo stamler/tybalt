@@ -334,6 +334,7 @@ export default defineComponent({
 <style>
 @import "highlight.js/styles/atom-one-light";
 @import "./lds-ellipsis.css";
+@import "./table.css";
 :not(pre) > code {
   font-weight: bold;
   padding: 0 0.1em;
