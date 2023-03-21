@@ -38,6 +38,9 @@ export const useStateStore = defineStore({
     toggleMenu() {
       this.sidenav = !this.sidenav;
     },
+    hideNav() {
+      this.sidenav = false;
+    },
     startTask(task: Task) {
       const id = task.id;
       this.activeTasks[id] = { message: task.message };

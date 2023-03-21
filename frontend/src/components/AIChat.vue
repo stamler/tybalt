@@ -73,8 +73,14 @@ const functions = getFunctions(firebaseApp);
 export default defineComponent({
   setup() {
     const store = useStateStore();
-    const { startTask, endTask } = store;
-    return { user: store.user, claims: store.claims, startTask, endTask };
+    const { startTask, endTask, hideNav } = store;
+    return {
+      user: store.user,
+      claims: store.claims,
+      startTask,
+      endTask,
+      hideNav,
+    };
   },
   components: {
     ActionButton,
@@ -89,8 +95,7 @@ export default defineComponent({
       if (newValue === false) {
         this.$nextTick(() => {
           this.setInputHeight();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (this.$refs.chatfield as any).focus();
+          this.focusInput();
         });
       }
     },
@@ -133,8 +138,7 @@ export default defineComponent({
   },
   mounted() {
     this.setItem(this.id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (this.$refs.chatfield as any).focus();
+    this.focusInput();
   },
   computed: {
     lockinput() {
@@ -148,6 +152,11 @@ export default defineComponent({
     },
   },
   methods: {
+    focusInput() {
+      this.hideNav();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.$refs.chatfield as any).focus();
+    },
     setInputHeight(nextTick = false) {
       // TODO: call this on window resize as well.
 
@@ -231,8 +240,7 @@ export default defineComponent({
         // rebind next time
         this.item = undefined;
         this.messages = undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.$refs.chatfield as any).focus();
+        this.focusInput();
       }
     },
     async send() {
