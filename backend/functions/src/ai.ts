@@ -229,7 +229,7 @@ const sharedAiResponder = async (chatId: string, receivedEventId: string | undef
 
       // if the event id is undefined, this function was called by the user so
       // we create a new event id which is randomly generated
-      let eventId = receivedEventId === undefined ? uuidv4() + "_manual" : receivedEventId;
+      const eventId = receivedEventId === undefined ? uuidv4() + "_manual" : receivedEventId;
 
       // get the message data
       const messageData = messageSnapshot.data();

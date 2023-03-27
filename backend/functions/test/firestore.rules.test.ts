@@ -1337,21 +1337,23 @@ describe("Other Firestore Rules", function () {
   });
   
   describe("Jobs", () => {
-    const job = { description: "A basic job", client: "A special client", manager: "A company employee", status: "Active" };
+    const job = { description: "A basic job", client: "A special client", managerUid: "alice", managerDisplayName: "Alice", status: "Active" };
     const jobs = adminDb.collection("Jobs");
 
     beforeEach("reset data", async () => {
       await firebase.clearFirestoreData({ projectId });
       await jobs.doc("19-444").set(job);
       await jobs.doc("P19-444").set(job);
+      await profiles.doc("alice").set(alice);
     });
 
-    it("allows job claim holders to create or update", async () => {
+    it("allows job claim holders to create jobs", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
+      const doc2 = db2.collection("Jobs").doc("19-333");
       await firebase.assertSucceeds(doc.set(job));
-      const { manager, ...noManager } = job;
-      await firebase.assertSucceeds(doc.update({ ...noManager, manager: "A different employee" }));
+      await firebase.assertFails(doc2.set(job));
     });
     it("restricts value of status for projects", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
@@ -1376,12 +1378,9 @@ describe("Other Firestore Rules", function () {
     it("prevents job claim holders from creating jobs with invalid ID format", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("invalidIdFormat");
+      const doc2 = db.collection("Jobs").doc("19-333");
       await firebase.assertFails(doc.set(job));
-    });
-    it("prevents users without job claim from creating or updating", async () => {
-      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
-      const doc = db.collection("Jobs").doc("19-333");
-      await firebase.assertFails(doc.set(job));
+      await firebase.assertSucceeds(doc2.set(job));
     });
     it("prevents the description from being less than 4 characters long", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
@@ -1393,9 +1392,63 @@ describe("Other Firestore Rules", function () {
     it("requires the proposal to reference a valid job if present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
+
+      // proposal present and references a valid job
       await firebase.assertSucceeds(doc.set({ ...job, proposal: "P19-444"}));
+
+      // proposal not present
       await firebase.assertSucceeds(doc.set({ ...job }));
+
+      // proposal present but references an invalid job
       await firebase.assertFails(doc.set({ ...job, proposal: "P19-555"}));
+    });
+    it("requires the managerUid to reference a document in Profiles and be present", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      const { managerUid, ...noManagerUid } = job;
+      // managerUid is present and in Profiles
+      await firebase.assertSucceeds(doc.set({ ...noManagerUid, managerUid: "alice"}));
+
+      // managerUid not present
+      await firebase.assertFails(doc.set({ ...noManagerUid }));
+
+      // managerUid not in Profiles
+      await firebase.assertFails(doc.set({ ...noManagerUid, managerUid: "bob"}));
+    });
+    it("requires the alternateManagerUid to reference a document in Profiles if present", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await profiles.doc("bob").set(bob);
+
+      // alternateManagerUid not present
+      await firebase.assertSucceeds(doc.set({ ...job }));
+
+      // alternateManagerUid is present and in Profiles
+      await firebase.assertSucceeds(doc.set({ ...job, alternateManagerUid: "bob"}));
+
+      // alternateManagerUid not in Profiles
+      await firebase.assertFails(doc.set({ ...job, alternateManagerUid: "charles"}));
+    });
+    it("requires the alternateManagerUid to be different from the managerUid if present", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      await profiles.doc("bob").set(bob);
+
+      // alternateManagerUid is present and different from managerUid
+      await firebase.assertSucceeds(doc.set({ ...job, alternateManagerUid: "bob"}));
+
+      // alternateManagerUid is present and same as managerUid
+      await firebase.assertFails(doc.set({ ...job, alternateManagerUid: "alice"}));
+    });
+    it("disallows the manager field on create or update", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+
+      // manager field not present
+      await firebase.assertSucceeds(doc.set(job));
+
+      // manager field present
+      await firebase.assertFails(doc.set({ ...job, manager: "Ignored in app now" }));
     });
   });
   describe("TimeAmendments", () => {

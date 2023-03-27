@@ -320,6 +320,10 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   .document("Profiles/{profileId}")
   .onWrite(async (change, context) => {
 
+  // Any change to a profile will trigger this function. Since the Azure Graph
+  // Data is updated on a regular basis, (the msGraphDataUpdated field) this
+  // occurs at the same interval as a downstream consequence of this.
+
   const db = admin.firestore();
   functions.logger.log(`update of profile ${change.after.id} triggered Secured API Key generation for Algolia search`);
 
@@ -340,10 +344,11 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   // setup the Algolia client
   const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
 
-  const claimIndexMap = {
-    job: "tybalt_jobs",
-    time: "tybalt_jobs",
-  }
+  functions.logger.log("Restricting Indices via tybalt claims is currently disabled.");
+  // const claimIndexMap = {
+  //   job: "tybalt_jobs",
+  //   time: "tybalt_jobs",
+  // }
 
   const customClaims = change.after.get("customClaims");
   if (customClaims === undefined) {
@@ -352,7 +357,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   }
   
   // get the list of unique indices mapped by the profiles customClaims
-  const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims)));
+  // const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims)));
 
   // Generate a secured api key using the search-only API key secret stored in functions.config().algolia.searchkey
   // specify userToken to match the profile id (which in turn matches the firebase auth uid)
@@ -360,7 +365,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   // https://www.algolia.com/doc/api-reference/api-methods/generate-secured-api-key/
   const key = client.generateSecuredApiKey(env.algolia.searchkey, {
     userToken: change.after.id,
-    restrictIndices: [...new Set(restrictIndices)],
+    // restrictIndices: [...new Set(restrictIndices)],
   });
 
   functions.logger.info(`generated algolia key for profile ${change.after.id}`);

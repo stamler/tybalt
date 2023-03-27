@@ -20,7 +20,7 @@ import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCom
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment/*, getPayPeriodExpenses*/, submitExpense } from "./expenses";
-import { updateAlgoliaIndex } from "./algolia";
+import { updateAlgoliaIndex, jobSearchKeys, profileFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
 export { currentADDump } from "./syncUsersFromOnPrem";
@@ -33,6 +33,7 @@ export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
 export { newAiChat, deleteChat, aiResponder, retryAiChat } from "./ai";
+export { deleteJob, fullSyncLastTimeEntryDate, updateLastTimeEntryDate, clearLastTimeEntryDate } from "./jobs";
 export { auditExportStatus } from "./audit";
 export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
@@ -57,7 +58,12 @@ exports.emailOnExpenseRejection = functions.firestore
 exports.algoliaUpdateJobsIndex = functions.firestore
   .document("Jobs/{jobId}")
   .onWrite((change, context) => {
-    return updateAlgoliaIndex(change, context, "tybalt_jobs");
+    return updateAlgoliaIndex({change, context, indexName: "tybalt_jobs", searchKeysFunction: jobSearchKeys});
+  });
+exports.algoliaUpdateProfilesIndex = functions.firestore
+  .document("Profiles/{profileId}")
+  .onWrite((change, context) => {
+    return updateAlgoliaIndex({change, context, indexName: "tybalt_profiles", allowedFields: ["displayName", "givenName", "surname"], filterFunction: profileFilter });
   });
 
 // clean up expense attachments that are orphaned by deletion or update of 

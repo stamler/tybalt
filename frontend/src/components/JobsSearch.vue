@@ -20,7 +20,18 @@
                 <div class="headline">{{ item.client }}</div>
                 <div class="byline">{{ item.description }}</div>
               </div>
-              <div class="firstline">{{ item.manager }}</div>
+              <div class="firstline">
+                {{ item.managerDisplayName }}
+                <span v-if="item.alternateManagerUid">
+                  / {{ item.alternateManagerDisplayName }}
+                </span>
+                <span
+                  v-if="item.manager && item.managerUid === undefined"
+                  class="attention"
+                >
+                  ({{ item.manager }})
+                </span>
+              </div>
               <div class="secondline">
                 {{ item.proposal }} {{ item.status }}
               </div>
@@ -32,6 +43,10 @@
               <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
                 <Icon icon="feather:edit" width="24px" />
               </router-link>
+              <action-button
+                type="delete"
+                @click="deleteJob({ id: item.objectID })"
+              />
             </div>
           </div>
         </template>
@@ -48,15 +63,18 @@ import { useStateStore } from "../stores/state";
 import { Icon } from "@iconify/vue";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
+import ActionButton from "./ActionButton.vue";
 
 export default defineComponent({
   setup() {
     const store = useStateStore();
-    return { user: store.user };
+    const { startTask, endTask } = store;
+    return { user: store.user, startTask, endTask };
   },
 
   components: {
     Icon,
+    ActionButton,
   },
   data() {
     return {
@@ -80,6 +98,26 @@ export default defineComponent({
       const searchkey = this.profileSecrets.get("algoliaSearchKey");
       this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
       this.searchClientLoaded = true;
+    },
+    deleteJob(job: firebase.firestore.DocumentData) {
+      this.startTask({
+        id: `delete${job.id}`,
+        message: "Deleting Job...",
+      });
+      // call the callable function to delete the job
+      const deleteJob = firebase.functions().httpsCallable("deleteJob");
+      if (
+        confirm("It is is potentially dangerous to delete a job. Are you sure?")
+      ) {
+        deleteJob(job)
+          .then(() => this.endTask(`delete${job.id}`))
+          .catch((error) => {
+            this.endTask(`delete${job.id}`);
+            alert(error.message);
+          });
+      } else {
+        this.endTask(`delete${job.id}`);
+      }
     },
   },
 });

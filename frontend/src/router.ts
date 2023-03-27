@@ -32,9 +32,10 @@ import UsersDetails from "@/components/UsersDetails.vue";
 import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesBulkEdit from "@/components/ProfilesBulkEdit.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
-//import JobsList from "@/components/JobsList.vue";
+import JobsStale from "@/components/JobsStale.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
+import JobsAdmin from "@/components/JobsAdmin.vue";
 import JobsDetails from "@/components/JobsDetails.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
@@ -554,15 +555,6 @@ const router = createRouter({
           redirect: "/admin/jobs/search",
           component: ContentShell,
           children: [
-            /*
-            {
-              meta: { showInUi: true, uiName: "List" },
-              path: "list",
-              name: "Jobs List",
-              props: { collection: "Jobs" },
-              component: JobsList,
-            },
-            */
             {
               meta: { showInUi: true, uiName: "Search" },
               path: "search",
@@ -580,6 +572,30 @@ const router = createRouter({
               name: "Add Job",
               props: { collectionName: "Jobs" },
               component: JobsEdit,
+            },
+            {
+              meta: { showInUi: true, uiName: "Stale" },
+              path: "stale",
+              name: "Stale Jobs",
+              props: { allUsers: true },
+              component: JobsStale,
+            },
+            {
+              meta: { showInUi: true, uiName: "My Stale" },
+              path: "stale/mine",
+              name: "My Stale Jobs",
+              props: { allUsers: false },
+              component: JobsStale,
+            },
+            {
+              meta: {
+                showInUi: true,
+                uiName: "Admin",
+                requiredClaims: ["admin"],
+              },
+              path: "admin",
+              name: "Jobs Admin",
+              component: JobsAdmin,
             },
             {
               path: ":id/edit",

@@ -6,6 +6,11 @@
       placeholder="search..."
       v-model="search"
     />
+    <span class="listheader">
+      {{ this.allUsers ? "Total" : "Your" }} stale items (not including those
+      with no time): {{ count }}
+    </span>
+
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
       <div class="anchorbox">{{ item.id }}</div>
       <div class="detailsbox">
@@ -14,9 +19,15 @@
           <div class="byline">{{ item.description }}</div>
         </div>
         <div class="firstline">{{ item.manager }}</div>
-        <div class="secondline">{{ item.proposal }} {{ item.status }}</div>
+        <div class="secondline">{{ item.proposal }}</div>
         <div v-if="item.clientContact" class="thirdline">
           Contact: {{ item.clientContact }}
+        </div>
+        <div>
+          <div class="fourthline">
+            Last time entry:
+            {{ shortDateWithYear(item.lastTimeEntryDate.toDate()) }}
+          </div>
         </div>
       </div>
       <div class="rowactionsbox">
@@ -30,20 +41,59 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { searchString } from "./helpers";
+import { searchString, shortDateWithYear } from "./helpers";
+import { useStateStore } from "../stores/state";
+import { User } from "firebase/auth";
 import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
+import { subDays } from "date-fns";
 import {
+  getCountFromServer,
   getFirestore,
   collection,
-  CollectionReference,
   DocumentData,
+  query,
+  where,
+  limit,
+  orderBy,
+  Query,
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 export default defineComponent({
-  props: ["collectionName"],
+  setup() {
+    const stateStore = useStateStore();
+    const user = stateStore.user;
+    return { user };
+  },
+  props: ["allUsers"],
   components: {
     Icon,
+  },
+  methods: {
+    shortDateWithYear,
+    selectQuery(allUsers: boolean) {
+      const staleCutoff = subDays(new Date(), 365);
+      if (allUsers) {
+        this.query = query(
+          collection(db, "Jobs"),
+          where("lastTimeEntryDate", "<", staleCutoff),
+          where("status", "==", "Active"),
+          orderBy("lastTimeEntryDate", "asc")
+        );
+      } else {
+        this.query = query(
+          collection(db, "Jobs"),
+          where("lastTimeEntryDate", "<", staleCutoff),
+          where("status", "==", "Active"),
+          where("managerUid", "==", (this.user as unknown as User).uid),
+          orderBy("lastTimeEntryDate", "asc")
+        );
+      }
+      this.$firestoreBind("items", query(this.query, limit(100)));
+      getCountFromServer(this.query).then((snap) => {
+        this.count = snap.data().count;
+      });
+    },
   },
   computed: {
     processedItems(): DocumentData[] {
@@ -63,17 +113,22 @@ export default defineComponent({
   },
   data() {
     return {
+      count: 0,
+      query: undefined as Query | undefined,
       search: "",
       parentPath: "",
-      collectionObject: null as CollectionReference | null,
       items: [] as DocumentData[],
     };
   },
+  watch: {
+    allUsers: function (allUsers) {
+      this.selectQuery(allUsers);
+    },
+  }, // first arg is newVal, second is oldVal
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = collection(db, this.collectionName);
-    this.$firestoreBind("items", this.collectionObject);
+    this.selectQuery(this.allUsers);
   },
 });
 </script>

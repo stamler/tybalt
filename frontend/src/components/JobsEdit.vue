@@ -5,10 +5,40 @@
       <span v-if="editing">{{ id }}</span>
       <input class="grow" v-else type="text" name="job" v-model="item.id" />
     </span>
-    <span class="field">
-      <label for="manager">Manager</label>
-      <input class="grow" type="text" name="manager" v-model="item.manager" />
+    <span class="field" v-show="item.manager !== undefined">
+      <label for="legacyManager">Legacy Manager</label>
+      {{ item.manager }}
     </span>
+    <span class="field" v-show="managerUid === undefined">
+      <label for="manager">Manager</label>
+      <span class="grow">
+        <div id="managerAutocomplete" />
+      </span>
+    </span>
+    <span class="field" v-show="managerUid !== undefined">
+      <label for="manager">Manager</label>
+      <span class="grow">
+        <action-button type="delete" @click.prevent="managerUid = undefined" />
+        {{ item.managerDisplayName }}
+      </span>
+    </span>
+    <span class="field" v-show="alternateManagerUid === undefined">
+      <label for="manager">Alt. Manager</label>
+      <span class="grow">
+        <div id="alternateManagerAutocomplete" />
+      </span>
+    </span>
+    <span class="field" v-show="alternateManagerUid !== undefined">
+      <label for="manager">Alt. Manager</label>
+      <span class="grow">
+        <action-button
+          type="delete"
+          @click.prevent="alternateManagerUid = undefined"
+        />
+        {{ item.alternateManagerDisplayName }}
+      </span>
+    </span>
+
     <span class="field">
       <label for="client">Client</label>
       <input class="grow" type="text" name="client" v-model="item.client" />
@@ -73,17 +103,41 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { firebaseApp } from "../firebase";
 import _ from "lodash";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { useStateStore } from "../stores/state";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  CollectionReference,
+  DocumentSnapshot,
+  DocumentData,
+} from "firebase/firestore";
+import ActionButton from "./ActionButton.vue";
+import algoliasearch from "algoliasearch/lite";
+import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
+const db = getFirestore(firebaseApp);
 
 export default defineComponent({
+  setup() {
+    // user doesn't need to be reactive so no refs wanted, just the user object,
+    // so we don't use storeToRefs() to toRef()
+    return { user: useStateStore().user };
+  },
   props: ["id", "collectionName"],
+  components: {
+    ActionButton,
+  },
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData,
+      managerUid: undefined as string | undefined,
+      alternateManagerUid: undefined as string | undefined,
     };
   },
   computed: {
@@ -99,19 +153,99 @@ export default defineComponent({
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = db.collection(this.collectionName);
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
+    this.setupAlgolia();
   },
   methods: {
+    async setupAlgolia() {
+      // setup algolia autocomplete
+      const profileSecrets = await getDoc(
+        doc(db, "ProfileSecrets", this.user.uid)
+      );
+      // This gets triggered when the user selects an item from the autocomplete
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const writeManagerToItem = (values: any) => {
+        this.managerUid = values.objectID;
+        this.item.managerDisplayName = values.displayName;
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const writeAlternateManagerToItem = (values: any) => {
+        this.alternateManagerUid = values.objectID;
+        this.item.alternateManagerDisplayName = values.displayName;
+      };
+      const searchClient = algoliasearch(
+        "F7IPMZB3IW",
+        profileSecrets.get("algoliaSearchKey")
+      );
+      autocomplete({
+        container: "#managerAutocomplete",
+        placeholder: "staff...",
+        getSources() {
+          return [
+            {
+              sourceId: "managers",
+              onSelect({ item }) {
+                writeManagerToItem(item);
+              },
+              templates: {
+                item({ item }) {
+                  return `${item.displayName}`;
+                },
+              },
+              getItems({ query }) {
+                return getAlgoliaResults({
+                  searchClient,
+                  queries: [
+                    {
+                      indexName: "tybalt_profiles",
+                      query,
+                    },
+                  ],
+                });
+              },
+            },
+          ];
+        },
+      });
+      autocomplete({
+        container: "#alternateManagerAutocomplete",
+        placeholder: "staff...",
+        getSources() {
+          return [
+            {
+              sourceId: "clients",
+              onSelect({ item }) {
+                writeAlternateManagerToItem(item);
+              },
+              templates: {
+                item({ item }) {
+                  return `${item.displayName}`;
+                },
+              },
+              getItems({ query }) {
+                return getAlgoliaResults({
+                  searchClient,
+                  queries: [
+                    {
+                      indexName: "tybalt_profiles",
+                      query,
+                    },
+                  ],
+                });
+              },
+            },
+          ];
+        },
+      });
+    },
     setItem(id: string) {
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
+        getDoc(doc(this.collectionObject, id)).then(
+          (snap: DocumentSnapshot) => {
             const result = snap.data();
             if (result === undefined) {
               // A document with this id doesn't exist in the database,
@@ -119,8 +253,12 @@ export default defineComponent({
               this.$router.push(this.parentPath);
             } else {
               this.item = result;
+              this.managerUid = result.managerUid || undefined;
+              this.alternateManagerUid =
+                result.alternateManagerUid || undefined;
             }
-          });
+          }
+        );
       } else {
         this.item = {
           status: "",
@@ -129,15 +267,29 @@ export default defineComponent({
     },
     save() {
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
+
+      // delete the legacy manager field
+      // TODO:*** This is temporary, until all the old data is migrated ***
+      delete this.item.manager;
+
+      // set the manager UIDs
+      if (this.managerUid !== undefined) {
+        this.item.managerUid = this.managerUid;
+      } else {
+        delete this.item.managerUid;
+      }
+      if (this.alternateManagerUid !== undefined) {
+        this.item.alternateManagerUid = this.alternateManagerUid;
+      } else {
+        delete this.item.alternateManagerUid;
+      }
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
-        this.collectionObject
-          .doc(this.id)
-          .set(this.item)
+        setDoc(doc(this.collectionObject, this.id), this.item)
           .then(() => {
             this.$router.push(this.parentPath);
           })
@@ -151,9 +303,7 @@ export default defineComponent({
         const newId = this.item.id;
         delete this.item.id;
 
-        this.collectionObject
-          .doc(newId)
-          .set(this.item)
+        setDoc(doc(this.collectionObject, newId), this.item)
           .then(() => {
             this.clearEditor();
             // notify user save is done
@@ -166,8 +316,11 @@ export default defineComponent({
       }
     },
     clearEditor() {
-      this.item = {} as firebase.firestore.DocumentData;
+      this.item = {} as DocumentData;
     },
   },
 });
 </script>
+<style lang="scss">
+@import "./algolia-autocomplete-classic-fork.scss";
+</style>

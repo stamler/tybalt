@@ -4,7 +4,10 @@
     <div>client: {{ item.client }}</div>
     <div>client contact: {{ item.clientContact }}</div>
     <div>description: {{ item.description }}</div>
-    <div>manager: {{ item.manager }}</div>
+    <div>manager: {{ item.managerDisplayName }}</div>
+    <div v-if="item.alternateManagerUid">
+      alt. manager: {{ item.alternateManagerDisplayName }}
+    </div>
     <div>status: {{ item.status }}</div>
     <h4>Time Entries</h4>
     <form id="editor">
