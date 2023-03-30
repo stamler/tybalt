@@ -33,6 +33,7 @@ import ProfilesList from "@/components/ProfilesList.vue";
 import ProfilesBulkEdit from "@/components/ProfilesBulkEdit.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
 import JobsStale from "@/components/JobsStale.vue";
+import JobsNoTime from "@/components/JobsNoTime.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
 import JobsAdmin from "@/components/JobsAdmin.vue";
@@ -586,6 +587,12 @@ const router = createRouter({
               name: "My Stale Jobs",
               props: { allUsers: false },
               component: JobsStale,
+            },
+            {
+              meta: { showInUi: true, uiName: "No Time" },
+              path: "notime",
+              name: "Jobs Without Time",
+              component: JobsNoTime,
             },
             {
               meta: {
