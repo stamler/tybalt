@@ -342,6 +342,25 @@ service cloud.firestore {
           isMissing("workrecord")
         );
     }
+    function validJob(jobId) {
+      return (
+        ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
+        jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?') &&
+        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status"]) &&
+        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "status", "clientContact"]) &&
+        isInCollection("managerUid","Profiles") &&
+        (
+          (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
+          isMissing("alternateManagerUid")
+        ) &&
+        newDoc().description.size() > 3 &&
+        newDoc().status is string &&
+        (
+          ( jobId.matches('^(P).*') && (newDoc().status == "Active" || newDoc().status == "Awarded" || newDoc().status == "Not Awarded" || newDoc().status == "Cancelled" )) ||
+          ( jobId.matches('^[0-9].*') && (newDoc().status =="Active" || newDoc().status =="Closed" || newDoc().status =="Cancelled" ) )
+        )
+      );
+    }
     match /Computers/{computer} {
       allow read: if hasClaim("admin") || hasClaim("computers");
     }
@@ -462,22 +481,13 @@ service cloud.firestore {
     }
     match /Jobs/{jobId} {
       allow read: if isSignedIn();
-      allow create, update: if hasClaim("job") && 
-        ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
-        jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?') &&
-        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status"]) &&
-        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "proposal", "status", "clientContact"]) &&
-        isInCollection("managerUid","Profiles") &&
-        (
-          (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
-          isMissing("alternateManagerUid")
-        ) &&
-        newDoc().description.size() > 3 &&
-        newDoc().status is string &&
-        (
-          ( jobId.matches('^(P).*') && (newDoc().status == "Active" || newDoc().status == "Awarded" || newDoc().status == "Not Awarded" || newDoc().status == "Cancelled" )) ||
-          ( jobId.matches('^[0-9].*') && (newDoc().status =="Active" || newDoc().status =="Closed" || newDoc().status =="Cancelled" ) )
-        );
+      allow create: if hasClaim("job") && validJob(jobId) &&
+        // ensure user doesn't set some fields
+        newDoc().hasTimeEntries == false &&
+        isMissing("lastTimeEntryDate");
+      allow update: if hasClaim("job") && validJob(jobId) &&
+        // ensure user doesn't change some fields
+        !newDoc().diff(resource.data).affectedKeys().hasAny(["lastTimeEntryDate", "hasTimeEntries"]);
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");

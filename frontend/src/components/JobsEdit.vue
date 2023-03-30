@@ -303,6 +303,9 @@ export default defineComponent({
         const newId = this.item.id;
         delete this.item.id;
 
+        // set the default for hasTimeEntries
+        this.item.hasTimeEntries = false;
+
         setDoc(doc(this.collectionObject, newId), this.item)
           .then(() => {
             this.clearEditor();

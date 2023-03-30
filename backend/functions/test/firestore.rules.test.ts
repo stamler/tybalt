@@ -1337,7 +1337,7 @@ describe("Other Firestore Rules", function () {
   });
   
   describe("Jobs", () => {
-    const job = { description: "A basic job", client: "A special client", managerUid: "alice", managerDisplayName: "Alice", status: "Active" };
+    const job = { description: "A basic job", client: "A special client", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false };
     const jobs = adminDb.collection("Jobs");
 
     beforeEach("reset data", async () => {
@@ -1354,6 +1354,22 @@ describe("Other Firestore Rules", function () {
       const doc2 = db2.collection("Jobs").doc("19-333");
       await firebase.assertSucceeds(doc.set(job));
       await firebase.assertFails(doc2.set(job));
+    });
+    it("prevents updating the lastTimeEntryDate and hasTimeEntries fields", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-444");
+      await firebase.assertSucceeds(doc.set(job));
+      // the existing value of hasTimeEntries is false, so this should fail
+      await firebase.assertFails(doc.update({ hasTimeEntries: true }));
+
+      // the existing value of hasTimeEntries is false, so this succeed
+      await firebase.assertSucceeds(doc.update({ hasTimeEntries: false }));
+    
+      // this should fail unless the new value is identical to the existing value
+      const date = new Date();
+      jobs.doc("19-444").update({ lastTimeEntryDate: date });
+      await firebase.assertFails(doc.update({ lastTimeEntryDate: new Date() }));
+      await firebase.assertSucceeds(doc.update({ lastTimeEntryDate: date }));
     });
     it("restricts value of status for projects", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
