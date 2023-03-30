@@ -70,7 +70,7 @@ export const currentADDump = functions.https.onRequest(async (req: functions.htt
     for (const user of extraUsers) {
       await db.collection("Users").add({
         department: user.Department,
-        description: user.Description,
+        description: user.Description || null,
         OU: user.OU,
         title: user.Title,
         adEnabled: user.enabled,
