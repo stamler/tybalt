@@ -4,7 +4,14 @@
       v-bind:search-client="searchClient"
       index-name="tybalt_jobs"
     >
-      <ais-search-box id="searchbox" placeholder="search..." />
+      <div id="listbar">
+        <ais-search-box
+          style="width: 100%; padding-left: 0.3em"
+          placeholder="search..."
+        />
+        <span>{{ count }} items</span>
+      </div>
+
       <ais-hits>
         <template v-slot:item="{ item }">
           <div class="listentry">
@@ -57,14 +64,23 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useStateStore } from "../stores/state";
 import { Icon } from "@iconify/vue";
 import algoliasearch from "algoliasearch/lite";
 import { SearchClient } from "algoliasearch/lite";
 import ActionButton from "./ActionButton.vue";
-
+import {
+  getCountFromServer,
+  getFirestore,
+  collection,
+  DocumentData,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 export default defineComponent({
   setup() {
     const store = useStateStore();
@@ -78,8 +94,9 @@ export default defineComponent({
   },
   data() {
     return {
+      count: 0,
       parentPath: "",
-      profileSecrets: {} as firebase.firestore.DocumentData,
+      profileSecrets: {} as DocumentData,
       searchClient: {} as SearchClient,
       searchClientLoaded: false,
     };
@@ -87,25 +104,27 @@ export default defineComponent({
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.setup();
+    this.setupSearch();
+    getCountFromServer(collection(db, "Jobs")).then((snap) => {
+      this.count = snap.data().count;
+    });
   },
   methods: {
-    async setup() {
-      this.profileSecrets = await db
-        .collection("ProfileSecrets")
-        .doc(this.user.uid)
-        .get();
+    async setupSearch() {
+      this.profileSecrets = await getDoc(
+        doc(db, "ProfileSecrets", this.user.uid)
+      );
       const searchkey = this.profileSecrets.get("algoliaSearchKey");
       this.searchClient = algoliasearch("F7IPMZB3IW", searchkey);
       this.searchClientLoaded = true;
     },
-    deleteJob(job: firebase.firestore.DocumentData) {
+    deleteJob(job: DocumentData) {
       this.startTask({
         id: `delete${job.id}`,
         message: "Deleting Job...",
       });
       // call the callable function to delete the job
-      const deleteJob = firebase.functions().httpsCallable("deleteJob");
+      const deleteJob = httpsCallable(functions, "deleteJob");
       if (
         confirm("It is is potentially dangerous to delete a job. Are you sure?")
       ) {
