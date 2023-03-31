@@ -12,7 +12,11 @@
     </span>
 
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
-      <div class="anchorbox">{{ item.id }}</div>
+      <div class="anchorbox">
+        <router-link :to="[parentPath, item.id, 'details'].join('/')">
+          {{ item.id }}
+        </router-link>
+      </div>
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">{{ item.client }}</div>

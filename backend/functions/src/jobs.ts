@@ -165,7 +165,7 @@ async function writeJobsLastTimeEntryDate(fullSync = false) {
     if (doc.exists) {
       const timestamp = zonedTimeToUtc(new Date(date), APP_NATIVE_TZ);
       //functions.logger.debug(`Updating lastTimeEntryDate for job ${jobId} to ${date} as ${timestamp.toISOString()}`);
-      await doc.ref.update({ lastTimeEntryDate: timestamp });
+      await doc.ref.update({ lastTimeEntryDate: timestamp, hasTimeEntries: true });
     } else {
       functions.logger.warn(`Job ${jobId} does not exist in firestore.`);
     }
@@ -192,11 +192,13 @@ export const fullSyncLastTimeEntryDate = functions.runWith({ timeoutSeconds: 240
 
 // this callable function is called by the client to clear the lastTimeEntryDate
 // field on all Jobs in Firestore.
-export const clearLastTimeEntryDate = functions.runWith({ timeoutSeconds: 240 }).https.onCall(async (data, context) => {
+export const clearLastTimeEntryDate = functions.runWith({ timeoutSeconds: 360 }).https.onCall(async (data, context) => {
   // throw if the caller isn't authenticated & authorized
   getAuthObject(context, ["admin"]);
+  functions.logger.info("Adding hasTimeEntries:false to all docs in the Jobs collection...")
+  await addFieldToCollection("Jobs", "hasTimeEntries", () => false, context);
+  functions.logger.info("Deleting lastTimeEntryDate field on all docs in the Jobs collection...");
   return deleteFieldFromCollection("Jobs", "lastTimeEntryDate", context);
-
 });
 
 // This function is called by other functions to delete a field from all docs in
@@ -232,4 +234,46 @@ async function deleteFieldFromCollection(collection: string, fieldName: string, 
     batches.push(batch.commit());
   }
   return Promise.all(batches);
+}
+
+// This function is called by other functions to add a field to all docs in a
+// collection.
+type AllowedFieldValues = string | number | boolean | admin.firestore.Timestamp | admin.firestore.GeoPoint | admin.firestore.DocumentReference | admin.firestore.FieldValue;
+type ValueFunction = (docSnap: admin.firestore.QueryDocumentSnapshot) => AllowedFieldValues;
+
+async function addFieldToCollection(collection: string, fieldName: string, valueFn: ValueFunction, context: functions.https.CallableContext) {
+
+  // throw if the caller isn't authenticated & authorized
+  getAuthObject(context, ["admin"]);
+
+  let modifiedDocsCounter = 0;
+  const batchSize = 499;
+  const batches = [];
+  let lastDoc: admin.firestore.QueryDocumentSnapshot | undefined = undefined;
+  let querySnap: FirebaseFirestore.QuerySnapshot;
+  do {
+
+    let query = db.collection(collection).limit(batchSize)
+
+    if (lastDoc !== undefined) {
+      query = query.startAfter(lastDoc);
+    }
+
+    querySnap = await query.get();
+    const batch = db.batch();
+
+    querySnap.forEach((docSnap) => {
+      batch.update(docSnap.ref, {
+        [fieldName]: valueFn(docSnap),
+      });
+      modifiedDocsCounter++;
+    });
+    lastDoc = querySnap.docs[querySnap.docs.length - 1];
+
+    functions.logger.debug(`adding ${fieldName} field to ${querySnap.size} documents`);
+    batches.push(batch.commit());
+  } while (querySnap.size >= batchSize);
+  await Promise.all(batches);
+  functions.logger.info(`added ${fieldName} field to ${modifiedDocsCounter} documents`);
+  return;
 }
