@@ -291,7 +291,8 @@ export default defineComponent({
         // Since the UI binds existing id to the key field, no need to delete
         setDoc(doc(this.collectionObject, this.id), this.item)
           .then(() => {
-            this.$router.push(this.parentPath);
+            this.$router.go(-1);
+            // this.$router.push(this.parentPath);
           })
           .catch((error: unknown) => {
             if (error instanceof Error) {

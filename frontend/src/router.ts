@@ -34,6 +34,7 @@ import ProfilesBulkEdit from "@/components/ProfilesBulkEdit.vue";
 import ProfilesEdit from "@/components/ProfilesEdit.vue";
 import JobsStale from "@/components/JobsStale.vue";
 import JobsNoTime from "@/components/JobsNoTime.vue";
+import JobsLegacyManager from "@/components/JobsLegacyManager.vue";
 import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
 import JobsAdmin from "@/components/JobsAdmin.vue";
@@ -593,6 +594,12 @@ const router = createRouter({
               path: "notime",
               name: "Jobs Without Time",
               component: JobsNoTime,
+            },
+            {
+              meta: { showInUi: true, uiName: "Legacy Manager" },
+              path: "legacymanager",
+              name: "Jobs with Legacy Manager",
+              component: JobsLegacyManager,
             },
             {
               meta: {
