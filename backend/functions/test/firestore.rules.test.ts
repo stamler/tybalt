@@ -1336,8 +1336,9 @@ describe("Other Firestore Rules", function () {
     });
   });
   
-  describe("Jobs", () => {
-    const job = { description: "A basic job", client: "A special client", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false };
+  describe.only("Jobs", () => {
+    const divisions = adminDb.collection("Divisions");
+    const job = { description: "A basic job", client: "A special client", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false, divisions: ["BM"] };
     const jobs = adminDb.collection("Jobs");
 
     beforeEach("reset data", async () => {
@@ -1345,8 +1346,33 @@ describe("Other Firestore Rules", function () {
       await jobs.doc("19-444").set(job);
       await jobs.doc("P19-444").set(job);
       await profiles.doc("alice").set(alice);
+      await divisions.doc("B").set({ name: "Building Engineering (Group)" });
+      await divisions.doc("BM").set({ name: "Mechanical" });
+      await divisions.doc("BS").set({ name: "Structural" });
     });
 
+    it("requires at least one division to be set, divisions must be in 'Divisions' collection and not single letter (groups)", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+
+      // fails if no divisions are set
+      await firebase.assertFails(doc.set({ ...job, divisions: [] }));
+
+      // fails if division is not a list
+      await firebase.assertFails(doc.set({ ...job, divisions: 142 }));
+
+      // fails if division is not in 'Divisions' collection
+      await firebase.assertFails(doc.set({ ...job, divisions: ["ZZ"] }));
+
+      // fails if division is a single letter (group) even if in 'Divisions' collection
+      await firebase.assertFails(doc.set({ ...job, divisions: ["B"] }));
+
+      // succeeds if the only division is in 'Divisions' collection
+      await firebase.assertSucceeds(doc.set(job));
+
+      // succeeds if multiple divisions are in 'Divisions' collection
+      await firebase.assertSucceeds(doc.set({ ...job, divisions: ["BM", "BS"] }));
+    });
     it("allows job claim holders to create jobs", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();

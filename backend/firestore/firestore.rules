@@ -342,12 +342,50 @@ service cloud.firestore {
           isMissing("workrecord")
         );
     }
+    function containsNoDuplicates(array) {
+      return array.toSet().size() == array.size();
+    }
+    function isDivisionNotGroup(div) {
+      // verify that the division has a length of at least 2 characters since
+      // groups have a length of 1
+      return div.size() > 1 && keyInCollection(div, "Divisions");
+    }
+    function validDivisionsArray(value) {
+      // the divisions array 
+      // 1. must have at least one element 
+      // 2. each element must be a string representing the id of a division in
+      //    the Divisions collection
+      // 3. each element must be at least 2 characters long because
+      //    single-character divisions are actually Groups
+      // 4. each element must be unique
+      return (
+        value is list &&
+        value.size() > 0 &&
+        value.size() < 10 &&
+
+        // the first element must be a division
+        isDivisionNotGroup(value[0]) &&
+
+        // the length must be less than 2 or the second element must be a division
+        // no more than 9 elements are allowed for the divisions list.
+        (value.size() < 2 || isDivisionNotGroup(value[1])) &&
+        (value.size() < 3 || isDivisionNotGroup(value[2])) &&
+        (value.size() < 4 || isDivisionNotGroup(value[3])) &&
+        (value.size() < 5 || isDivisionNotGroup(value[4])) &&
+        (value.size() < 6 || isDivisionNotGroup(value[5])) &&
+        (value.size() < 7 || isDivisionNotGroup(value[6])) &&
+        (value.size() < 8 || isDivisionNotGroup(value[7])) &&
+        (value.size() < 9 || isDivisionNotGroup(value[8])) &&
+        (value.size() < 10 || isDivisionNotGroup(value[9])) &&
+        containsNoDuplicates(value)
+      );
+    }
     function validJob(jobId) {
       return (
         ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
         jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?') &&
-        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status"]) &&
-        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "status", "clientContact"]) &&
+        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status", "divisions"]) &&
+        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "status", "divisions", "clientContact"]) &&
         isInCollection("managerUid","Profiles") &&
         (
           (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
@@ -358,7 +396,8 @@ service cloud.firestore {
         (
           ( jobId.matches('^(P).*') && (newDoc().status == "Active" || newDoc().status == "Awarded" || newDoc().status == "Not Awarded" || newDoc().status == "Cancelled" )) ||
           ( jobId.matches('^[0-9].*') && (newDoc().status =="Active" || newDoc().status =="Closed" || newDoc().status =="Cancelled" ) )
-        )
+        ) &&
+        validDivisionsArray(newDoc().divisions)
       );
     }
     match /Computers/{computer} {
