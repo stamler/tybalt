@@ -384,8 +384,8 @@ service cloud.firestore {
       return (
         ( isMissing("proposal") || isInCollection("proposal","Jobs")) && 
         jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?') &&
-        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status", "divisions"]) &&
-        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "status", "divisions", "clientContact"]) &&
+        newDoc().keys().hasAll(["client", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner"]) &&
+        newDoc().keys().hasOnly(["client", "description", "managerUid", "managerDisplayName", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "status", "divisions", "jobOwner", "clientContact"]) &&
         isInCollection("managerUid","Profiles") &&
         (
           (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
@@ -397,7 +397,14 @@ service cloud.firestore {
           ( jobId.matches('^(P).*') && (newDoc().status == "Active" || newDoc().status == "Awarded" || newDoc().status == "Not Awarded" || newDoc().status == "Cancelled" )) ||
           ( jobId.matches('^[0-9].*') && (newDoc().status =="Active" || newDoc().status =="Closed" || newDoc().status =="Cancelled" ) )
         ) &&
-        validDivisionsArray(newDoc().divisions)
+        validDivisionsArray(newDoc().divisions) &&
+
+        // the jobOwner must be a string 
+        // 1. jobOwner is the name of the party that actually owns the job, as
+        //    the client may be a subcontractor
+        // 2. jobOwner matches client if the client is the actual owner of the
+        //    job
+        newDoc().jobOwner is string && newDoc().jobOwner.size() > 5
       );
     }
     match /Computers/{computer} {
