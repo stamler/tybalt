@@ -1,3 +1,7 @@
+// Please see file-5lj.ts for proposal to replace this script with a more
+// general solution that applies a function to each document in a collection.
+
+
 // import data from node CLI
 
 import * as admin from "firebase-admin";

@@ -206,6 +206,8 @@ export const clearLastTimeEntryDate = functions.runWith({ timeoutSeconds: 360 })
 // when absolutely necessary. It is a long-running operation and care should be
 // taken by the caller to ensure that it runs to completion.
 async function deleteFieldFromCollection(collection: string, fieldName: string, context: functions.https.CallableContext) {
+  // TODO: Please see file-5lj.ts for proposal to replace this script with a more
+  // general solution that applies a function to each document in a collection.
 
   // throw if the caller isn't authenticated & authorized
   getAuthObject(context, ["admin"]);
@@ -242,6 +244,8 @@ type AllowedFieldValues = string | number | boolean | admin.firestore.Timestamp 
 type ValueFunction = (docSnap: admin.firestore.QueryDocumentSnapshot) => AllowedFieldValues;
 
 async function addFieldToCollection(collection: string, fieldName: string, valueFn: ValueFunction, context: functions.https.CallableContext) {
+  // TODO: Please see file-5lj.ts for proposal to replace this script with a more
+  // general solution that applies a function to each document in a collection.
 
   // throw if the caller isn't authenticated & authorized
   getAuthObject(context, ["admin"]);

@@ -1,3 +1,6 @@
+// Please see file-5lj.ts for proposal to replace this script with a more
+// general solution that applies a function to each document in a collection.
+
 // derrive new data from node CLI
 
 // ATTENTION: This needs to be carefully customized each time it is used
