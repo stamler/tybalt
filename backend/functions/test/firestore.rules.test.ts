@@ -1338,7 +1338,7 @@ describe("Other Firestore Rules", function () {
   
   describe.only("Jobs", () => {
     const divisions = adminDb.collection("Divisions");
-    const job = { description: "A basic job", client: "A special client", jobOwner: "the client is working on behalf of this owner", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false, divisions: ["BM"] };
+    const job = { description: "A basic job", client: "A special client", clientContact: "Debbie Downer", jobOwner: "the client is working on behalf of this owner", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false, divisions: ["BM"] };
     const jobs = adminDb.collection("Jobs");
 
     beforeEach("reset data", async () => {
@@ -1351,6 +1351,19 @@ describe("Other Firestore Rules", function () {
       await divisions.doc("BS").set({ name: "Structural" });
     });
 
+    it("requires the clientContact field to be a string at least 6 chars long", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-333");
+      
+      // fails if clientContact is not a string
+      await firebase.assertFails(doc.set({ ...job, clientContact: 123 }));
+
+      // fails if clientContact is less than 6 chars
+      await firebase.assertFails(doc.set({ ...job, clientContact: "12345" }));
+
+      // succeeds if clientContact is a string at least 6 chars long
+      await firebase.assertSucceeds(doc.set({ ...job, clientContact: "123456" }));
+    });
     it("requires a jobOwner field as a string at least 6 chars long", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
