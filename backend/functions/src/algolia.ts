@@ -41,7 +41,7 @@ export async function updateAlgoliaIndex({
   
   // if the filter function is provided and returns false, then remove the
   // document from the index
-  if (filterFunction !== undefined && !filterFunction(afterData)) {
+  if (filterFunction !== undefined && !filterFunction(change.after)) {
     functions.logger.log(`Removing item ${change.after.ref.id} from index ${indexName} because it was filtered`);
     return index.deleteObject(change.after.ref.id);
   }
@@ -82,4 +82,8 @@ export function profileFilter(object: any) {
   // TODO: uncomment this when we have established a way to determine if a
   // profile is active or not 
   //return object.timeSheetExpected === true;
+}
+
+export function divisionsFilter(object: any) {
+  return object.ref.id.length > 1;
 }

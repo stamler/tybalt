@@ -20,7 +20,7 @@ import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCom
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment/*, getPayPeriodExpenses*/, submitExpense } from "./expenses";
-import { updateAlgoliaIndex, jobSearchKeys, profileFilter } from "./algolia";
+import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
 export { currentADDump } from "./syncUsersFromOnPrem";
@@ -64,6 +64,11 @@ exports.algoliaUpdateProfilesIndex = functions.firestore
   .document("Profiles/{profileId}")
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_profiles", allowedFields: ["displayName", "givenName", "surname"], filterFunction: profileFilter });
+  });
+exports.algoliaUpdateDivisionsIndex = functions.firestore
+  .document("Divisions/{divisionId}")
+  .onWrite((change, context) => {
+    return updateAlgoliaIndex({change, context, indexName: "tybalt_divisions", filterFunction: divisionsFilter });
   });
 
 // clean up expense attachments that are orphaned by deletion or update of 
