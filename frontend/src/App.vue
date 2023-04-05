@@ -229,6 +229,7 @@ body,
   font-size: 0.8em;
   color: rgba(16, 200, 214, 1);
   margin-right: 0.3em;
+  white-space: nowrap;
 }
 .anchorbox {
   display: flex;
@@ -350,6 +351,7 @@ button {
   flex-grow: 1;
   font-size: 1em;
   border-radius: 0;
+  appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
   border-bottom: 1px solid #e6e6e6;
@@ -358,6 +360,7 @@ button {
   width: 5em;
   font-size: 1em;
   border-radius: 0;
+  appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
   border-bottom: 1px solid #e6e6e6;

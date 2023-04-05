@@ -28,6 +28,16 @@
         <div id="alternateManagerAutocomplete" />
       </span>
     </span>
+    <DSStringArrayInput
+      :profileDoc="profileSecretsDoc"
+      :arrg="item.divisions"
+      :templateFunction="(item: any) => { return `${item.objectID} - ${item.name}` }"
+      label="Divisions"
+      placeholder="start typing..."
+      indexName="tybalt_divisions"
+      @add-element="addDivision"
+      @delete-element="deleteDivision"
+    />
     <span class="field" v-show="alternateManagerUid !== undefined">
       <label for="manager">Alt. Manager</label>
       <span class="grow">
@@ -42,6 +52,10 @@
     <span class="field">
       <label for="client">Client</label>
       <input class="grow" type="text" name="client" v-model="item.client" />
+    </span>
+    <span class="field">
+      <label for="jobOwner">Job Owner</label>
+      <input class="grow" type="text" name="jobOwner" v-model="item.jobOwner" />
     </span>
     <span class="field">
       <label for="clientContact">Client Contact</label>
@@ -102,7 +116,24 @@
 </template>
 
 <script lang="ts">
+// interface Job {
+//   id: string;
+//   manager?: string;
+//   managerDisplayName: string;
+//   managerUid: string;
+//   alternateManagerDisplayName: string;
+//   alternateManagerUid: string;
+//   client: string;
+//   clientContact: string;
+//   jobOwner: string;
+//   proposal?: string;
+//   description: string;
+//   status: string;
+//   divisions: string[];
+// }
+
 import { defineComponent } from "vue";
+import { useCollection } from "vuefire";
 import { firebaseApp } from "../firebase";
 import _ from "lodash";
 import { useStateStore } from "../stores/state";
@@ -115,8 +146,10 @@ import {
   CollectionReference,
   DocumentSnapshot,
   DocumentData,
+  DocumentReference,
 } from "firebase/firestore";
 import ActionButton from "./ActionButton.vue";
+import DSStringArrayInput from "./DSStringArrayInput.vue";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
 const db = getFirestore(firebaseApp);
@@ -130,14 +163,19 @@ export default defineComponent({
   props: ["id", "collectionName"],
   components: {
     ActionButton,
+    DSStringArrayInput,
   },
   data() {
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: {} as DocumentData,
+      item: { status: "", divisions: [] } as DocumentData,
       managerUid: undefined as string | undefined,
       alternateManagerUid: undefined as string | undefined,
+      divisions: useCollection(collection(db, "Divisions")),
+      profileSecretsDoc: undefined as
+        | DocumentReference<DocumentData>
+        | undefined,
     };
   },
   computed: {
@@ -155,9 +193,18 @@ export default defineComponent({
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
     this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
+    this.profileSecretsDoc = doc(db, "ProfileSecrets", this.user.uid);
     this.setupAlgolia();
   },
   methods: {
+    deleteDivision(index: number) {
+      this.item.divisions.splice(index, 1);
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addDivision(item: any) {
+      const division = item.objectID;
+      this.item.divisions.push(division);
+    },
     async setupAlgolia() {
       // setup algolia autocomplete
       const profileSecrets = await getDoc(
@@ -214,7 +261,7 @@ export default defineComponent({
         getSources() {
           return [
             {
-              sourceId: "clients",
+              sourceId: "alternateManagers",
               onSelect({ item }) {
                 writeAlternateManagerToItem(item);
               },
@@ -259,11 +306,8 @@ export default defineComponent({
             }
           }
         );
-      } else {
-        this.item = {
-          status: "",
-        };
       }
+      // the default value are set in the data() function or in clearEditor()
     },
     save() {
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
@@ -320,7 +364,7 @@ export default defineComponent({
       }
     },
     clearEditor() {
-      this.item = {} as DocumentData;
+      this.item = { status: "", divisions: [] } as DocumentData;
     },
   },
 });

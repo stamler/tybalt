@@ -1355,6 +1355,10 @@ describe("Other Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
       
+      // fails if clientContact is missing
+      const { clientContact, ...missingClientContact } = job;
+      await firebase.assertFails(doc.set(missingClientContact));
+
       // fails if clientContact is not a string
       await firebase.assertFails(doc.set({ ...job, clientContact: 123 }));
 
@@ -1368,6 +1372,10 @@ describe("Other Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
 
+      // fails if jobOwner is missing
+      const { jobOwner, ...missingJobOwner } = job;
+      await firebase.assertFails(doc.set(missingJobOwner));
+      
       // fails if jobOwner is not a string
       await firebase.assertFails(doc.set({ ...job, jobOwner: 123 }));
 
