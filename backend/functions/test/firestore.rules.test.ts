@@ -1336,7 +1336,7 @@ describe("Other Firestore Rules", function () {
     });
   });
   
-  describe.only("Jobs", () => {
+  describe("Jobs", () => {
     const divisions = adminDb.collection("Divisions");
     const job = { description: "A basic job", client: "A special client", clientContact: "Debbie Downer", jobOwner: "the client is working on behalf of this owner", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false, divisions: ["BM"] };
     const jobs = adminDb.collection("Jobs");
