@@ -303,6 +303,11 @@ export default defineComponent({
               this.managerUid = result.managerUid || undefined;
               this.alternateManagerUid =
                 result.alternateManagerUid || undefined;
+              // if editing a document that doesn't yet have a divisions array,
+              // create an empty one so that we can push to it
+              if (this.item.divisions === undefined) {
+                this.item.divisions = [];
+              }
             }
           }
         );
