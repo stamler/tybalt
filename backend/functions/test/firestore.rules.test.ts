@@ -1336,8 +1336,10 @@ describe("Other Firestore Rules", function () {
     });
   });
   
-  describe("Jobs", () => {
+  describe.only("Jobs", () => {
     const divisions = adminDb.collection("Divisions");
+    const proposalSubmissionDueDate = new Date();
+    const proposalOpeningDate = new Date(proposalSubmissionDueDate.getTime() - 10000000);
     const job = { description: "A basic job", client: "A special client", clientContact: "Debbie Downer", jobOwner: "the client is working on behalf of this owner", managerUid: "alice", managerDisplayName: "Alice", status: "Active", hasTimeEntries: false, divisions: ["BM"] };
     const jobs = adminDb.collection("Jobs");
 
@@ -1445,11 +1447,16 @@ describe("Other Firestore Rules", function () {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("P19-333");
       const {status, ...noStatus} = job;
-      await firebase.assertFails(doc.set({ status: "Closed", ...noStatus}));
-      await firebase.assertSucceeds(doc.set({ status: "Active", ...noStatus}));
-      await firebase.assertSucceeds(doc.set({ status: "Not Awarded", ...noStatus}));
-      await firebase.assertSucceeds(doc.set({ status: "Awarded", ...noStatus}));
-      await firebase.assertSucceeds(doc.set({ status: "Cancelled", ...noStatus}));
+      const proposal = { ...noStatus, proposalOpeningDate, proposalSubmissionDueDate };
+
+      // fails if status is set to 'Closed'
+      await firebase.assertFails(doc.set({ status: "Closed", ...proposal}));
+
+      // proposals can have status of 'Active', 'Not Awarded', 'Awarded', or 'Cancelled'
+      await firebase.assertSucceeds(doc.set({ status: "Active", ...proposal}));
+      await firebase.assertSucceeds(doc.set({ status: "Not Awarded", ...proposal}));
+      await firebase.assertSucceeds(doc.set({ status: "Awarded", ...proposal}));
+      await firebase.assertSucceeds(doc.set({ status: "Cancelled", ...proposal}));
     });
     it("prevents job claim holders from creating jobs with invalid ID format", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
@@ -1465,19 +1472,66 @@ describe("Other Firestore Rules", function () {
       const { description, ...noDescription } = job;
       await firebase.assertFails(doc.update({ ...noDescription, description: "not" }));
     });
-    it("requires the proposal to reference a valid job if present", async () => {
+    it("requires the proposal to reference a valid job if present on project. Must not be present on proposal", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
 
-      // proposal present and references a valid job
+      // succeeds when proposal present and references a valid job
       await firebase.assertSucceeds(doc.set({ ...job, proposal: "P19-444"}));
 
-      // proposal not present
+      // succeeds when proposal not present
       await firebase.assertSucceeds(doc.set({ ...job }));
 
-      // proposal present but references an invalid job
+      // fails when proposal present but references an invalid job
       await firebase.assertFails(doc.set({ ...job, proposal: "P19-555"}));
+
+      // fails when proposal present and references a valid job but the job is not a proposal
+      await firebase.assertFails(doc.set({ ...job, proposal: "19-444"}));
+
+      // fails when proposal present and references a valid job but document being set is a proposal
+      // because proposals cannot have proposals
+      const proposalDoc = db.collection("Jobs").doc("P19-333");
+      await firebase.assertFails(proposalDoc.set({ ...job, proposal: "P19-444"}));
     });
+    it("requires a proposal to have a valid proposalOpeningDate and proposalSubmissionDueDate", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("P19-444");
+      const projDoc = db.collection("Jobs").doc("19-444");
+      const proposal = { ...job, proposalOpeningDate, proposalSubmissionDueDate };
+
+      // succeeds when proposalOpeningDate and proposalSubmissionDueDate are present and valid
+      await firebase.assertSucceeds(doc.set(proposal));
+
+      // succeeds when proposalSubmissionDueDate and proposalOpeningDate are missing and the job is a project
+      await firebase.assertSucceeds(projDoc.set(job));
+
+      // fails when attempting to set proposalSubmissionDueDate on a project
+      const projWithProposalSubmissionDueDate = { ...job, proposalSubmissionDueDate };
+      await firebase.assertFails(projDoc.set(projWithProposalSubmissionDueDate));
+
+      // fails when attempting to set proposalOpeningDate on a project
+      const projWithProposalOpeningDate = { ...job, proposalOpeningDate };
+      await firebase.assertFails(projDoc.set(projWithProposalOpeningDate));
+      
+      // fails when proposalSubmissionDueDate not present
+      const { proposalSubmissionDueDate: _1, ...noProposalSubmissionDueDate } = proposal;
+      await firebase.assertFails(doc.set(noProposalSubmissionDueDate));
+
+      // fails when proposalOpeningDate not present
+      const { proposalOpeningDate: _2, ...noProposalOpeningDate } = proposal;
+      await firebase.assertFails(doc.set(noProposalOpeningDate));
+      
+      // fails when proposalSubmissionDueDate is not a date
+      await firebase.assertFails(doc.set({ ...noProposalSubmissionDueDate, proposalSubmissionDueDate: "not a date" }));
+
+      // fails when proposalOpeningDate is not a date
+      await firebase.assertFails(doc.set({ ...noProposalOpeningDate, proposalOpeningDate: "not a date" }));
+    });
+    it("requires a proposal to have a valid proposalValue");
+    it("requires a project to have a valid projectAgreementValue");
+    it("requires a project to have a valid projectAwardDate");
+    it("requires the fnAgreement field to be present and a boolean");
+
     it("requires the managerUid to reference a document in Profiles and be present", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("19-333");
