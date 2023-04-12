@@ -366,6 +366,16 @@ export default defineComponent({
               if (this.item.fnAgreement === undefined) {
                 this.item.fnAgreement = false;
               }
+
+              // set the Timestamps to dates for the datepicker
+              if (this.id.startsWith("P")) {
+                this.item.proposalOpeningDate =
+                  result.proposalOpeningDate.toDate();
+                this.item.proposalSubmissionDueDate =
+                  result.proposalSubmissionDueDate.toDate();
+              } else {
+                this.item.projectAwardDate = result.projectAwardDate.toDate();
+              }
             }
           }
         );
