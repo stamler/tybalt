@@ -66,13 +66,51 @@
         v-model="item.clientContact"
       />
     </span>
-    <span
-      class="field"
-      v-if="
-        (item.id && !item.id.startsWith('P')) ||
-        (editing && !id.startsWith('P'))
-      "
-    >
+    <span class="field" v-if="isProject">
+      <label for="projectAwardDate">Project Award Date</label>
+      <datepicker
+        name="projectAwardDate"
+        placeholder="Select..."
+        :auto-apply="true"
+        :enable-time-picker="false"
+        :format="shortDateWithWeekday"
+        hide-input-icon
+        input-class-name="jobDateField"
+        week-start="0"
+        v-model="item.projectAwardDate"
+      />
+    </span>
+    <span class="field" v-if="!isProject">
+      <label for="proposalOpeningDate">Proposal Opening Date</label>
+      <datepicker
+        name="proposalOpeningDate"
+        placeholder="Select..."
+        :auto-apply="true"
+        :enable-time-picker="false"
+        :format="shortDateWithWeekday"
+        hide-input-icon
+        input-class-name="jobDateField"
+        week-start="0"
+        v-model="item.proposalOpeningDate"
+      />
+    </span>
+    <span class="field" v-if="!isProject">
+      <label for="proposalSubmissionDueDate">
+        Proposal Submission Due Date
+      </label>
+      <datepicker
+        name="proposalSubmissionDueDate"
+        placeholder="Select..."
+        :auto-apply="true"
+        :enable-time-picker="false"
+        :format="shortDateWithWeekday"
+        hide-input-icon
+        input-class-name="jobDateField"
+        week-start="0"
+        v-model="item.proposalSubmissionDueDate"
+      />
+    </span>
+    <span class="field" v-if="isProject">
       <!-- Hide if id is proposal (starts with 'P') -->
       <!-- TODO: Restrict to existing proposals -->
       <label for="proposal">Proposal</label>
@@ -81,6 +119,10 @@
     <span class="field">
       <label for="description">Description</label>
       <input class="grow" type="text" name="code" v-model="item.description" />
+    </span>
+    <span class="field">
+      <label for="fnAgreement">FN Agreement</label>
+      <input type="checkbox" id="fnAgreement" v-model="item.fnAgreement" />
     </span>
     <span class="field">
       <select class="grow" name="status" v-model="item.status">
@@ -152,6 +194,9 @@ import ActionButton from "./ActionButton.vue";
 import DSStringArrayInput from "./DSStringArrayInput.vue";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
+import Datepicker from "@vuepic/vue-datepicker";
+import { shortDateWithWeekday } from "./helpers";
+
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
@@ -163,13 +208,14 @@ export default defineComponent({
   props: ["id", "collectionName"],
   components: {
     ActionButton,
+    Datepicker,
     DSStringArrayInput,
   },
   data() {
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: { status: "", divisions: [] } as DocumentData,
+      item: { status: "", divisions: [], fnAgreement: false } as DocumentData,
       managerUid: undefined as string | undefined,
       alternateManagerUid: undefined as string | undefined,
       divisions: useCollection(collection(db, "Divisions")),
@@ -181,6 +227,12 @@ export default defineComponent({
   computed: {
     editing: function (): boolean {
       return this.id !== undefined;
+    },
+    isProject: function (): boolean {
+      return (
+        (this.item.id && !this.item.id.startsWith("P")) ||
+        (this.editing && !this.id.startsWith("P"))
+      );
     },
   },
   watch: {
@@ -197,6 +249,7 @@ export default defineComponent({
     this.setupAlgolia();
   },
   methods: {
+    shortDateWithWeekday,
     deleteDivision(index: number) {
       this.item.divisions.splice(index, 1);
     },
@@ -308,6 +361,11 @@ export default defineComponent({
               if (this.item.divisions === undefined) {
                 this.item.divisions = [];
               }
+
+              // if the document is missing an fnAgreement field, set it false
+              if (this.item.fnAgreement === undefined) {
+                this.item.fnAgreement = false;
+              }
             }
           }
         );
@@ -376,4 +434,8 @@ export default defineComponent({
 </script>
 <style lang="scss">
 @import "./algolia-autocomplete-classic-fork.scss";
+.jobDateField {
+  font-size: 1em !important;
+  padding: 0;
+}
 </style>
