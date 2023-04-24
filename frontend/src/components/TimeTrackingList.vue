@@ -23,6 +23,11 @@
         </div>
       </div>
       <div class="rowactionsbox">
+        <action-button
+          type="user"
+          @click="timeSummary(item.weekEnding.toDate())"
+          title="time summary"
+        />
         <a
           style="display: block"
           v-if="hasLink(item, 'json')"
@@ -45,7 +50,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { exportDate, generateTimeReportCSV } from "./helpers";
+import { exportDate, generateTimeReportCSV, timeSummary } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
@@ -96,6 +101,7 @@ export default defineComponent({
   },
   methods: {
     exportDate,
+    timeSummary,
     generateTimeReportCSV,
     hasLink(item: DocumentData, property: string) {
       return (

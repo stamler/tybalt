@@ -10,6 +10,7 @@
     <Icon icon="feather:unlock" width="24px" v-if="type === 'unlock'" />
     <Icon icon="feather:user-minus" width="24px" v-if="type === 'removeuser'" />
     <Icon icon="feather:user-plus" width="24px" v-if="type === 'adduser'" />
+    <Icon icon="feather:user" width="24px" v-if="type === 'user'" />
     <Icon icon="feather:download" width="24px" v-if="type === 'download'" />
     <Icon icon="feather:plus-circle" width="24px" v-if="type === 'add'" />
     <Icon icon="feather:copy" width="24px" v-if="type === 'copy'" />

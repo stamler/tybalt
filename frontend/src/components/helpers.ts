@@ -373,6 +373,35 @@ export async function generateTimeReportCSV(
   );
 }
 
+export async function timeSummary(weekEnding: Date) {
+  const start = new Date();
+  store.startTask({
+    id: `getTimeSummary${start.getTime()}`,
+    message: "Getting Time Summary",
+  });
+  const weekEndingZoned = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
+  const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
+  const queryMySQL = httpsCallable(functions, "queryMySQL");
+  let response: HttpsCallableResult;
+  try {
+    response = await queryMySQL({
+      queryName: "weeklyTimeSummaryPerEmployee",
+      queryValues,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const csv = parse(response.data as Array<any>);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const filename = `time_summary_${exportDateWeekStart(
+      weekEnding
+    )}-${exportDate(weekEnding)}.csv`;
+    store.endTask(`getTimeSummary${start.getTime()}`);
+    downloadBlob(blob, filename);
+  } catch (error) {
+    store.endTask(`getTimeSummary${start.getTime()}`);
+    alert(`Error: ${error}`);
+  }
+}
+
 export function exportDate(date: Date) {
   return format(date, "yyyy MMM dd");
 }

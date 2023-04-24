@@ -24,6 +24,7 @@ export const queries = [
   { name: "timetypeSummary", authorizedClaims: ["kpi"] },
   { name: "payablesPayrollCSV", authorizedClaims: ["report"], beforeFunction: waitingPeriodPassed },
   { name: "payablesWeeklyCSV", authorizedClaims: ["report"] },
+  { name: "weeklyTimeSummaryPerEmployee", authorizedClaims: ["report"] },
 ];
 
 /* 
