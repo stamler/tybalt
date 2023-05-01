@@ -185,6 +185,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   CollectionReference,
   DocumentSnapshot,
   DocumentData,
@@ -412,7 +413,34 @@ export default defineComponent({
             // this.$router.push(this.parentPath);
           })
           .catch((error: unknown) => {
-            if (error instanceof Error) {
+            // If the value of this.item.status is "Cancelled" or the value is
+            // "Closed" and this is a project, then prompt whether the user
+            // would like to force this save despite being an invalid job.
+            if (
+              this.item.status === "Cancelled" ||
+              (this.item.status === "Closed" && !this.id.startsWith("P"))
+            ) {
+              if (
+                confirm(
+                  `This job is invalid. Are you sure you want to force its status to ${this.item.status}?`
+                )
+              ) {
+                updateDoc(doc(db, this.collectionName, this.id), {
+                  status: this.item.status,
+                })
+                  .then(() => {
+                    // console.log("Forced save successful");
+                    this.$router.go(-1);
+                    // this.$router.push(this.parentPath);
+                  })
+                  .catch((error: unknown) => {
+                    // console.log("Forced save failed");
+                    if (error instanceof Error) {
+                      alert(`Editing failed: ${error.message}`);
+                    } else alert(`Editing failed: ${JSON.stringify(error)}`);
+                  });
+              }
+            } else if (error instanceof Error) {
               alert(`Editing failed: ${error.message}`);
             } else alert(`Editing failed: ${JSON.stringify(error)}`);
           });
