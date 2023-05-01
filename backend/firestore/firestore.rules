@@ -554,9 +554,24 @@ service cloud.firestore {
         // ensure user doesn't set some fields
         newDoc().hasTimeEntries == false &&
         isMissing("lastTimeEntryDate");
-      allow update: if hasClaim("job") && validJob(jobId) &&
+      allow update: if hasClaim("job") && (
+        validJob(jobId) &&
         // ensure user doesn't change some fields
-        !newDoc().diff(resource.data).affectedKeys().hasAny(["lastTimeEntryDate", "hasTimeEntries"]);
+        !newDoc().diff(resource.data).affectedKeys().hasAny(["lastTimeEntryDate", "hasTimeEntries"])
+      ) || 
+      (
+        newDoc().diff(resource.data).affectedKeys().hasOnly(["status"]) && 
+        (
+          (
+            newDoc().status in ["Cancelled", "Closed"] &&
+            jobId.matches('^[0-9].*')
+          ) || 
+          (
+            newDoc().status == "Cancelled" &&
+            jobId.matches('^(P).*')
+          )
+        )
+      );
     }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");

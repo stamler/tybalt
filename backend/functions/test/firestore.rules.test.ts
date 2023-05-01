@@ -1460,6 +1460,24 @@ describe("Other Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ status: "Awarded", ...proposal}));
       await firebase.assertSucceeds(doc.set({ status: "Cancelled", ...proposal}));
     });
+    it("allows a job to be cancelled regardless of validity or closed regardless of validity if it is a project", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      await adminDb.collection("Jobs").doc("P19-444").set({"chocolatebar": false}); // missing proposalOpeningDate, proposalSubmissionDueDate, and projectAwardDate
+      await adminDb.collection("Jobs").doc("19-333").set({"nutbar": false}); // missing projectAwardDate
+      const doc1 = db.collection("Jobs").doc("19-333");
+      const doc2 = db.collection("Jobs").doc("P19-444");
+      
+      // Test closing and cancelling invalid projects
+      await firebase.assertSucceeds(doc1.update({ status: "Cancelled" }));
+      await firebase.assertFails(doc1.update({ status: "Active" }));
+      await firebase.assertSucceeds(doc1.update({ status: "Closed" }));
+    
+      // Test cancelling invalid proposals
+      await firebase.assertFails(doc2.update({ status: "Not Awarded" }));
+      await firebase.assertFails(doc2.update({ status: "Closed" }));
+      await firebase.assertSucceeds(doc2.update({ status: "Cancelled" }));
+      await firebase.assertFails(doc2.update({ status: "Active" }));
+    });
     it("prevents job claim holders from creating jobs with invalid ID format", async () => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
       const doc = db.collection("Jobs").doc("invalidIdFormat");
