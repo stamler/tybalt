@@ -11,32 +11,38 @@
     <div>status: {{ item.status }}</div>
     <h4>Time Entries</h4>
     <form id="editor">
-      <!-- <span class="field">
-        <label for="startDate">from</label>
-        <datepicker
-          name="startDate"
-          input-class="calendar-input"
-          wrapper-class="calendar-wrapper"
-          placeholder="Start Date"
-          :inline="false"
-          :disabledDates="dps.disabled"
-          :highlighted="dps.highlighted"
-          v-model="startDate"
-        />
-      </span>
-      <span class="field">
-        <label for="endDate">to</label>
-        <datepicker
-          name="endDate"
-          input-class="calendar-input"
-          wrapper-class="calendar-wrapper"
-          placeholder="End Date"
-          :inline="false"
-          :disabledDates="dps.disabled"
-          :highlighted="dps.highlighted"
-          v-model="endDate"
-        />
-      </span> -->
+      <label for="startDate">from</label>
+      <datepicker
+        name="startDate"
+        placeholder="Start Date"
+        :clearable="false"
+        :auto-apply="true"
+        :min-date="dps.disabled.to"
+        :max-date="dps.disabled.from"
+        :highlight="dps.highlighted.dates"
+        :enable-time-picker="false"
+        :format="shortDateWithWeekday"
+        week-start="0"
+        hide-input-icon
+        input-class-name="field"
+        v-model="startDate"
+      />
+      <label for="endDate">to</label>
+      <datepicker
+        name="endDate"
+        placeholder="End Date"
+        :clearable="false"
+        :auto-apply="true"
+        :min-date="dps.disabled.to"
+        :max-date="dps.disabled.from"
+        :highlight="dps.highlighted.dates"
+        :enable-time-picker="false"
+        :format="shortDateWithWeekday"
+        week-start="0"
+        hide-input-icon
+        input-class-name="field"
+        v-model="endDate"
+      />
       <span class="field" v-if="isTopLevelJob(id)">
         <label for="subJobs">sub jobs?</label>
         <input name="subJobs" type="checkbox" v-model="subJobs" />
@@ -113,9 +119,10 @@ import {
 const db = getFirestore(firebaseApp);
 import { formatDistanceToNow } from "date-fns";
 import { useStateStore } from "../stores/state";
-// import Datepicker from "vuejs-datepicker";
+import Datepicker from "@vuepic/vue-datepicker";
 import QueryBox from "./QueryBox.vue";
 import DownloadQueryLink from "./DownloadQueryLink.vue";
+import { shortDateWithWeekday } from "./helpers";
 
 export default defineComponent({
   setup() {
@@ -124,7 +131,7 @@ export default defineComponent({
   },
   props: ["id", "collectionName"],
   components: {
-    // Datepicker,
+    Datepicker,
     QueryBox,
     DownloadQueryLink,
   },
@@ -167,6 +174,7 @@ export default defineComponent({
     this.setItem(this.id);
   },
   methods: {
+    shortDateWithWeekday,
     isTopLevelJob(job: string) {
       // return true if the provided job doesn't have dashed subjobs
       const re = /^(P)?[0-9]{2}-[0-9]{3,4}$/;
