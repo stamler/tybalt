@@ -1336,7 +1336,7 @@ describe("Other Firestore Rules", function () {
     });
   });
   
-  describe.only("Jobs", () => {
+  describe("Jobs", () => {
     const divisions = adminDb.collection("Divisions");
     const proposalSubmissionDueDate = new Date();
     const proposalOpeningDate = new Date(proposalSubmissionDueDate.getTime() - 10000000);
