@@ -39,7 +39,7 @@ export const wgCreateKeylessClient = functions.https.onCall(async (data: unknown
 
   // throw if the caller isn't authenticated & authorized. For now only allow
   // clients with the 'admin' claim create a client config
-  getAuthObject(context, ["admin"]);
+  getAuthObject(context, ["admin", "wg"]);
 
   // Verify data is a WireguardClientPayloadObject
   if (!isWireguardClientPayloadObject(data)) {
@@ -143,7 +143,7 @@ export function* ipRange(
 export const wgToggleEnableClient = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   // throw if the caller isn't authenticated & authorized. For now only allow
   // clients with the 'admin' claim create a client config
-  getAuthObject(context, ["admin"]);
+  getAuthObject(context, ["admin", "wg"]);
 
   // Validate the data or throw
   // use a User Defined Type Guard
