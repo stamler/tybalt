@@ -761,7 +761,7 @@ service cloud.firestore {
       allow read: if hasClaim("admin") || hasClaim("hr");
     }
     match /WireGuardClients/{client} {
-      allow read: if hasClaim("admin") || hasClaim("hr") || uidMatches();
+      allow read: if hasClaim("admin") || hasClaim("hr") || hasClaim("wg") || uidMatches();
     }
     match /{document=**} {
       allow read, write: if false;
