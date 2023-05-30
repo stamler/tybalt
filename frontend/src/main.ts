@@ -103,7 +103,13 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
     // TODO: avoid casting to firebase.User
     tasks.push(store.setUser(firebase.auth().currentUser as firebase.User));
     tasks.push(
-      user.getIdTokenResult().then((token) => store.setClaims(token.claims))
+      // Using true here will force a refresh of the token test this to see if a
+      // simple refresh will suffice instead of logging out after claims are
+      // updated, then figure out how to refresh the token in the background
+      // periodically without logging out
+      // https://firebase.google.com/docs/auth/admin/custom-claims
+      // https://firebase.google.com/docs/reference/js/auth.user.md#usergetidtokenresult
+      user.getIdTokenResult(true).then((token) => store.setClaims(token.claims))
     );
     Promise.all(tasks).then(() => {
       if (!app) {
