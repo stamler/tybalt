@@ -236,7 +236,7 @@ service cloud.firestore {
         // allowed fields
         newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
           "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
-          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding" ]) &&
+          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding", "category" ]) &&
 
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
@@ -266,7 +266,15 @@ service cloud.firestore {
             get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.description == newDoc().jobDescription &&
             get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.client == newDoc().client &&
             (newDoc().timetype == "R" || newDoc().timetype == "RT") &&
-            isMissing("hours")
+            isMissing("hours") &&
+            // if a category property is specified, it must be a string and that
+            // string must be in the categories list of the corresponding job
+            // Document. if the category property is not specified, the job must not
+            // have any categories
+            (
+              (isMissing("category") && !("categories" in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data)) ||
+              (newDoc().category is string && newDoc().category in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.categories)
+            )
           ) || 
           isMissing("job")
         ) &&
@@ -448,7 +456,7 @@ service cloud.firestore {
       return (
         jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?') &&
         newDoc().keys().hasAll([ "client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement"]) &&
-        newDoc().keys().hasOnly(["client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "projectAwardDate"]) &&
+        newDoc().keys().hasOnly(["client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "projectAwardDate", "categories"]) &&
         isInCollection("managerUid","Profiles") &&
         (
           (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
@@ -465,6 +473,14 @@ service cloud.firestore {
         // 2. jobOwner matches client if the client is the actual owner of the
         //    job
         newDoc().jobOwner is string && newDoc().jobOwner.size() > 5 &&
+
+        // The job may have a list of one or more categories in list.
+        // categories must be strings and must be at least 1 character long
+        // we only validate the first category
+        (
+          ( newDoc().categories is list && newDoc().categories[0] is string && newDoc().categories[0].size() > 0 ) ||
+          isMissing("categories") 
+        ) &&
 
         // clientContact must be a string
         newDoc().clientContact is string && newDoc().clientContact.size() > 5 &&

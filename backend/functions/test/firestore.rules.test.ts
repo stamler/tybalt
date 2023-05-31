@@ -1259,6 +1259,43 @@ describe("Other Firestore Rules", function () {
       await firebase.assertSucceeds(doc.set({ ...missingHours, jobHours: 5, ...missingJob, job:"19-333" }));
       await firebase.assertFails(doc.set({ ...missingHours, jobHours: 5, ...missingJob, job:"20-333" }));
     });
+    it("requires a category to be set to one of the values in the categories list on the corresponding job if that job has a categories list", async () => {
+      // setup categories on the job 19-333 used by entryJobProperties
+      await jobs.doc("19-333").update({ categories: [ "category1", "category2" ] });
+      await jobs.doc("19-444").set({ description: "A basic job", client: "A special client" });
+      const { hours, ...missingHours } = baseline;
+      const testEntry = { ...missingHours, jobHours: 5, ...entryJobProperties }
+      const { job, ...missingJob } = testEntry;
+      const doc = timeDb.collection("TimeEntries").doc();
+
+      // succeeds when category is a string and that string is present in the job's categories list
+      await firebase.assertSucceeds(
+        doc.set({ ...testEntry, category: "category1" })
+      );
+      await firebase.assertSucceeds(
+        doc.set({ ...testEntry, category: "category2" })
+      );
+
+      // fails when category is a string but the job doesn't have a categories list
+      await firebase.assertFails(
+        doc.set({ ...missingJob, job: "19-444", category: "category1" })
+      );
+
+      // fails when a category is not present but the job has a categories list
+      await firebase.assertFails(
+        doc.set({ ...testEntry })
+      );
+
+      // fails when category isn't a string
+      await firebase.assertFails(
+        doc.set({ ...testEntry, category: ["category2"] })
+      );
+
+      // fails when category is a string but that string isn't present in the job's categories list
+      await firebase.assertFails(
+        doc.set({ ...testEntry, category: "category3" })
+      );
+    });
     it("requires jobDescription and client to match a referenced job's respective properties", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       const { jobDescription, ...missingJobDescription } = entryJobProperties;
@@ -1579,6 +1616,19 @@ describe("Other Firestore Rules", function () {
 
       // fails when fnAgreement is not a boolean
       await firebase.assertFails(doc.set({ ...noFnAgreement, fnAgreement: "not a boolean" }));
+    });
+    it("requires the categories property to be a list of strings of length 1 or more if present.", async () => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, job: true } }).firestore();
+      const doc = db.collection("Jobs").doc("19-444");
+      const with_categories = { ...project, categories: ["category1", "category2"] };
+      const invalid_categories_a = { ...project, categories: ["", "category2"] };
+      const invalid_categories_b = { ...project, categories: [6, "category2"] };
+      const empty_categories = { ...project, categories: [] };
+      await firebase.assertSucceeds(doc.set(project));
+      await firebase.assertSucceeds(doc.set(with_categories)); // causing failure
+      await firebase.assertFails(doc.set(empty_categories));
+      await firebase.assertFails(doc.set(invalid_categories_a));
+      await firebase.assertFails(doc.set(invalid_categories_b));
     });
     it("requires a proposal to have a valid proposalValue");
     it("requires a project to have a valid projectAgreementValue");

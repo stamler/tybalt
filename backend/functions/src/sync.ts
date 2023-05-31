@@ -145,7 +145,7 @@ export async function exportTime() {
     const tsSQLResponse = mysqlConnection.query("INSERT INTO TimeSheets SET ?", [timeSheet]);
     
     // Get the entries then INSERT them into MySQL in the transaction
-    const timeEntriesFields = ["uid", "tsid", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount"];
+    const timeEntriesFields = ["uid", "tsid", "date", "timetype", "timetypeName", "division", "divisionName", "client", "job", "workrecord", "jobDescription", "hours", "jobHours", "mealsHours", "workDescription", "payoutRequestAmount", "category"];
     const entries: TimeEntry[] = tsSnap.get("entries");
     const insertValues = entries.map((entry: TimeEntry) => {
       const cleaned: any = entry;

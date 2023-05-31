@@ -9,6 +9,12 @@
       alt. manager: {{ item.alternateManagerDisplayName }}
     </div>
     <div>status: {{ item.status }}</div>
+    <div v-if="item.categories" style="display: flex; flex-wrap: wrap">
+      categories:
+      <span class="label" v-for="category in item.categories" :key="category">
+        {{ category }}
+      </span>
+    </div>
     <h4>Time Entries</h4>
     <form id="editor">
       <label for="startDate">from</label>

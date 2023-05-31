@@ -53,7 +53,7 @@
       </span>
       <span class="field" v-show="job !== undefined">
         <span class="grow">
-          <action-button type="delete" @click.prevent="job = undefined" />
+          <action-button type="delete" @click.prevent="clearJob" />
           {{ job }} / {{ item.client }}:{{ item.jobDescription }}
         </span>
       </span>
@@ -69,6 +69,16 @@
           min="0"
           max="18"
         />
+      </span>
+
+      <span class="field" v-if="jobCategories !== null">
+        <label for="category">Category</label>
+        <select class="grow" name="category" v-model="item.category">
+          <option disabled selected value="">-- choose category --</option>
+          <option v-for="c in jobCategories" :value="c" v-bind:key="c">
+            {{ c }}
+          </option>
+        </select>
       </span>
     </span>
 
@@ -212,6 +222,7 @@ export default defineComponent({
           dates: [new Date()],
         },
       },
+      jobCategories: null as string[] | null,
       parentPath: "",
       collectionObject: null as CollectionReference | null,
       divisions: useCollection(collection(db, "Divisions")),
@@ -275,16 +286,41 @@ export default defineComponent({
     this.setupInit();
   },
   methods: {
+    clearJob() {
+      this.job = undefined;
+      this.jobCategories = null;
+      delete this.item.category;
+    },
+    async loadJobCategories(jobId: string | undefined) {
+      if (jobId === undefined) {
+        this.jobCategories = null;
+        return;
+      }
+      // get the job document from firestore and if the job has a categories
+      // list set the jobCategories list
+      const jobDoc = await getDoc(doc(db, "Jobs", jobId));
+      if (jobDoc.exists()) {
+        const categories = jobDoc.get("categories");
+        // if categories is an array set the flag to true
+        if (Array.isArray(categories)) {
+          this.jobCategories = categories;
+        } else {
+          this.jobCategories = null;
+        }
+      }
+    },
     shortDateWithWeekday,
     async setupInit() {
       const profileSecrets = await getDoc(
         doc(db, "ProfileSecrets", this.user.uid)
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const writeJobToItem = (values: any) => {
+      const writeJobToItem = async (values: any) => {
         this.job = values.objectID;
         this.item.jobDescription = values.description;
         this.item.client = values.client;
+
+        await this.loadJobCategories(values.objectID);
       };
       const searchClient = algoliasearch(
         "F7IPMZB3IW",
@@ -337,6 +373,7 @@ export default defineComponent({
               this.item = result;
               this.job = this.item.job;
               this.item.date = result.date.toDate();
+              this.loadJobCategories(this.item.job);
             }
           })
           .catch(() => {

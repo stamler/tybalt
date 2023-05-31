@@ -58,7 +58,9 @@
             v-if="['R', 'RT'].includes(item.timetype) && item.job"
             class="firstline"
           >
-            {{ item.job }} {{ item.client }}: {{ item.jobDescription }}
+            {{ item.job }} {{ item.client }}
+            <span v-if="item.category" class="label">{{ item.category }}</span>
+            : {{ item.jobDescription }}
           </div>
           <div class="secondline">
             {{ hoursString(item) }}

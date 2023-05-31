@@ -42,6 +42,7 @@ CREATE TABLE `TimeEntries` (
   `mealsHours` decimal(3,1) DEFAULT NULL,
   `workDescription` text,
   `payoutRequestAmount` decimal(7,2) DEFAULT NULL,
+  `category` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_tsid` (`tsid`),
   CONSTRAINT `fk_tsid` FOREIGN KEY (`tsid`) REFERENCES `TimeSheets` (`id`) ON DELETE CASCADE

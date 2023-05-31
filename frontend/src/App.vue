@@ -319,6 +319,7 @@ a:active {
 #editor .field {
   display: flex;
   font-size: 1.2em;
+  flex-wrap: wrap;
 }
 
 input,

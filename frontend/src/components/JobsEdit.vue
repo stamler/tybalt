@@ -38,6 +38,27 @@
       @add-element="addDivision"
       @delete-element="deleteDivision"
     />
+    <span class="field">
+      <label for="categories">Categories</label>
+      <span
+        class="label"
+        v-for="(item, index) in item.categories"
+        v-bind:key="index"
+      >
+        {{ item }}
+        <!-- emit an event to the parent component to delete the item -->
+        <button class="del_but" @click.prevent="deleteCategory(index)">
+          <Icon icon="feather:x" width="18px" />
+        </button>
+      </span>
+      <input
+        class="grow"
+        type="text"
+        name="categoriesInput"
+        v-model="categoriesInput"
+        @input="updateCategoriesInput"
+      />
+    </span>
     <span class="field" v-show="alternateManagerUid !== undefined">
       <label for="manager">Alt. Manager</label>
       <span class="grow">
@@ -192,6 +213,7 @@ import {
   DocumentReference,
 } from "firebase/firestore";
 import ActionButton from "./ActionButton.vue";
+import { Icon } from "@iconify/vue";
 import DSStringArrayInput from "./DSStringArrayInput.vue";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
@@ -211,9 +233,11 @@ export default defineComponent({
     ActionButton,
     Datepicker,
     DSStringArrayInput,
+    Icon,
   },
   data() {
     return {
+      categoriesInput: "",
       parentPath: "",
       collectionObject: null as CollectionReference | null,
       item: { status: "", divisions: [], fnAgreement: false } as DocumentData,
@@ -250,6 +274,27 @@ export default defineComponent({
     this.setupAlgolia();
   },
   methods: {
+    updateCategoriesInput() {
+      // This is triggered every time the input field changes. If the last
+      // character is a comma, then we add the text to the categories array.
+      // Otherwise we do nothing.
+      if (this.categoriesInput.endsWith(",")) {
+        const category = this.categoriesInput.slice(
+          0,
+          this.categoriesInput.length - 1
+        );
+        // if item.categories is undefined, create it
+        if (this.item.categories === undefined) {
+          this.item.categories = [];
+        }
+
+        this.item.categories.push(category.trim());
+        this.categoriesInput = "";
+      }
+    },
+    deleteCategory(index: number) {
+      this.item.categories.splice(index, 1);
+    },
     shortDateWithWeekday,
     deleteDivision(index: number) {
       this.item.divisions.splice(index, 1);
@@ -404,6 +449,12 @@ export default defineComponent({
       if (this.collectionObject === null) {
         throw "There is no valid collection object";
       }
+
+      // if the categories property is an empty array, delete it
+      if (this.item.categories?.length === 0) {
+        delete this.item.categories;
+      }
+
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
@@ -470,10 +521,33 @@ export default defineComponent({
   },
 });
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 @import "./algolia-autocomplete-classic-fork.scss";
 .jobDateField {
   font-size: 1em !important;
   padding: 0;
+}
+
+button.del_but {
+  color: var(--button-link-color);
+  background: none;
+  border: none;
+  border-radius: 0;
+  text-decoration: none;
+  font-size: 1em;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+  margin: inherit;
+  margin-left: 0;
+  padding: 0;
+}
+button.del_but:hover {
+  transition: filter 0.05s ease-in;
+  filter: drop-shadow(2px 2px 1px rgb(0 0 0 / 0.3));
+}
+
+button:active {
+  filter: brightness(0.7) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.3));
 }
 </style>
