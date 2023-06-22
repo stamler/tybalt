@@ -10,6 +10,9 @@ service cloud.firestore {
     function uidMatches() { // requester uid matches field in existing doc
       return request.auth.uid == resource.data.uid;
     }
+    function uidMatchesDocId() { // requester uid matches doc id
+      return request.auth.uid == resource.id;
+    }
     function uidUnchanged() { // uid field in existing doc matches request uid field
       return request.resource.data.uid == resource.data.uid;
     }
@@ -30,6 +33,9 @@ service cloud.firestore {
     }
     function newDoc() {
       return request.resource.data;
+    }
+    function ak() {
+      return newDoc().diff(resource.data).affectedKeys();
     }
     function valueOrZero(field) {
       return newDoc().get(field, 0)
@@ -351,59 +357,62 @@ service cloud.firestore {
         );
     }
     function validProfile() {
+      let nd = newDoc();
+      let wwh = nd.workWeekHours;
+      let pid = nd.payrollId;
       return
-        newDoc().keys().hasAll(["email", "displayName", "payrollId", "salary"]) &&
-        newDoc().diff(resource.data).affectedKeys().hasOnly([
-          "bot", "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff", "workWeekHours"
+        nd.keys().hasAll(["email", "displayName", "payrollId", "salary"]) &&
+        nd.diff(resource.data).affectedKeys().hasOnly([
+          "bot", "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff", "workWeekHours", "defaultChargeOutRate"
         ]) &&
         (
-          (newDoc().bot is string && newDoc().bot.size() > 2) || isMissing("bot")
+          (nd.bot is string && newDoc().bot.size() > 2) || isMissing("bot")
         ) &&
         (
-          newDoc().offRotation is bool || isMissing("offRotation")
+          nd.offRotation is bool || isMissing("offRotation")
         ) &&
         (
-          newDoc().workWeekHours is int && 
-          newDoc().workWeekHours > 0 &&
-          newDoc().workWeekHours <= 40 || 
+          wwh is int && 
+          wwh > 0 &&
+          wwh <= 40 || 
           isMissing("workWeekHours")
         ) &&
         (
-          (newDoc().payrollId is int &&
-          newDoc().payrollId > 0) ||
-          (newDoc().payrollId is string &&
-          newDoc().payrollId.matches('CMS[0-9]{1,2}'))
+          (pid is int &&
+          pid > 0) ||
+          (pid is string &&
+          pid.matches('CMS[0-9]{1,2}'))
         ) &&
         (
-          newDoc().personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
+          nd.personalVehicleInsuranceExpiry is timestamp || isMissing("personalVehicleInsuranceExpiry")
         ) &&
         (
           (
-            newDoc().skipMinTimeCheckOnNextBundle is bool &&
+            nd.skipMinTimeCheckOnNextBundle is bool &&
             (
-              newDoc().skipMinTimeCheckOnNextBundle == newDoc().salary || newDoc().skipMinTimeCheckOnNextBundle != true
+              nd.skipMinTimeCheckOnNextBundle == nd.salary || nd.skipMinTimeCheckOnNextBundle != true
             ) &&
             (
-              newDoc().skipMinTimeCheckOnNextBundle == false || (newDoc().untrackedTimeOff == false || isMissing("untrackedTimeOff"))
+              nd.skipMinTimeCheckOnNextBundle == false || (nd.untrackedTimeOff == false || isMissing("untrackedTimeOff"))
             )
           ) || isMissing("skipMinTimeCheckOnNextBundle")
         ) &&
         (
-          newDoc().allowPersonalReimbursement is bool || isMissing("allowPersonalReimbursement")
+          nd.allowPersonalReimbursement is bool || isMissing("allowPersonalReimbursement")
         ) &&
         (
           (
-            newDoc().untrackedTimeOff is bool && 
+            nd.untrackedTimeOff is bool && 
             (
-              newDoc().untrackedTimeOff == newDoc().salary || newDoc().untrackedTimeOff != true
+              nd.untrackedTimeOff == nd.salary || nd.untrackedTimeOff != true
             ) 
           ) || isMissing("untrackedTimeOff")
         ) &&
         (
-          newDoc().doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
+          nd.doNotAcceptSubmissions is bool || isMissing("doNotAcceptSubmissions")
         ) &&
-        newDoc().salary is bool &&
-        newDoc().timeSheetExpected is bool &&
+        nd.salary is bool &&
+        nd.timeSheetExpected is bool &&
         isInCollection("managerUid","Profiles") && 
         // this restricts any updates that don't have a manager UID
         // NB: This technically allows any profile, regardless of permissions, to be assigned as a manager
@@ -412,7 +421,14 @@ service cloud.firestore {
         (
           isInCollection("alternateManager", "ManagerNames") ||
           isMissing("alternateManager") 
-        )      
+        ) && (
+          (
+            nd.defaultChargeOutRate is number &&
+            nd.defaultChargeOutRate > 49 &&
+            nd.defaultChargeOutRate < 300 &&
+            isPositiveMultipleOfPointFive("defaultChargeOutRate")
+          ) || isMissing("defaultChargeOutRate")
+        )
     }
     function containsNoDuplicates(array) {
       return array.toSet().size() == array.size();
@@ -547,19 +563,26 @@ service cloud.firestore {
       allow read: if hasClaim("admin");
     }
     match /Profiles/{profileId} {
-      allow read: if request.auth.uid == profileId || hasClaim("tapr") && managerUidMatches() || hasClaim("report") || hasClaim("admin");
+      allow read: if request.auth.uid == profileId || hasClaim("tapr") && managerUidMatches() || hasClaim("report") || hasClaim("admin") || hasClaim("cor");
       // admins can update all profiles
       // users can update the managerUid and defaultDivision of their own profile
       allow update: if (
-        hasClaim("admin") && validProfile()
+        validProfile() &&
+        (
+          hasClaim("admin") ||
+          // hr can only update certain fields
+          (
+            hasClaim("hr") && ak().hasOnly(["managerUid", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "defaultChargeOutRate" ])
+          ) ||
+          // cor can only update certain fields
+          (
+            hasClaim("cor") && ak().hasOnly(["defaultChargeOutRate"])
+          )
+        )
       ) ||
-      // hr can only update certain fields
       (
-        hasClaim("hr") && validProfile() && newDoc().diff(resource.data).affectedKeys().hasOnly(["managerUid", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation" ])
-      ) ||
-      (
-        request.auth.uid == resource.id &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["managerUid", "alternateManager", "defaultDivision", "doNotAcceptSubmissions"]) &&
+        uidMatchesDocId() &&
+        ak().hasOnly(["managerUid", "alternateManager", "defaultDivision", "doNotAcceptSubmissions"]) &&
         isInCollection("managerUid","Profiles") && // tapr validated in buildTimesheets function
         isInCollection("defaultDivision", "Divisions") &&
         (

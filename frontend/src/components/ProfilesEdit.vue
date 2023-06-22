@@ -32,6 +32,18 @@
       <input class="grow" type="checkbox" name="salary" v-model="item.salary" />
     </span>
     <span class="field">
+      <label for="defaultChargeOutRate">Default Charge-out Rate</label>
+      <input
+        class="grow"
+        type="number"
+        step="0.5"
+        min="50"
+        max="250"
+        name="defaultChargeOutRate"
+        v-model="item.defaultChargeOutRate"
+      />
+    </span>
+    <span class="field">
       <label for="offRotation">Off Rotation</label>
       <input
         class="grow"
@@ -281,6 +293,7 @@ export default defineComponent({
           bot?: string;
           payrollId?: number;
           personalVehicleInsuranceExpiry?: Date;
+          defaultChargeOutRate?: number;
         } = {
           displayName: this.item.displayName,
           managerUid: this.item.managerUid,
@@ -319,6 +332,11 @@ export default defineComponent({
         if (this.item.personalVehicleInsuranceExpiry) {
           obj.personalVehicleInsuranceExpiry =
             this.item.personalVehicleInsuranceExpiry;
+        }
+        if (typeof this.item.defaultChargeOutRate === "number") {
+          obj.defaultChargeOutRate = this.item.defaultChargeOutRate;
+        } else {
+          obj.defaultChargeOutRate = 50;
         }
         updateDoc(doc(this.collectionObject, this.id), obj)
           .then(() => {

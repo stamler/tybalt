@@ -552,7 +552,7 @@ export async function exportProfiles() {
   // Get specified fields from all profiles and store them in an array of arrays
   // to be used in the INSERT query
   const allProfilesQuerySnap = await db.collection("Profiles").get();
-  const profilesFields = ["id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "untrackedTimeOff", "timestamp"];
+  const profilesFields = ["id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "untrackedTimeOff", "timestamp", "defaultChargeOutRate"];
   const now = new Date();
   const insertValues = allProfilesQuerySnap.docs.map((profileSnap) => {
     const profile = profileSnap.data();
@@ -576,7 +576,7 @@ export async function exportProfiles() {
   // deleted from Firestore will remain in MySQL. For this reason we delete all
   // rows where the timestamp is older than expected. We can safely assume that
   // 5 minutes prior to now is too old.
-  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP()`;
+  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP(), defaultChargeOutRate=VALUES(defaultChargeOutRate)`;
   try {
     await mysqlConnection.query(q, [insertValues]);
   } catch (error) {

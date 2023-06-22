@@ -462,6 +462,138 @@ describe("Other Firestore Rules", function () {
         })
       );
     });
+    it("allows only admin and hr to change the defaultChargeOutRate", async() => {
+      const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
+      const db2 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, hr: true } }).firestore();
+      const db3 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice } }).firestore();
+      const db4 = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, cor: true } }).firestore();
+      const doc = db.collection("Profiles").doc("bob"); // admin alice updating bob's profile
+      const doc2 = db2.collection("Profiles").doc("bob"); // hr alice updating bob's profile
+      const doc3 = db3.collection("Profiles").doc("bob"); // regular alice updating bob's profile
+      const doc4 = db3.collection("Profiles").doc("alice"); // regular alice updating her own profile
+      const doc5 = db4.collection("Profiles").doc("bob"); // cor alice updating bob's profile
+      await firebase.assertSucceeds(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc5.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100,
+        })
+      );
+      // defaultChargeOutRate is not a number
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: "100",
+        })
+      );
+      // defaultChargeOutRate is not a multiple of 0.5
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100.4,
+        })
+      );
+      // defaultChargeOutRate is too big
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 1000,
+        })
+      );
+      // defaultChargeOutRate is too small
+      await firebase.assertFails(
+        doc.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 0,
+        })
+      );
+      await firebase.assertSucceeds(
+        doc2.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100,
+        })
+      );
+      await firebase.assertFails(
+        doc3.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100,
+        })
+      );
+      await firebase.assertFails(
+        doc4.update({
+          displayName: "Bob",
+          email: "bob@example.com",
+          managerUid: "alice",
+          payrollId: 28,
+          doNotAcceptSubmissions: true,
+          defaultDivision: "ABC",
+          salary: true,
+          offRotation: false,
+          defaultChargeOutRate: 100,
+        })
+      );
+    });
     it("prevents untrackedTimeOff:true if salary:false", async() => {
       const db = firebase.initializeTestApp({ projectId, auth: { uid: "alice",...alice, admin: true } }).firestore();
       const doc = db.collection("Profiles").doc("bob");

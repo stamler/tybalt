@@ -22,6 +22,7 @@
     <Icon icon="feather:eye" width="24px" v-if="type === 'view'" />
     <Icon icon="feather:edit" width="24px" v-if="type === 'edit'" />
     <Icon icon="feather:frown" width="24px" v-if="type === 'problem'" />
+    <Icon icon="feather:save" width="24px" v-if="type === 'save'" />
   </button>
 </template>
 

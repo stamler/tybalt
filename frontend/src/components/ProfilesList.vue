@@ -34,6 +34,9 @@
             <template v-if="!item.timeSheetExpected">
               /Time Sheet: not expected
             </template>
+            <template v-if="item.defaultChargeOutRate !== undefined">
+              /Charge-out Rate: {{ item.defaultChargeOutRate }}
+            </template>
           </span>
           <span v-else class="attention">timeSheetExpected not specified</span>
           <span v-if="typeof item.untrackedTimeOff === 'boolean'">
@@ -48,7 +51,7 @@
               /vehicle insurance expiry:
               {{ shortDate(item.personalVehicleInsuranceExpiry.toDate()) }}
             </template>
-            <span v-else class="attention"> /vehicle insurance expired</span>
+            <span v-else class="attention"> /vehicle insurance: expired</span>
           </span>
           <span
             v-if="

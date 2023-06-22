@@ -13,7 +13,11 @@ import { APP_NATIVE_TZ } from "./config";
 // valueMutator: a function to preprocess the queryValues
 export const queries = [
   { name: "jobEntriesSummary-startsWith", authorizedClaims: ["time"] },
+  { name: "jobEntriesSummaryWithValues-startsWith", authorizedClaims: ["time"] },
+  { name: "jobEntriesSummaryByDivisionWithValues-startsWith", authorizedClaims: ["time"] },
   { name: "jobEntriesSummary", authorizedClaims: ["time"] },
+  { name: "jobEntriesSummaryWithValues", authorizedClaims: ["time"] },
+  { name: "jobEntriesSummaryByDivisionWithValues", authorizedClaims: ["time"] },
   { name: "jobReport-startsWith", authorizedClaims: ["report", "tapr"] },
   { name: "jobReport", authorizedClaims: ["report", "tapr"] },
   { name: "payrollReport-TimeEntriesOnly", authorizedClaims: ["report"] },

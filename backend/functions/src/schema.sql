@@ -3,9 +3,11 @@ CREATE TABLE `Profiles` (
   `surname` varchar(32) NOT NULL,
   `givenName` varchar(48) NOT NULL,
   `openingDateTimeOff` date NOT NULL,
-  `openingOP` int unsigned NOT NULL,
-  `openingOV` int unsigned NOT NULL,
+  `openingOP` decimal(5,1) unsigned NOT NULL,
+  `openingOV` decimal(6,2) unsigned NOT NULL,
+  `untrackedTimeOff` tinyint(1) NOT NULL DEFAULT '0',
   `timestamp` timestamp NOT NULL,
+  `defaultChargeOutRate` decimal(6,2) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

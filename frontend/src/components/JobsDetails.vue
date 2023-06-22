@@ -54,18 +54,34 @@
         <input name="subJobs" type="checkbox" v-model="subJobs" />
       </span>
     </form>
-
-    <h5>Summary</h5>
+    <h5>Division Summary</h5>
     <query-box
       :queryName="
-        subJobs ? 'jobEntriesSummary-startsWith' : 'jobEntriesSummary'
+        subJobs
+          ? 'jobEntriesSummaryByDivisionWithValues-startsWith'
+          : 'jobEntriesSummaryByDivisionWithValues'
       "
       :queryValues="[
         id,
         startDate.toISOString().substring(0, 10),
         endDate.toISOString().substring(0, 10),
       ]"
-      :dlFileName="`${id}_JobEntriesSummary.csv`"
+      :dlFileName="`${id}_JobEntriesSummaryByDivision.csv`"
+    />
+
+    <h5>Staff Summary</h5>
+    <query-box
+      :queryName="
+        subJobs
+          ? 'jobEntriesSummaryWithValues-startsWith'
+          : 'jobEntriesSummaryWithValues'
+      "
+      :queryValues="[
+        id,
+        startDate.toISOString().substring(0, 10),
+        endDate.toISOString().substring(0, 10),
+      ]"
+      :dlFileName="`${id}_JobEntriesSummaryByStaff.csv`"
     />
 
     <!-- Link to related TimeSheets for context. Available to report or tapr
