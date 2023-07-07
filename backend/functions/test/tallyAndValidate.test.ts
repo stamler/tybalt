@@ -789,5 +789,44 @@ describe("tallyAndValidate", async () => {
         "The same work record appears in multiple entries"
       );
     });
+    it("rejects if the job specifies allowed divisions and any time entries referencing that job aren't in those divisions", async () => {
+      // setup the database with the base job
+      await db.collection("Jobs").doc("25-002").set({ client: "Superman", description: "CW Earth Rotation", manager: "Joe Schmoe", status: "Active", divisions: ["EG"] });
+
+      // create a set of time entries for a 40 hour week that include divisions that are not allowed for the job
+      const fullEEDay2 = { division: "EE", divisionName: "Environmental", timetype: "R", timetypeName: "Hours Worked", workDescription, ...jobPartial2 }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
+
+      // tally and validate fails because entries include divisions not allowed on the job
+      let timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      await assert.isRejected(
+        tallyAndValidate(auth, profile, timeEntries, weekEnding),
+        "failed to open 25-002: division EE is not chargeable for the job."
+      );
+
+      // change the job to add another allowed division (the one on the
+      // entries), then the same set of time entries as above should properly
+      // tally and validate
+      await db.collection("Jobs").doc("25-002").set({ client: "Superman", description: "CW Earth Rotation", manager: "Joe Schmoe", status: "Active", divisions: ["EG", "EE"] });
+
+      // tally and validate now succeeds because entries include divisions allowed on the job
+      timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
+      assert.equal(tally.workHoursTally.jobHours,24, "jobHours tally doesn't match");
+      assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
+    });
   });
 });

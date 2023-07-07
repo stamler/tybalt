@@ -433,6 +433,26 @@ export async function tallyAndValidate(
       }
       // fold in existing data
       Object.assign(jobsTally[job], jobData);
+
+      // if the job has a divisions property, for each timeEntry in entries, if
+      // the job matches the current job, check if the division on the jobEntry
+      // is included in the divisions property of the job. If the jobEntry
+      // division is not included in the job's divisions property, throw an
+      // error noting that entries in that division are not chargeable to the
+      // job.
+      if (jobData?.divisions !== undefined) {
+        entries.forEach((timeEntry) => {
+          if (timeEntry.job === job) {
+            if (!jobData.divisions.includes(timeEntry.division)) {
+              throw new functions.https.HttpsError(
+                "failed-precondition",
+                `division ${timeEntry.division} is not chargeable for the job.`
+              )
+            }
+          }
+        });
+      }
+
     } catch (error: unknown) {
       const typedError = error as functions.https.HttpsError;
       throw new functions.https.HttpsError(
