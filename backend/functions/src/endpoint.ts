@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import { getAuthObject } from "./utilities";
-import { createSSHMySQLConnection2 } from "./sshMysql";
+import { /*createSSHMySQLConnection2, */ createSSHMySQLPool } from "./sshMysql";
 import { queries, loadSQLFileToString } from "./sqlQueries";
 
 interface QueryPayloadObject {
@@ -56,8 +56,9 @@ export const queryMySQL = functions.https.onCall(async (data: unknown, context: 
 
   // Load and run the query
   const sql = loadSQLFileToString(name);
-  const connection = await createSSHMySQLConnection2();
-  const [rows, fields] = await connection.query(sql, processedQueryValues);
+  // const connection = await createSSHMySQLConnection2();
+  const pool = await createSSHMySQLPool();
+  const [rows, fields] = await pool.query(sql, processedQueryValues);
   
   // process the query and return the data (CSV or JSON) here
   functions.logger.info("field names: " + JSON.stringify(fields.map(x=>x.name)));

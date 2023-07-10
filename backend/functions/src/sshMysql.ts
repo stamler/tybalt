@@ -67,6 +67,49 @@ export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.
   });
 })};
 
+
+/*
+Create a mysql database pool behind an SSH server by reading credentials
+from google cloud functions environment variables
+*/
+export const createSSHMySQLPool = () => {return new Promise<mysqlPromise.Pool>((resolve, reject) => {
+  sshClient.on("ready", () => {
+    sshClient.forwardOut(
+      "127.0.0.1",
+      3306,
+      env.mysql.host,
+      env.mysql.port,
+      async (err, stream) => {
+        if (err) reject(err);
+        try {
+          const pool = await mysqlPromise.createPool({
+            dateStrings: true, // don't cast DATE/DATETIME/TIMESTAMP to Date()
+            host: "127.0.0.1",
+            port: 3306,
+            user: env.mysql.user,
+            password: env.mysql.pass,
+            database: env.mysql.db,
+            stream,
+            // https://github.com/sidorares/node-mysql2/tree/master/documentation#known-incompatibilities-with-node-mysql
+            // This ensures that DECIMAL are returned as Number so we can save
+            // work on the client site at the expense of possible floating point
+            // errors!!
+            decimalNumbers: true,
+          });            
+          resolve(pool);
+        } catch (error) {
+          reject(error);          
+        }
+      }
+    );
+  }).connect({
+    host: env.mysqlssh.host,
+    port: env.mysqlssh.port,
+    username: env.mysqlssh.user,
+    password: env.mysqlssh.pass,
+  });
+})};
+
 // Promisify the query() function of a mysql2 connection
 export const query = (connection: mysql.Connection, q: string, values: any = undefined): QueryResponse => {
   return new Promise((resolve, reject) => {
