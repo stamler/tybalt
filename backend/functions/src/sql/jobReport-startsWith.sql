@@ -15,7 +15,8 @@ SELECT client,
   "" comments,
   CONCAT(givenName, " ", surname) employee,
   surname,
-  givenName
+  givenName,
+  IFNULL(category,'') category
 FROM TimeEntries
   LEFT OUTER JOIN TimeSheets ON TimeEntries.tsid = TimeSheets.id
 WHERE job REGEXP CONCAT("^", ?)
