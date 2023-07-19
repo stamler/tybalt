@@ -651,7 +651,7 @@ export const approveMutation = functions.https.onCall(async (data: any, context:
 
   // throw if the caller isn't authenticated & authorized. Only allow clients
   // with the 'admin' claim to approve mutations.
-  getAuthObject(context, ["admin"]);
+  getAuthObject(context, ["admin", "baseit"]);
 
   if (!data.id) {
     throw new functions.https.HttpsError(
