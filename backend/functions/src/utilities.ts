@@ -131,6 +131,14 @@ export function isDocIdObject(data: any): data is DocIdObject {
   return typeof data.id === "string";
 }
 
+interface LocationStringObject {
+  // a string representing a location
+  location: string;
+}
+export function isLocationStringObject(data: any): data is LocationStringObject {
+  return typeof data.location === "string";
+}
+
 interface PayPeriodEndingObject {
   // integer result of payPeriodEnding.toDate().getTime()
   payPeriodEnding: number;
