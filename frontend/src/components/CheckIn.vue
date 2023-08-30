@@ -3,15 +3,31 @@
     <div id="dash">
       <div class="infobox" v-if="item">
         <p>
-          You were at {{ locations[item.location] }}
+          You were at {{ item.location }}
           {{ relativeTime(item.location_time) }}
         </p>
         <h2>Where are you now?</h2>
 
-        <div v-for="(description, key) in locations" v-bind:key="key">
+        <div v-for="key in locations" v-bind:key="key">
           <action-button @click="submitCheckIn(key)">
-            {{ description }}
+            {{ key }}
           </action-button>
+        </div>
+        <div>
+          <input type="text" name="field" v-model="field" placeholder="Field (specify)" />
+          <action-button
+            v-if="field.length > 1"
+            type="send"
+            @click="submitCheckIn(field)"
+          />
+        </div>
+        <div>
+          <input type="text" name="other" v-model="other" placeholder="Other" />
+          <action-button
+            v-if="other.length > 1"
+            type="send"
+            @click="submitCheckIn(other)"
+          />
         </div>
       </div>
     </div>
@@ -44,18 +60,19 @@ export default defineComponent({
   },
   data() {
     return {
+      field: "",
+      other: "",
       item: useDocument(
         doc(db, "Profiles", (this.user as unknown as DocumentData).uid)
       ),
-
-      locations: {
-        Home: "Home",
-        Yonge: "1918 Yonge St",
-        "14Quebec": "14 Quebec St",
-        "15Quebec": "15 Quebec St",
-        Field: "In the Field",
-        Lab: "Lab at 274 Kingston",
-      },
+      locations: [
+        "Home",
+        "Yonge St",
+        "Quebec St",
+        "Kingston St",
+        "Lab",
+        "Fort Frances",
+      ],
     };
   },
   components: { ActionButton },

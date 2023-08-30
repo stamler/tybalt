@@ -7,7 +7,7 @@
         <ul>
           <li v-for="checkin in items" v-bind:key="checkin.id">
             <div class="checkin">
-              {{ locations[checkin.location] }} — {{ relativeTime(checkin.time) }}
+              {{ checkin.location }} — {{ relativeTime(checkin.time) }}
             </div>
           </li>
         </ul>
