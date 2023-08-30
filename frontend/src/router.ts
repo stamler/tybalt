@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 // Components
 import MainView from "@/views/MainView.vue";
 import WelcomeSettings from "@/components/WelcomeSettings.vue";
+import CheckIn from "@/components/CheckIn.vue";
+import CheckInHistory from "@/components/CheckInHistory.vue";
 import AIChat from "@/components/AIChat.vue";
 import AIChatsList from "@/components/AIChatsList.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
@@ -54,6 +56,35 @@ const router = createRouter({
     {
       path: "/me",
       component: WelcomeSettings,
+    },
+    {
+      path: "/presence",
+      name: "Presence",
+      meta: { claims: ["time"] },
+      redirect: "/presence/checkin",
+      component: MainView,
+      children: [
+        {
+          path: "checkin",
+          name: "Check In",
+          redirect: "/presence/checkin/add",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add Check In",
+              component: CheckIn,
+            },
+            {
+              meta: { showInUi: true, uiName: "History" },
+              path: "history",
+              name: "Check In History",
+              component: CheckInHistory,
+            },
+          ],
+        },
+      ],
     },
     {
       path: "/time",

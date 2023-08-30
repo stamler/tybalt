@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "CheckIns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "time",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "Expenses",
       "queryScope": "COLLECTION",
       "fields": [
@@ -195,6 +209,24 @@
         {
           "fieldPath": "date",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Jobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "managerUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastTimeEntryDate",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -502,6 +534,24 @@
         },
         {
           "fieldPath": "displayName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isInOnPremisesAD",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "surname",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "givenName",
           "order": "ASCENDING"
         }
       ]

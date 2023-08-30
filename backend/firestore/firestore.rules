@@ -529,6 +529,9 @@ service cloud.firestore {
     match /Computers/{computer} {
       allow read: if hasClaim("admin") || hasClaim("computers");
     }
+    match /CheckIns/{checkin} {
+      allow read: if hasClaim("time")
+    }
     match /ProfileSecrets/{profileId} {
       allow read: if request.auth.uid == profileId;
     }
