@@ -14,11 +14,16 @@
           </action-button>
         </div>
         <div>
-          <input type="text" name="field" v-model="field" placeholder="Field (specify)" />
+          <input
+            type="text"
+            name="field"
+            v-model="field"
+            placeholder="Field (specify)"
+          />
           <action-button
             v-if="field.length > 1"
             type="send"
-            @click="submitCheckIn(field)"
+            @click="submitCheckIn('Field: ' + field)"
           />
         </div>
         <div>
@@ -37,12 +42,12 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { firebaseApp } from "../firebase";
-import { getFirestore, doc, DocumentData, Timestamp } from "firebase/firestore";
+import { getFirestore, doc, DocumentData } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import ActionButton from "./ActionButton.vue";
 import { useDocument } from "vuefire";
 import { useStateStore } from "../stores/state";
-import { formatDistanceToNow } from "date-fns";
+import { relativeTime } from "./helpers";
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
@@ -72,6 +77,7 @@ export default defineComponent({
         "Kingston St",
         "Lab",
         "Fort Frances",
+        "Email/Phone",
       ],
     };
   },
@@ -93,12 +99,7 @@ export default defineComponent({
           alert(`Error checking in: ${error.message}`);
         });
     },
-    relativeTime(date: Timestamp | undefined): string {
-      if (date === undefined) {
-        return "";
-      }
-      return formatDistanceToNow(date.toDate(), { addSuffix: true });
-    },
+    relativeTime,
   },
 });
 </script>

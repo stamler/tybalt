@@ -5,6 +5,7 @@ import MainView from "@/views/MainView.vue";
 import WelcomeSettings from "@/components/WelcomeSettings.vue";
 import CheckIn from "@/components/CheckIn.vue";
 import CheckInHistory from "@/components/CheckInHistory.vue";
+import CheckInReport from "@/components/CheckInReport.vue";
 import AIChat from "@/components/AIChat.vue";
 import AIChatsList from "@/components/AIChatsList.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
@@ -81,6 +82,20 @@ const router = createRouter({
               path: "history",
               name: "Check In History",
               component: CheckInHistory,
+            },
+          ],
+        },
+        {
+          path: "report",
+          name: "Check Ins",
+          redirect: "/presence/report/today",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "Today" },
+              path: "today",
+              name: "Check In Report Today",
+              component: CheckInReport,
             },
           ],
         },

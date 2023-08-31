@@ -1,5 +1,11 @@
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
-import { format, addDays, subDays, differenceInDays } from "date-fns";
+import {
+  format,
+  addDays,
+  subDays,
+  differenceInDays,
+  formatDistanceToNow,
+} from "date-fns";
 import firebase, { firebaseApp } from "../firebase";
 import { COMPANY_SHORTNAME, APP_NATIVE_TZ, PAYROLL_EPOCH } from "../config";
 import {
@@ -703,4 +709,11 @@ export async function generateAttachmentZip(
     alert(error);
   }
   store.endTask(`generateAttachments${item.id}`);
+}
+
+export function relativeTime(date: Timestamp | undefined): string {
+  if (date === undefined) {
+    return "";
+  }
+  return formatDistanceToNow(date.toDate(), { addSuffix: true });
 }

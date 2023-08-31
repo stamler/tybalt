@@ -24,6 +24,9 @@ export const checkIn = functions.https.onCall(async (data: unknown, context: fun
       "a string in the location property.");
   }
 
+  // Get the user's profile from the Profiles collection
+  const profile = await db.collection("Profiles").doc(auth.uid).get();
+
   // create a batch to write to both the CheckIns and Profiles collections
   const batch = db.batch();
 
@@ -31,6 +34,7 @@ export const checkIn = functions.https.onCall(async (data: unknown, context: fun
     uid: auth.uid, 
     time: admin.firestore.FieldValue.serverTimestamp(),
     location: data.location,
+    displayName: profile.get("displayName"),
   });
 
   batch.update(db.collection("Profiles").doc(auth.uid), {
