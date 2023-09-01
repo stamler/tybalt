@@ -139,6 +139,21 @@ export function isLocationStringObject(data: any): data is LocationStringObject 
   return typeof data.location === "string";
 }
 
+interface VacationObject {
+  // integer result of start.toDate().getTime()
+  start: number;
+  end: number;
+  description: string;
+  availability: string;
+}
+
+export function isVacationObject(data: any): data is VacationObject {
+  return typeof data.start === "number" && 
+    typeof data.end === "number" &&
+    typeof data.description === "string" &&
+    typeof data.availability === "string";
+}
+
 interface PayPeriodEndingObject {
   // integer result of payPeriodEnding.toDate().getTime()
   payPeriodEnding: number;

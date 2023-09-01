@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import MainView from "@/views/MainView.vue";
 import WelcomeSettings from "@/components/WelcomeSettings.vue";
 import CheckIn from "@/components/CheckIn.vue";
+import VacationsEdit from "@/components/VacationsEdit.vue";
+import VacationsList from "@/components/VacationsList.vue";
 import CheckInHistory from "@/components/CheckInHistory.vue";
 import CheckInReport from "@/components/CheckInReport.vue";
 import AIChat from "@/components/AIChat.vue";
@@ -82,6 +84,26 @@ const router = createRouter({
               path: "history",
               name: "Check In History",
               component: CheckInHistory,
+            },
+          ],
+        },
+        {
+          path: "vacation",
+          name: "Vacation",
+          redirect: "/presence/vacation/list",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Vacations List",
+              component: VacationsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Add" },
+              path: "add",
+              name: "Add Vacation",
+              component: VacationsEdit,
             },
           ],
         },

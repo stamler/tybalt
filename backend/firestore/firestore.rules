@@ -532,6 +532,10 @@ service cloud.firestore {
     match /CheckIns/{checkin} {
       allow read: if hasClaim("time")
     }
+    match /Vacations/{vacationId} {
+      allow read: if uidMatches();
+      allow delete: if uidMatches();
+    }
     match /ProfileSecrets/{profileId} {
       allow read: if request.auth.uid == profileId;
     }
