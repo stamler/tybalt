@@ -67,6 +67,7 @@ interface NewADUserData extends ExistingADUserData {
   license: string;
   managerUid: string;
   managerName: string;
+  defaultChargeOutRate: number;
   payrollId: string;
 }
 
@@ -93,6 +94,7 @@ function isNewADUserData(data: any): data is NewADUserData {
   const centralOfficeInt = parseInt(data.centralOffice, 10);
   const stationInt = parseInt(data.station, 10);
   if (
+      typeof data.defaultChargeOutRate === "number" && data.defaultChargeOutRate > 50 && data.defaultChargeOutRate < 500 &&
       typeof data.surname === "string" && data.surname.length > 2 &&
       typeof data.givenName === "string" && data.givenName.length > 2 &&
       typeof data.department === "string" &&
@@ -124,8 +126,10 @@ function mutationDataFromFields(fields: NewADUserData | ExistingADUserData) {
       remuneration: fields.remuneration,
       managerUid: fields.managerUid,
       managerName: fields.managerName,
-      payrollId: fields.payrollId,
+      // make payrollId a number if it's a number, otherwise leave it as a string
+      payrollId: isNaN(parseInt(fields.payrollId, 10)) ? fields.payrollId : parseInt(fields.payrollId,10),
       telephoneNumber: `+1 (${fields.areaCode}) ${fields.centralOffice}-${fields.station}`,
+      defaultChargeOutRate: fields.defaultChargeOutRate,
       license: fields.license,
     };
   } else if (isExistingADUserData(fields)) {

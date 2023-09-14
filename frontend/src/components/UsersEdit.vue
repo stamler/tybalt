@@ -64,6 +64,19 @@
       </select>
     </span>
     <span class="field">
+      <label for="defaultChargeOutRate">Default Charge-out Rate:</label>
+      <input
+        class="grow"
+        type="number"
+        name="defaultChargeOutRate"
+        v-model.trim="item.defaultChargeOutRate"
+        step="0.50"
+        min="49"
+        max="300"
+        placeholder="50.00"
+      />
+    </span>
+    <span class="field">
       <label for="payrollId">Payroll ID</label>
       <input
         class="grow"

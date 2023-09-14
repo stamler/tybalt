@@ -109,9 +109,6 @@ function isCustomClaims(data: any): data is CustomClaims {
 
 // Create the corresponding Profile document when an auth user is created
 // Use merge in case the document already exists.
-
-// TODO: BUG: payrollId is being set as received from the mutation, but it must
-// be an integer unless it conforms to the format given in the firestore rules
 export async function createProfile(user: admin.auth.UserRecord) {
   const db = admin.firestore();
   const customClaims = { time: true };
@@ -131,6 +128,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
     payrollId: null,
     managerUid: null,
     managerName: null,
+    defaultChargeOutRate: null,
   };
   const batch = db.batch();
   if (mutationQuery.size === 1) {
@@ -143,6 +141,7 @@ export async function createProfile(user: admin.auth.UserRecord) {
       payrollId: data.payrollId || null,
       managerUid: data.managerUid || null,
       managerName: data.managerName || null,
+      defaultChargeOutRate: data.defaultChargeOutRate,
     }
     batch.update(mutationQuery.docs[0].ref, {
       status: "complete",

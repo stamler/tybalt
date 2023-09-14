@@ -52,7 +52,8 @@
             {{ item.data.telephoneNumber }} // {{ item.data.remuneration }} //
             defaultDivision:{{ item.data.defaultDivision }} // manager:
             {{ item.data.managerName }} // payrollId:
-            {{ item.data.payrollId }}
+            {{ item.data.payrollId }} // defaultChargeOutRate:
+            {{ item.data.defaultChargeOutRate }}
           </div>
         </div>
         <div class="rowactionsbox">
