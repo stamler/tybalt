@@ -17,7 +17,7 @@
         </div>
         <div class="firstline">{{ item.description }}</div>
         <div class="secondline">
-          {{ shortDateWithWeekday(item.start.toDate()) }} 
+          {{ shortDateWithWeekday(item.start.toDate()) }}
           to
           {{ shortDateWithWeekday(item.end.toDate()) }}
         </div>
