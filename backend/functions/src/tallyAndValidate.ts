@@ -418,6 +418,18 @@ export async function tallyAndValidate(
     )
   }
 
+  // if the jobsTally object is not empty, throw if the profile doesn't have
+  // a number in the defaultChargeOutRate field
+  if (Object.keys(jobsTally).length > 0) {
+    const defaultChargeOutRate = profile.get("defaultChargeOutRate");
+    if (typeof defaultChargeOutRate !== "number" || defaultChargeOutRate <= 0) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "You must have a default charge-out rate on your profile to claim time to a job."
+      )
+    }
+  }
+
   // get the entire job document for each key in the jobsTally
   // and store it in the tally so the info is available for reports
   // jobsTally entries already have name, hours, jobHours properties

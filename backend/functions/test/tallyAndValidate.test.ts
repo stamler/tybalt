@@ -28,7 +28,7 @@ describe("tallyAndValidate", async () => {
 
   // a mock profile object
   const openingVals = { openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 113, openingOP: 80 };
-  const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
+  const profile = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28, defaultChargeOutRate: 100}, "Profiles/alice");
 
   const workDescription = "Generic Description";
 
@@ -735,7 +735,7 @@ describe("tallyAndValidate", async () => {
         .orderBy("date", "asc")
         .get();
       assert.equal(timeEntries.size,4);
-      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, untrackedTimeOff:true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
+      const profileB = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28, defaultChargeOutRate: 100, untrackedTimeOff:true }, "Profiles/alice");
       const tally = await tallyAndValidate(auth, profileB, timeEntries, weekEnding);
       assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,16, "jobHours tally doesn't match");
@@ -827,6 +827,35 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
       assert.equal(tally.workHoursTally.jobHours,24, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
+    });
+    it("rejects if any time entry has a job specified but the user's Profile document doesn't have a defaultChargeOutRate property set", async () => {
+      const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, mealsHours: 0.5, ...jobPartial2 }
+      await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullEEDay2 });
+      const timeEntries = await db
+        .collection("TimeEntries")
+        .where("uid", "==", alice.uid)
+        .where("weekEnding", "==", weekEnding)
+        .orderBy("date", "asc")
+        .get();
+      assert.equal(timeEntries.size,5);
+
+      // rejects due to non-number defaultChargeOutRate
+      const profile2 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28, defaultChargeOutRate: "string"}, "Profiles/alice");
+      await assert.isRejected(
+        tallyAndValidate(auth, profile2, timeEntries, weekEnding),
+        "You must have a default charge-out rate on your profile to claim time to a job."
+      );
+
+      // rejects due to missing defaultChargeOutRate
+      const profile3 = tester.firestore.makeDocumentSnapshot({ ...alice, salary: true, ...openingVals, managerUid: "bob", managerName: "Bob Example", payrollId: 28}, "Profiles/alice");
+      await assert.isRejected(
+        tallyAndValidate(auth, profile3, timeEntries, weekEnding),
+        "You must have a default charge-out rate on your profile to claim time to a job."
+      );
+
+      // succeeds with valid defaultChargeOutRate (Using the default profile)
+      const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
+      assert.equal(tally.workHoursTally.hours,16,"hours tally doesn't match");
     });
   });
 });
