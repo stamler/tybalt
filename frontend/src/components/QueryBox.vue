@@ -18,7 +18,6 @@ import firebase from "../firebase";
 import ObjectTable from "./ObjectTable.vue";
 import { parse } from "json2csv";
 import { TableData, QueryPayloadObject } from "./types";
-import { debounce } from "lodash";
 
 export default defineComponent({
   setup() {
@@ -46,9 +45,9 @@ export default defineComponent({
       downloadBlob(blob, name);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    runQuery: debounce(function (this: any) {
+    async runQuery(key: string) {
       this.startTask({
-        id: "runQuery",
+        id: `runQuery_${key}`,
         message: "getting data...",
       });
       const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
@@ -57,24 +56,24 @@ export default defineComponent({
         queryData.queryValues = this.queryValues;
       return queryMySQL(queryData)
         .then((response) => {
-          this.endTask("runQuery");
+          this.endTask(`runQuery_${key}`);
           this.queryResult = response.data;
         })
         .catch((error) => {
-          this.endTask("runQuery");
+          this.endTask(`runQuery_${key}`);
           alert(`Error running query: ${error.message}`);
         });
-    }, 200),
+    },
   },
   created() {
-    this.runQuery();
+    this.runQuery(this.queryName ?? "");
   },
   watch: {
     queryName: function () {
-      this.runQuery();
+      this.runQuery(this.queryName ?? "");
     },
     queryValues: function () {
-      this.runQuery();
+      this.runQuery(this.queryName ?? "");
     },
   },
 });
