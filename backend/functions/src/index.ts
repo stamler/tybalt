@@ -11,13 +11,13 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
-import * as rawLoginsModule from "./rawLogins";
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
+export { rawLogins, rawLoginsCleanup } from "./rawLogins";
 export { cleanUpOrphanedAttachment } from "./expenses";
 export { bundleTimesheet } from "./bundleTimesheets";
 export { assignComputerToUser } from "./computers";
@@ -77,10 +77,6 @@ exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAtt
 
 // call from client to generate a zip file of expense attachments for a given document ID or payPeriodEnding
 exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
-
-// Get a raw login and update Computers, Logins, and Users. If it's somehow
-// incorrect, write it to RawLogins collection for later processing
-exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
 
 // unbundle a timesheet
 exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
@@ -148,11 +144,6 @@ exports.rawLoginsCreatedDate = functions.firestore
 exports.usersCreatedDate = functions.firestore
   .document("Users/{loginId}")
   .onCreate(writeCreated);
-
-// Cleanup old RawLogins onCreate
-exports.rawLoginsCleanup = functions.firestore
-  .document("RawLogins/{loginId}")
-  .onCreate(rawLoginsModule.cleanup);
 
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
 exports.updateAuth = functions.firestore

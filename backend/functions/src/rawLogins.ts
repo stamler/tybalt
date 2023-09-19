@@ -99,7 +99,9 @@ function isValidLogin(data: any): data is ValidLogin {
   return false;
 }
 
-export async function handler(req: functions.https.Request, res: functions.Response<any>): Promise<any> {
+// Get a raw login and update Computers, Logins, and Users. If it's somehow
+// incorrect, write it to RawLogins collection for later processing
+export const rawLogins = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
   const db = admin.firestore();
   // Validate the secret sent in the header from the client.
   const appSecret = functions.config().tybalt.radiator.secret;
@@ -146,7 +148,7 @@ export async function handler(req: functions.https.Request, res: functions.Respo
     const typedError = error as Error;
     return res.status(500).send(typedError.message);
   }
-};
+});
 
 // Creates or updates Computers and Users document, creates Logins document
 async function storeValidLogin(d: ValidLogin) {
@@ -230,14 +232,17 @@ async function getUserRef(d: ValidLogin) {
   return db.collection("Users").doc();
 }
 
+// Cleanup old RawLogins onCreate
 // This function deletes all rawLogins except for the latest
 // for each computerName. The deletion will be done on a batched
 // write after querying what we want
 // https://github.com/googleapis/nodejs-firestore/issues/64
-export async function cleanup(
+export const rawLoginsCleanup = functions.firestore
+  .document("RawLogins/{loginId}")
+  .onCreate(async (
   snapshot: admin.firestore.DocumentSnapshot, 
   context: functions.EventContext
-) {
+) =>{
   const data = snapshot.data();
   const db = admin.firestore();
 
@@ -287,4 +292,4 @@ export async function cleanup(
   } else {
     return `No items to cleanup for computerName ${data.computerName}`;
   }
-};
+});
