@@ -47,10 +47,10 @@ interface PendingTimeSheetSummary {
   OV?: number;
 }
 
-export async function unbundleTimesheet(
+export const unbundleTimesheet = functions.https.onCall(async (
   data: unknown, 
   context: functions.https.CallableContext
-) {
+) => {
   const db = admin.firestore();
 
   // throw if the caller isn't authenticated & authorized
@@ -118,7 +118,7 @@ export async function unbundleTimesheet(
   // Delete the TimeSheet
   batch.delete(timeSheet.ref);
   return batch.commit();
-};
+});
 
 /*
   If a timesheet is approved, make sure that it is included in the pending
@@ -398,7 +398,7 @@ export const updateViewers = functions.firestore
   sets the exportInProgress flag and deletes any corresponding rows in 
   MySQL. Finally it unsets the exportInProgress flag.
 */
-export async function unlockTimesheet(data: unknown, context: functions.https.CallableContext) {
+export const unlockTimesheet = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   // caller must have permission to run this
   getAuthObject(context, ["tsunlock"])
 
@@ -483,14 +483,13 @@ export async function unlockTimesheet(data: unknown, context: functions.https.Ca
     return successBatch.commit();
   }
   return;
-}
+});
 
 /*
   Given a document id, lock the corresponding approved TimeSheet document
   and mark it as exported:false.
 */
-export async function lockTimesheet(data: unknown, context: functions.https.CallableContext) {
-
+export const lockTimesheet = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   getAuthObject(context, ["tslock"])
 
   // Validate the data or throw
@@ -540,7 +539,7 @@ export async function lockTimesheet(data: unknown, context: functions.https.Call
       }
     });
   });
-}
+});
 
 // Given a TimeTracking id, create or update a file on Google storage
 // with the locked timeSheets and amendments. Must be called by another
@@ -659,18 +658,21 @@ export async function exportJson(data: unknown) {
 };
 
 // call exportJson as soon as a TimeAmendment is committed
-export async function exportOnAmendmentCommit(
+export const exportOnAmendmentCommit = functions.firestore
+  .document("TimeAmendments/{amendmentId}")
+  .onUpdate(async(
   change: functions.ChangeJson,
   context: functions.EventContext,
-) {
+) => {
     const committedWeekEnding = change.after.data().committedWeekEnding;
     if (committedWeekEnding !== undefined) {
       const timeTrackingDocRef = await getTrackingDoc(committedWeekEnding.toDate(),"TimeTracking","weekEnding");
       return exportJson({ id: timeTrackingDocRef.id });
     }
-  };
+  });
 
-export async function commitTimeAmendment(data: unknown, context: functions.https.CallableContext) {
+// commit a TimeAmendment
+export const commitTimeAmendment = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
 
   // throw if the caller isn't authenticated & authorized
   getAuthObject(context, ["tame"]);
@@ -716,7 +718,7 @@ export async function commitTimeAmendment(data: unknown, context: functions.http
       workWeekHours: profile.workWeekHours === undefined ? 40 : profile.workWeekHours,
       exported: false,
     });
-};
+});
 
 // create object summary of TimeSheet
 function buildPendingObj(data: admin.firestore.DocumentData ) {

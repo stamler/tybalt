@@ -12,7 +12,6 @@ admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
 import { writeWeekEnding } from "./utilities";
-import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
@@ -21,7 +20,7 @@ export { rawLogins, rawLoginsCleanup } from "./rawLogins";
 export { bundleTimesheet } from "./bundleTimesheets";
 export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
-export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
+export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking, unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense, cleanUpOrphanedAttachment } from "./expenses";
 export { writeFileLinks, expensesPayPeriodEnding } from "./utilities";
@@ -76,15 +75,6 @@ exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAtt
 // call from client to generate a zip file of expense attachments for a given document ID or payPeriodEnding
 exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
 
-// unbundle a timesheet
-exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
-
-// lock approved timesheets individually by TimeSheet doc id
-exports.lockTimesheet = functions.https.onCall(lockTimesheet);
-
-// unlock approved timesheets individually by TimeSheet doc id
-exports.unlockTimesheet = functions.https.onCall(unlockTimesheet);
-
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
     context: functions.EventContext
@@ -111,14 +101,6 @@ exports.timeAmendmentsCommittedWeekEnding = functions.firestore
 exports.expensesCommittedWeekEnding = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
-
-// commit a TimeAmendment (TODO: include export JSON call here rather than trigger)
-exports.commitTimeAmendment = functions.https.onCall(commitTimeAmendment);
-
-// exportJson when a timeAmendment is committed
-exports.exportOnAmendmentCommit = functions.firestore
-  .document("TimeAmendments/{amendmentId}")
-  .onUpdate(exportOnAmendmentCommit);
 
   // Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore
