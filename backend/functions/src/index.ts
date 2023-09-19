@@ -26,7 +26,7 @@ export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTim
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense } from "./expenses";
 export { writeFileLinks } from "./utilities";
-export { algoliaUpdateSecuredAPIKey, updateOpeningValues /*, getMileageForUids*/ } from "./profiles";
+export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
@@ -86,10 +86,6 @@ exports.lockTimesheet = functions.https.onCall(lockTimesheet);
 
 // unlock approved timesheets individually by TimeSheet doc id
 exports.unlockTimesheet = functions.https.onCall(unlockTimesheet);
-
-// return expense documents associated with a pay period
-// replaced by payablesPayrollCSV.sql
-// exports.getPayPeriodExpenses = functions.https.onCall(getPayPeriodExpenses);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,
