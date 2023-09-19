@@ -394,12 +394,15 @@ export async function writeWeekEnding(
     }
   };
 
+// Write the payPeriodEnding on Expenses
 // add timestamp of pay period ending (23:59:59.999 EST on saturday of week2) 
 // to payPeriodEnding of Document based on date and commitTime
-export async function writeExpensePayPeriodEnding(
+export const expensesPayPeriodEnding = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onWrite(async (
   change: functions.ChangeJson,
   context: functions.EventContext,
-) {
+) => {
   if (!change.after.exists) {
     // The Document was deleted, do nothing
     console.log("writePayPeriodEnding() called but Document was deleted");
@@ -460,7 +463,7 @@ export async function writeExpensePayPeriodEnding(
   }
   // no changes to be made
   return null;
-  };
+});
 
 // Calculate the correct saturday of the weekEnding in APP_NATIVE_TZ 
 // assuming input is in APP_NATIVE_TZ timezone as well.

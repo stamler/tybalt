@@ -11,7 +11,7 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
-import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
+import { writeWeekEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
@@ -24,7 +24,7 @@ export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
 export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense, cleanUpOrphanedAttachment } from "./expenses";
-export { writeFileLinks } from "./utilities";
+export { writeFileLinks, expensesPayPeriodEnding } from "./utilities";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
@@ -111,11 +111,6 @@ exports.timeAmendmentsCommittedWeekEnding = functions.firestore
 exports.expensesCommittedWeekEnding = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
-
-// Write the payPeriodEnding on Expenses
-exports.expensesPayPeriodEnding = functions.firestore
-  .document("Expenses/{expenseId}")
-  .onWrite(writeExpensePayPeriodEnding);
 
 // commit a TimeAmendment (TODO: include export JSON call here rather than trigger)
 exports.commitTimeAmendment = functions.https.onCall(commitTimeAmendment);
