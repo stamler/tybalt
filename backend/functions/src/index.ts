@@ -13,21 +13,18 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
-import { updateProfileFromMSGraph } from "./profiles";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
-export { updateAuthAndManager, createProfile, deleteProfile } from "./profiles";
+export { updateAuthAndManager, createProfile, deleteProfile, updateProfileFromMSGraph, algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { rawLogins, rawLoginsCleanup } from "./rawLogins";
-export { cleanUpOrphanedAttachment } from "./expenses";
 export { bundleTimesheet } from "./bundleTimesheets";
 export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
-export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense } from "./expenses";
+export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense, cleanUpOrphanedAttachment } from "./expenses";
 export { writeFileLinks } from "./utilities";
-export { algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
@@ -141,6 +138,3 @@ exports.rawLoginsCreatedDate = functions.firestore
 exports.usersCreatedDate = functions.firestore
   .document("Users/{loginId}")
   .onCreate(writeCreated);
-
-// update a profile from the MS Graph
-exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);

@@ -263,7 +263,7 @@ export const updateAuthAndManager = functions.firestore.document("Profiles/{uid}
   }
 });
 
-export async function updateProfileFromMSGraph(data: unknown, context: functions.https.CallableContext) {
+export const updateProfileFromMSGraph = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   const db = admin.firestore();
   if (!context.auth) {
     // Throw an HttpsError so that the client gets the error details
@@ -316,7 +316,7 @@ export async function updateProfileFromMSGraph(data: unknown, context: functions
     },
     { merge: true }
   );
-}
+});
 
 export const algoliaUpdateSecuredAPIKey = functions.firestore
   .document("Profiles/{profileId}")
