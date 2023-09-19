@@ -15,10 +15,10 @@ import * as rawLoginsModule from "./rawLogins";
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment } from "./expenses";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
+export { cleanUpOrphanedAttachment } from "./expenses";
 export { bundleTimesheet } from "./bundleTimesheets";
 export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
@@ -69,12 +69,6 @@ exports.algoliaUpdateDivisionsIndex = functions.firestore
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_divisions", filterFunction: divisionsFilter });
   });
-
-// clean up expense attachments that are orphaned by deletion or update of 
-// corresponding expense document
-exports.cleanUpOrphanedAttachment = functions.firestore
-  .document("Expenses/{expenseId}")
-  .onWrite(cleanUpOrphanedAttachment);
 
 // immediately prior to attempting to upload an expense attachment,
 // clean up the existing attachments in case there are orphans from previous

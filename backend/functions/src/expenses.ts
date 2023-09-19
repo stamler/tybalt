@@ -17,14 +17,15 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 //const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 //const WITHIN_MSEC = 1;
 
-// onWrite()
-// check if the filepath changed
-// if it did, either a new one was uploaded or 
-// there isn't one so delete the old file
-export async function cleanUpOrphanedAttachment(
+// clean up expense attachments that are orphaned by deletion or update of
+// corresponding expense document. Check if the filepath changed. If it did,
+// either a new one was uploaded or there isn't one so delete the old file
+export const cleanUpOrphanedAttachment = functions.firestore
+  .document("Expenses/{expenseId}")
+  .onWrite(async (
   change: functions.ChangeJson,
   context: functions.EventContext,
-) {
+) =>{
     const beforeData = change.before.data();
     const afterData = change.after.data();
     let beforeAttachment: string;
@@ -48,8 +49,7 @@ export async function cleanUpOrphanedAttachment(
     }
     // document was just created, do nothing
     return;
-}
-
+});
 
 /*
   If an expense is committed, add it to the expenses property of the
