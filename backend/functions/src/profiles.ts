@@ -181,9 +181,9 @@ export async function deleteProfile(user: admin.auth.UserRecord) {
 
 // update the Firebase Auth User that corresponds to the Profile
 // can be displayed in the UI
-// TODO: rename this function because it also updates managerName in Profile
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
-export async function updateAuth(change: functions.ChangeJson, context: functions.EventContext) {
+// update the Firebase Auth Custom Claims from the corresponding Profile doc
+export const updateAuthAndManager = functions.firestore.document("Profiles/{uid}").onWrite(async (change: functions.ChangeJson, context: functions.EventContext) => {
   const db = admin.firestore();
   if (change.after.exists) {
     const before = change.before.data();
@@ -261,7 +261,7 @@ export async function updateAuth(change: functions.ChangeJson, context: function
     await db.collection("ProfileSecrets").doc(change.before.id).delete();
     return null;
   }
-};
+});
 
 export async function updateProfileFromMSGraph(data: unknown, context: functions.https.CallableContext) {
   const db = admin.firestore();
