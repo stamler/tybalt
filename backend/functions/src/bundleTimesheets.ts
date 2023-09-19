@@ -12,10 +12,10 @@ const WITHIN_MSEC = 1;
 // The bundleTimesheet groups TimeEntries together
 // into a timesheet for a given user and week
 // time is ignored in weekEnding property of data arg
-export async function bundleTimesheet(
+export const bundleTimesheet = functions.https.onCall(async (
   data: unknown, 
   context: functions.https.CallableContext
-) {
+) => {
   const db = admin.firestore();
 
   // throw if the caller isn't authenticated & authorized
@@ -231,4 +231,4 @@ export async function bundleTimesheet(
       `${managerProfile.get("displayName")} doesn't have required permissions`
     );
   }
-};
+});

@@ -1,8 +1,6 @@
 /*
  * @Author: Dean Stamler 
  * @Date: 2018-01-01 12:00:00 
- * @Last Modified by: Dean Stamler
- * @Last Modified time: 2023-02-17 12:55:05
  */
 
 // Entry point for tybalt app
@@ -16,12 +14,12 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import * as rawLoginsModule from "./rawLogins";
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
-import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
 import { cleanUpOrphanedAttachment } from "./expenses";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
+export { bundleTimesheet } from "./bundleTimesheets";
 export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
@@ -89,9 +87,6 @@ exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", tim
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
-
-// bundle a timesheet
-exports.bundleTimesheet = functions.https.onCall(bundleTimesheet);
 
 // unbundle a timesheet
 exports.unbundleTimesheet = functions.https.onCall(unbundleTimesheet);
