@@ -19,14 +19,14 @@ import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
 import { updateAuth, createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
-import { cleanUpOrphanedAttachment/*, getPayPeriodExpenses*/, submitExpense } from "./expenses";
+import { cleanUpOrphanedAttachment } from "./expenses";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
-export { updateExpenseTracking, expenseRates, uncommitExpense/*, updateMileageClaimed */} from "./expenses";
+export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense } from "./expenses";
 export { writeFileLinks } from "./utilities";
 export { algoliaUpdateSecuredAPIKey, updateOpeningValues /*, getMileageForUids*/ } from "./profiles";
 export { scheduledFirestoreExport } from "./export";
@@ -179,5 +179,3 @@ exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);
 
 // update a profile from the MS Graph
 exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);
-
-exports.submitExpense = functions.https.onCall(submitExpense);

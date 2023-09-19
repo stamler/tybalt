@@ -227,93 +227,7 @@ export async function exportJson(data: unknown) {
   });
 };
 
-// replaced with payablesPayrollCSV.sql
-// export async function getPayPeriodExpenses(
-//     data: unknown, 
-//     context: functions.https.CallableContext
-// ): Promise<admin.firestore.DocumentData[]> {
-
-//   // throw if the caller isn't authenticated & authorized
-//   getAuthObject(context, ["report"]);
-  
-//   // Validate the data or throw
-//   // use a User Defined Type Guard
-//   if (!isWeekReference(data)) {
-//     throw new functions.https.HttpsError(
-//       "invalid-argument",
-//       "The provided data isn't a valid week reference"
-//     );
-//   }
-
-//   // Get argument
-//   const week2Ending = new Date(data.weekEnding);
-
-//   // Verify that the provided weekEnding is a payroll week 2
-//   // by ensuring an even week difference from a week epoch
-//   if (!isPayrollWeek2(week2Ending)) {
-//     throw new functions.https.HttpsError(
-//       "invalid-argument",
-//       "The week ending specified is not week 2 of a payroll period"
-//     )
-//   }
-
-//   /* 
-//   throw if the current datetime is before the end of the week following the 
-//   pay period because more expenses may still be committed. This allows
-//   adding and committing of expenses up to a full week following the end of
-//   the pay period to be paid out during that period
-//   */
-//   if (new Date() < thisTimeNextWeekInTimeZone(week2Ending, APP_NATIVE_TZ)) {
-//     const zoned_week = utcToZonedTime(
-//       new Date(data.weekEnding),
-//       APP_NATIVE_TZ
-//     );  
-//     throw new functions.https.HttpsError(
-//       "invalid-argument",
-//       `Wait until ${format(addDays(zoned_week,8), "MMM dd")} to process expenses for pay period ending ${format(zoned_week, "MMM dd")}`
-//     )
-//   }
-
-//   /*
-//   pay periods are two weeks long. Expenses are reported in the week in 
-//   which they are committed. We will use all expenses commited in week2
-//   of the pay period, and all expenses committed in the week after whose
-//   date is before the end of the pay period. Because they will already have
-//   been paid out, we also must remove out any expense commited in week1 of
-//   the pay period whose date is before the beginning of the pay period.
-//   */
-//   const db = admin.firestore();
-
-//   let expensesSnapshot;
-//   if (EXACT_TIME_SEARCH) {
-//     expensesSnapshot = await db.collection("Expenses")
-//       .where("committed", "==", true)
-//       .where("payPeriodEnding", "==", week2Ending)
-//       .get();
-//   } else {
-//     expensesSnapshot = await db.collection("Expenses")
-//       .where("committed", "==", true)
-//       .where("payPeriodEnding", ">", subMilliseconds(week2Ending, WITHIN_MSEC))
-//       .where("payPeriodEnding", "<", addMilliseconds(week2Ending, WITHIN_MSEC))
-//       .get();
-//   }
-
-//   const expenses = expensesSnapshot.docs.map((d: admin.firestore.QueryDocumentSnapshot): admin.firestore.DocumentData => { return d.data()});
-
-//   // convert commitTime, committedWeekEnding, and date to strings
-//   return expenses.map((e: admin.firestore.DocumentData): admin.firestore.DocumentData => {
-//     e.date = e.date.toDate().toString();
-//     e.commitTime = e.commitTime.toDate().toString();
-//     e.committedWeekEnding = e.committedWeekEnding.toDate().toString();
-//     e.payPeriodEnding = e.payPeriodEnding.toDate().toString();
-//     return e
-//   });
-// }
-
-export async function submitExpense(
-  data: unknown, 
-  context: functions.https.CallableContext
-) {
+export const submitExpense = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   // Validate the data or throw
   // use a User Defined Type Guard
   if (!isDocIdObject(data)) {
@@ -365,12 +279,13 @@ export async function submitExpense(
   return db.collection("Expenses").doc(data.id).set(
     {
       submitted: true,
+      submittedDate: admin.firestore.FieldValue.serverTimestamp(),
       approved: managerUid === context.auth?.uid,
       committed: false,
     },
     { merge: true }
   );
-}
+});
 
 // Get the values from all of the documents in the ExpenseRates collection
 // and return them as an array of objects. Authentication is not required
@@ -488,73 +403,3 @@ export const uncommitExpense = functions.https.onCall(async (data: unknown, cont
   }
   return;
 });
-
-// get mileageClaimed, mileageClaimedSince tallies from SQL using the
-// mileageClaimed.sql query on a schedule that updates all profiles at once
-// based on the reset date in SQL.
-
-// 2022-10-12: updateMileageClaimed() is no longer used. It has been replaced by the
-// writebackProfiles() call in syncToSQL()
-
-// export const updateMileageClaimed = functions.pubsub
-//   .schedule("17 12,15,18 * * *") // 12:17, 15:17, 18:17 daily
-//   .timeZone(APP_NATIVE_TZ)
-//   .onRun(async (context) => {
-//     // Load and run the query
-//     const sql = loadSQLFileToString("mileageClaimed");
-//     const connection = await createSSHMySQLConnection2();
-//     const [rows, _fields] = await connection.query(sql);
-
-//     const db = admin.firestore();
-
-//     const profilesQuery = await db.collection("Profiles").get();
-//     const profiles = profilesQuery.docs;
-//     functions.logger.debug(`${profilesQuery.size} in profiles query`);
-//     const updateProfilesBatch = db.batch()
-
-//     // Update the mileageClaimed and mileageClaimedSince properties on each
-//     // profile where a value exists
-//     let mileageClaimedSince: Date;
-
-//     if (Array.isArray(rows)) {
-//       functions.logger.debug(`${rows.length} rows returned from SQL query`);
-//       // The mileageClaimedSince property is set to the reset date in SQL. Since
-//       // this is the same for every row, we can get it here then use it
-//       // throughout the rest of the function.
-//       mileageClaimedSince = new Date((rows[0] as RowDataPacket).jsDate);
-
-//       rows.forEach((row: any) => {
-//         // remove this profile from the profiles array
-//         const index = profiles.findIndex(x => x.id === row.uid);
-//         if (index > -1) {
-//           profiles.splice(index, 1);
-//         } else {
-//           throw new Error(`Profile ${row.uid} not found in Firestore`);
-//         }
-
-//         // update the mileageClaimed and mileageClaimedSince properties
-//         const profileRef = db.collection("Profiles").doc(row.uid);
-//         // functions.logger.debug(`Updating mileageClaimed for ${row.uid} to ${row.mileageClaimed}`);
-//         // functions.logger.debug(`${profiles.length} elements in profiles array`);
-//         updateProfilesBatch.update(profileRef, {
-//           mileageClaimed: row.mileageClaimed,
-//           mileageClaimedSince,
-//         });
-//       });
-//     }
-
-//     // set the mileageClaimed to 0 and the mileageClaimedSince date for
-//     // all profiles where there was no result in the previous step
-//     functions.logger.debug(`zeroing out mileage on remaining ${profiles.length} profiles`);
-//     profiles.forEach((profile) => {
-//       // functions.logger.debug(`zeroing out mileage for ${profile.id} on ${mileageClaimedSince.toISOString()}`);
-//       updateProfilesBatch.update(profile.ref, {
-//         mileageClaimed: 0,
-//         mileageClaimedSince,
-//       });
-//     });
-    
-//     // Commit the batch
-//     // return; // abandon the batch in testing
-//     return updateProfilesBatch.commit();
-//   });
