@@ -14,7 +14,6 @@ admin.initializeApp();
 admin.firestore().settings({ timestampsInSnapshots: true });
 
 import * as rawLoginsModule from "./rawLogins";
-import { assignComputerToUser } from "./computers";
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 import { bundleTimesheet } from "./bundleTimesheets";
@@ -23,6 +22,7 @@ import { cleanUpOrphanedAttachment } from "./expenses";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
+export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
@@ -89,9 +89,6 @@ exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", tim
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
 exports.rawLogins = functions.https.onRequest(rawLoginsModule.handler);
-
-// assign a user to a computer
-exports.assignComputerToUser = functions.https.onCall(assignComputerToUser);
 
 // bundle a timesheet
 exports.bundleTimesheet = functions.https.onCall(bundleTimesheet);

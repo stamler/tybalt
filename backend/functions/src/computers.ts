@@ -1,9 +1,3 @@
-/* 
-
-This module exports callable handlers (functions.https.onCall(<handler_func>))
-https://firebase.google.com/docs/functions/callable
-
-*/
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getAuthObject } from "./utilities";
@@ -25,14 +19,10 @@ function isComputerAssignment(data: any): data is ComputerAssignment {
   return false;
 }
 
-// The claimsHandler writes user information under the assigned property of a
-// computer based on a userSourceAnchor and Computer ID
-// TODO: possibly do this in the client with a transaction by opening up
-// appropriate permissions in firestore security rules
-export async function assignComputerToUser(
-    data: unknown, 
-    context: functions.https.CallableContext
-  ) {
+// write user information under the assigned property of a computer based on a
+// userSourceAnchor and Computer ID
+export const assignComputerToUser = functions.https.onCall(
+  async (data: unknown, context: functions.https.CallableContext) => {
     const db = admin.firestore();
 
     // throw if the caller isn't authenticated & authorized
@@ -84,4 +74,4 @@ export async function assignComputerToUser(
       "assigned.by": auth.uid,
       "assigned.byName": auth.token.name,
     });
-  };
+  });
