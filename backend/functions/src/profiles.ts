@@ -109,7 +109,7 @@ function isCustomClaims(data: any): data is CustomClaims {
 
 // Create the corresponding Profile document when an auth user is created
 // Use merge in case the document already exists.
-export async function createProfile(user: admin.auth.UserRecord) {
+export const createProfile = functions.auth.user().onCreate(async (user: admin.auth.UserRecord) => {
   const db = admin.firestore();
   const customClaims = { time: true };
   await admin.auth().setCustomUserClaims(user.uid, customClaims);
@@ -167,17 +167,17 @@ export async function createProfile(user: admin.auth.UserRecord) {
     functions.logger.error(error);
   }
   return null;
-};
+});
 
 // Delete the corresponding Profile document when an auth user is deleted
-export async function deleteProfile(user: admin.auth.UserRecord) {
+export const deleteProfile = functions.auth.user().onDelete(async (user: admin.auth.UserRecord) => {
   const db = admin.firestore();
   try {
     await db.collection("Profiles").doc(user.uid).delete();
   } catch (error) {
     console.log(error);
   }
-};
+});
 
 // update the Firebase Auth User that corresponds to the Profile
 // can be displayed in the UI

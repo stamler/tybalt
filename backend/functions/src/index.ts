@@ -13,11 +13,11 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import { writeWeekEnding, writeExpensePayPeriodEnding } from "./utilities";
 import { unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
-import { createProfile, deleteProfile, updateProfileFromMSGraph } from "./profiles";
+import { updateProfileFromMSGraph } from "./profiles";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
-export { updateAuthAndManager } from "./profiles";
+export { updateAuthAndManager, createProfile, deleteProfile } from "./profiles";
 export { rawLogins, rawLoginsCleanup } from "./rawLogins";
 export { cleanUpOrphanedAttachment } from "./expenses";
 export { bundleTimesheet } from "./bundleTimesheets";
@@ -141,10 +141,6 @@ exports.rawLoginsCreatedDate = functions.firestore
 exports.usersCreatedDate = functions.firestore
   .document("Users/{loginId}")
   .onCreate(writeCreated);
-
-// create and delete profiles
-exports.createProfile = functions.auth.user().onCreate(createProfile);
-exports.deleteProfile = functions.auth.user().onDelete(deleteProfile);
 
 // update a profile from the MS Graph
 exports.updateProfileFromMSGraph = functions.https.onCall(updateProfileFromMSGraph);
