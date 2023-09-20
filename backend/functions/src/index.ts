@@ -13,8 +13,8 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import { writeWeekEnding } from "./utilities";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
-import { cleanUpUnusedAttachments, generateExpenseAttachmentArchive } from "./storage";
 import { emailOnReject, emailOnShare } from "./email";
+export { generateExpenseAttachmentArchive, cleanUpUsersExpenseAttachments } from "./storage";
 export { updateAuthAndManager, createProfile, deleteProfile, updateProfileFromMSGraph, algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { rawLogins, rawLoginsCleanup } from "./rawLogins";
 export { bundleTimesheet } from "./bundleTimesheets";
@@ -66,14 +66,6 @@ exports.algoliaUpdateDivisionsIndex = functions.firestore
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_divisions", filterFunction: divisionsFilter });
   });
-
-// immediately prior to attempting to upload an expense attachment,
-// clean up the existing attachments in case there are orphans from previous
-// uploads
-exports.cleanUpUsersExpenseAttachments = functions.https.onCall(cleanUpUnusedAttachments);
-
-// call from client to generate a zip file of expense attachments for a given document ID or payPeriodEnding
-exports.generateExpenseAttachmentArchive = functions.runWith({memory: "2GB", timeoutSeconds: 180}).https.onCall(generateExpenseAttachmentArchive);
 
 const writeCreated = function (
     snap: admin.firestore.DocumentSnapshot,

@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { generateExpenseAttachmentArchive } from "./storage";
+import { generateExpenseAttachmentArchiveUnwrapped } from "./storage";
 //import { utcToZonedTime } from "date-fns-tz";
 //import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
 import * as _ from "lodash";
@@ -128,7 +128,7 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
       // }      
     }
     await exportJson({ id: expenseTrackingDocRef.id });
-    return generateExpenseAttachmentArchive({ id: expenseTrackingDocRef.id });
+    return generateExpenseAttachmentArchiveUnwrapped({ id: expenseTrackingDocRef.id });
   });
 
 // Given an ExpenseTracking id, create or update a file on Google storage

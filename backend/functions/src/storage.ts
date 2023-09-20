@@ -8,14 +8,18 @@ import * as os from "os";
 import * as archiver from "archiver";
 import { format } from "date-fns";
 
-// Given an ExpenseTracking id, create a zip archive of all attachments
-// from Google storage for the corresponding week
+// Given an ExpenseTracking id in a DocIdObject or a payPeriodEnding, create a
+// zip archive of all attachments from Google storage for the corresponding week
 // with the committed expenses. Store zip under ExpenseTrackingExports prefix
 
 // TODO: rework without using temp storage and upload
 //https://stackoverflow.com/questions/51563883/can-i-zip-files-in-firebase-storage-via-firebase-cloud-functions
+export const generateExpenseAttachmentArchive = functions
+  .runWith({memory: "2GB", timeoutSeconds: 180})
+  .https
+  .onCall(generateExpenseAttachmentArchiveUnwrapped)
 
-export async function generateExpenseAttachmentArchive(data: unknown) {
+export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
     const db = admin.firestore();
     
     let trackingSnapshot: admin.firestore.DocumentSnapshot;
@@ -139,7 +143,6 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     archive.pipe(outputStreamBuffer);
     functions.logger.log("configured archiver to pipe to Cloud Storage");
     
-
     // iterate over the documents with attachments, adding their
     // contents to the zip file with descriptive names
     const contents: { filename: string, tempLocalAttachmentName: string }[] = [];
@@ -166,7 +169,9 @@ export async function generateExpenseAttachmentArchive(data: unknown) {
     await archive.finalize();
   }
 
-export async function cleanUpUnusedAttachments(data: unknown, context: functions.https.CallableContext) {
+// UI calls this prior to attempting to upload an expense attachment, cleaning
+// up the existing attachments in case there are orphans from previous uploads
+export const cleanUpUsersExpenseAttachments = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   const auth = getAuthObject(context, ["time"]);
 
   const db = admin.firestore();
@@ -193,4 +198,4 @@ export async function cleanUpUnusedAttachments(data: unknown, context: functions
   const result = await Promise.all(deleteResults);
   functions.logger.info(result);
   return
-};
+});
