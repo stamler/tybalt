@@ -108,23 +108,6 @@ export default defineComponent({
       );
     },
     generateAttachmentZip,
-    // async generateAttachmentZip(item: DocumentData) {
-    //   const functions = getFunctions(firebaseApp);
-    //   const generateExpenseAttachmentArchive = httpsCallable(
-    //     functions,
-    //     "generateExpenseAttachmentArchive"
-    //   );
-    //   this.startTask({
-    //     id: `generateAttachments${item.id}`,
-    //     message: "Generating Attachments",
-    //   });
-    //   try {
-    //     await generateExpenseAttachmentArchive({ id: item.id });
-    //   } catch (error) {
-    //     alert(error);
-    //   }
-    //   this.endTask(`generateAttachments${item.id}`);
-    // },
   },
   created() {
     this.parentPath =

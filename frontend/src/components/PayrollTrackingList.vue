@@ -33,34 +33,6 @@
         >
           week2
         </action-button>
-        <!-- <action-button
-          v-if="hasLink(item, 'week1TimeJson')"
-          type="download"
-          @click="generatePayrollCSV(item['week1TimeJson'])"
-        >
-          week1
-        </action-button> -->
-        <!-- <action-button
-          v-if="hasLink(item, 'week2TimeJson')"
-          type="download"
-          @click="generatePayrollCSV(item['week2TimeJson'])"
-        >
-          week2
-        </action-button> -->
-        <!--
-        REMOVED AND REPLACED WITH generatePayablesCSVSQL
-          <action-button
-            v-if="Object.keys(item.expenses).length > 0"
-            type="download"
-            @click="
-              generatePayablesCSV(
-                getPayPeriodExpenses(item.payPeriodEnding.toDate())
-              ).then(() => generateAttachmentZip(item))
-            "
-          >
-            expenses
-          </action-button>
-        -->
         <action-button
           type="download"
           @click="
@@ -258,52 +230,6 @@ export default defineComponent({
       }
     },
     generateAttachmentZip,
-    // async generateAttachmentZip(item: DocumentData) {
-    //   const generateExpenseAttachmentArchive = httpsCallable(
-    //     functions,
-    //     "generateExpenseAttachmentArchive"
-    //   );
-    //   const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
-    //   if (item.zip !== undefined) {
-    //     return;
-    //   }
-    //   this.startTask({
-    //     id: `generateAttachments${payPeriodEnding}`,
-    //     message: "Generating Attachments",
-    //   });
-    //   try {
-    //     await generateExpenseAttachmentArchive({ payPeriodEnding });
-    //   } catch (error) {
-    //     alert(error);
-    //   }
-    //   this.endTask(`generateAttachments${payPeriodEnding}`);
-    // },
-    // REMOVED AND REPLACED WITH generatePayablesCSVSQL
-    // async getPayPeriodExpenses(week: Date) {
-    //   const getPayPeriodExpenses = firebase
-    //     .functions()
-    //     .httpsCallable("getPayPeriodExpenses");
-    //   try {
-    //     store.commit("startTask", {
-    //       id: `getExpenses${week.getTime()}`,
-    //       message: "Getting Expenses",
-    //     });
-    //     const result = await getPayPeriodExpenses({
-    //       weekEnding: week.getTime(),
-    //     });
-    //     store.commit("endTask", { id: `getExpenses${week.getTime()}` });
-    //     return result.data;
-    //     /*
-    //     const blob = new Blob([JSON.stringify(result.data)], {
-    //       type: "application/json;charset=utf-8",
-    //     });
-    //     this.downloadBlob(blob, "expenses.json", true);
-    //     */
-    //   } catch (error) {
-    //     store.commit("endTask", { id: `getExpenses${week.getTime()}` });
-    //     alert(`Error getting expenses: ${error}`);
-    //   }
-    // },
   },
 });
 </script>
