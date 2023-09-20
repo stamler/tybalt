@@ -79,6 +79,18 @@
       <div class="detailsbox">
         <div class="headline_wrapper">
           <div class="headline">
+            <!-- if the item was submitted more than 14 days (2 weeks) ago,
+            show a warning -->
+            <span
+              v-if="
+                item.submittedDate?.toDate() <
+                Date.now() - 14 * 24 * 60 * 60 * 1000
+              "
+              style="color: red"
+            >
+              Submitted {{ relativeTime(item.submittedDate) }}
+            </span>
+
             {{ item.displayName }}
           </div>
           <div class="byline">
@@ -143,7 +155,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { downloadAttachment, shortDate } from "./helpers";
+import { downloadAttachment, shortDate, relativeTime } from "./helpers";
 import RejectModal from "./RejectModal.vue";
 import { firebaseApp } from "../firebase";
 import {
@@ -182,6 +194,7 @@ export default defineComponent({
   },
   methods: {
     shortDate,
+    relativeTime,
     downloadAttachment,
     commitItem(item: DocumentData, collection: CollectionReference) {
       if (collection === null) {
