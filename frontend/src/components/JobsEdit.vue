@@ -211,6 +211,7 @@ import {
   DocumentSnapshot,
   DocumentData,
   DocumentReference,
+  runTransaction,
 } from "firebase/firestore";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
@@ -503,7 +504,20 @@ export default defineComponent({
         // set the default for hasTimeEntries
         this.item.hasTimeEntries = false;
 
-        setDoc(doc(this.collectionObject, newId), this.item)
+        // check that the job number is not a duplicate of an existing job
+        // number. Do this by first checking the server for the job number if we
+        // are NOT editing, and if it exists, throw an error.
+        return runTransaction(db, async (transaction) => {
+          const docRef = doc(db, this.collectionName, newId);
+          return transaction.get(docRef).then((snap: DocumentSnapshot) => {
+            if (snap.exists()) {
+              throw new Error(
+                `Job number ${newId} already exists. Please choose a different job number.`
+              );
+            }
+            transaction.set(docRef, this.item);
+          });
+        })
           .then(() => {
             this.clearEditor();
             // notify user save is done
