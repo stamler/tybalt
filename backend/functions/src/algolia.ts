@@ -1,12 +1,13 @@
 import * as functions from "firebase-functions";
 import algoliasearch from "algoliasearch";
 import * as _ from "lodash";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 const env = functions.config();
 
 // This interface defines the named parameters for the updateAlgoliaIndex
 // function
 interface UpdateAlgoliaIndexParams {
-  change: functions.ChangeJson;
+  change: ChangeJson;
   context: functions.EventContext;
   indexName: string;
   allowedFields?: string[];

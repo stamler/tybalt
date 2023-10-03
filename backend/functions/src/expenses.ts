@@ -11,6 +11,7 @@ import { generateExpenseAttachmentArchiveUnwrapped } from "./storage";
 //import { format, addDays, subMilliseconds, addMilliseconds } from "date-fns";
 import * as _ from "lodash";
 import { createSSHMySQLConnection2 } from "./sshMysql";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 // import { loadSQLFileToString } from "./sqlQueries";
 // import { RowDataPacket } from "mysql2";
 
@@ -23,7 +24,7 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 export const cleanUpOrphanedAttachment = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
 ) =>{
     const beforeData = change.before.data();

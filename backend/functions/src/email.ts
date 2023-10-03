@@ -5,6 +5,7 @@ import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";
 import { APP_URL, APP_NATIVE_TZ } from "./config";
 import * as _ from "lodash";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 
 // Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
@@ -141,7 +142,7 @@ export const scheduledEmailCleanup = functions.pubsub
 
 // onUpdate of TimeSheets or Expenses document
 export async function emailOnReject(
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
   collection: "TimeSheets" | "Expenses",
 ) {
@@ -249,7 +250,7 @@ export async function emailOnReject(
 // onUpdate of TimeSheets document, notify affected users that a time sheet was
 // shared
 export async function emailOnShare(
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
   collection: "TimeSheets",
 ) {

@@ -31,6 +31,7 @@ import * as os from "os";
 import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc, isTimeSheet, isApprovedTimeSheet, isSubmittedTimeSheet, isLockedTimeSheet } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 // import { updateProfileTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
@@ -661,7 +662,7 @@ export async function exportJson(data: unknown) {
 export const exportOnAmendmentCommit = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onUpdate(async(
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
 ) => {
     const committedWeekEnding = change.after.data().committedWeekEnding;

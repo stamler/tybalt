@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
 import { PAYROLL_EPOCH, APP_NATIVE_TZ } from "./config";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -338,7 +339,7 @@ export const writeFileLinks = functions.storage
 // add timestamp of 23:59:59 EST next saturday to weekEndingProperty of Document
 // based on dateProperty
 export async function writeWeekEnding(
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
   dateProperty: string,
   weekEndingProperty: string
@@ -400,7 +401,7 @@ export async function writeWeekEnding(
 export const expensesPayPeriodEnding = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (
-  change: functions.ChangeJson,
+  change: ChangeJson,
   context: functions.EventContext,
 ) => {
   if (!change.after.exists) {

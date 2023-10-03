@@ -20,6 +20,7 @@ import jwtDecode, { JwtPayload } from "jwt-decode";
 //import { subDays } from "date-fns";
 import { getAuthObject, isPayrollWeek2 } from "./utilities";
 import algoliasearch from "algoliasearch";
+import { ChangeJson } from "firebase-functions/lib/common/change";
 const env = functions.config();
 
 interface MSJwtPayload extends JwtPayload {
@@ -183,7 +184,7 @@ export const deleteProfile = functions.auth.user().onDelete(async (user: admin.a
 // can be displayed in the UI
 // VERIFY THIS WORKS WITH FEDERATED USERS (MICROSOFT IN THIS CASE)
 // update the Firebase Auth Custom Claims from the corresponding Profile doc
-export const updateAuthAndManager = functions.firestore.document("Profiles/{uid}").onWrite(async (change: functions.ChangeJson, context: functions.EventContext) => {
+export const updateAuthAndManager = functions.firestore.document("Profiles/{uid}").onWrite(async (change: ChangeJson, context: functions.EventContext) => {
   const db = admin.firestore();
   if (change.after.exists) {
     const before = change.before.data();
