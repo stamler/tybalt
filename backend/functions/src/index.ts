@@ -34,6 +34,7 @@ export { addMutation, deleteMutation, dispatchMutations, mutationComplete, appro
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
 export { wgCreateKeylessClient, wgToggleEnableClient, wgDeleteClient, wgPeersIni, wgSetPublicKey, wgClearPublicKey } from "./wireguard";
 export { checkIn, createVacation } from "./presence";
+export { createInvoice } from "./invoices";
 
 // send emails when timesheets are shared
 exports.emailOnTimeSheetShare = functions.firestore

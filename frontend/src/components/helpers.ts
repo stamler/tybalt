@@ -717,3 +717,15 @@ export function relativeTime(date: Timestamp | undefined): string {
   }
   return formatDistanceToNow(date.toDate(), { addSuffix: true });
 }
+
+export function invoiceNumberDisplay(invoice: {
+  number: string;
+  job: string;
+  revisionNumber: number;
+}) {
+  const unrevised = invoice.number + "-" + invoice.job.replace("-", "");
+  if (invoice.revisionNumber === 0) {
+    return unrevised;
+  }
+  return unrevised + " rev" + invoice.revisionNumber;
+}

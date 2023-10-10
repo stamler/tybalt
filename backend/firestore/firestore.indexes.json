@@ -213,6 +213,24 @@
       ]
     },
     {
+      "collectionGroup": "Invoices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "job",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "replaced",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "Jobs",
       "queryScope": "COLLECTION",
       "fields": [

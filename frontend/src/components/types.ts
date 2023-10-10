@@ -9,6 +9,20 @@ export interface QueryPayloadObject {
   queryValues?: any[];
 }
 
+// https://www.qualdesk.com/blog/2021/type-guard-for-string-union-types-typescript/
+export const ALLOWED_INVOICE_LINE_TYPES = [
+  "subcontractor",
+  "expense",
+  "division",
+] as const;
+export type InvoiceLineItemType = (typeof ALLOWED_INVOICE_LINE_TYPES)[number];
+
+export interface InvoiceLineObject {
+  lineType: InvoiceLineItemType;
+  description: string;
+  amount: number;
+}
+
 export interface TimeEntry {
   // required properties always
   date: firebase.firestore.Timestamp;

@@ -128,6 +128,30 @@ CREATE TABLE `AllowanceRates` (
   PRIMARY KEY (`effective_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
+CREATE TABLE `Invoices` (
+  `id` varchar(512) NOT NULL,
+  `job` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `number` varchar(8) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `revisionNumber` tinyint unsigned NOT NULL,
+  `billingNumber` tinyint unsigned NOT NULL,
+  `date` date NOT NULL,
+  `createdDate` datetime NOT NULL,
+  `creatorUid` varchar(512) NOT NULL,
+  `creatorName` varchar(128) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+CREATE TABLE `InvoiceLineItems` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `invoiceid` varchar(512) NOT NULL,
+  `amount` decimal(11,2) NOT NULL,
+  `lineType` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `description` varchar(265) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_invoiceid` (`invoiceid`),
+  CONSTRAINT `fk_invoiceid` FOREIGN KEY (`invoiceid`) REFERENCES `Invoices` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+
 /* This view calculates the allowanceTotal, that is the amount of each expense
 in dollars based on the allowances claimed. This result can be LEFT JOINed to
 Expenses ON id = id.*/

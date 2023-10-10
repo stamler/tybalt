@@ -155,6 +155,136 @@ export function isVacationObject(data: any): data is VacationObject {
     typeof data.availability === "string";
 }
 
+// https://www.qualdesk.com/blog/2021/type-guard-for-string-union-types-typescript/
+const ALLOWED_INVOICE_LINE_TYPES = ["subcontractor", "expense", "division"] as const;
+type InvoiceLineItemType = typeof ALLOWED_INVOICE_LINE_TYPES[number];
+function isInvoiceLineItemType(lineType: string): lineType is InvoiceLineItemType {
+  return ALLOWED_INVOICE_LINE_TYPES.includes(lineType as InvoiceLineItemType);
+}
+
+export interface InvoiceLineObject {
+  lineType: InvoiceLineItemType;
+  description: string;
+  amount: number;
+}
+
+function isInvoiceLineObject(data: any): data is InvoiceLineObject {
+  // check that amount is a number
+  if (typeof data.amount !== "number") {
+    return false;
+  }
+
+  // check that amount is not zero
+  if (data.amount === 0) {
+    return false;
+  }
+
+  // check that amount has no more than 2 decimal places
+  const amount = data.amount.toString().split(".");
+  if (amount.length === 2 && amount[1].length > 2) {
+    return false;
+  }
+  // check the types of the properties
+  return isInvoiceLineItemType(data.lineType) && typeof data.description === "string" && data.description.length > 0;
+}
+
+interface DivisionAmountObject extends InvoiceLineObject {
+  // a DivisionAmountObject is an InvoiceLineObject with a lineType of "division"
+  lineType: "division";
+}
+
+function isDivisionAmountObject(data: any): data is DivisionAmountObject {
+  // TODO: check if the division exists in the database
+  return isInvoiceLineObject(data) && data.lineType === "division";
+}
+
+interface InvoiceObject {
+  // integer result of date.toDate().getTime()
+  job: string,
+  number: string,
+  billingNumber: number, // a positive integer greater than zero. The sequence number of the invoice for this job
+  revisionNumber: number, // defaults to zero if no revisions. A positive integer
+  date: number;
+  lineItems: InvoiceLineObject[];
+}
+
+export function isInvoiceObject(data: any): data is InvoiceObject {
+  // it must contain a job property which is a string
+  // The string must match the format XX-YYY WHERE X and Y are numbers
+  // TODO: match hyphenated job numbers
+  if (typeof data.job !== "string" && !data.job.match(/^\d{2}-\d{3}$/)) {
+    return false;
+  }
+
+  // it must contain a number property which is a string. Note that even though
+  // it is called number it may have hyphens or other characters. The format of
+  // the number string must be YYMMNNNN where YY are the last two digits of the
+  // year, MM are the month from 01 to 12, and NNNN are a number starting at 0001 and going
+  // up. This last number can be either 3 or 4 digits long.
+  const numberFormatRegex = /^\d{2}(0[1-9]|1[0-2])(\d{3}|\d{4})$/;
+  if (!(typeof data.number === "string" && data.number.match(numberFormatRegex))) {
+    return false;
+  }
+
+  // it must contain a billingNumber property which is a positive whole number
+  if (!(typeof data.billingNumber === "number" && data.billingNumber > 0 && Number.isInteger(data.billingNumber))) {
+    return false;
+  }
+
+  // it must contain a revisionNumber property which is a positive whole number
+  if (!(typeof data.revisionNumber === "number" && data.revisionNumber >= 0 && Number.isInteger(data.revisionNumber))) {
+    return false;
+  }
+
+  // it must contain a date property which is a number due to serialization
+  if (typeof data.date !== "number") {
+    return false;
+  }
+
+  // it must contain a lineItems property which is an array of objects with a
+  // length of at least 1
+  if (!(Array.isArray(data.lineItems) && data.lineItems.length > 0)) {
+    return false;
+  }
+
+  // at least one element of the lineItems array must be a DivisionAmountObject
+  // and there must be no duplicated descriptions in all of the
+  // DivisionAmountObjects present in the lineItems array
+  const lineItems = data.lineItems as InvoiceLineObject[];
+  const divisionSet = new Set();
+  const otherLineSet = new Set();
+  let divisionCount = 0;
+
+  // iterate over the lineItems array adding each description to either
+  // divisionSet or otherLineSet based on whether it is a DivisionAmountObject
+  // or not. If it is a DivisionAmountObject, increment divisionCount. If the
+  // same description is added twice in either set, return false
+  for (const lineItem of lineItems) {
+    if (!isInvoiceLineObject(lineItem)) {
+      return false;
+    }
+    if (isDivisionAmountObject(lineItem)) {
+      if (divisionSet.has(lineItem.description)) {
+        return false;
+      }
+      divisionSet.add(lineItem.description);
+      divisionCount++;
+    } else {
+      if (otherLineSet.has(lineItem.description)) {
+        return false;
+      }
+      otherLineSet.add(lineItem.description);
+    }
+  }
+
+  // if the divisionCount is less than 1, return false
+  if (divisionCount < 1) {
+    return false;
+  }
+  
+  return true;
+}
+
 interface PayPeriodEndingObject {
   // integer result of payPeriodEnding.toDate().getTime()
   payPeriodEnding: number;

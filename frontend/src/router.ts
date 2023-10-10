@@ -44,6 +44,8 @@ import JobsSearch from "@/components/JobsSearch.vue";
 import JobsEdit from "@/components/JobsEdit.vue";
 import JobsAdmin from "@/components/JobsAdmin.vue";
 import JobsDetails from "@/components/JobsDetails.vue";
+import CreateInvoice from "@/components/CreateInvoice.vue";
+import InvoiceDetails from "@/components/InvoiceDetails.vue";
 import TimeTypesDivisionsList from "@/components/TimeTypesDivisionsList.vue";
 import TimeTypesDivisionsEdit from "@/components/TimeTypesDivisionsEdit.vue";
 import WireGuardClientsList from "@/components/WireGuardClientsList.vue";
@@ -694,6 +696,36 @@ const router = createRouter({
               },
               name: "Job Details",
               component: JobsDetails,
+            },
+            {
+              path: ":id/invoices/create",
+              props: (route) => {
+                return { job: route.params.id };
+              },
+              name: "Create Invoice",
+              component: CreateInvoice,
+            },
+            {
+              path: ":id/invoices/:invoiceId/revise",
+              props: (route) => {
+                return {
+                  job: route.params.id,
+                  invoiceId: route.params.invoiceId,
+                };
+              },
+              name: "Revise Invoice",
+              component: CreateInvoice,
+            },
+            {
+              path: ":id/invoices/:invoiceId/details",
+              props: (route) => {
+                return {
+                  job: route.params.id,
+                  invoiceId: route.params.invoiceId,
+                };
+              },
+              name: "Invoice Details",
+              component: InvoiceDetails,
             },
           ],
         },

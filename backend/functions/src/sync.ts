@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
-import { TimeEntry } from "./utilities";
+import { TimeEntry, InvoiceLineObject } from "./utilities";
 import { APP_NATIVE_TZ } from "./config";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
@@ -25,6 +25,9 @@ export const syncToSQL = functions
     await exportAmendments();
     await cleanupExport("Expenses");
     await exportExpenses();
+    await cleanupExport("Invoices");
+    await deleteReplacedInvoices();
+    await exportInvoices();
     await exportProfiles();
     try {
       await writebackProfiles();
@@ -356,6 +359,7 @@ cleanupExport() cleans up the exportInProgress:true property on the specified
 collection. See cleanupTime() for more details.
 */
 export async function cleanupExport(collection: string) {
+  functions.logger.debug(`cleanupExport(${collection})`);
   const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the documents where exportInProgress:true. They may locked/committed or
@@ -683,4 +687,191 @@ export async function writebackProfiles() {
   
   // Commit the batch
   return updateProfilesBatch.commit();
+}
+
+/*
+exportInvoices(): 
+This involves exporting the line items to one each with a new ID then exporting
+the data related to the whole invoice to another table. There will be no
+facility to update invoices in MySQL since no updates are allowed in Firestore.
+However it will be possible to manually deleted invoices in Firestore and in
+this case the corresponding rows in MySQL will also need to be deleted.
+*/
+export async function exportInvoices() {
+  // 1. export invoices where exported: false and replaced: false, then set
+  //    exported: true
+  const start = process.hrtime.bigint();
+  const mysqlConnection = await createSSHMySQLConnection2();
+
+  // get the invoices to export
+  const batchSize = 499;  
+  const pendingExportQuery = db
+    .collection("Invoices")
+    .where("exported", "==", false)
+    .where("replaced", "==", false)
+    .limit(batchSize);
+
+  const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
+
+  // Run the query and set the flag exportInProgress:true. At the same time
+  // create a batch to delete the exportInProgress:true flag that will be run
+  // only if the export fails. The purpose of this code is prevent changes to
+  // these docs while they are being exported to mysql. This is a manual
+  // document-locking mechanism that can span a longer time than a transaction
+  // during the exportInvoices() function call
+  const [invoiceDocSnaps, exportFailBatch] = await db.runTransaction(async t => {
+    const rollbackBatch = db.batch();
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "exportInvoices(): an export is already running"
+      );
+    }
+    const invoiceSnaps = await t.get(pendingExportQuery);
+    const docs:admin.firestore.QueryDocumentSnapshot[] = [];
+    invoiceSnaps.forEach(invoiceSnap => {
+      // skip the Invoices doc if prerequisites aren't met
+      if (
+        invoiceSnap.get("exportInProgress") === true || // another export is running
+        invoiceSnap.get("exported") === true || // the Invoice is already exported
+        invoiceSnap.get("replaced") === true // the Invoice has been replaced
+      ) {
+        // skip this TimeSheets document
+        return;
+      }
+      docs.push(invoiceSnap);
+      rollbackBatch.update(invoiceSnap.ref, {
+        exportInProgress: admin.firestore.FieldValue.delete(),
+      });
+      t.update(invoiceSnap.ref, { exportInProgress: true });
+    });
+    t.set(exportLocksDoc,{ message: "exportInvoices() transaction created this " +
+      "doc to prevent other instances of exportX() from " +
+      "running simultaneously."})
+    return [docs, rollbackBatch];
+  });
+
+  //  MySQL doesn't support deferred constraints per the SQL standard like
+  //  PostgreSQL does. This means we cannot insert both the parent and child rows
+  //  in the same transaction because the child will fail due to missing parent.
+  //  The workaround is disabling FOREIGN_KEY_CHECKS on this transaction
+  //  because we are using the same value within this function for the fields
+  //  and failure of any query should fail the entire transaction.
+  //  multipleStatements is disabled by default in mysql2 hence 2 queries
+  await mysqlConnection.query("SET FOREIGN_KEY_CHECKS=0;");
+  await mysqlConnection.query("START TRANSACTION;");
+
+  // create the batch that will be run only if the export MySQL COMMIT succeeds
+  const exportSuccessBatch = db.batch();
+
+  // Iterate over the Invoices documents, INSERTing them and their corresponding
+  // LineItems into the respective MySQL tables
+  const invoiceResults = invoiceDocSnaps.map(async invoiceSnap => {
+    const snapData = invoiceSnap.data();
+    const invoice = {
+      id: invoiceSnap.id,
+      billingNumber: snapData.billingNumber,
+      creatorUid: snapData.creatorUid,
+      creatorName: snapData.creatorName,
+      createdDate: snapData.createdDate.toDate(),
+      job: snapData.job,
+      number: snapData.number,
+      revisionNumber: snapData.revisionNumber,
+      date: format(utcToZonedTime(snapData.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd"),
+    };
+
+    // Insert the Invoice-level data into the Invoices table first
+    const invoiceSQLResponse = mysqlConnection.query("INSERT INTO Invoices SET ?", [invoice]);
+    
+    // Get the lineItems then INSERT them into MySQL in the transaction
+    const lineItemsFields = ["invoiceid", "amount", "lineType", "description"];
+    const lineItems: InvoiceLineObject[] = invoiceSnap.get("lineItems");
+    const insertValues = lineItems.map((lineItem: InvoiceLineObject) => {
+      const cleaned: any = lineItem;
+      cleaned.invoiceid = invoiceSnap.id;
+      return lineItemsFields.map(x => cleaned[x]);
+    });
+    const q = `INSERT INTO InvoiceLineItems (${lineItemsFields.toString()}) VALUES ?`;
+    const lineItemsSQLResponse = mysqlConnection.query(q, [insertValues]);
+
+    try {
+      await Promise.all([invoiceSQLResponse, lineItemsSQLResponse]);
+    } catch (error) {
+      functions.logger.error(`Failed to export Invoices document ${invoice.id} ${invoice.job} ${invoice.number} rev ${invoice.revisionNumber}: ${error}`);
+      throw error
+    }
+
+    // INSERTs were successful for this doc, mark it in success batch
+    return exportSuccessBatch.update(invoiceSnap.ref, {
+      exported: true,
+      exportInProgress: admin.firestore.FieldValue.delete(),
+    });
+  });
+
+  try {
+    await Promise.all(invoiceResults);
+    await mysqlConnection.query( "COMMIT;");
+    // delete exportInProgress:true property, set exported:true on local docs
+    await exportSuccessBatch.commit();
+    const end = process.hrtime.bigint();
+    const elapsed = (end - start) / BigInt(1000000000);
+    functions.logger.log(`Exported ${invoiceResults.length} Invoices documents in ${elapsed.toString()} sec`);
+  } catch (error) {
+    await mysqlConnection.query( "ROLLBACK;");
+    // delete exportInProgress:true property on local docs
+    await exportFailBatch.commit();
+    functions.logger.error(`Export failed ${error}`);
+  }
+
+  await mysqlConnection.query( "SET FOREIGN_KEY_CHECKS=1;");
+  return exportLocksDoc.delete();
+}
+
+/*
+deleteReplacedInvoices():
+delete invoices where exported: true and replaced: true, then set exported:
+false in firestore
+*/
+export async function deleteReplacedInvoices(){
+  functions.logger.debug("deleteReplacedInvoices()");
+  // get invoices in firestore where exported: true and replaced: true
+  const batchSize = 499;
+  const pendingDeletionQuery = db
+    .collection("Invoices")
+    .where("exported", "==", true)
+    .where("replaced", "==", true)
+    .limit(batchSize);
+  const batch = db.batch();
+
+  // for each invoice, delete the Invoices row with the matching id. The ON
+  // CASCADE of TimeEntries will automatically delete the entries so we don't
+  // have to handle that here.
+  const mysqlConnection = await createSSHMySQLConnection2();
+  await mysqlConnection.query( "START TRANSACTION;");
+
+  const invoiceDocSnaps = await pendingDeletionQuery.get();
+  const invoiceResults = invoiceDocSnaps.docs.map(async invoiceSnap => {
+    const invoiceid = invoiceSnap.id;
+    const q = `DELETE FROM Invoices WHERE id=?`;
+    const invoiceSQLResponse = mysqlConnection.query(q, [invoiceid]);
+    try {
+      await invoiceSQLResponse;
+    } catch (error) {
+      functions.logger.error(`Failed to delete Invoices document ${invoiceid}: ${error}`);
+      throw error
+    }
+    return batch.update(invoiceSnap.ref, {
+      exported: false,
+    });
+  });
+
+  try {
+    await Promise.all(invoiceResults);
+    await mysqlConnection.query( "COMMIT;");
+    return batch.commit();
+  } catch (error) {
+    functions.logger.error(`Delete failed ${error}`);
+    return mysqlConnection.query( "ROLLBACK;");
+  }
 }

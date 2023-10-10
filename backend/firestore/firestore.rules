@@ -626,6 +626,14 @@ service cloud.firestore {
         )
       );
     }
+    match /Invoices/{invoiceId} {
+      allow read: if hasClaim("job") || hasClaim("report") || (
+        hasClaim("time") && (
+          get(/databases/$(database)/documents/Jobs/$(resource.data.job)).data.managerUid == request.auth.uid ||
+          get(/databases/$(database)/documents/Jobs/$(resource.data.job)).data.alternateManagerUid == request.auth.uid
+        )
+      );
+    }
     match /RawLogins/{rawLogin} {
       allow read, delete: if hasClaim("admin");
     }

@@ -15,6 +15,25 @@
         {{ category }}
       </span>
     </div>
+    <h4>
+      Invoices
+      <router-link v-bind:to="{ name: 'Create Invoice' }">
+        <Icon icon="feather:plus-circle" width="24px" />
+      </router-link>
+    </h4>
+    <div v-for="invoice in this.invoices" v-bind:key="invoice.id">
+      <router-link
+        v-bind:to="{
+          name: 'Invoice Details',
+          params: { invoiceId: invoice.id },
+        }"
+      >
+        {{ invoiceNumberDisplay(invoice) }} /
+        {{ relativeTime(invoice.createdDate.toDate()) }} — ${{
+          invoiceTotal(invoice)
+        }}
+      </router-link>
+    </div>
     <h4>Time Entries</h4>
     <form id="editor">
       <label for="startDate">from</label>
@@ -125,6 +144,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { useCollection } from "vuefire";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -144,7 +164,9 @@ import { useStateStore } from "../stores/state";
 import Datepicker from "@vuepic/vue-datepicker";
 import QueryBox from "./QueryBox.vue";
 import DownloadQueryLink from "./DownloadQueryLink.vue";
-import { shortDateWithWeekday } from "./helpers";
+import { shortDateWithWeekday, invoiceNumberDisplay } from "./helpers";
+import { Icon } from "@iconify/vue";
+import { InvoiceLineObject } from "./types";
 
 export default defineComponent({
   setup() {
@@ -156,6 +178,7 @@ export default defineComponent({
     Datepicker,
     QueryBox,
     DownloadQueryLink,
+    Icon,
   },
   data() {
     return {
@@ -176,6 +199,14 @@ export default defineComponent({
       collectionObject: null as CollectionReference | null,
       item: {} as DocumentData,
       timeSheets: [],
+      invoices: useCollection(
+        query(
+          collection(db, "Invoices"),
+          where("job", "==", this.id),
+          where("replaced", "==", false),
+          orderBy("date", "desc")
+        )
+      ),
     };
   },
   watch: {
@@ -196,7 +227,14 @@ export default defineComponent({
     this.setItem(this.id);
   },
   methods: {
+    invoiceTotal(invoice: DocumentData) {
+      return invoice.lineItems.reduce(
+        (total: number, lineItem: InvoiceLineObject) => total + lineItem.amount,
+        0
+      );
+    },
     shortDateWithWeekday,
+    invoiceNumberDisplay,
     isTopLevelJob(job: string) {
       // return true if the provided job doesn't have dashed subjobs
       const re = /^(P)?[0-9]{2}-[0-9]{3,4}$/;

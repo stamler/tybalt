@@ -28,6 +28,7 @@
     "spec": [
       "test/**/*.ts"
     ],
+    "reporter": "spec",
     "exit": true
   },
   "nyc": {
