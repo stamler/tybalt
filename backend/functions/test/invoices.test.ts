@@ -28,7 +28,7 @@ const timeClaimContext = {
   auth: { uid: "user1", token: { time: true } },
 };
 
-describe.only('createInvoice', () => {
+describe('createInvoice', () => {
   before(async () => {
     // Create test data
     await db.collection("Jobs").doc("24-001").set({ managerUid: "user1", alternateManagerUid: "user2", description: "A basic job", client: "A special client" });

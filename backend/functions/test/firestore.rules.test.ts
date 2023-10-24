@@ -1271,6 +1271,11 @@ describe("Other Firestore Rules", function () {
         doc.set({ uid: "bob", date: new Date(), timetype: "OR", timetypeName: "Off Rotation" })
       );
     });
+    it("requires workDescription to not contain a job number", async () => {
+      const doc = timeDb.collection("TimeEntries").doc();
+      await firebase.assertFails(doc.set({ ...baseline, workDescription: "Descript 5char 19-333" }));
+      await firebase.assertSucceeds(doc.set(baseline));
+    });
     it("requires Hours-worked documents to have a valid division", async () => {
       const doc = timeDb.collection("TimeEntries").doc();
       await firebase.assertSucceeds(doc.set(baseline));

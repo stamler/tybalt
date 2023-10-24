@@ -314,8 +314,11 @@ service cloud.firestore {
         ) &&
 
         // validate presence and length of description for Regular Hours and Training
+        // also ensure workDescription does not contain jobNumbers of the format
+        // XX-YYY where XX is a number between 15 and 40 and YYY is a 3-digit
+        // number between 001 and 999
         (
-          (newDoc().workDescription.size() > 4 && newDoc().timetype in ["R", "RT"]) || !(newDoc().timetype in ["R", "RT"])
+          (newDoc().workDescription.size() > 4 && !newDoc().workDescription.matches('.*(1[5-9]|2[0-9]|3[0-9]|40)-([0-9]{3}).*') && newDoc().timetype in ["R", "RT"]) || !(newDoc().timetype in ["R", "RT"])
         ) &&
 
         // ensure absence of description for Banking, Payout, Off and Off Rotation
