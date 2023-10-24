@@ -14,7 +14,7 @@ import { MICROSOFT_TENANT_ID } from "./config";
 // Vue.use(InstantSearch);
 
 // first import is here to initializeApp()
-import firebase from "./firebase";
+import firebase, { firebaseApp } from "./firebase";
 import AppRootComponent from "./App.vue";
 import router from "./router";
 // import { PiniaVuePlugin } from "pinia";
@@ -117,7 +117,10 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
         app.use(router);
         app.use(pinia);
         app.use(InstantSearch);
-        app.use(VueFire, { modules: [VueFireFirestoreOptionsAPI()] }); // Use this module for $firestoreBind
+        app.use(VueFire, {
+          firebaseApp,
+          modules: [VueFireFirestoreOptionsAPI()],
+        }); // Use this module for $firestoreBind
         app.mount("#app");
       }
     });
