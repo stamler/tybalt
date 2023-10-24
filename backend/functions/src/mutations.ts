@@ -94,7 +94,7 @@ function isNewADUserData(data: any): data is NewADUserData {
   const centralOfficeInt = parseInt(data.centralOffice, 10);
   const stationInt = parseInt(data.station, 10);
   if (
-      typeof data.defaultChargeOutRate === "number" && data.defaultChargeOutRate > 50 && data.defaultChargeOutRate < 500 &&
+      typeof data.defaultChargeOutRate === "number" && data.defaultChargeOutRate >= 40 && data.defaultChargeOutRate < 500 &&
       typeof data.surname === "string" && data.surname.length > 2 &&
       typeof data.givenName === "string" && data.givenName.length > 2 &&
       typeof data.department === "string" &&
