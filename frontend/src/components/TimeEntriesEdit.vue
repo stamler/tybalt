@@ -158,6 +158,10 @@
         v-model.trim="item.workDescription"
       />
     </span>
+    <span v-if="jobNumbersInDescription" class="attention">
+      Job numbers are not allowed in the work description. Enter jobs numbers in
+      the appropriate field and create one time entry per job.
+    </span>
     <span class="field" v-if="item.timetype === 'OTO'">
       $<input
         class="grow"
@@ -170,7 +174,9 @@
     </span>
 
     <span class="field">
-      <button type="button" v-on:click="save()">Save</button>
+      <button type="button" v-on:click="save()" v-if="!jobNumbersInDescription">
+        Save
+      </button>
       <button type="button" v-on:click="$router.push(parentPath)">
         Cancel
       </button>
@@ -254,6 +260,16 @@ export default defineComponent({
               lowercase.includes(token)
             ))
         );
+      }
+      return false;
+    },
+    jobNumbersInDescription(): boolean {
+      if (this.item.workDescription !== undefined) {
+        const lowercase = this.item.workDescription.toLowerCase().trim();
+        // look for any instances of XX-YYY where XX is a number between 15 and
+        // 40 and YYY is a zero-padded number between 1 and 999 then return true
+        // if any are found
+        return /(1[5-9]|2[0-9]|3[0-9]|40)-(\d{3})/.test(lowercase);
       }
       return false;
     },
