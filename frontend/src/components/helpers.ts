@@ -720,10 +720,16 @@ export function relativeTime(date: Timestamp | undefined): string {
 
 export function invoiceNumberDisplay(invoice: {
   number: string;
+  billingNumber: number;
   job: string;
   revisionNumber: number;
 }) {
-  const unrevised = invoice.number + "-" + invoice.job.replace("-", "");
+  const unrevised =
+    invoice.billingNumber +
+    " - " +
+    invoice.number +
+    "-" +
+    invoice.job.replace("-", "");
   if (invoice.revisionNumber === 0) {
     return unrevised;
   }

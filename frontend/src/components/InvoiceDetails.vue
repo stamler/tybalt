@@ -1,6 +1,9 @@
 <template>
-  <form id="editor" v-if="invoice !== undefined">
+  <div v-if="invoice !== undefined">
     <h1>Invoice {{ invoiceNumberDisplay(invoice) }}</h1>
+    <span v-if="invoice.replaced === true" class="attention">
+      This invoice has been replaced
+    </span>
     <p>
       <router-link :to="{ name: 'Job Details', params: { id: invoice.job } }">
         {{ invoice.job }}
@@ -30,6 +33,24 @@
             </tr>
           </tbody>
         </table>
+        <div v-if="allInvoices.length > 0">
+          <h2>All Versions</h2>
+          <ul>
+            <li v-for="inv in allInvoices" :key="inv.id">
+              <router-link
+                :to="{
+                  name: 'Invoice Details',
+                  params: { invoiceId: inv.id },
+                }"
+              >
+                {{ invoiceNumberDisplay(inv) }}
+              </router-link>
+              &nbsp;<span v-if="inv.replaced === false" class="label">
+                active
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
       <router-link
         v-bind:to="{
@@ -43,7 +64,7 @@
       </router-link>
       <!-- TODO: next & previous buttons -->
     </div>
-  </form>
+  </div>
 </template>
 
 <script lang="ts">
@@ -52,9 +73,15 @@ import { InvoiceLineObject } from "./types";
 import { shortDateWithWeekday, invoiceNumberDisplay } from "./helpers";
 import { useStateStore } from "../stores/state";
 import { firebaseApp } from "../firebase";
-import { getFirestore, doc } from "firebase/firestore";
-import { useDocument } from "vuefire";
-
+import {
+  getFirestore,
+  doc,
+  collection,
+  query,
+  where,
+  getDoc,
+  DocumentData,
+} from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
@@ -69,8 +96,20 @@ export default defineComponent({
   },
   data() {
     return {
-      invoice: useDocument(doc(db, "Invoices", this.invoiceId)),
+      invoice: undefined as DocumentData | undefined,
+      allInvoices: [],
     };
+  },
+  created() {
+    this.setData();
+  },
+  watch: {
+    invoiceId: {
+      immediate: true,
+      handler() {
+        this.setData();
+      },
+    },
   },
   props: ["invoiceId"],
   computed: {
@@ -85,6 +124,20 @@ export default defineComponent({
   methods: {
     invoiceNumberDisplay,
     shortDateWithWeekday,
+    async setData() {
+      // get the number and job number of the invoice
+      const result = await getDoc(doc(db, "Invoices", this.invoiceId));
+      this.invoice = result.data();
+      // get all invoices with the number for the job
+      this.$firestoreBind(
+        "allInvoices",
+        query(
+          collection(db, "Invoices"),
+          where("job", "==", this.invoice?.job),
+          where("number", "==", this.invoice?.number)
+        )
+      );
+    },
   },
 });
 </script>
