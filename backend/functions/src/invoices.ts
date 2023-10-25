@@ -88,24 +88,48 @@ export const createInvoice = functions.https.onCall(async (data: unknown, contex
       if (existingInvoicesQuerySnap.docs.length === 0 && invoice.revisionNumber > 0) {
         throw new functions.https.HttpsError("invalid-argument", "A revision cannot be created for an invoice that does not already exist.");
       }
+
+      // if the revisionNumber is greater than 9, throw an error
+      if (invoice.revisionNumber > 9) {
+        throw new functions.https.HttpsError("invalid-argument", "A revision number cannot be greater than 9.");
+      }
+      
       // if there are existing invoices, check that none of them have the same
       // revisionNumber as the one in the data object. If they do, throw an
       // error. Also check that none of them have a revisionNumber that is
       // greater than the one in the data object. If they do, throw an error.
+
+      // NB: This functionality has been significantly changed to allow multiple
+      // versions of the same revision to be created. The commented code below
+      // is the original functionality.
       existingInvoicesQuerySnap.forEach((existingInvoice) => {
         if (existingInvoice.get("revisionNumber") === invoice.revisionNumber) {
           if (invoice.revisionNumber === 0) {
             throw new functions.https.HttpsError("invalid-argument", `Invoice ${data.number} already exists. If you're creating a revision, set the revisionNumber property to a value greater than 0.`);
           }
-          throw new functions.https.HttpsError("invalid-argument", `A revision with number ${data.revisionNumber} already exists for invoice ${data.number}.`);
+          // commented to change behavior to allow multiple versions of the same revision to be created
+          // throw new functions.https.HttpsError("invalid-argument", `A revision with number ${data.revisionNumber} already exists for invoice ${data.number}.`);
         }
-        if (existingInvoice.get("revisionNumber") > invoice.revisionNumber) {
-          throw new functions.https.HttpsError("invalid-argument", `Revision ${data.revisionNumber} was already superseded by revision ${existingInvoice.get('revisionNumber')} for invoice ${data.number}.`);
-        }
+        // commented to change behavior to allow multiple versions of the same revision to be created
+        // if (existingInvoice.get("revisionNumber") > invoice.revisionNumber) {
+        //   throw new functions.https.HttpsError("invalid-argument", `Revision ${data.revisionNumber} was already superseded by revision ${existingInvoice.get('revisionNumber')} for invoice ${data.number}.`);
+        // }
       });
       // if there are existing invoices and none of them have the same
       // revisionNumber as the one in the data object, set the replaced
       // property of all existing invoices to true
+
+      // NB: This functionality has been significantly changed to allow multiple
+      // versions of the same revision to be created. We may now arrive at this
+      // point with existing Invoices whose revisionNumber matches the one in
+      // the data object. The prior comment reflect the original functionality.
+
+      // Now, the replaced property of all existing invoices with the same
+      // number is set to true. The new invoice is then created in the
+      // transaction. The most recently created invoice will be the one that
+      // has the replaced property set to false. This is the invoice that will
+      // be displayed in the UI and that will be synced to the MySQL database
+      // during the next export and used for reporting.
       existingInvoicesQuerySnap.forEach((existingInvoice) => {
         transaction.update(existingInvoice.ref, { replaced: true });
       });

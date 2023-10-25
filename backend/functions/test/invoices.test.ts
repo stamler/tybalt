@@ -90,7 +90,15 @@ describe('createInvoice', () => {
     await assert.isRejected(result2);
   });
 
-  it('requires revisionNumber to a positive integer', async () => {
+  it('requires revisionNumber to a positive integer from 0 to 9', async () => {
+    // create a valid invoice
+    await db.collection("Invoices").add(validInvoice);
+
+    // fails when > 9
+    const invalidInvoice3 = { ...validInvoice, revisionNumber: 10 };
+    const result3 = wrapped(invalidInvoice3, timeClaimContext);
+    await assert.isRejected(result3);
+
     // fails when < 0
     const invalidInvoice = { ...validInvoice, revisionNumber: -1 };
     const result = wrapped(invalidInvoice, timeClaimContext);
@@ -136,23 +144,23 @@ describe('createInvoice', () => {
     await assert.isRejected(result, "Invoice 2401001 already exists. If you're creating a revision, set the revisionNumber property to a value greater than 0");
   });
 
-  it('rejects invoice revisions if there is an existing invoice with the same number and revisionNumber', async () => {
+  it('allows invoice revisions even if there is an existing invoice with the same number and revisionNumber', async () => {
     const revision1 = { ...validInvoice, revisionNumber: 1 };
     const revision2 = { ...validInvoice, revisionNumber: 2 };
     await db.collection("Invoices").add(validInvoice);
     await db.collection("Invoices").add(revision1);
     const result = wrapped(revision1, timeClaimContext);
-    await assert.isRejected(result, "A revision with number 1 already exists for invoice 2401001.");
+    await assert.isFulfilled(result);
     await assert.isFulfilled(wrapped(revision2, timeClaimContext));
   });
 
-  it('rejects invoice revisions if there is an existing invoice with the same number and a higher revisionNumber', async () => {
+  it('allows invoice revisions if there is an existing invoice with the same number and a higher revisionNumber', async () => {
     const revision1 = { ...validInvoice, revisionNumber: 1 };
     const revision2 = { ...validInvoice, revisionNumber: 2 };
     await db.collection("Invoices").add(validInvoice);
     await db.collection("Invoices").add(revision2);
     const result = wrapped(revision1, timeClaimContext);
-    await assert.isRejected(result, "Revision 1 was already superseded by revision 2 for invoice 2401001.");
+    await assert.isFulfilled(result);
   });
   it('marks previous invoice versions as replaced when a new revision is created', async () => {
     const revision1 = { ...validInvoice, revisionNumber: 1 };
