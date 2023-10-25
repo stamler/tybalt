@@ -33,6 +33,17 @@
             </tr>
           </tbody>
         </table>
+        <router-link
+          v-if="invoice.replaced === false"
+          v-bind:to="{
+            name: 'Revise Invoice',
+            params: {
+              invoiceId,
+            },
+          }"
+        >
+          Replace
+        </router-link>
         <div v-if="allInvoices.length > 0">
           <h2>All Versions</h2>
           <ul>
@@ -52,17 +63,6 @@
           </ul>
         </div>
       </div>
-      <router-link
-        v-bind:to="{
-          name: 'Revise Invoice',
-          params: {
-            invoiceId,
-          },
-        }"
-      >
-        Replace
-      </router-link>
-      <!-- TODO: next & previous buttons -->
     </div>
   </div>
 </template>
