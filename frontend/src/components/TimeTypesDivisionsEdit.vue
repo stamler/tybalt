@@ -25,16 +25,26 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import _ from "lodash";
-import firebase from "../firebase";
-const db = firebase.firestore();
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  DocumentData,
+  DocumentSnapshot,
+  collection,
+  CollectionReference,
+  getDoc,
+  setDoc,
+  doc,
+} from "firebase/firestore";
+const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   props: ["id", "collectionName"],
   data() {
     return {
       parentPath: "",
-      collectionObject: null as firebase.firestore.CollectionReference | null,
-      item: {} as firebase.firestore.DocumentData | undefined,
+      collectionObject: null as CollectionReference | null,
+      item: {} as DocumentData | undefined,
     };
   },
   computed: {
@@ -50,7 +60,7 @@ export default defineComponent({
   created() {
     this.parentPath =
       this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = db.collection(this.collectionName);
+    this.collectionObject = collection(db, this.collectionName);
     this.setItem(this.id);
   },
   methods: {
@@ -59,18 +69,17 @@ export default defineComponent({
         throw "There is no valid collection object";
       }
       if (id) {
-        this.collectionObject
-          .doc(id)
-          .get()
-          .then((snap: firebase.firestore.DocumentSnapshot) => {
-            if (snap.exists) {
+        getDoc(doc(this.collectionObject, id)).then(
+          (snap: DocumentSnapshot) => {
+            if (snap.exists()) {
               this.item = snap.data();
             } else {
               // A document with this id doesn't exist in the database,
               // list instead.  TODO: show a message to the user
               this.$router.push(this.parentPath);
             }
-          });
+          }
+        );
       } else {
         this.item = {};
       }
@@ -83,9 +92,7 @@ export default defineComponent({
       if (this.id) {
         // Editing an existing item
         // Since the UI binds existing id to the key field, no need to delete
-        this.collectionObject
-          .doc(this.id)
-          .set(this.item)
+        setDoc(doc(this.collectionObject, this.id), this.item)
           .then(() => {
             this.$router.push(this.parentPath);
           })
@@ -99,9 +106,7 @@ export default defineComponent({
         const newId = this.item.id;
         delete this.item.id;
 
-        this.collectionObject
-          .doc(newId)
-          .set(this.item)
+        setDoc(doc(this.collectionObject, newId), this.item)
           .then(() => {
             this.clearEditor();
             // notify user save is done

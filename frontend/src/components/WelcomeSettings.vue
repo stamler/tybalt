@@ -119,7 +119,7 @@
 <script lang="ts">
 import { LIB_VERSION } from "../version";
 import { defineComponent } from "vue";
-import { signOut } from "../main";
+import { signOutTybalt } from "../main";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -262,12 +262,12 @@ Add-LocalGroupMember -Group 'Network Configuration Operators' -Member '${COMPANY
 
       downloadBlob(blob, "SetupWireguard.ps1");
     },
-    signOut,
+    signOutTybalt,
     async signOutWrapper() {
       // wrap the signOut because it was causing issues of not working at all
       // may be because the function depended on async stuff being loaded
       // but it's not clear why
-      signOut();
+      signOutTybalt();
     },
     setItem(id: string) {
       if (id) {
@@ -308,7 +308,7 @@ Add-LocalGroupMember -Group 'Network Configuration Operators' -Member '${COMPANY
         obj.alternateManager = this.item.alternateManager;
       }
       setDoc(doc(db, "Profiles", this.user.uid), obj, { merge: true })
-        .then(signOut)
+        .then(signOutTybalt)
         .catch((error) => {
           alert(`Error saving profile: ${error.message}`);
         });

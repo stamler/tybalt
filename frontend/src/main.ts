@@ -2,7 +2,7 @@
  * @Author: Dean Stamler
  * @Date: 2018-01-01 12:00:00
  * @Last Modified by: Dean Stamler
- * @Last Modified time: 2023-02-17 12:57:26
+ * @Last Modified time: 2023-10-26 13:22:18
  */
 
 // import Vue from "vue";
@@ -14,7 +14,18 @@ import { MICROSOFT_TENANT_ID } from "./config";
 // Vue.use(InstantSearch);
 
 // first import is here to initializeApp()
-import firebase, { firebaseApp } from "./firebase";
+import { firebaseApp } from "./firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import {
+  getAuth,
+  getRedirectResult,
+  onAuthStateChanged,
+  User,
+  OAuthProvider,
+  signInWithRedirect,
+  signOut,
+} from "firebase/auth";
+import { getFirestore, getDoc, doc } from "firebase/firestore";
 import AppRootComponent from "./App.vue";
 import router from "./router";
 // import { PiniaVuePlugin } from "pinia";
@@ -23,35 +34,44 @@ import { pinia } from "./piniainit";
 import { useStateStore } from "./stores/state";
 import { subDays } from "date-fns";
 
+const functions = getFunctions(firebaseApp);
+const auth = getAuth(firebaseApp);
+
+const provider = new OAuthProvider("microsoft.com");
+provider.setCustomParameters({ tenant: MICROSOFT_TENANT_ID });
+
 let app: App;
 
 // https://github.com/firebase/quickstart-js/blob/master/auth/microsoft-redirect.html
 /* Handle the redirect extracting a token if it exists */
-firebase
-  .auth()
-  .getRedirectResult()
+getRedirectResult(auth)
   .then(async (result) => {
     // get token and call graph to load first name, last name
     // and other important data, then save it to the profile
     // https://firebase.google.com/docs/auth/web/microsoft-oauth
-    const updateProfileFromMSGraph = firebase
-      .functions()
-      .httpsCallable("updateProfileFromMSGraph");
+    const updateProfileFromMSGraph = httpsCallable(
+      functions,
+      "updateProfileFromMSGraph"
+    );
 
-    const credential = result.credential as firebase.auth.OAuthCredential;
+    if (result === null || OAuthProvider.credentialFromResult === null) {
+      return null;
+    }
+
+    const credential = OAuthProvider.credentialFromResult(result);
 
     if (credential) {
       updateProfileFromMSGraph({
         accessToken: credential.accessToken,
       }).catch((error) => alert(`Update from MS Graph failed: ${error}`));
     } else {
-      const currentUser = firebase.auth().currentUser;
+      const currentUser = auth.currentUser;
       if (currentUser !== null) {
         // Validate the age of the profile
         // sign out if the profile is missing msGraphDataUpdated
         // or it was updated more than 7 days ago
-        const db = firebase.firestore();
-        const snap = await db.collection("Profiles").doc(currentUser.uid).get();
+        const db = getFirestore(firebaseApp);
+        const snap = await getDoc(doc(db, "Profiles", currentUser.uid));
         const profile = snap.data();
 
         if (
@@ -60,7 +80,7 @@ firebase
             profile.msGraphDataUpdated.toDate() < subDays(new Date(), 7))
         ) {
           alert("Your profile needs an update. Please sign back in.");
-          signOut();
+          signOutTybalt();
         }
       }
     }
@@ -80,7 +100,7 @@ firebase
     }
   });
 
-const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
+const unsubscribe = onAuthStateChanged(auth, async function (user) {
   if (user) {
     // console.log(`${user.displayName} is logged in`);
     // set state and user in pinia
@@ -90,9 +110,12 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
     const store = useStateStore(pinia);
 
     // get the expense rates and store them in the store
-    const getExpenseRates = firebase.functions().httpsCallable("expenseRates");
+    const getExpenseRates = httpsCallable(functions, "expenseRates");
     tasks.push(
-      getExpenseRates().then((result) => store.setExpenseRates(result.data))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getExpenseRates().then((result: Record<string, any>) =>
+        store.setExpenseRates(result.data)
+      )
     );
 
     // TODO: Vuex won't survive a page reload and this code won't be
@@ -101,7 +124,7 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
     // by the router, any component which depends on state will fail on
     // app load.
     // TODO: avoid casting to firebase.User
-    tasks.push(store.setUser(firebase.auth().currentUser as firebase.User));
+    tasks.push(store.setUser(auth.currentUser as User));
     tasks.push(
       // Using true here will force a refresh of the token test this to see if a
       // simple refresh will suffice instead of logging out after claims are
@@ -125,18 +148,16 @@ const unsubscribe = firebase.auth().onAuthStateChanged(async function (user) {
       }
     });
   } else {
-    const provider = new firebase.auth.OAuthProvider("microsoft.com");
-    provider.setCustomParameters({ tenant: MICROSOFT_TENANT_ID });
     // https://stackoverflow.com/questions/41055699/why-does-firebase-auth-work-for-chrome-but-not-firefox
     // signInWithRedirect can have issues in Firefox and other browsers
     // signInWithPopup can be used instead. Disabling enhanced tracking
     // protection in Firefox can sometimes resolve the issue.
-    firebase.auth().signInWithRedirect(provider);
+    signInWithRedirect(auth, provider);
   }
 });
 
-export function signOut(): void {
+export function signOutTybalt(): void {
   unsubscribe();
-  firebase.auth().signOut();
+  signOut(auth);
   window.location.href = "https://login.windows.net/common/oauth2/logout";
 }

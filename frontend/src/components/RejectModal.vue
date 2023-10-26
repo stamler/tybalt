@@ -31,10 +31,16 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import {
+  getFirestore,
+  doc,
+  runTransaction,
+  DocumentSnapshot,
+} from "firebase/firestore";
 import { useStateStore } from "../stores/state";
 
-const db = firebase.firestore();
+const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   setup() {
@@ -77,38 +83,35 @@ export default defineComponent({
         id: `reject${docId}`,
         message: "rejecting",
       });
-      const docRef = db.collection(collectionName).doc(docId);
-      return db
-        .runTransaction((transaction) => {
-          return transaction
-            .get(docRef)
-            .then((tsDoc: firebase.firestore.DocumentSnapshot) => {
-              if (!tsDoc.exists) {
-                throw `A document with id ${docId} doesn't exist.`;
-              }
-              const data = tsDoc?.data() ?? undefined;
-              if (
-                (collectionName === "TimeSheets" &&
-                  data?.submitted === true &&
-                  data?.locked === false) ||
-                (collectionName === "Expenses" &&
-                  data?.submitted === true &&
-                  (data?.committed === false || data?.committed === undefined))
-              ) {
-                // document is rejectable because it is submitted and not locked or committed
-                transaction.update(docRef, {
-                  approved: false,
-                  submitted: false,
-                  rejected: true,
-                  rejectorId: this.user.uid,
-                  rejectorName: this.user.displayName,
-                  rejectionReason: reason,
-                });
-              } else {
-                throw "The document has not been submitted or is locked";
-              }
+      const docRef = doc(db, collectionName, docId);
+      return runTransaction(db, async (transaction) => {
+        return transaction.get(docRef).then((tsDoc: DocumentSnapshot) => {
+          if (!tsDoc.exists) {
+            throw `A document with id ${docId} doesn't exist.`;
+          }
+          const data = tsDoc?.data() ?? undefined;
+          if (
+            (collectionName === "TimeSheets" &&
+              data?.submitted === true &&
+              data?.locked === false) ||
+            (collectionName === "Expenses" &&
+              data?.submitted === true &&
+              (data?.committed === false || data?.committed === undefined))
+          ) {
+            // document is rejectable because it is submitted and not locked or committed
+            transaction.update(docRef, {
+              approved: false,
+              submitted: false,
+              rejected: true,
+              rejectorId: this.user.uid,
+              rejectorName: this.user.displayName,
+              rejectionReason: reason,
             });
-        })
+          } else {
+            throw "The document has not been submitted or is locked";
+          }
+        });
+      })
         .then(() => {
           this.endTask(`reject${docId}`);
         })

@@ -6,7 +6,7 @@ import {
   differenceInDays,
   formatDistanceToNow,
 } from "date-fns";
-import firebase, { firebaseApp } from "../firebase";
+import { firebaseApp } from "../firebase";
 import { COMPANY_SHORTNAME, APP_NATIVE_TZ, PAYROLL_EPOCH } from "../config";
 import {
   getFirestore,
@@ -26,6 +26,7 @@ import {
   httpsCallable,
   HttpsCallableResult,
 } from "firebase/functions";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
 import { parse } from "json2csv";
@@ -35,7 +36,7 @@ import { pinia } from "../piniainit";
 
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
-const storage = firebase.storage();
+const storage = getStorage(firebaseApp);
 const store = useStateStore(pinia);
 
 // Given a number (result of getTime() from js Date object), verify that it is
@@ -455,7 +456,7 @@ export async function downloadAttachment(
   item: DocumentData,
   sameTab?: boolean
 ) {
-  const url = await storage.ref(item.attachment).getDownloadURL();
+  const url = await getDownloadURL(ref(storage, item.attachment));
   if (sameTab === true) {
     const a = document.createElement("a");
     a.href = url;

@@ -10,14 +10,17 @@
   </div>
 </template>
 <script lang="ts">
+import { firebaseApp } from "../firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { defineComponent } from "vue";
 import ActionButton from "./ActionButton.vue";
 import { downloadBlob } from "./helpers";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
 import ObjectTable from "./ObjectTable.vue";
 import { parse } from "json2csv";
 import { TableData, QueryPayloadObject } from "./types";
+
+const functions = getFunctions(firebaseApp);
 
 export default defineComponent({
   setup() {
@@ -50,14 +53,14 @@ export default defineComponent({
         id: `runQuery_${key}`,
         message: "getting data...",
       });
-      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      const queryMySQL = httpsCallable(functions, "queryMySQL");
       const queryData = { queryName: this.queryName } as QueryPayloadObject;
       if (this.queryValues !== undefined)
         queryData.queryValues = this.queryValues;
       return queryMySQL(queryData)
         .then((response) => {
           this.endTask(`runQuery_${key}`);
-          this.queryResult = response.data;
+          this.queryResult = response.data as TableData;
         })
         .catch((error) => {
           this.endTask(`runQuery_${key}`);

@@ -257,7 +257,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import firebase, { firebaseApp } from "../firebase";
+import { firebaseApp } from "../firebase";
 import {
   getFirestore,
   collection,
@@ -273,9 +273,18 @@ import {
   setDoc,
   FirestoreError,
 } from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  getDownloadURL,
+  StorageError,
+  uploadBytes,
+} from "firebase/storage";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useCollection } from "vuefire";
 const db = getFirestore(firebaseApp);
-const storage = firebase.storage();
+const storage = getStorage(firebaseApp);
+const functions = getFunctions(firebaseApp);
 import { useStateStore } from "../stores/state";
 import Datepicker from "@vuepic/vue-datepicker";
 import { addWeeks } from "date-fns";
@@ -448,9 +457,10 @@ export default defineComponent({
     },
     cleanup() {
       // clean up any existing orphaned attachments
-      const cleanup = firebase
-        .functions()
-        .httpsCallable("cleanUpUsersExpenseAttachments");
+      const cleanup = httpsCallable(
+        functions,
+        "cleanUpUsersExpenseAttachments"
+      );
       return cleanup().catch((error: unknown) => {
         alert(`Attachment cleanup failed: ${JSON.stringify(error)}`);
       });
@@ -482,10 +492,10 @@ export default defineComponent({
             // otherwise set a flag and save the ref to item
             // let url;
             try {
-              /*url = */ await storage.ref(pathReference).getDownloadURL();
+              /*url = */ await getDownloadURL(ref(storage, pathReference));
               this.attachmentPreviouslyUploaded = true;
             } catch (error) {
-              const err = error as firebase.storage.FirebaseStorageError;
+              const err = error as StorageError;
               if (err.code === "storage/object-not-found") {
                 this.newAttachment = pathReference;
                 this.attachmentPreviouslyUploaded = false;
@@ -653,7 +663,7 @@ export default defineComponent({
 
         // upload the attachment
         try {
-          await storage.ref(this.newAttachment).put(this.localFile);
+          await uploadBytes(ref(storage, this.newAttachment), this.localFile);
           uploadFailed = false;
           this.endTask(`upload${this.newAttachment}`);
         } catch (error) {

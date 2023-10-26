@@ -4,11 +4,14 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { parse } from "json2csv";
 import ActionButton from "./ActionButton.vue";
 import { QueryPayloadObject } from "./types";
 import { downloadBlob } from "./helpers";
+
+const functions = getFunctions(firebaseApp);
 
 export default defineComponent({
   setup() {
@@ -24,18 +27,18 @@ export default defineComponent({
   components: { ActionButton },
   methods: {
     async download() {
-      const result = await this.runQuery();
+      const result = (await this.runQuery()) as Readonly<unknown>;
       const csv = parse(result);
       const blob = new Blob([csv], { type: "text/csv" });
       const name = this.dlFileName || "report.csv";
       downloadBlob(blob, name);
     },
-    runQuery() {
+    async runQuery() {
       this.startTask({
         id: "runQuery",
         message: "getting data...",
       });
-      const queryMySQL = firebase.functions().httpsCallable("queryMySQL");
+      const queryMySQL = httpsCallable(functions, "queryMySQL");
       const queryData = { queryName: this.queryName } as QueryPayloadObject;
       if (this.queryValues !== undefined)
         queryData.queryValues = this.queryValues;

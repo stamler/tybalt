@@ -3,7 +3,7 @@ import "firebase/compat/functions";
 import "firebase/compat/firestore";
 import "firebase/compat/auth";
 import "firebase/compat/storage";
-import "firebase/compat/analytics";
+import { getAnalytics } from "firebase/analytics";
 import { FIREBASE_CONFIG } from "./config";
 // Initialize Firebase
 
@@ -14,7 +14,7 @@ import { FIREBASE_CONFIG } from "./config";
 // registration configuration matches.
 export const firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
 
-export const analytics = firebase.analytics();
+export const analytics = getAnalytics(firebaseApp);
 
 const USE_EMULATORS = false;
 const db = firebase.firestore();

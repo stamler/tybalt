@@ -186,7 +186,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import firebase, { firebaseApp } from "../firebase";
+import { firebaseApp } from "../firebase";
 import { useCollection } from "vuefire";
 import {
   getFirestore,
@@ -197,6 +197,7 @@ import {
   CollectionReference,
   DocumentSnapshot,
   DocumentData,
+  serverTimestamp,
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 import { useStateStore } from "../stores/state";
@@ -516,7 +517,7 @@ export default defineComponent({
 
         this.item.creator = this.user.uid;
         this.item.creatorName = this.user.displayName;
-        this.item.created = firebase.firestore.FieldValue.serverTimestamp();
+        this.item.created = serverTimestamp();
         this.item.committed = false;
       }
 

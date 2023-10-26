@@ -1,4 +1,4 @@
-import firebase from "../firebase";
+import { Timestamp } from "firebase/firestore";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TableData = Record<string, any>[] | undefined;
@@ -25,13 +25,13 @@ export interface InvoiceLineObject {
 
 export interface TimeEntry {
   // required properties always
-  date: firebase.firestore.Timestamp;
+  date: Timestamp;
   timetype: string;
   timetypeName: string;
   uid: string;
 
   // required properties for TimeEntries pulled from collection
-  weekEnding: firebase.firestore.Timestamp;
+  weekEnding: Timestamp;
 
   // properties which are never required, but may require eachother
   division?: string;

@@ -23,8 +23,11 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import firebase from "../firebase";
+import { firebaseApp } from "../firebase";
+import { DocumentData } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
+const functions = getFunctions(firebaseApp);
 export default defineComponent({
   props: ["item", "newOpeningDate"],
   data() {
@@ -33,10 +36,11 @@ export default defineComponent({
     };
   },
   methods: {
-    save(item: firebase.firestore.DocumentData) {
-      const updateOpeningValues = firebase
-        .functions()
-        .httpsCallable("updateOpeningValues");
+    save(item: DocumentData) {
+      const updateOpeningValues = httpsCallable(
+        functions,
+        "updateOpeningValues"
+      );
 
       // Perform the save of the individual item here,
       // using the this.newOpeningDate value from the top of the UI

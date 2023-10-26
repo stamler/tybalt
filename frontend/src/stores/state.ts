@@ -1,4 +1,4 @@
-import firebase from "../firebase";
+import { User } from "firebase/auth";
 import { defineStore } from "pinia";
 
 interface TaskList {
@@ -13,7 +13,7 @@ export const useStateStore = defineStore({
   id: "state",
   state: () => ({
     sidenav: false,
-    user: { uid: "", email: "" } as firebase.User,
+    user: { uid: "", email: "" } as User,
     claims: {} as { [claim: string]: boolean },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expenseRates: null as { [key: string]: any } | null,
@@ -50,7 +50,7 @@ export const useStateStore = defineStore({
       delete this.activeTasks[id];
       this.showTasks = Object.keys(this.activeTasks).length > 0;
     },
-    setUser(user: firebase.User) {
+    setUser(user: User) {
       this.user = user;
     },
     setClaims(claims: { [claim: string]: boolean }) {
