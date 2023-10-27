@@ -1,6 +1,6 @@
 {
   "name": "tybalt-frontend",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "private": true,
   "scripts": {
     "copyconfig": "cp ../config.ts src/config.ts",
@@ -29,7 +29,7 @@
     "@types/lodash": "^4.14.168",
     "@types/marked": "^4.0.8",
     "@types/uuid": "^9.0.1",
-    "@vuepic/vue-datepicker": "^3.5.3",
+    "@vuepic/vue-datepicker": "^7.2.0",
     "algoliasearch": "^4.8.6",
     "core-js": "^3.8.3",
     "date-fns": "^2.16.1",
