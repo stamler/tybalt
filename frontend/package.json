@@ -71,7 +71,7 @@
     "mocha": "^10.2.0",
     "prettier": "^2.2.1",
     "sass": "^1.49.7",
-    "sass-loader": "^10.1.1",
+    "sass-loader": "^13.3.2",
     "ts-node": "^10.7.0",
     "typescript": "5.1"
   }
