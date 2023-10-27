@@ -1,8 +1,6 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/functions";
-import "firebase/compat/firestore";
-import "firebase/compat/auth";
-import "firebase/compat/storage";
+import { initializeApp } from "firebase/app";
+import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
+import { initializeFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { FIREBASE_CONFIG } from "./config";
 // Initialize Firebase
@@ -12,18 +10,15 @@ import { FIREBASE_CONFIG } from "./config";
 // authDomain is set to match the actual custom URL of the site, replacing
 // firebaseApp-ca99XX.firebaseapp.com with APP_HOSTNAME and the Azure App
 // registration configuration matches.
-export const firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+export const firebaseApp = initializeApp(FIREBASE_CONFIG);
 
 export const analytics = getAnalytics(firebaseApp);
 
 const USE_EMULATORS = false;
-const db = firebase.firestore();
 if (location.hostname === "localhost" && USE_EMULATORS) {
-  db.settings({
+  initializeFirestore(firebaseApp, {
     host: "localhost:8080",
     ssl: false,
   });
-  firebase.functions().useFunctionsEmulator("http://localhost:5001");
+  connectFunctionsEmulator(getFunctions(firebaseApp), "localhost", 5001);
 }
-
-export default firebase;
