@@ -17,7 +17,7 @@ which aggregate around jobs
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent } from "vue";
 import { firebaseApp } from "../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";

@@ -19,7 +19,7 @@
   </span>
 </template>
 
-<script>
+<script lang="ts">
 import { Icon } from "@iconify/vue";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
@@ -53,7 +53,8 @@ export default defineComponent({
         "F7IPMZB3IW",
         profileSecrets.get("algoliaSearchKey")
       );
-      const add = (item) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const add = (item: Record<string, any>) => {
         this.$emit("add-element", item);
       };
       const idx_n = () => {
