@@ -1,6 +1,6 @@
 {
   "name": "tybalt-frontend",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "private": true,
   "scripts": {
     "copyconfig": "cp ../config.ts src/config.ts",
@@ -27,7 +27,6 @@
     "@algolia/autocomplete-theme-classic": "^1.4.1",
     "@types/json2csv": "^5.0.1",
     "@types/lodash": "^4.14.168",
-    "@types/marked": "^4.0.8",
     "@types/uuid": "^9.0.1",
     "@vuepic/vue-datepicker": "^7.2.0",
     "algoliasearch": "^4.8.6",
@@ -36,9 +35,9 @@
     "date-fns-tz": "^2.0.0",
     "firebase": "^10.5.2",
     "highlight.js": "^11.7.0",
-    "js-sha256": "^0.9.0",
+    "js-sha256": "^0.10.1",
     "json2csv": "^5.0.5",
-    "marked": "^4.2.12",
+    "marked": "^9.1.2",
     "pinia": "^2.0.23",
     "tslib": "^2.3.0",
     "uuid": "^9.0.0",
@@ -50,7 +49,7 @@
   "devDependencies": {
     "@iconify/vue": "^4.0.2",
     "@types/chai": "^4.3.1",
-    "@types/jsdom": "^20.0.0",
+    "@types/jsdom": "^21.1.4",
     "@types/mocha": "^10.0.3",
     "@typescript-eslint/eslint-plugin": "^5.41.0",
     "@typescript-eslint/parser": "^5.41.0",
@@ -67,13 +66,13 @@
     "eslint": "^7.19.0",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-vue": "^9.7.0",
-    "jsdom": "^20.0.1",
+    "jsdom": "^22.1.0",
     "jsdom-global": "^3.0.2",
     "mocha": "^10.2.0",
     "prettier": "^2.2.1",
     "sass": "^1.49.7",
     "sass-loader": "^10.1.1",
     "ts-node": "^10.7.0",
-    "typescript": "~4.7"
+    "typescript": "^5.2.2"
   }
 }
