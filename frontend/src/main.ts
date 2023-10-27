@@ -24,6 +24,7 @@ import {
   OAuthProvider,
   signInWithRedirect,
   signOut,
+  getIdTokenResult,
 } from "firebase/auth";
 import { getFirestore, getDoc, doc } from "firebase/firestore";
 import AppRootComponent from "./App.vue";
@@ -132,7 +133,18 @@ const unsubscribe = onAuthStateChanged(auth, async function (user) {
       // periodically without logging out
       // https://firebase.google.com/docs/auth/admin/custom-claims
       // https://firebase.google.com/docs/reference/js/auth.user.md#usergetidtokenresult
-      user.getIdTokenResult(true).then((token) => store.setClaims(token.claims))
+      getIdTokenResult(user, true).then((token) => {
+        const allClaims = token.claims;
+        // filter out the properties that don't have a value of true
+        const claims = Object.keys(allClaims)
+          .filter((key) => allClaims[key] === true)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .reduce((obj: Record<string, any>, key) => {
+            obj[key] = allClaims[key];
+            return obj;
+          }, {});
+        store.setClaims(claims);
+      })
     );
     Promise.all(tasks).then(() => {
       if (!app) {
