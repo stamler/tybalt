@@ -1,3 +1,9 @@
+/**
+ * This was used to cancel all early proposals. It has never been used or
+ * tested. If it is going to be used it will have to be tested first to ensure
+ * it does what is expected.
+ */
+
 import * as admin from "firebase-admin";
 const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
