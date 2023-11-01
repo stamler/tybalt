@@ -8,7 +8,7 @@ chai.use(chaiAsPromised);
 const assert = chai.assert;
 
 import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc, nextSaturday } from "../src/utilities";
-import { CallableContext } from "firebase-functions/lib/providers/https";
+import { CallableContext } from "firebase-functions/v1/https";
 import { cleanupFirestore } from "./helpers";
 
 describe("utilities.ts", () => {
