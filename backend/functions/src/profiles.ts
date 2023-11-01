@@ -16,7 +16,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as _ from "lodash";
 import axios from "axios";
-import jwtDecode, { JwtPayload } from "jwt-decode";
+import { jwtDecode, JwtPayload } from "jwt-decode";
 //import { subDays } from "date-fns";
 import { getAuthObject, isPayrollWeek2 } from "./utilities";
 import algoliasearch from "algoliasearch";
