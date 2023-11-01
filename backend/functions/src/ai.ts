@@ -3,7 +3,7 @@
 import * as functions from "firebase-functions";
 import { getAuthObject, isDocIdObject, isChatPayloadObject } from "./utilities";
 import * as admin from "firebase-admin";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { v4 as uuidv4 } from "uuid";
 
 const db = admin.firestore();
@@ -376,7 +376,7 @@ async function queryChatGPT(messages: OpenAIChatMessage[], uid: string) {
     );
     return { message: response.data.choices[0].message, response: response.data} ;        
   } catch (error) {
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       throw new Error(error.message);
     } else {
       throw error;

@@ -54,7 +54,7 @@
     "ajv": "^6.12.6",
     "algoliasearch": "^4.8.6",
     "archiver": "^6.0.1",
-    "axios": "^0.24.0",
+    "axios": "^1.6.0",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^2.0.0",
     "firebase-admin": "^11.11.0",
