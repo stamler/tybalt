@@ -81,8 +81,8 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.jobHours,0, "jobHours tally doesn't match");
       assert.equal(tally.workHoursTally.noJobNumber,32, "noJobNumber tally doesn't match");
       assert.equal(tally.nonWorkHoursTally.OP, 8, "PPTO tally doesn't match");
-      assert(_.isEqual(tally.timetypes.sort(), ["OP", "R"]));
-      assert(_.isEqual(tally.divisions, ["CI"]));
+      assert.isTrue(_.isEqual(tally.timetypes.sort(), ["OP", "R"]));
+      assert.isTrue(_.isEqual(tally.divisions, ["CI"]));
     });
     it("rejects for salary or hourly staff member if a 'R' time entry is missing hours", async () => {
       const { hours, ...missingHours } = fullITDay;
@@ -721,11 +721,11 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.jobsTally["25-001"].jobHours,16, "jobHours tally for job 25-001 doesn't match");
       assert.equal(tally.jobsTally["25-002"].hours,0, "hours tally for job 25-002 doesn't match");
       assert.equal(tally.jobsTally["25-002"].jobHours,8, "jobHours tally for job 25-002 doesn't match");
-      assert(_.isEqual(tally.timetypes, ["R"]));
-      assert(_.isEqual(tally.divisions.sort(), ["EE", "EG"]));
-      assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
-      assert(_.isEqual(tally.jobNumbers.sort(),["25-001", "25-002"]));
-      assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
+      assert.isTrue(_.isEqual(tally.timetypes, ["R"]));
+      assert.isTrue(_.isEqual(tally.divisions.sort(), ["EE", "EG"]));
+      assert.isTrue(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
+      assert.isTrue(_.isEqual(tally.jobNumbers.sort(),["25-001", "25-002"]));
+      assert.isTrue(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
     });
     it("tallies and validates for salaried staff member with fewer than 40 regular hours if untrackedTimeOff:true", async () => {
       const timeEntries = await db
@@ -742,11 +742,11 @@ describe("tallyAndValidate", async () => {
       assert.equal(tally.workHoursTally.noJobNumber,0, "noJobNumber tally doesn't match");
       assert.equal(tally.jobsTally["25-001"].hours,16, "hours tally for job 25-001 doesn't match");
       assert.equal(tally.jobsTally["25-001"].jobHours,16, "jobHours tally for job 25-001 doesn't match");
-      assert(_.isEqual(tally.timetypes, ["R"]));
-      assert(_.isEqual(tally.divisions.sort(), ["EE"]));
-      assert(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
-      assert(_.isEqual(tally.jobNumbers.sort(),["25-001"]));
-      assert(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
+      assert.isTrue(_.isEqual(tally.timetypes, ["R"]));
+      assert.isTrue(_.isEqual(tally.divisions.sort(), ["EE"]));
+      assert.isTrue(_.isEqual(tally.divisions.sort(), Object.keys(tally.divisionsTally).sort()));
+      assert.isTrue(_.isEqual(tally.jobNumbers.sort(),["25-001"]));
+      assert.isTrue(_.isEqual(tally.jobNumbers.sort(),Object.keys(tally.jobsTally).sort()));
     });
     it("rejects if a job in a time entry isn't active", async () => {
       const fullEEDay2 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, ...jobPartial3 }
@@ -774,7 +774,7 @@ describe("tallyAndValidate", async () => {
       .get();
       assert.equal(timeEntries.size,5);
       const tally = await tallyAndValidate(auth, profile, timeEntries, weekEnding);
-      assert(_.isEqual(tally.timetypes, ["R"]));
+      assert.isTrue(_.isEqual(tally.timetypes, ["R"]));
       const fullDay3 = { division: "EG", divisionName: "Geotechnical", timetype: "R", timetypeName: "Hours Worked", workDescription, mealsHours: 0.5, workrecord:"K20-123", ...jobPartial }
       await db.collection("TimeEntries").add({ date: new Date(2020,0,8), uid: alice.uid, weekEnding, ...fullDay3 });
       timeEntries = await db
