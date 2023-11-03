@@ -29,11 +29,12 @@ import {
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
-import { parse } from "json2csv";
+import { Parser } from "@json2csv/plainjs";
 import { useStateStore } from "../stores/state";
 import router from "../router";
 import { pinia } from "../piniainit";
 
+const parser = new Parser();
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
 const storage = getStorage(firebaseApp);
@@ -369,7 +370,8 @@ export async function generateTimeReportCSV(
     amendmentRecords.push(line);
   }
 
-  const csv = parse(timesheetRecords.concat(amendmentRecords), opts);
+  const optsParser = new Parser(opts);
+  const csv = optsParser.parse(timesheetRecords.concat(amendmentRecords));
   const blob = new Blob([csv], { type: "text/csv" });
   const filename = `time_report_${exportDateWeekStart(weekEnding)}-${exportDate(
     weekEnding
@@ -396,7 +398,7 @@ export async function timeSummary(weekEnding: Date) {
       queryValues,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const csv = parse(response.data as Array<any>);
+    const csv = parser.parse(response.data as Array<any>);
     const blob = new Blob([csv], { type: "text/csv" });
     const filename = `time_summary_${exportDateWeekStart(
       weekEnding
@@ -637,7 +639,7 @@ export async function generatePayablesCSVSQL(
       processed.payrollId = Number(x.payrollId);
       return processed;
     });
-    const csv = parse(dat);
+    const csv = parser.parse(dat);
     const blob = new Blob([csv], { type: "text/csv" });
     /* TODO: filename should represent the correct start and end dates of
     the report */

@@ -6,7 +6,7 @@ import { defineComponent } from "vue";
 import { useStateStore } from "../stores/state";
 import { firebaseApp } from "../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { parse } from "json2csv";
+import { Parser } from "@json2csv/plainjs";
 import ActionButton from "./ActionButton.vue";
 import { QueryPayloadObject } from "./types";
 import { downloadBlob } from "./helpers";
@@ -28,7 +28,8 @@ export default defineComponent({
   methods: {
     async download() {
       const result = (await this.runQuery()) as Readonly<unknown>;
-      const csv = parse(result);
+      const parser = new Parser();
+      const csv = parser.parse(result);
       const blob = new Blob([csv], { type: "text/csv" });
       const name = this.dlFileName || "report.csv";
       downloadBlob(blob, name);

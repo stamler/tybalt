@@ -17,7 +17,7 @@ import ActionButton from "./ActionButton.vue";
 import { downloadBlob } from "./helpers";
 import { useStateStore } from "../stores/state";
 import ObjectTable from "./ObjectTable.vue";
-import { parse } from "json2csv";
+import { Parser } from '@json2csv/plainjs';
 import { TableData, QueryPayloadObject } from "./types";
 
 const functions = getFunctions(firebaseApp);
@@ -42,7 +42,8 @@ export default defineComponent({
   methods: {
     download() {
       if (this.queryResult === undefined) return;
-      const csv = parse(this.queryResult);
+      const parser = new Parser();
+      const csv = parser.parse(this.queryResult);
       const blob = new Blob([csv], { type: "text/csv" });
       const name = this.dlFileName || "report.csv";
       downloadBlob(blob, name);

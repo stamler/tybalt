@@ -52,7 +52,7 @@ import WireGuardClientsList from "@/components/WireGuardClientsList.vue";
 import WireGuardClientAdd from "@/components/WireGuardClientAdd.vue";
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
@@ -441,7 +441,6 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Payroll List",
-              props: { collectionName: "PayrollTracking" },
               component: PayrollTrackingList,
             },
           ],
