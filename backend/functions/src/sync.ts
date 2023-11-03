@@ -6,7 +6,7 @@ import { TimeEntry, InvoiceLineObject } from "./utilities";
 import { APP_NATIVE_TZ } from "./config";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
-import { RowDataPacket } from "mysql2";
+import { RowDataPacket, Connection } from "mysql2/promise";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -19,19 +19,22 @@ export const syncToSQL = functions
 //  .schedule("0 * * * *") // every hour
   .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
-    await cleanupTime();
-    await exportTime();
-    await cleanupExport("TimeAmendments");
-    await exportAmendments();
-    await cleanupExport("Expenses");
-    await exportExpenses();
-    await cleanupExport("Invoices");
-    await deleteReplacedInvoices();
-    await exportInvoices();
-    await exportProfiles();
+    // create a single connection to MySQL and use it for all operations
+    const mysqlConnection = await createSSHMySQLConnection2();
+    await cleanupTime(mysqlConnection);
+    await exportTime(mysqlConnection);
+    await cleanupExport(mysqlConnection, "TimeAmendments");
+    await exportAmendments(mysqlConnection);
+    await cleanupExport(mysqlConnection, "Expenses");
+    await exportExpenses(mysqlConnection);
+    await cleanupExport(mysqlConnection, "Invoices");
+    await deleteReplacedInvoices(mysqlConnection);
+    await exportInvoices(mysqlConnection);
+    await exportProfiles(mysqlConnection);
     try {
-      await writebackProfiles();
+      await writebackProfiles(mysqlConnection);
     } catch (error) {
+      functions.logger.error(`Failed to writeback profiles: ${error}`);
       await db.collection("Emails").add({
         toUids: ["UAmV8K6DcXVhSrMAtZua0OmCUPu2"],
         message: {
@@ -46,7 +49,7 @@ export const syncToSQL = functions
         },
       });
     }
-    return;
+    return mysqlConnection.end();
   });
 
 /*
@@ -61,9 +64,8 @@ NEVER UNLOCKING A DOCUMENT THAT HAS THIS FLAG SET. The final batch update will
 delete this flag. This is a manual document-locking mechanism that can span a
 longer time than a transaction during the exportTime() function call 
 */
-export async function exportTime() {
+export async function exportTime(mysqlConnection: Connection) {
   const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the first "batchSize" documents that are locked but not yet exported.
   // Since runs are idempotent we can just run it again if there are remaining
@@ -200,8 +202,7 @@ MySQL under TimeSheets and TimeEntries and delete them. Then once successful
 deletion is confirmed, delete the exportInProgress property and set 
 exported:false. The next time exportTime() runs, this document will be
 exported fresh. */
-export async function cleanupTime() {
-  const mysqlConnection = await createSSHMySQLConnection2();
+export async function cleanupTime(mysqlConnection: Connection) {
 
   // Get the documents where exportInProgress:true. They may locked or
   // unlocked, exported or not exported
@@ -259,9 +260,8 @@ export async function cleanupTime() {
 /*
 exportTime() but for TimeAmendments
 */
-export async function exportAmendments() {
+export async function exportAmendments(mysqlConnection: Connection) {
   const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the first "batchSize" documents that are locked but not yet exported
   // This batches runs. Since runs are idempotent we can just run it again if
@@ -358,9 +358,8 @@ export async function exportAmendments() {
 cleanupExport() cleans up the exportInProgress:true property on the specified
 collection. See cleanupTime() for more details.
 */
-export async function cleanupExport(collection: string) {
+export async function cleanupExport(mysqlConnection:Connection, collection: string) {
   functions.logger.debug(`cleanupExport(${collection})`);
-  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the documents where exportInProgress:true. They may locked/committed or
   // unlocked/uncommitted, exported or not exported
@@ -425,9 +424,8 @@ A DOCUMENT THAT HAS THIS FLAG SET. The final batch update will delete this flag.
 This is a manual document-locking mechanism that can span a longer time than a
 transaction during the exportExpenses() function call 
 */
-export async function exportExpenses() {
+export async function exportExpenses(mysqlConnection: Connection) {
   const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection2();
 
   // Get the first "batchSize" documents that are committed but not yet exported
   // This batches runs. Since runs are idempotent we can just run it again if
@@ -549,10 +547,9 @@ timestamp column which is updated on UPSERT is used to determine which Profiles
 are stale (at least 2 minutes old) and should be deleted. These are cleaned up
 in this function.
 */
-export async function exportProfiles() {
+export async function exportProfiles(mysqlConnection: Connection) {
   // const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection2();
-
+  functions.logger.debug("exporting profiles");
   // Get specified fields from all profiles and store them in an array of arrays
   // to be used in the INSERT query
   const allProfilesQuerySnap = await db.collection("Profiles").get();
@@ -596,12 +593,12 @@ export async function exportProfiles() {
     functions.logger.error(`Failed to cleanup stale Profiles rows: ${error}`);
     throw error
   }
-  functions.logger.log(`Cleaned up stale Profiles rows`);
+  functions.logger.debug(`Cleaned up stale Profiles rows`);
 
   // The affectedRows property is the number of rows that were deleted, but I'm
   // lazy and this is typescript so I'm just going to show the whole object
   // instead of declaring a type and then using it to extract the property
-  functions.logger.log(cleanupResult[0]);
+  functions.logger.debug(cleanupResult[0]);
 }
 
 /*
@@ -611,13 +608,15 @@ retrieving the Profiles data from MySQL and then updating the Firestore
 documents.
 */
 
-export async function writebackProfiles() {
+export async function writebackProfiles(mysqlConnection: Connection) {
   // Load and run the query
+  functions.logger.debug(`writing back profiles`);
   const mileageSql = loadSQLFileToString("mileageClaimed");
   const timeOffSql = loadSQLFileToString("timeOffTallies");
-  const connection = await createSSHMySQLConnection2();
-  const [mr, _fields0] = await connection.query(mileageSql);
-  const [tr, _fields1] = await connection.query(timeOffSql);
+
+  const [mr, _fields0] = await mysqlConnection.query(mileageSql);
+  const [tr, _fields1] = await mysqlConnection.query(timeOffSql);
+  functions.logger.debug(`got mileage and time off tallies`);
 
   const profilesQuery = await db.collection("Profiles").get();
   const profiles = profilesQuery.docs;
@@ -645,7 +644,7 @@ export async function writebackProfiles() {
       mileageClaimedSince = new Date(mileageRows[0].jsDate);
     } else {
       const mileageResetSql = "SELECT MAX(date) FROM MileageResetDates WHERE date < NOW()";
-      const [rr, _fields2] = await connection.query(mileageResetSql);
+      const [rr, _fields2] = await mysqlConnection.query(mileageResetSql);
       const resetRows = rr as RowDataPacket[];
       if (resetRows.length === 1) {
         functions.logger.debug(`mileageClaimedSince set to ${resetRows[0]["MAX(date)"]} from SQL query`);
@@ -697,11 +696,10 @@ facility to update invoices in MySQL since no updates are allowed in Firestore.
 However it will be possible to manually deleted invoices in Firestore and in
 this case the corresponding rows in MySQL will also need to be deleted.
 */
-export async function exportInvoices() {
+export async function exportInvoices(mysqlConnection: Connection) {
   // 1. export invoices where exported: false and replaced: false, then set
   //    exported: true
   const start = process.hrtime.bigint();
-  const mysqlConnection = await createSSHMySQLConnection2();
 
   // get the invoices to export
   const batchSize = 499;  
@@ -833,7 +831,7 @@ deleteReplacedInvoices():
 delete invoices where exported: true and replaced: true, then set exported:
 false in firestore
 */
-export async function deleteReplacedInvoices(){
+export async function deleteReplacedInvoices(mysqlConnection: Connection){
   functions.logger.debug("deleteReplacedInvoices()");
   // get invoices in firestore where exported: true and replaced: true
   const batchSize = 499;
@@ -847,7 +845,6 @@ export async function deleteReplacedInvoices(){
   // for each invoice, delete the Invoices row with the matching id. The ON
   // CASCADE of TimeEntries will automatically delete the entries so we don't
   // have to handle that here.
-  const mysqlConnection = await createSSHMySQLConnection2();
   await mysqlConnection.query( "START TRANSACTION;");
 
   const invoiceDocSnaps = await pendingDeletionQuery.get();
