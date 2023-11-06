@@ -365,6 +365,9 @@ export default defineComponent({
                     {
                       indexName: "tybalt_jobs",
                       query,
+                      // params: {
+                      //   hitsPerPage: 7,
+                      // },
                     },
                   ],
                 });
