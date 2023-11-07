@@ -97,7 +97,7 @@ export default defineComponent({
   data() {
     return {
       invoice: undefined as DocumentData | undefined,
-      allInvoices: [],
+      allInvoices: [] as DocumentData[],
     };
   },
   created() {
