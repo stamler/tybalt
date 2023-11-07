@@ -31,10 +31,8 @@
       </div>
 
       <!-- Show approved unlocked TimeSheets -->
-      <div
-        v-if="this.item.pending && Object.keys(this.item.pending).length > 0"
-      >
-        <h5>Approved ({{ Object.keys(this.item.pending).length }})</h5>
+      <div v-if="item.pending && Object.keys(item.pending).length > 0">
+        <h5>Approved ({{ Object.keys(item.pending).length }})</h5>
         <div class="horizontalScroll">
           <table>
             <thead>
@@ -327,7 +325,7 @@ export default defineComponent({
       APP_URL,
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: {} as DocumentData | undefined,
+      item: {} as DocumentData,
       profiles: useCollection(collection(db, "Profiles")),
     };
   },
@@ -370,15 +368,20 @@ export default defineComponent({
         } else alert(`Error restoring ${uid}: ${JSON.stringify(error)}`);
       });
     },
-    tsIdForUid(uid: string, tsObj: Record<string, TimeSheetTrackingPayload>) {
+    tsIdForUid(
+      uid: string,
+      tsObj: Record<string, TimeSheetTrackingPayload>
+    ): string {
       const keys = Object.keys(_.pickBy(tsObj, (i) => i.uid === uid));
       if (keys.length === 1) {
         return keys[0];
       }
-      if (keys.length > 1) {
-        alert(`Multiple time sheet keys [${keys.join()}] found for uid ${uid}`);
-      }
-      return null;
+      alert(
+        `There isn't only one time sheet key (actually ${
+          keys.length
+        }) [${keys.join()}] found for uid ${uid}`
+      );
+      throw `Didn't find only one key for uid ${uid} [${keys.join()}]`;
     },
     setItem(id: string) {
       if (this.collectionObject === null) {

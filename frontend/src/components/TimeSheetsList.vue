@@ -169,7 +169,7 @@ export default defineComponent({
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      items: [],
+      items: [] as DocumentData[],
     };
   },
   created() {
@@ -260,7 +260,9 @@ export default defineComponent({
     submitTs,
     unbundle,
     isPayrollWeek2,
-    unreviewed(item: DocumentData) {
+    // return an object whose keys are uids and values are objects containing
+    // at least displayName
+    unreviewed(item: DocumentData): Record<string, { displayName: string }> {
       if (item.viewers) {
         return _.omit(item.viewers, item.reviewedIds);
       } else {

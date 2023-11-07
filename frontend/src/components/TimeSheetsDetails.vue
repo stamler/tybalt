@@ -199,7 +199,7 @@ export default defineComponent({
       rejectionReason: "",
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: {} as DocumentData | undefined,
+      item: {} as DocumentData,
     };
   },
   watch: {
@@ -241,7 +241,7 @@ export default defineComponent({
         this.item = {};
       }
     },
-    approveTs(timesheetId: string) {
+    async approveTs(timesheetId: string) {
       this.startTask({
         id: `approve${timesheetId}`,
         message: "approving",
