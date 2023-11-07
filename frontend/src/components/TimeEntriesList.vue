@@ -373,7 +373,7 @@ export default defineComponent({
           // accumulate values and create it if not.
           if (!Object.prototype.hasOwnProperty.call(tallyObject, key)) {
             tallyObject[key] = {
-              weekEnding: new Date(key),
+              weekEnding: new Date(parseInt(key, 10)),
               bankEntries: [],
               payoutRequests: [],
               offRotationDates: [],
