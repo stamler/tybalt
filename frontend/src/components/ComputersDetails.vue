@@ -82,7 +82,7 @@ export default defineComponent({
       parentPath: "",
       collectionObject: null as CollectionReference | null,
       item: {} as DocumentData,
-      logins: [],
+      logins: [] as DocumentData[],
     };
   },
   watch: {

@@ -48,7 +48,7 @@ export default defineComponent({
     return {
       collectionObject: collection(db, "Users"),
       item: {} as DocumentData | undefined,
-      logins: [],
+      logins: [] as DocumentData[],
     };
   },
   methods: {

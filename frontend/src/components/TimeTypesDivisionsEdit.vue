@@ -44,7 +44,7 @@ export default defineComponent({
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: {} as DocumentData | undefined,
+      item: {} as DocumentData,
     };
   },
   computed: {
