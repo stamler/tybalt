@@ -38,7 +38,7 @@
           <!-- filter out reports that are not expected to report time -->
           <tr
             v-for="report in reports.filter(
-              (r) => r.timeSheetExpected === true
+              (r: DocumentData) => r.timeSheetExpected === true
             )"
             v-bind:key="report.id"
           >
@@ -67,6 +67,7 @@ import {
   query,
   where,
   Timestamp,
+  DocumentData,
 } from "firebase/firestore";
 import { format } from "date-fns";
 const db = getFirestore(firebaseApp);
@@ -78,8 +79,8 @@ export default defineComponent({
   },
   data() {
     return {
-      profile: {},
-      reports: [],
+      profile: {} as DocumentData,
+      reports: [] as DocumentData,
     };
   },
   created() {

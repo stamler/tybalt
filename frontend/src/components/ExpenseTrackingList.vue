@@ -95,7 +95,7 @@ export default defineComponent({
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      items: [],
+      items: [] as DocumentData[],
     };
   },
   methods: {

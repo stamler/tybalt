@@ -8,14 +8,14 @@
         </p>
       </span>
     </div>
-    <div v-for="week in Object.keys(this.tallies)" v-bind:key="week">
+    <div v-for="week in Object.keys(tallies)" v-bind:key="week">
       <span class="listheader">
         {{ shortDateWeekDayStart(tallies[week].weekEnding) }} &mdash;
         {{ shortDateWeekDay(tallies[week].weekEnding) }}
       </span>
       <div
         class="listentry"
-        v-for="item in itemsByWeekEnding(week)"
+        v-for="item in itemsByWeekEnding(parseInt(week, 10))"
         v-bind:key="item.id"
         v-bind:class="{ stthsday: dayIsSTThS(item) }"
       >
@@ -317,7 +317,7 @@ export default defineComponent({
           alert(`Amendment commit failed: ${error}`);
         });
     },
-    totalHours(week: number): number {
+    totalHours(week: string): number {
       return (
         this.tallies[week].nonWorkHoursTally.total +
         this.tallies[week].workHoursTally.total
@@ -363,11 +363,11 @@ export default defineComponent({
         jobsTally: { [job: string]: { client: string; description: string } };
       }
 
-      const tallyObject: { [key: number]: WeekTally } = {};
+      const tallyObject: { [key: string]: WeekTally } = {};
 
       for (const item of this.items) {
         if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
-          const key = item.weekEnding.toDate().getTime();
+          const key: string = item.weekEnding.toDate().getTime().toString();
           // this item can be tallied because it has a weekEnding property
           // Check if it already has an entry in the tally object to
           // accumulate values and create it if not.

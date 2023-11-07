@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h3>{{ this.id }}</h3>
+    <h3>{{ id }}</h3>
     <div>client: {{ item.client }}</div>
     <div>client contact: {{ item.clientContact }}</div>
     <div>description: {{ item.description }}</div>
@@ -21,7 +21,7 @@
         <Icon icon="feather:plus-circle" width="24px" />
       </router-link>
     </h4>
-    <div v-for="invoice in this.invoices" v-bind:key="invoice.id">
+    <div v-for="invoice in invoices" v-bind:key="invoice.id">
       <router-link
         v-bind:to="{
           name: 'Invoice Details',
@@ -43,7 +43,6 @@
         :clearable="false"
         :auto-apply="true"
         :min-date="dps.disabled.to"
-        :max-date="dps.disabled.from"
         :highlight="dps.highlighted.dates"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
@@ -59,7 +58,6 @@
         :clearable="false"
         :auto-apply="true"
         :min-date="dps.disabled.to"
-        :max-date="dps.disabled.from"
         :highlight="dps.highlighted.dates"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
@@ -198,7 +196,7 @@ export default defineComponent({
       parentPath: "",
       collectionObject: null as CollectionReference | null,
       item: {} as DocumentData,
-      timeSheets: [],
+      timeSheets: [] as DocumentData[],
       invoices: useCollection(
         query(
           collection(db, "Invoices"),

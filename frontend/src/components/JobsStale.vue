@@ -7,8 +7,8 @@
       v-model="search"
     />
     <span class="listheader">
-      {{ this.allUsers ? "Total" : "Your" }} stale items (not including those
-      with no time): {{ count }}
+      {{ allUsers ? "Total" : "Your" }} stale items (not including those with no
+      time): {{ count }}
     </span>
 
     <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">

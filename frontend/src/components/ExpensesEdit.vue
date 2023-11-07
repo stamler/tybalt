@@ -4,7 +4,6 @@
       name="datepicker"
       placeholder="Date"
       :auto-apply="true"
-      :min-date="dps.disabled.to"
       :max-date="dps.disabled.from"
       :highlight="dps.highlighted.dates"
       :enable-time-picker="false"
@@ -299,6 +298,11 @@ interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
+// a typeguard for HTTMLInputEvent
+function isHTMLInputEvent(event: Event): event is HTMLInputEvent {
+  return "target" in event;
+}
+
 export default defineComponent({
   setup() {
     const store = useStateStore();
@@ -328,7 +332,7 @@ export default defineComponent({
       collectionObject: null as CollectionReference | null,
       divisions: useCollection(collection(db, "Divisions")),
       showSuggestions: false,
-      selectedIndex: null as number | null,
+      selectedIndex: 0 as number,
       jobCandidates: [] as DocumentData[],
       item: {} as DocumentData,
       profile: {} as DocumentData,
@@ -465,7 +469,10 @@ export default defineComponent({
         alert(`Attachment cleanup failed: ${JSON.stringify(error)}`);
       });
     },
-    async updateAttachment(event: HTMLInputEvent) {
+    async updateAttachment(event: Event) {
+      if (!isHTMLInputEvent(event)) {
+        throw new Error("Event is not an HTMLInputEvent");
+      }
       this.attachmentPreviouslyUploaded = false;
       const allowedTypes: { [subtype: string]: string } = {
         pdf: "pdf",
@@ -559,16 +566,12 @@ export default defineComponent({
     },
     onArrowUp() {
       const count = this.jobCandidates.length;
-      this.selectedIndex =
-        this.selectedIndex === null
-          ? count - 1
-          : (this.selectedIndex + count - 1) % count;
+      this.selectedIndex = (this.selectedIndex + count - 1) % count;
       this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
     onArrowDown() {
       const count = this.jobCandidates.length;
-      this.selectedIndex =
-        this.selectedIndex === null ? 0 : (this.selectedIndex + 1) % count;
+      this.selectedIndex = (this.selectedIndex + 1) % count;
       this.item.job = this.jobCandidates[this.selectedIndex].id;
     },
     // any annotation in next line due to the following:

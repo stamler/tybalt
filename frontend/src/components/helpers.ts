@@ -490,7 +490,13 @@ export function searchString(item: DocumentData) {
   return fields.join(",").toLowerCase();
 }
 
-export function copyEntry(item: DocumentData, collection: CollectionReference) {
+export function copyEntry(
+  item: DocumentData,
+  collection: CollectionReference | null
+) {
+  if (collection === null) {
+    throw "There is no valid collection object";
+  }
   if (confirm("Want to copy this entry to tomorrow?")) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { date, ...newItem } = item;
@@ -499,9 +505,6 @@ export function copyEntry(item: DocumentData, collection: CollectionReference) {
       id: `copy${item.id}`,
       message: "copying",
     });
-    if (collection === null) {
-      throw "There is no valid collection object";
-    }
     return addDoc(collection, newItem)
       .then(() => {
         store.endTask(`copy${item.id}`);
@@ -513,7 +516,10 @@ export function copyEntry(item: DocumentData, collection: CollectionReference) {
   }
 }
 
-export function del(item: DocumentData, collection: CollectionReference) {
+export function del(
+  item: DocumentData,
+  collection: CollectionReference | null
+) {
   if (collection === null) {
     throw "There is no valid collection object";
   }
@@ -719,12 +725,7 @@ export function relativeTime(date: Timestamp | undefined): string {
   return formatDistanceToNow(date.toDate(), { addSuffix: true });
 }
 
-export function invoiceNumberDisplay(invoice: {
-  number: string;
-  billingNumber: number;
-  job: string;
-  revisionNumber: number;
-}) {
+export function invoiceNumberDisplay(invoice: DocumentData) {
   const unrevised =
     invoice.billingNumber +
     " - " +

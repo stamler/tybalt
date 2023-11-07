@@ -188,15 +188,15 @@ export default defineComponent({
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      approved: [],
-      submitted: [],
+      approved: [] as DocumentData[],
+      submitted: [] as DocumentData[],
     };
   },
   methods: {
     shortDate,
     relativeTime,
     downloadAttachment,
-    commitItem(item: DocumentData, collection: CollectionReference) {
+    commitItem(item: DocumentData, collection: CollectionReference | null) {
       if (collection === null) {
         throw "There is no valid collection object";
       }

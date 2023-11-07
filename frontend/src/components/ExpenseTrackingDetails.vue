@@ -2,7 +2,7 @@
   <div id="list">
     <h4 v-if="item.weekEnding">
       {{ shortDate(weekStart) }} to
-      {{ shortDate(item.weekEnding.toDate()) }} ({{ this.expenses.length }},
+      {{ shortDate(item.weekEnding.toDate()) }} ({{ expenses.length }},
       {{ countOfExpensesWithAttachments }} with attachments)
     </h4>
     <div v-for="(expenses, uid) in processedItems" v-bind:key="uid">
@@ -129,7 +129,7 @@ export default defineComponent({
     return {
       parentPath: "",
       collectionObject: null as CollectionReference | null,
-      item: {} as DocumentData | undefined,
+      item: {} as DocumentData,
       expenses: [] as DocumentData[],
     };
   },
