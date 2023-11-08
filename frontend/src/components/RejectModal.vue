@@ -29,8 +29,8 @@
   </transition>
 </template>
 
-<script lang="ts">
-import { ref, defineComponent } from "vue";
+<script setup lang="ts">
+import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { firebaseApp } from "../firebase";
 import {
@@ -43,106 +43,91 @@ import { useStateStore } from "../stores/state";
 
 const db = getFirestore(firebaseApp);
 
-export default defineComponent({
-  props: {
-    collectionName: {
-      type: String,
-      required: true,
-    },
+const props = defineProps({
+  collectionName: {
+    type: String,
+    required: true,
   },
-  setup(props) {
-    const router = useRouter();
-    const route = useRoute();
-    const parentPath = ref(route.matched[route.matched.length - 2]?.path ?? "");
-    const show = ref(false);
-    const rejectionReason = ref("");
-    const itemId = ref("");
+});
 
-    const store = useStateStore();
-    const { startTask, endTask } = store;
+const router = useRouter();
+const route = useRoute();
+const parentPath = ref(route.matched[route.matched.length - 2]?.path ?? "");
+const show = ref(false);
+const rejectionReason = ref("");
+const itemId = ref("");
 
-    const rejectThenRedirect = async function () {
-      await rejectDoc(
-        itemId.value,
-        rejectionReason.value,
-        props.collectionName
-      );
-      closeModal();
-      router.push(parentPath.value);
-    };
+const store = useStateStore();
+const { startTask, endTask } = store;
 
-    const closeModal = function () {
-      show.value = false;
-      itemId.value = "";
-      rejectionReason.value = "";
-      //document.querySelector("body")?.classList.remove("overflow-hidden");
-    };
+const rejectThenRedirect = async function () {
+  await rejectDoc(itemId.value, rejectionReason.value, props.collectionName);
+  closeModal();
+  router.push(parentPath.value);
+};
 
-    const openModal = function (id: string) {
-      show.value = true;
-      itemId.value = id;
-      //document.querySelector("body")?.classList.add("overflow-hidden");
-    };
+const closeModal = function () {
+  show.value = false;
+  itemId.value = "";
+  rejectionReason.value = "";
+  //document.querySelector("body")?.classList.remove("overflow-hidden");
+};
 
-    const rejectDoc = async function (
-      docId: string,
-      reason: string,
-      collectionName: string
-    ) {
-      startTask({
-        id: `reject${docId}`,
-        message: "rejecting",
-      });
-      const docRef = doc(db, collectionName, docId);
-      return runTransaction(db, async (transaction) => {
-        return transaction.get(docRef).then((tsDoc: DocumentSnapshot) => {
-          if (!tsDoc.exists) {
-            throw `A document with id ${docId} doesn't exist.`;
-          }
-          const data = tsDoc?.data() ?? undefined;
-          if (
-            (collectionName === "TimeSheets" &&
-              data?.submitted === true &&
-              data?.locked === false) ||
-            (collectionName === "Expenses" &&
-              data?.submitted === true &&
-              (data?.committed === false || data?.committed === undefined))
-          ) {
-            // document is rejectable because it is submitted and not locked or committed
-            transaction.update(docRef, {
-              approved: false,
-              submitted: false,
-              rejected: true,
-              rejectorId: store.user.uid,
-              rejectorName: store.user.displayName,
-              rejectionReason: reason,
-            });
-          } else {
-            throw "The document has not been submitted or is locked";
-          }
+const openModal = function (id: string) {
+  show.value = true;
+  itemId.value = id;
+  //document.querySelector("body")?.classList.add("overflow-hidden");
+};
+
+const rejectDoc = async function (
+  docId: string,
+  reason: string,
+  collectionName: string
+) {
+  startTask({
+    id: `reject${docId}`,
+    message: "rejecting",
+  });
+  const docRef = doc(db, collectionName, docId);
+  return runTransaction(db, async (transaction) => {
+    return transaction.get(docRef).then((tsDoc: DocumentSnapshot) => {
+      if (!tsDoc.exists) {
+        throw `A document with id ${docId} doesn't exist.`;
+      }
+      const data = tsDoc?.data() ?? undefined;
+      if (
+        (collectionName === "TimeSheets" &&
+          data?.submitted === true &&
+          data?.locked === false) ||
+        (collectionName === "Expenses" &&
+          data?.submitted === true &&
+          (data?.committed === false || data?.committed === undefined))
+      ) {
+        // document is rejectable because it is submitted and not locked or committed
+        transaction.update(docRef, {
+          approved: false,
+          submitted: false,
+          rejected: true,
+          rejectorId: store.user.uid,
+          rejectorName: store.user.displayName,
+          rejectionReason: reason,
         });
-      })
-        .then(() => {
-          endTask(`reject${docId}`);
-        })
-        .catch((error) => {
-          endTask(`reject${docId}`);
-          alert(`Rejection failed: ${error}`);
-        });
-    };
+      } else {
+        throw "The document has not been submitted or is locked";
+      }
+    });
+  })
+    .then(() => {
+      endTask(`reject${docId}`);
+    })
+    .catch((error) => {
+      endTask(`reject${docId}`);
+      alert(`Rejection failed: ${error}`);
+    });
+};
 
-    return {
-      show,
-      rejectionReason,
-      itemId,
-      startTask,
-      endTask,
-      rejectThenRedirect,
-      openModal,
-      closeModal,
-      user: store.user,
-    };
-  },
+defineExpose({
+  openModal,
 });
 </script>
 

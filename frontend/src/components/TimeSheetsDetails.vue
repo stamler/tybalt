@@ -54,7 +54,7 @@
           canApprove(item) && item.submitted === true && item.locked === false
         "
         type="share"
-        @click="$refs.shareModal.openModal(id, item.viewerIds)"
+        @click="shareModal?.openModal(id, item.viewerIds)"
       />
       <!-- review button -->
       <action-button
@@ -158,10 +158,12 @@ const db = getFirestore(firebaseApp);
 export default defineComponent({
   setup() {
     const rejectModal = ref<typeof RejectModal | null>(null);
+    const shareModal = ref<typeof ShareModal | null>(null);
     const store = useStateStore();
     const { startTask, endTask } = store;
     return {
       rejectModal,
+      shareModal,
       startTask,
       endTask,
       claims: store.claims,

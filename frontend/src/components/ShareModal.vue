@@ -11,9 +11,7 @@
           <h3>{{ viewerIds.length === 0 ? "No " : "" }}Viewers</h3>
           <span v-for="managerUid in viewerIds" v-bind:key="managerUid">
             {{ managers.filter((x) => x.id === managerUid)[0].displayName }}
-            <span
-              v-on:click="$delete(viewerIds, viewerIds.indexOf(managerUid))"
-            >
+            <span v-on:click="delete viewerIds[viewerIds.indexOf(managerUid)]">
               <Icon icon="feather:x-circle" width="24px" />
             </span>
           </span>
@@ -40,8 +38,8 @@
   </transition>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { ref } from "vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -56,56 +54,56 @@ import { Icon } from "@iconify/vue";
 
 const db = getFirestore(firebaseApp);
 
-export default defineComponent({
-  props: ["collectionName"],
-  components: { Icon },
-  data() {
-    return {
-      parentPath: "",
-      show: false,
-      itemId: "",
-      newViewer: "",
-      viewerIds: [] as string[],
-      managers: useCollection(
-        query(collection(db, "ManagerNames"), orderBy("displayName"))
-      ),
-    };
+const props = defineProps({
+  collectionName: {
+    type: String,
+    required: true,
   },
-  methods: {
-    async saveThenClose() {
-      try {
-        await updateDoc(doc(collection(db, this.collectionName), this.itemId), {
-          viewerIds: this.viewerIds,
-        });
-        this.closeModal();
-      } catch (error) {
-        alert(`Update sharing failed: ${error}`);
-      }
-    },
-    closeModal() {
-      this.show = false;
-      this.itemId = "";
-      this.viewerIds = [];
-      //document.querySelector("body")?.classList.remove("overflow-hidden");
-    },
-    openModal(id: string, viewerIds: string[]) {
-      this.show = true;
-      this.itemId = id;
-      this.viewerIds = viewerIds || [];
-      //document.querySelector("body")?.classList.add("overflow-hidden");
-    },
-    addViewer() {
-      // add viewer, ignoring duplicate entries
-      const ids = new Set(this.viewerIds);
-      ids.add(this.newViewer);
-      this.viewerIds = Array.from(ids);
-      this.newViewer = "";
-    },
-  },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-  },
+});
+
+const show = ref(false);
+const itemId = ref("");
+const newViewer = ref("");
+const viewerIds = ref([] as string[]);
+const managers = useCollection(
+  query(collection(db, "ManagerNames"), orderBy("displayName"))
+);
+
+const saveThenClose = async function () {
+  try {
+    await updateDoc(doc(collection(db, props.collectionName), itemId.value), {
+      viewerIds: viewerIds.value,
+    });
+    closeModal();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log(props.collectionName, itemId.value, viewerIds.value);
+    alert(`Update sharing failed: ${error}`);
+  }
+};
+
+const closeModal = function () {
+  show.value = false;
+  itemId.value = "";
+  viewerIds.value = [];
+  //document.querySelector("body")?.classList.remove("overflow-hidden");
+};
+const openModal = function (id: string, viewerIdsArg: string[]) {
+  show.value = true;
+  itemId.value = id;
+  viewerIds.value = viewerIdsArg || [];
+  //document.querySelector("body")?.classList.add("overflow-hidden");
+};
+const addViewer = function () {
+  // add viewer, ignoring duplicate entries
+  const ids = new Set(viewerIds.value);
+  ids.add(newViewer.value);
+  viewerIds.value = Array.from(ids);
+  newViewer.value = "";
+};
+
+defineExpose({
+  openModal,
 });
 </script>
 

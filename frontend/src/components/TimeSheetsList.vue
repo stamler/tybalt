@@ -92,7 +92,7 @@
             <action-button
               type="share"
               title="share with another manager"
-              @click="$refs.shareModal.openModal(item.id, item.viewerIds)"
+              @click="shareModal?.openModal(item.id, item.viewerIds)"
             />
             <action-button
               type="delete"
@@ -110,7 +110,7 @@
           <action-button
             type="share"
             title="share with another manager"
-            @click="$refs.shareModal.openModal(item.id, item.viewerIds)"
+            @click="shareModal?.openModal(item.id, item.viewerIds)"
           />
           <template v-if="!item.locked">
             <action-button
@@ -157,8 +157,9 @@ const db = getFirestore(firebaseApp);
 export default defineComponent({
   setup() {
     const rejectModal = ref<typeof RejectModal | null>(null);
+    const shareModal = ref<typeof ShareModal | null>(null);
     const store = useStateStore();
-    return { rejectModal, user: store.user };
+    return { rejectModal, shareModal, user: store.user };
   },
   props: ["query", "collectionName"],
   components: {
