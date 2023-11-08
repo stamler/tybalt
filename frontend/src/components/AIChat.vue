@@ -28,7 +28,7 @@
     <div class="chat_input" v-bind:class="{ disabled: lockinput === true }">
       <textarea
         v-show="item?.waiting !== true"
-        v-on:input="setInputHeight"
+        v-on:input="($event) => setInputHeight()"
         ref="chatfield"
         v-model="input"
         placeholder="..."
