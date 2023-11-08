@@ -7,7 +7,7 @@
     >
       <span class="listheader">
         Week Ending
-        {{ shortDate(new Date(weekEnding)) }}
+        {{ shortDate(new Date(parseInt(weekEnding.toString(), 10))) }}
         <action-button
           v-if="unsubmittedExpenseIds(expenses).length > 0"
           type="send"
@@ -178,7 +178,7 @@
               <action-button
                 v-if="!item.approved && !item.rejected"
                 type="delete"
-                @click="$refs.rejectModal.openModal(item.id)"
+                @click="rejectModal?.openModal(item.id)"
               />
             </template>
             <template v-if="item.rejected">
@@ -191,7 +191,7 @@
             <template v-if="!item.committed">
               <action-button
                 type="delete"
-                @click="$refs.rejectModal.openModal(item.id)"
+                @click="rejectModal?.openModal(item.id)"
               />
             </template>
             <template v-if="item.committed">
@@ -230,7 +230,7 @@ import {
   orderBy,
   collection,
 } from "firebase/firestore";
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { format, addDays } from "date-fns";
 import _ from "lodash";
 import ActionButton from "./ActionButton.vue";
@@ -240,9 +240,10 @@ const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   setup() {
+    const rejectModal = ref<typeof RejectModal | null>(null);
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { user: store.user, startTask, endTask };
+    return { rejectModal, user: store.user, startTask, endTask };
   },
   props: ["approved", "collectionName"],
   computed: {

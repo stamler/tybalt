@@ -74,7 +74,7 @@
                   <action-button
                     type="delete"
                     title="reject this time sheet"
-                    @click="$refs.rejectModal.openModal(tsId)"
+                    @click="rejectModal?.openModal(tsId)"
                   />
                 </td>
                 <td>
@@ -177,7 +177,7 @@
 <script lang="ts">
 import { Icon } from "@iconify/vue";
 import RejectModal from "./RejectModal.vue";
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { shortDate } from "./helpers";
 import { APP_URL } from "../config";
 import { subWeeks, addMilliseconds } from "date-fns";
@@ -209,9 +209,10 @@ interface TimeSheetTrackingPayload {
 
 export default defineComponent({
   setup() {
+    const rejectModal = ref<typeof RejectModal | null>(null);
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { startTask, endTask };
+    return { rejectModal, startTask, endTask };
   },
   components: {
     Icon,

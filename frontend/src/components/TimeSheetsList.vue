@@ -97,7 +97,7 @@
             <action-button
               type="delete"
               title="reject this timesheet"
-              @click="$refs.rejectModal.openModal(item.id)"
+              @click="rejectModal?.openModal(item.id)"
             />
           </template>
           <template v-if="item.rejected">
@@ -116,7 +116,7 @@
             <action-button
               type="delete"
               title="reject this timesheet"
-              @click="$refs.rejectModal.openModal(item.id)"
+              @click="rejectModal?.openModal(item.id)"
             />
           </template>
         </template>
@@ -131,7 +131,7 @@
 <script lang="ts">
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -156,8 +156,9 @@ const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   setup() {
+    const rejectModal = ref<typeof RejectModal | null>(null);
     const store = useStateStore();
-    return { user: store.user };
+    return { rejectModal, user: store.user };
   },
   props: ["query", "collectionName"],
   components: {

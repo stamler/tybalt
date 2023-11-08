@@ -59,10 +59,7 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <action-button
-          type="delete"
-          @click="$refs.rejectModal.openModal(item.id)"
-        />
+        <action-button type="delete" @click="rejectModal?.openModal(item.id)" />
         <action-button
           type="lock"
           @click="commitItem(item, collectionObject)"
@@ -140,10 +137,7 @@
         </div>
       </div>
       <div class="rowactionsbox">
-        <action-button
-          type="delete"
-          @click="$refs.rejectModal.openModal(item.id)"
-        />
+        <action-button type="delete" @click="rejectModal?.openModal(item.id)" />
         <action-button
           type="lock"
           @click="commitItem(item, collectionObject)"
@@ -154,7 +148,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { ref, defineComponent } from "vue";
 import { downloadAttachment, shortDate, relativeTime } from "./helpers";
 import RejectModal from "./RejectModal.vue";
 import { firebaseApp } from "../firebase";
@@ -176,8 +170,10 @@ const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   setup() {
+    const rejectModal = ref<typeof RejectModal | null>(null);
+
     const store = useStateStore();
-    return { user: store.user };
+    return { rejectModal, user: store.user };
   },
   props: ["collectionName"],
   components: {

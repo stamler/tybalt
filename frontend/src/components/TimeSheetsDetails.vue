@@ -46,7 +46,7 @@
           item.rejected === false
         "
         type="delete"
-        @click="$refs.rejectModal.openModal(id)"
+        @click="rejectModal?.openModal(id)"
       />
       <!-- share button -->
       <action-button
@@ -130,7 +130,7 @@
 <script lang="ts">
 import RejectModal from "./RejectModal.vue";
 import ShareModal from "./ShareModal.vue";
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import {
   shortDate,
   generateTimeReportCSV,
@@ -157,9 +157,16 @@ const db = getFirestore(firebaseApp);
 
 export default defineComponent({
   setup() {
+    const rejectModal = ref<typeof RejectModal | null>(null);
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { startTask, endTask, claims: store.claims, user: store.user };
+    return {
+      rejectModal,
+      startTask,
+      endTask,
+      claims: store.claims,
+      user: store.user,
+    };
   },
   components: {
     ActionButton,

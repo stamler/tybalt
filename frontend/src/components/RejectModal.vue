@@ -30,7 +30,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { ref, defineComponent } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
@@ -43,43 +44,52 @@ import { useStateStore } from "../stores/state";
 const db = getFirestore(firebaseApp);
 
 export default defineComponent({
-  setup() {
+  props: {
+    collectionName: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
+    const router = useRouter();
+    const route = useRoute();
+    const parentPath = ref(route.matched[route.matched.length - 2]?.path ?? "");
+    const show = ref(false);
+    const rejectionReason = ref("");
+    const itemId = ref("");
+
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { startTask, endTask, user: store.user };
-  },
-  props: ["collectionName"],
-  data() {
-    return {
-      parentPath: "",
-      show: false,
-      rejectionReason: "",
-      itemId: "",
-    };
-  },
-  methods: {
-    async rejectThenRedirect() {
-      await this.rejectDoc(
-        this.itemId,
-        this.rejectionReason,
-        this.collectionName
+
+    const rejectThenRedirect = async function () {
+      await rejectDoc(
+        itemId.value,
+        rejectionReason.value,
+        props.collectionName
       );
-      this.closeModal();
-      this.$router.push(this.parentPath);
-    },
-    closeModal() {
-      this.show = false;
-      this.itemId = "";
-      this.rejectionReason = "";
+      closeModal();
+      router.push(parentPath.value);
+    };
+
+    const closeModal = function () {
+      show.value = false;
+      itemId.value = "";
+      rejectionReason.value = "";
       //document.querySelector("body")?.classList.remove("overflow-hidden");
-    },
-    openModal(id: string) {
-      this.show = true;
-      this.itemId = id;
+    };
+
+    const openModal = function (id: string) {
+      show.value = true;
+      itemId.value = id;
       //document.querySelector("body")?.classList.add("overflow-hidden");
-    },
-    rejectDoc(docId: string, reason: string, collectionName: string) {
-      this.startTask({
+    };
+
+    const rejectDoc = async function (
+      docId: string,
+      reason: string,
+      collectionName: string
+    ) {
+      startTask({
         id: `reject${docId}`,
         message: "rejecting",
       });
@@ -103,8 +113,8 @@ export default defineComponent({
               approved: false,
               submitted: false,
               rejected: true,
-              rejectorId: this.user.uid,
-              rejectorName: this.user.displayName,
+              rejectorId: store.user.uid,
+              rejectorName: store.user.displayName,
               rejectionReason: reason,
             });
           } else {
@@ -113,17 +123,25 @@ export default defineComponent({
         });
       })
         .then(() => {
-          this.endTask(`reject${docId}`);
+          endTask(`reject${docId}`);
         })
         .catch((error) => {
-          this.endTask(`reject${docId}`);
+          endTask(`reject${docId}`);
           alert(`Rejection failed: ${error}`);
         });
-    },
-  },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
+    };
+
+    return {
+      show,
+      rejectionReason,
+      itemId,
+      startTask,
+      endTask,
+      rejectThenRedirect,
+      openModal,
+      closeModal,
+      user: store.user,
+    };
   },
 });
 </script>
