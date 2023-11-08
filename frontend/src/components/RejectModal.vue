@@ -18,7 +18,7 @@
         <div class="modal__footer">
           <button v-on:click="closeModal()">Cancel</button>
           <button
-            v-if="this.rejectionReason.length > 5"
+            v-if="rejectionReason.length > 5"
             v-on:click="rejectThenRedirect()"
           >
             Reject

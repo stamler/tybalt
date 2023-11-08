@@ -111,7 +111,7 @@ export default defineComponent({
       }
       return SystemTypes[type];
     },
-    humanFileSize(bytes: number, si: boolean): string {
+    humanFileSize(bytes: number, si: boolean = false): string {
       const thresh = si ? 1000 : 1024;
       if (Math.abs(bytes) < thresh) {
         return bytes + " B";

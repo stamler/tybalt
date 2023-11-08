@@ -7,7 +7,7 @@
     >
       <span class="listheader">
         Week Ending
-        {{ shortDate(new Date(parseInt(weekEnding, 10))) }}
+        {{ shortDate(new Date(weekEnding)) }}
         <action-button
           v-if="unsubmittedExpenseIds(expenses).length > 0"
           type="send"

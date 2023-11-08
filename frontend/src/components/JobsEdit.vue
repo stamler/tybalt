@@ -42,10 +42,10 @@
       <label for="categories">Categories</label>
       <span
         class="label"
-        v-for="(item, index) in item.categories"
+        v-for="(value, index) in item.categories"
         v-bind:key="index"
       >
-        {{ item }}
+        {{ value }}
         <!-- emit an event to the parent component to delete the item -->
         <button class="del_but" @click.prevent="deleteCategory(index)">
           <Icon icon="feather:x" width="18px" />
