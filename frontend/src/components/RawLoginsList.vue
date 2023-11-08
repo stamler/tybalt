@@ -29,10 +29,17 @@
         </div>
         <div class="firstline">{{ item.upn }} {{ item.userSourceAnchor }}</div>
         <div class="secondline">
-          Hostname
-          {{
-            item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname
-          }}
+          <span
+            v-if="Object.keys(item.networkConfig)[0] === undefined"
+            class="attention"
+          >
+            Hostname Not Available
+          </span>
+          <span v-else>
+            {{
+              item.networkConfig[Object.keys(item.networkConfig)[0]].dnsHostname
+            }}
+          </span>
           reported from radiator v{{ item.radiatorVersion }}
         </div>
         <div class="thirdline">
