@@ -669,7 +669,12 @@ export function shortDateWithYear(date: Date) {
   return format(date, "yyyy MMM dd");
 }
 
-export function shortDateWithWeekday(date: Date) {
+export function shortDateWithWeekday(date: Date | Timestamp) {
+  // check if date is a Timestamp by checking for toDate() method and a
+  // nanoseconds property
+  if ("toDate" in date && "nanoseconds" in date) {
+    return format(date.toDate(), "EEE MMM dd");
+  }
   return format(date, "EEE MMM dd");
 }
 
@@ -736,4 +741,11 @@ export function invoiceNumberDisplay(invoice: DocumentData) {
     return unrevised;
   }
   return unrevised + " rev" + invoice.revisionNumber;
+}
+
+export function hasLink(item: DocumentData, property: string) {
+  return (
+    Object.prototype.hasOwnProperty.call(item, property) &&
+    item[property].length > 32
+  );
 }

@@ -204,8 +204,8 @@ body,
   flex: 0 0 5em;
   border-bottom: 1px solid #eee;
 }
-/* week2 gets different background colour */
-.week2 {
+/* a different colour scheme for specified rows */
+.listItemAltVisual {
   background-color: beige;
 }
 .listsummary {

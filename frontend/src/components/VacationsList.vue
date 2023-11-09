@@ -1,45 +1,24 @@
 <template>
-  <div id="list">
-    <div id="listbar">
-      <input
-        id="searchbox"
-        type="textbox"
-        placeholder="search..."
-        v-model="search"
-      />
-      <span>{{ processedItems.length }} items</span>
-    </div>
-    <div class="listentry" v-for="item in processedItems" v-bind:key="item.id">
-      <div class="anchorbox">{{ relativeTime(item.start) }}</div>
-      <div class="detailsbox">
-        <div class="headline_wrapper">
-          <div class="headline">{{ item.name }}</div>
-        </div>
-        <div class="firstline">{{ item.description }}</div>
-        <div class="secondline">
-          {{ shortDateWithWeekday(item.start.toDate()) }}
-          to
-          {{ shortDateWithWeekday(item.end.toDate()) }}
-        </div>
-        <div class="thirdline">{{ item.availability }}</div>
-      </div>
-      <div class="rowactionsbox">
-        <action-button type="delete" @click="delVacation(item)" />
-      </div>
-    </div>
-  </div>
+  <DSList v-if="itemsQuery !== null" :query="itemsQuery" :search="true">
+    <template #anchor="{ start }">{{ relativeTime(start) }}</template>
+    <template #headline="{ name }">{{ name }}</template>
+    <template #line1="{ description }">{{ description }}</template>
+    <template #line2="{ start, end }">
+      {{ shortDateWithWeekday(start) }}
+      to
+      {{ shortDateWithWeekday(end) }}
+    </template>
+    <template #line3="{ availability }">{{ availability }}</template>
+    <template #actions="item">
+      <action-button type="delete" @click="delVacation(item)" />
+    </template>
+  </DSList>
 </template>
 
-<script lang="ts">
-import { User } from "firebase/auth";
-import { useCollection } from "vuefire";
-import { defineComponent } from "vue";
-import {
-  searchString,
-  shortDateWithWeekday,
-  relativeTime,
-  del,
-} from "./helpers";
+<script setup lang="ts">
+import DSList from "./DSList.vue";
+import { ref } from "vue";
+import { shortDateWithWeekday, relativeTime, del } from "./helpers";
 import { subWeeks } from "date-fns";
 import { useStateStore } from "../stores/state";
 import ActionButton from "./ActionButton.vue";
@@ -54,50 +33,18 @@ import {
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 
-export default defineComponent({
-  setup() {
-    const store = useStateStore();
-    const { startTask, endTask } = store;
-    return {
-      user: store.user,
-      startTask,
-      endTask,
-      activeTasks: store.activeTasks,
-    };
-  },
-  components: {
-    ActionButton,
-  },
-  computed: {
-    processedItems(): DocumentData[] {
-      return this.items
-        .slice() // shallow copy https://github.com/vuejs/vuefire/issues/244
-        .filter(
-          (p: DocumentData) =>
-            searchString(p).indexOf(this.search.toLowerCase()) >= 0
-        );
-    },
-  },
-  methods: {
-    shortDateWithWeekday,
-    relativeTime,
-    delVacation(item: DocumentData) {
-      del(item, collection(db, "Vacations"));
-    },
-  },
-  data() {
-    return {
-      search: "",
-      parentPath: "",
-      items: useCollection(
-        query(
-          collection(db, "Vacations"),
-          where("uid", "==", (this.user as unknown as User).uid),
-          where("end", ">", subWeeks(new Date(), 8)),
-          orderBy("end", "desc")
-        )
-      ),
-    };
-  },
-});
+const store = useStateStore();
+
+const delVacation = function (item: DocumentData) {
+  del(item, collection(db, "Vacations"));
+};
+
+const itemsQuery = ref(
+  query(
+    collection(db, "Vacations"),
+    where("uid", "==", store.user.uid),
+    where("end", ">", subWeeks(new Date(), 8)),
+    orderBy("end", "desc")
+  )
+);
 </script>

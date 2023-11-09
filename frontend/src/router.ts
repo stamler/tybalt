@@ -172,7 +172,7 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Sheets List",
-              props: { query: "list", collectionName: "TimeSheets" },
+              props: { content: "list" },
               component: TimeSheetsList,
             },
             {
@@ -183,7 +183,7 @@ const router = createRouter({
               },
               path: "pending",
               name: "Time Sheets Pending",
-              props: { query: "pending", collectionName: "TimeSheets" },
+              props: { content: "pending" },
               component: TimeSheetsList,
             },
             {
@@ -194,7 +194,7 @@ const router = createRouter({
               },
               path: "approved",
               name: "Time Sheets Approved",
-              props: { query: "approved", collectionName: "TimeSheets" },
+              props: { content: "approved" },
               component: TimeSheetsList,
             },
             {
@@ -205,7 +205,7 @@ const router = createRouter({
               },
               path: "shared",
               name: "Time Sheets Shared",
-              props: { query: "shared", collectionName: "TimeSheets" },
+              props: { content: "shared" },
               component: TimeSheetsList,
             },
             {
@@ -375,7 +375,6 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Time Tracking List",
-              props: { collectionName: "TimeTracking" },
               component: TimeTrackingList,
             },
             {
@@ -406,7 +405,6 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Expense List",
-              props: { collectionName: "ExpenseTracking" },
               component: ExpenseTrackingList,
             },
             {
@@ -497,7 +495,6 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Raw Logins List",
-              props: { collectionName: "RawLogins" },
               component: RawLoginsList,
             },
           ],
@@ -544,21 +541,21 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Users List",
-              props: { query: "list" },
+              props: { content: "all" },
               component: UsersList,
             },
             {
               meta: { showInUi: true, uiName: "AD" },
               path: "ad",
               name: "AD Users List",
-              props: { query: "ad" },
+              props: { content: "ad" },
               component: UsersList,
             },
             {
               meta: { showInUi: true, uiName: "Not in AD" },
               path: "noad",
               name: "Not in AD Users List",
-              props: { query: "noad" },
+              props: { content: "noad" },
               component: UsersList,
             },
             {
@@ -601,7 +598,6 @@ const router = createRouter({
               meta: { showInUi: true, uiName: "List" },
               path: "list",
               name: "Profiles List",
-              props: { collectionName: "Profiles" },
               component: ProfilesList,
             },
             {
