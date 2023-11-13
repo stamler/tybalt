@@ -410,3 +410,42 @@ export function isMissingTimeSheetRecords(
   }
   return isMissingTimeSheetRecord(array[0]);
 }
+
+export interface Profile {
+  displayName: string;
+  email: string;
+  userSourceAnchor64: string;
+  mobilePhone?: string;
+  surname: string;
+  givenName: string;
+  jobTitle?: string;
+  userSourceAnchor: string;
+  azureId: string;
+  salary: boolean;
+  defaultDivision?: string;
+  managerUid?: string;
+  managerName?: string;
+  timeSheetExpected: boolean;
+  customClaims: Record<string, boolean>;
+  openingOV: number;
+  openingOP: number;
+  mileageClaimed: number;
+  openingDateTimeOff: Timestamp;
+  mileageClaimedSince: Timestamp;
+  payrollId: number | string;
+  offRotation: boolean;
+  defaultChargeOutRate: number;
+  usedOV: number;
+  usedOP: number;
+  usedAsOf: Timestamp;
+  msGraphDataUpdated: Timestamp;
+  personalVehicleInsuranceExpiry?: Timestamp;
+  doNotAcceptSubmissions?: boolean;
+  location?: string;
+  location_time?: Timestamp;
+  alternateManager?: string;
+  untrackedTimeOff?: boolean;
+  allowPersonalReimbursement?: boolean;
+  bot?: string;
+  workWeekHours?: number;
+}

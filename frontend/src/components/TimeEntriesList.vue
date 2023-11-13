@@ -170,278 +170,288 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { ref, watch, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { Profile } from "./types";
 import { shortDate, copyEntry, del } from "./helpers";
 import { format, subDays } from "date-fns";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
-import { storeToRefs } from "pinia";
 import { useStateStore } from "../stores/state";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
   collection,
   doc,
-  getDoc,
   CollectionReference,
   query,
+  Query,
   where,
   orderBy,
   DocumentData,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { useDocument, useCollection } from "vuefire";
+
+// A an object where the keys are saturdays and the values are tallies
+// to be used in the UI
+interface WeekTally {
+  weekEnding: Date;
+  bankEntries: DocumentData[];
+  payoutRequests: DocumentData[];
+  offRotationDates: number[];
+  offWeek: number[];
+  nonWorkHoursTally: { [timetype: string]: number; total: number };
+  mealsHoursTally: number;
+  workHoursTally: { hours: number; jobHours: number; total: number };
+  divisionsTally: { [division: string]: string }; // value is divisionName
+  jobsTally: { [job: string]: { client: string; description: string } };
+}
+
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
+const router = useRouter();
+const stateStore = useStateStore();
+const user = stateStore.user; // TODO: Why we can't use a ref here from storeToRefs
+const { startTask, endTask } = stateStore;
 
-export default defineComponent({
-  setup: () => {
-    const stateStore = useStateStore();
-    const user = stateStore.user; // TODO: Why we can't use a ref here from storeToRefs
-    const { activeTasks, showTasks } = storeToRefs(stateStore);
-    const { startTask, endTask } = stateStore;
-    return { activeTasks, showTasks, user, startTask, endTask };
+const props = defineProps({
+  collectionName: {
+    type: String,
+    required: true,
   },
-  props: ["collectionName"],
-  components: {
-    ActionButton,
-    Icon,
-  },
-  data() {
-    return {
-      parentPath: "",
-      collectionObject: null as CollectionReference | null,
-      items: [] as DocumentData[],
-      openingOV: 0,
-      openingOP: 0,
-      usedOP: 0,
-      usedOV: 0,
-      usedAsOf: new Date(),
-    };
-  },
-  watch: {
-    collectionName: {
-      immediate: true,
-      handler(collectionName) {
-        this.parentPath =
-          this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-        this.collectionObject = collection(db, collectionName);
-        // this.$firestoreBind("items", this.collectionObject);
-        const uid = this.user.uid;
-        if (uid === undefined) {
-          throw "There is no valid uid";
-        }
-        getDoc(doc(db, "Profiles", uid))
-          .then((docSnap) => {
-            this.openingOV = docSnap.get("openingOV") || 0;
-            this.openingOP = docSnap.get("openingOP") || 0;
-            this.usedOV = docSnap.get("usedOV") || 0;
-            this.usedOP = docSnap.get("usedOP") || 0;
-            this.usedAsOf = docSnap.get("usedAsOf")?.toDate() || new Date();
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Error loading profile: ${error.message}`);
-            } else alert(`Error loading profile: ${JSON.stringify(error)}`);
-          });
-        if (this.collectionName === "TimeEntries") {
-          this.$firestoreBind(
-            "items",
-            query(
-              this.collectionObject,
-              where("uid", "==", uid),
-              orderBy("date", "desc")
-            )
-          ).catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Can't load Time Entries: ${error.message}`);
-            } else alert(`Can't load Time Entries: ${JSON.stringify(error)}`);
-          });
-        }
-        if (this.collectionName === "TimeAmendments") {
-          this.$firestoreBind(
-            "items",
-            query(this.collectionObject, orderBy("date", "desc"))
-          ).catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Can't load Time Amendments: ${error.message}`);
-            } else
-              alert(`Can't load Time Amendments: ${JSON.stringify(error)}`);
-          });
-        }
-      },
-    },
-  },
-  methods: {
-    bundle(week: Date) {
-      this.startTask({
-        id: "bundle",
-        message: "verifying...",
+});
+const route = useRoute();
+const parentPath = ref("");
+const collectionObject = ref(null as CollectionReference | null);
+const openingOV = ref(0);
+const openingOP = ref(0);
+const usedOP = ref(0);
+const usedOV = ref(0);
+const usedAsOf = ref(new Date());
+const profileDoc = useDocument<Profile>(doc(db, "Profiles", user.uid));
+const itemsQuery = ref(null as Query | null);
+const items = ref([] as DocumentData[]);
+
+onMounted(() => {
+  // load the required profile data once the profile document is loaded
+  profileDoc.promise.value
+    .then(() => {
+      const profile = profileDoc.value;
+      if (!profile) {
+        alert("Can't load profile");
+        return;
+      }
+      openingOV.value = profile.openingOV || 0;
+      openingOP.value = profile.openingOP || 0;
+      usedOV.value = profile.usedOV || 0;
+      usedOP.value = profile.usedOP || 0;
+      usedAsOf.value = profile.usedAsOf?.toDate() || new Date();
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error) {
+        alert(`Can't load profile: ${error.message}`);
+      } else alert(`Can't load profile: ${JSON.stringify(error)}`);
+    });
+});
+
+watch(
+  () => props.collectionName,
+  (collectionName) => {
+    // if the collectionName changes, update the parentPath and items
+
+    // if collectionName isn't TimeEntries or TimeAmendments, alert and return
+    if (!["TimeEntries", "TimeAmendments"].includes(collectionName)) {
+      alert(`Invalid collectionName: ${collectionName}`);
+      return;
+    }
+
+    collectionObject.value = collection(db, collectionName);
+    parentPath.value = route?.matched[route.matched.length - 2]?.path ?? "";
+    itemsQuery.value = collection(getFirestore(firebaseApp), collectionName);
+
+    if (collectionName === "TimeEntries") {
+      const { promise: tep } = useCollection(
+        query(
+          collectionObject.value,
+          where("uid", "==", user.uid),
+          orderBy("date", "desc")
+        ),
+        { target: items }
+      );
+      tep.value.catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Can't load Time Entries: ${error.message}`);
+        } else alert(`Can't load Time Entries: ${JSON.stringify(error)}`);
       });
-      const bundleTimesheet = httpsCallable(functions, "bundleTimesheet");
-      return bundleTimesheet({ weekEnding: week.getTime() })
-        .then(() => {
-          this.endTask("bundle");
-          this.$router.push({ name: "Time Sheets" });
-        })
-        .catch((error) => {
-          this.endTask("bundle");
-          alert(`Error bundling timesheet: ${error.message}`);
-        });
-    },
-    copyEntry,
-    del,
-    dayIsSTThS(item: DocumentData): boolean {
-      // return true if day is Sunday, Tuesday, Thursday or Saturday
-      if (item.date.toDate().getDay() % 2 === 0) {
-        return true;
-      }
-      return false;
-    },
-    commit(item: DocumentData) {
-      const commitTimeAmendment = httpsCallable(
-        functions,
-        "commitTimeAmendment"
+    }
+    if (collectionName === "TimeAmendments") {
+      const { promise: tap } = useCollection(
+        query(collectionObject.value, orderBy("date", "desc")),
+        { target: items }
       );
-      this.startTask({
-        id: `commitAmendment${item.id}`,
-        message: "committing",
+      tap.value.catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Can't load Time Amendments: ${error.message}`);
+        } else alert(`Can't load Time Amendments: ${JSON.stringify(error)}`);
       });
-
-      return commitTimeAmendment({ id: item.id })
-        .then(() => {
-          this.endTask(`commitAmendment${item.id}`);
-        })
-        .catch((error) => {
-          this.endTask(`commitAmendment${item.id}`);
-          alert(`Amendment commit failed: ${error}`);
-        });
-    },
-    totalHours(week: string): number {
-      return (
-        this.tallies[week].nonWorkHoursTally.total +
-        this.tallies[week].workHoursTally.total
-      );
-    },
-    itemsByWeekEnding(weekEnding: number) {
-      return this.items.filter(
-        (x: DocumentData) =>
-          Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
-          x.weekEnding.toDate().getTime() === Number(weekEnding)
-      );
-    },
-    hoursString(item: DocumentData) {
-      const hoursArray = [];
-      if (item.hours) hoursArray.push(item.hours + " hrs");
-      if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
-      if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
-      return hoursArray.join(" + ");
-    },
-    shortDateWeekDayStart(date: Date) {
-      const startDate = subDays(date, 6);
-      return format(startDate, "EEE MMM dd");
-    },
-    shortDateWeekDay(date: Date) {
-      return format(date, "EEE MMM dd");
-    },
-    shortDate,
+    }
   },
-  computed: {
-    // A an object where the keys are saturdays and the values are tallies
-    // to be used in the UI
-    tallies() {
-      interface WeekTally {
-        weekEnding: Date;
-        bankEntries: DocumentData[];
-        payoutRequests: DocumentData[];
-        offRotationDates: number[];
-        offWeek: number[];
-        nonWorkHoursTally: { [timetype: string]: number; total: number };
-        mealsHoursTally: number;
-        workHoursTally: { hours: number; jobHours: number; total: number };
-        divisionsTally: { [division: string]: string }; // value is divisionName
-        jobsTally: { [job: string]: { client: string; description: string } };
+  { immediate: true }
+);
+
+const bundle = async function (week: Date) {
+  startTask({
+    id: "bundle",
+    message: "verifying...",
+  });
+  const bundleTimesheet = httpsCallable(functions, "bundleTimesheet");
+  return bundleTimesheet({ weekEnding: week.getTime() })
+    .then(() => {
+      endTask("bundle");
+      router.push({ name: "Time Sheets" });
+    })
+    .catch((error) => {
+      endTask("bundle");
+      alert(`Error bundling timesheet: ${error.message}`);
+    });
+};
+
+const dayIsSTThS = function (item: DocumentData): boolean {
+  // return true if day is Sunday, Tuesday, Thursday or Saturday
+  if (item.date.toDate().getDay() % 2 === 0) {
+    return true;
+  }
+  return false;
+};
+
+const commit = async function (item: DocumentData) {
+  const commitTimeAmendment = httpsCallable(functions, "commitTimeAmendment");
+  startTask({
+    id: `commitAmendment${item.id}`,
+    message: "committing",
+  });
+
+  return commitTimeAmendment({ id: item.id })
+    .then(() => {
+      endTask(`commitAmendment${item.id}`);
+    })
+    .catch((error) => {
+      endTask(`commitAmendment${item.id}`);
+      alert(`Amendment commit failed: ${error}`);
+    });
+};
+
+const totalHours = function (week: string): number {
+  return (
+    tallies.value[week].nonWorkHoursTally.total +
+    tallies.value[week].workHoursTally.total
+  );
+};
+
+const itemsByWeekEnding = function (weekEnding: number) {
+  return items.value.filter(
+    (x: DocumentData) =>
+      Object.prototype.hasOwnProperty.call(x, "weekEnding") &&
+      x.weekEnding.toDate().getTime() === Number(weekEnding)
+  );
+};
+
+const hoursString = function (item: DocumentData) {
+  const hoursArray = [];
+  if (item.hours) hoursArray.push(item.hours + " hrs");
+  if (item.jobHours) hoursArray.push(item.jobHours + " job hrs");
+  if (item.mealsHours) hoursArray.push(item.mealsHours + " hrs meals");
+  return hoursArray.join(" + ");
+};
+
+const shortDateWeekDayStart = function (date: Date) {
+  const startDate = subDays(date, 6);
+  return format(startDate, "EEE MMM dd");
+};
+const shortDateWeekDay = function (date: Date) {
+  return format(date, "EEE MMM dd");
+};
+
+const tallies = computed(() => {
+  const tallyObject: { [key: string]: WeekTally } = {};
+
+  for (const item of items.value) {
+    if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
+      const key: string = item.weekEnding.toDate().getTime().toString();
+      // this item can be tallied because it has a weekEnding property
+      // Check if it already has an entry in the tally object to
+      // accumulate values and create it if not.
+      if (!Object.prototype.hasOwnProperty.call(tallyObject, key)) {
+        tallyObject[key] = {
+          weekEnding: new Date(parseInt(key, 10)),
+          bankEntries: [],
+          payoutRequests: [],
+          offRotationDates: [],
+          offWeek: [],
+          nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
+          mealsHoursTally: 0,
+          workHoursTally: { hours: 0, jobHours: 0, total: 0 },
+          divisionsTally: {}, // key is division, value is divisionName
+          jobsTally: {}, // key is job, value is object with client and description
+        };
       }
 
-      const tallyObject: { [key: string]: WeekTally } = {};
-
-      for (const item of this.items) {
-        if (Object.prototype.hasOwnProperty.call(item, "weekEnding")) {
-          const key: string = item.weekEnding.toDate().getTime().toString();
-          // this item can be tallied because it has a weekEnding property
-          // Check if it already has an entry in the tally object to
-          // accumulate values and create it if not.
-          if (!Object.prototype.hasOwnProperty.call(tallyObject, key)) {
-            tallyObject[key] = {
-              weekEnding: new Date(parseInt(key, 10)),
-              bankEntries: [],
-              payoutRequests: [],
-              offRotationDates: [],
-              offWeek: [],
-              nonWorkHoursTally: { total: 0 }, // key is timetype, value is total
-              mealsHoursTally: 0,
-              workHoursTally: { hours: 0, jobHours: 0, total: 0 },
-              divisionsTally: {}, // key is division, value is divisionName
-              jobsTally: {}, // key is job, value is object with client and description
-            };
-          }
-
-          if (item.timetype === "OR") {
-            // Count the off rotation dates and ensure that there are not two
-            // off rotation entries for a given date.
-            const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
-            tallyObject[key].offRotationDates.push(orDate.getTime());
-          } else if (item.timetype === "OW") {
-            // Count the off dates and ensure that there are not two
-            // off entries for a given date.
-            const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
-            tallyObject[key].offWeek.push(orDate.getTime());
-          } else if (item.timetype === "OTO") {
-            // This is an request payout entry, store it in the payoutRequests
-            // array for processing after completing the tallies.
-            tallyObject[key].payoutRequests.push(item);
-          } else if (item.timetype === "RB") {
-            // This is an overtime bank entry, store it in the bankEntries
-            // array for processing after completing the tallies.
-            tallyObject[key].bankEntries.push(item);
-          } else if (item.timetype === "R" || item.timetype === "RT") {
-            // Tally the work hours and meals hours
-            if ("hours" in item) {
-              tallyObject[key].workHoursTally["hours"] += item.hours;
-              tallyObject[key].workHoursTally.total += item.hours;
-            }
-            if ("jobHours" in item) {
-              tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
-              tallyObject[key].workHoursTally.total += item.jobHours;
-            }
-            if ("mealsHours" in item) {
-              tallyObject[key].mealsHoursTally += item.mealsHours;
-            }
-
-            // Tally the divisions (must be present for work hours)
-            tallyObject[key].divisionsTally[item.division] = item.divisionName;
-
-            // Tally the jobs (may not be present)
-            if ("job" in item) {
-              tallyObject[key].jobsTally[item.job] = {
-                client: item.client,
-                description: item.jobDescription,
-              };
-            }
-          } else {
-            // Tally the non-work hours
-            if (item.timetype in tallyObject[key].nonWorkHoursTally) {
-              tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
-            } else {
-              tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
-            }
-            tallyObject[key].nonWorkHoursTally.total += item.hours;
-          }
+      if (item.timetype === "OR") {
+        // Count the off rotation dates and ensure that there are not two
+        // off rotation entries for a given date.
+        const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
+        tallyObject[key].offRotationDates.push(orDate.getTime());
+      } else if (item.timetype === "OW") {
+        // Count the off dates and ensure that there are not two
+        // off entries for a given date.
+        const orDate = new Date(item.date.toDate().setHours(0, 0, 0, 0));
+        tallyObject[key].offWeek.push(orDate.getTime());
+      } else if (item.timetype === "OTO") {
+        // This is an request payout entry, store it in the payoutRequests
+        // array for processing after completing the tallies.
+        tallyObject[key].payoutRequests.push(item);
+      } else if (item.timetype === "RB") {
+        // This is an overtime bank entry, store it in the bankEntries
+        // array for processing after completing the tallies.
+        tallyObject[key].bankEntries.push(item);
+      } else if (item.timetype === "R" || item.timetype === "RT") {
+        // Tally the work hours and meals hours
+        if ("hours" in item) {
+          tallyObject[key].workHoursTally["hours"] += item.hours;
+          tallyObject[key].workHoursTally.total += item.hours;
         }
+        if ("jobHours" in item) {
+          tallyObject[key].workHoursTally["jobHours"] += item.jobHours;
+          tallyObject[key].workHoursTally.total += item.jobHours;
+        }
+        if ("mealsHours" in item) {
+          tallyObject[key].mealsHoursTally += item.mealsHours;
+        }
+
+        // Tally the divisions (must be present for work hours)
+        tallyObject[key].divisionsTally[item.division] = item.divisionName;
+
+        // Tally the jobs (may not be present)
+        if ("job" in item) {
+          tallyObject[key].jobsTally[item.job] = {
+            client: item.client,
+            description: item.jobDescription,
+          };
+        }
+      } else {
+        // Tally the non-work hours
+        if (item.timetype in tallyObject[key].nonWorkHoursTally) {
+          tallyObject[key].nonWorkHoursTally[item.timetype] += item.hours;
+        } else {
+          tallyObject[key].nonWorkHoursTally[item.timetype] = item.hours;
+        }
+        tallyObject[key].nonWorkHoursTally.total += item.hours;
       }
-      return tallyObject;
-    },
-  },
+    }
+  }
+  return tallyObject;
 });
 </script>
 <style scoped>
