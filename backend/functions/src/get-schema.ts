@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
-function computeIfAbsent<K, V>(map: Map<K, V>, key: K, mappingFunction: (key: K) => V): V {
+function computeIfAbsent<K, V>(map: Map<K, V>, key: K, mappingFunction: (k: K) => V): V {
   let val = map.get(key);
   if (typeof val === "undefined") {
       val = mappingFunction(key);

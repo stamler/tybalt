@@ -88,3 +88,4 @@ backend/functions/src/config.ts
 # The config file for a specific deployment
 config.ts
 backend/functions/src/uid-map.json
+backend/functions/.env.*
