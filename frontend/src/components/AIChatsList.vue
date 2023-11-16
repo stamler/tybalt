@@ -39,6 +39,7 @@ import {
   DocumentData,
   query,
   where,
+  orderBy,
 } from "firebase/firestore";
 import { shortDate } from "./helpers";
 
@@ -50,7 +51,8 @@ const { startTask, endTask } = store;
 const itemsQuery = ref(
   query(
     collection(getFirestore(firebaseApp), "AIChats"),
-    where("uid", "==", store.user.uid)
+    where("uid", "==", store.user.uid),
+    orderBy("last_updated", "desc"),
   )
 );
 
