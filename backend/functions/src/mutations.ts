@@ -666,7 +666,7 @@ export const approveMutation = functions.https.onCall(async (data: any, context:
   const db = admin.firestore();
   const mutation = db.collection("UserMutations").doc(data.id);
   return db.runTransaction(async t => {
-    return t.get(mutation).then(async (docSnap) => {
+    await t.get(mutation).then(async (docSnap) => {
       if (!docSnap.exists) {
         throw new functions.https.HttpsError(
           "not-found",
@@ -679,10 +679,11 @@ export const approveMutation = functions.https.onCall(async (data: any, context:
           "The mutation status is not unapproved as expected. Aborting update."
         );
       }
-      return t.update(mutation, {
+      t.update(mutation, {
         status: "pending",
         statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
       });
     });
+    return;
   });
 });
