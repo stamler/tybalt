@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, Query } from "firebase/firestore";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TableData = Record<string, any>[] | undefined;
@@ -448,4 +448,13 @@ export interface Profile {
   allowPersonalReimbursement?: boolean;
   bot?: string;
   workWeekHours?: number;
+}
+
+export interface DSListConfig {
+  header: string;
+  query: Query;
+  actions: {
+    type: string;
+    handler: Function;
+  }[];
 }

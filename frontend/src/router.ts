@@ -12,6 +12,8 @@ import AIChat from "@/components/AIChat.vue";
 import AIChatsList from "@/components/AIChatsList.vue";
 import ExpensesEdit from "@/components/ExpensesEdit.vue";
 import ExpensesList from "@/components/ExpensesList.vue";
+import PurchaseOrderRequestsEdit from "@/components/PurchaseOrderRequestsEdit.vue";
+import PurchaseOrderRequestsList from "@/components/PurchaseOrderRequestsList.vue";
 import ExpensesQueue from "@/components/ExpensesQueue.vue";
 import TimeEntriesList from "@/components/TimeEntriesList.vue";
 import TimeEntriesEdit from "@/components/TimeEntriesEdit.vue";
@@ -315,6 +317,42 @@ const router = createRouter({
               name: "Expenses Approved",
               props: { approved: true, collectionName: "Expenses" },
               component: ExpensesList,
+            },
+          ],
+        },
+        {
+          path: "pos",
+          name: "POs",
+          redirect: "/expense/pos/requests",
+          component: ContentShell,
+          children: [
+            {
+              meta: { showInUi: true, uiName: "List" },
+              path: "list",
+              name: "Purchase Orders List",
+              props: { requests: false },
+              component: PurchaseOrderRequestsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Requests" },
+              path: "requests",
+              name: "Purchase Order Requests List",
+              component: PurchaseOrderRequestsList,
+            },
+            {
+              meta: { showInUi: true, uiName: "Request" },
+              path: "request",
+              name: "Request Purchase Order",
+              props: { collectionName: "PurchaseOrderRequests" },
+              component: PurchaseOrderRequestsEdit,
+            },
+            {
+              path: ":id/edit",
+              props: (route) => {
+                return { id: route.params.id, collectionName: "PurchaseOrderRequests" };
+              },
+              name: "Edit Purchase Order Request",
+              component: PurchaseOrderRequestsEdit,
             },
           ],
         },

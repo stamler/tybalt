@@ -14,6 +14,7 @@
  * - searchFields: an array of strings indicating which fields should be
  *   searched when the user types in the search box. If not provided, all fields
  *   will be searched. (TODO: implement this)
+ * - listHeader: a string that will be displayed at the top of the list.
  *
  * This component has multiple slots, named as follows:
  * - anchor: the leftmost column of the list. This is usually a link to the
@@ -53,6 +54,10 @@ const props = defineProps({
   rowAltVisualFn: {
     type: Function as PropType<(item: DocumentData) => boolean>,
     default: () => false,
+  },
+  listHeader: {
+    type: String,
+    required: false,
   },
 });
 
@@ -118,6 +123,9 @@ watch(
       />
       <span>{{ processedItems.length }} items</span>
     </div>
+    <span v-if="props.listHeader" class="listheader">
+      {{ props.listHeader }}
+    </span>
     <div
       class="listentry"
       v-bind:class="{ listItemAltVisual: rowAltVisualFn(item) }"

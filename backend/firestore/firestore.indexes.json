@@ -305,6 +305,39 @@
       ]
     },
     {
+      "collectionGroup": "PurchaseOrderRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "creatorUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "attachment",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "PurchaseOrderRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "fullyApproved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdDate",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "PurchaseOrders",
+      "queryScope": "COLLECTION",
+      "fields": []
+    },
+    {
       "collectionGroup": "RawLogins",
       "queryScope": "COLLECTION",
       "fields": [

@@ -8,6 +8,15 @@ service firebase.storage {
         request.resource.contentType.matches('image/jpeg')
       );    
     }
+    // give managers read access. This can possibly be achieved by storing the
+    // corresponding PurchaseOrderRequests document's id in the customMetadata
+    // property of the file. We could then use getMetadata() to retrieve the id
+    // then use firestore.get() to load the managerUid and check if the
+    // requester is the manager.
+    function requesterIsPurchaseOrderRequestsManager() {
+      let docId = resource.metadata.PurchaseOrderRequestsId;
+      return request.auth.uid in firestore.get(/databases/(default)/documents/PurchaseOrderRequests/$(docId)).data.managerUid;
+    }
     function hasClaim(claim) { // requester has given custom claim
       return request.auth.token[claim] == true;
     }
@@ -26,6 +35,21 @@ service firebase.storage {
         hasClaim("time") && request.auth.uid == userId ||
         hasClaim("tapr") ||
         hasClaim("eapr") ||
+        hasClaim("report")
+      )
+      // allow user to create the file but not update it
+      allow write: if 
+        request.auth.uid == userId &&
+        resource == null &&
+        isValidExpenseAttachment();
+    }
+    match /PurchaseOrderRequests/{userId}/{purchaseOrderRequestFilename} {
+      // authenticated users can read 
+      allow read: if (
+        hasClaim("time") && request.auth.uid == userId ||
+        hasClaim("time") && requesterIsPurchaseOrderRequestsManager() ||
+        hasClaim("vp") ||
+        hasClaim("smg") ||
         hasClaim("report")
       )
       // allow user to create the file but not update it

@@ -199,3 +199,35 @@ export const cleanUpUsersExpenseAttachments = functions.https.onCall(async (data
   functions.logger.info(result);
   return
 });
+
+// UI calls this prior to attempting to upload a PurchaseOrderRequest
+// attachment, cleaning up the existing attachments in case there are orphans
+// from previous uploads
+export const cleanUpUsersPurchaseOrderRequestAttachments = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  const auth = getAuthObject(context, ["time"]);
+
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket();
+  // files = get list of file objects under PurchaseOrderRequests/auth.uid/<filenames>
+  const [files] = await bucket.getFiles({ prefix: `PurchaseOrderRequests/${auth.uid}/` });
+
+  // references = get all PurchaseOrderRequests where uid = auth.uid orderBy attachment
+  const purchaseOrderRequestsSnapshot = await db.collection("PurchaseOrderRequests")
+    .where("creatorUid", "==", auth.uid)
+    .orderBy("attachment")
+    .get();
+  const references = purchaseOrderRequestsSnapshot.docs.map(x => x.get("attachment"));
+ 
+  // unreferenced = files where references does not include the file name
+  const unreferenced = files.filter(x => !references.includes(x.name));
+ 
+  // delete unreferenced here (temporarily do nothing for testing)
+  functions.logger.info(`deleting ${unreferenced.length} unreferenced files...\n${unreferenced.map(x => x.name).join("\n")}`);
+  const deleteResults = [];
+  for (const file of unreferenced) {
+    deleteResults.push(file.delete());
+  }
+  const result = await Promise.all(deleteResults);
+  functions.logger.info(result);
+  return
+});

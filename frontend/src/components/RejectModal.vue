@@ -33,15 +33,10 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { firebaseApp } from "../firebase";
-import {
-  getFirestore,
-  doc,
-  runTransaction,
-  DocumentSnapshot,
-} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useStateStore } from "../stores/state";
 
-const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
 const props = defineProps({
   collectionName: {
@@ -88,42 +83,16 @@ const rejectDoc = async function (
     id: `reject${docId}`,
     message: "rejecting",
   });
-  const docRef = doc(db, collectionName, docId);
-  return runTransaction(db, async (transaction) => {
-    return transaction.get(docRef).then((tsDoc: DocumentSnapshot) => {
-      if (!tsDoc.exists) {
-        throw `A document with id ${docId} doesn't exist.`;
-      }
-      const data = tsDoc?.data() ?? undefined;
-      if (
-        (collectionName === "TimeSheets" &&
-          data?.submitted === true &&
-          data?.locked === false) ||
-        (collectionName === "Expenses" &&
-          data?.submitted === true &&
-          (data?.committed === false || data?.committed === undefined))
-      ) {
-        // document is rejectable because it is submitted and not locked or committed
-        transaction.update(docRef, {
-          approved: false,
-          submitted: false,
-          rejected: true,
-          rejectorId: store.user.uid,
-          rejectorName: store.user.displayName,
-          rejectionReason: reason,
-        });
-      } else {
-        throw "The document has not been submitted or is locked";
-      }
-    });
-  })
-    .then(() => {
-      endTask(`reject${docId}`);
-    })
-    .catch((error) => {
-      endTask(`reject${docId}`);
-      alert(`Rejection failed: ${error}`);
-    });
+  const rejectDoc = httpsCallable(functions, "rejectDoc");
+  try {
+    await rejectDoc({ id: docId, collectionName, reason });
+    endTask(`reject${docId}`);
+  } catch (error: unknown) {
+    endTask(`reject${docId}`);
+    if (error instanceof Error) {
+      alert(`Error rejecting: ${error.message}`);
+    } else alert(`Error rejecting: ${JSON.stringify(error)}`);
+  }
 };
 
 defineExpose({

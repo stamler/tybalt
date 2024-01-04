@@ -14,7 +14,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 import { writeWeekEnding } from "./utilities";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
 import { emailOnReject, emailOnShare } from "./email";
-export { generateExpenseAttachmentArchive, cleanUpUsersExpenseAttachments } from "./storage";
+export { generateExpenseAttachmentArchive, cleanUpUsersExpenseAttachments, cleanUpUsersPurchaseOrderRequestAttachments } from "./storage";
 export { updateAuthAndManager, createProfile, deleteProfile, updateProfileFromMSGraph, algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
 export { rawLogins, rawLoginsCleanup } from "./rawLogins";
 export { bundleTimesheet } from "./bundleTimesheets";
