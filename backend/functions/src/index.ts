@@ -27,7 +27,6 @@ export { writeFileLinks, expensesPayPeriodEnding } from "./utilities";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
-export { newAiChat, deleteChat, aiResponder, retryAiChat } from "./ai";
 export { deleteJob, fullSyncLastTimeEntryDate, updateLastTimeEntryDate, clearLastTimeEntryDate } from "./jobs";
 export { auditExportStatus } from "./audit";
 export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";

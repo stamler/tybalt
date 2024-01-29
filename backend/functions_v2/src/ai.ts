@@ -1,10 +1,17 @@
 // ai.ts
 
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { logger } from "firebase-functions/v2";
+import { defineSecret } from "firebase-functions/params";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { DocumentData } from "@google-cloud/firestore";
 import { getAuthObject, isDocIdObject, isChatPayloadObject } from "./utilities";
+
 import * as admin from "firebase-admin";
 import axios, { isAxiosError } from "axios";
 import { v4 as uuidv4 } from "uuid";
+
+const openAIKey = defineSecret("OPENAI_KEY");
 
 const db = admin.firestore();
 // This google cloud function is called by the client to save a new chat message
@@ -15,11 +22,12 @@ const db = admin.firestore();
 // id is the id of the chat thread. If it is not provided, a new document is
 // created, otherwise the message is added to the existing document. The
 // function always returns the id of the chat thread.
-export const newAiChat = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+export const newAiChat = onCall(async (callableRequest) => {
   
     // Verify data is a ChatPayload
+    const data = callableRequest.data;
     if (!isChatPayloadObject(data)) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "The chat payload object didn't validate"
       );
@@ -29,7 +37,7 @@ export const newAiChat = functions.https.onCall(async (data: unknown, context: f
     const { content } = data;
   
     // throw if the caller isn't authenticated & authorized
-    const auth = getAuthObject(context, ["chat"]);
+    const auth = getAuthObject(callableRequest, ["chat"]);
 
     // look for a bot string on the profile of the user
     const profileRef = db.collection("Profiles").doc(auth.uid);
@@ -66,8 +74,8 @@ export const newAiChat = functions.https.onCall(async (data: unknown, context: f
       await batch.commit();
       return { id: newDocRef.id };          
     } catch (error) {
-      functions.logger.error(error);
-      throw new functions.https.HttpsError(
+      logger.error(error);
+      throw new HttpsError(
         "internal",
         "There was an error creating the chat document"
       );
@@ -90,11 +98,12 @@ interface ChatDoc {
 // containing the following properties: { id: string }. id is the id of the
 // AIChats document. On success, the function returns nothing. It throws if 
 // the caller isn't authenticated & authorized or if the document doesn't exist.
-export const deleteChat = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+export const deleteChat = onCall(async (callableRequest) => {
     
     // Verify data is a DocIdObject
+    const data = callableRequest.data;
     if (!isDocIdObject(data)) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "The provided data doesn't contain a document id"
       );
@@ -104,20 +113,20 @@ export const deleteChat = functions.https.onCall(async (data: unknown, context: 
     const { id } = data;
   
     // throw if the caller isn't authenticated & authorized
-    getAuthObject(context, ["chat"]);
+    getAuthObject(callableRequest, ["chat"]);
 
     // throw if the document's uid doesn't match the caller's uid
     const docRef = db.collection("AIChats").doc(id);
     const docSnapshot = await docRef.get();
     if (!docSnapshot.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "not-found",
         "The chat document doesn't exist"
       );
     }
     const docData = docSnapshot.data();
-    if (docData?.uid !== context.auth?.uid) {
-      throw new functions.https.HttpsError(
+    if (docData?.uid !== callableRequest.auth?.uid) {
+      throw new HttpsError(
         "permission-denied",
         "You are not authorized to delete this document"
       );
@@ -135,7 +144,7 @@ export const deleteChat = functions.https.onCall(async (data: unknown, context: 
     const messagesSnapshot = await messagesRef.limit(499).get();
     const messagesCount = messagesSnapshot.size;
     if (messagesCount === 499) {
-      functions.logger.warn(
+      logger.warn(
         "There are more than 499 messages in the subcollection. The function will not delete all of them and they will become orphaned."
       );
     }
@@ -151,8 +160,8 @@ export const deleteChat = functions.https.onCall(async (data: unknown, context: 
       await batch.commit();
       return { messagesCount };
     } catch (error) {
-      functions.logger.error(error);
-      throw new functions.https.HttpsError(
+      logger.error(error);
+      throw new HttpsError(
         "internal",
         "There was an error deleting the messages"
       );
@@ -164,8 +173,14 @@ export const deleteChat = functions.https.onCall(async (data: unknown, context: 
 // response to the database. This function waits for a maximum of 180 seconds
 // before timing out. This means dispatching the message to the chat bot can
 // take up to 180 seconds. The dispatch functions should timeout before this
-export const aiResponder = functions.runWith({ timeoutSeconds: 180 }).firestore.document("AIChats/{chatId}/messages/{messageId}").onCreate(async (snap, context) => {
-  return sharedAiResponder(context.params.chatId, context.eventId, context.params.messageId, snap);
+export const aiResponder = onDocumentCreated(
+  { 
+    document: "AIChats/{chatId}/messages/{messageId}",
+    timeoutSeconds: 180,
+    secrets: [openAIKey],
+  },
+  async (event) => {
+    return sharedAiResponder(event.params.chatId, event.id, event.params.messageId, event.data?.data());
 });
 
 // The user may call the retryAiChat function to retry a chat that has failed to
@@ -174,10 +189,13 @@ export const aiResponder = functions.runWith({ timeoutSeconds: 180 }).firestore.
 // implemented by calling a shared function with the id parameter. This function
 // is shared with aiResponder. When the function returns successfully, the
 // chat's error flag is set to false and the error message is cleared.
-export const retryAiChat = functions.https.onCall(async (data, context) => {
+export const retryAiChat = onCall({
+  secrets: [openAIKey],
+}, async (callableRequest) => {
   // Verify data is a DocIdObject
+  const data = callableRequest.data;
   if (!isDocIdObject(data)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "The provided data doesn't contain a document id"
     );
@@ -185,19 +203,19 @@ export const retryAiChat = functions.https.onCall(async (data, context) => {
   // get document id from data
   const { id } = data;
   // throw if the caller isn't authenticated & authorized
-  getAuthObject(context, ["chat"]);
+  getAuthObject(callableRequest, ["chat"]);
   // get the chat document
   const chatRef = db.collection("AIChats").doc(id);
   const chatSnapshot = await chatRef.get();
   if (!chatSnapshot.exists) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "not-found",
       "The chat document doesn't exist"
     );
   }
   const chatData = chatSnapshot.data();
-  if (chatData?.uid !== context.auth?.uid) {
-    throw new functions.https.HttpsError(
+  if (chatData?.uid !== callableRequest.auth?.uid) {
+    throw new HttpsError(
       "permission-denied",
       "You are not authorized to retry this chat"
     );
@@ -206,7 +224,7 @@ export const retryAiChat = functions.https.onCall(async (data, context) => {
   const messagesRef = chatRef.collection("messages");
   const messagesSnapshot = await messagesRef.orderBy("time", "desc").limit(1).get();
   if (messagesSnapshot.empty) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "not-found",
       "The chat document doesn't contain any messages"
     );
@@ -217,30 +235,30 @@ export const retryAiChat = functions.https.onCall(async (data, context) => {
   try {
     return sharedAiResponder(id, undefined, messageId, messageSnapshot);
   } catch (error) {
-    functions.logger.error(error);
-    throw new functions.https.HttpsError(
+    logger.error(error);
+    throw new HttpsError(
       "internal",
       "There was an error retrying the chat"
     );
   }
 });
 
-const sharedAiResponder = async (chatId: string, receivedEventId: string | undefined, messageId: string, messageSnapshot: admin.firestore.DocumentSnapshot ) => {
+const sharedAiResponder = async (chatId: string, receivedEventId: string | undefined, messageId: string, data: DocumentData | undefined ) => {
 
       // if the event id is undefined, this function was called by the user so
       // we create a new event id which is randomly generated
       const eventId = receivedEventId === undefined ? uuidv4() + "_manual" : receivedEventId;
 
       // get the message data
-      const messageData = messageSnapshot.data();
-      if (!messageData) {
+      if (!data) {
         throw new Error(`message ${messageId} belonging to chat ${chatId} is empty`);
       }
+      const messageData = data;
       const { content, role } = messageData;
 
       // only respond to messages from the user
       if (role !== "user") {
-        functions.logger.info(`Ignoring message ${messageId} because it's not from a user.`);
+        logger.info(`Ignoring message ${messageId} because it's not from a user.`);
         return;
       }
   
@@ -263,13 +281,13 @@ const sharedAiResponder = async (chatId: string, receivedEventId: string | undef
       // triggered multiple times.
       const existingMsg = await chatRef.collection("messages").where("eventId", "==", eventId).get();
       if (existingMsg.size > 0) {
-        functions.logger.warn(`A message for eventId ${eventId} already exists in the database`);
+        logger.warn(`A message for eventId ${eventId} already exists in the database`);
         return;
       }
       try {
         await chatRef.update({ responding: true });
       } catch (error) {
-        functions.logger.error(`There was an error updating the responding flag for chat ${chatId}`);
+        logger.error(`There was an error updating the responding flag for chat ${chatId}`);
       }
 
       const batch = db.batch();
@@ -290,16 +308,16 @@ const sharedAiResponder = async (chatId: string, receivedEventId: string | undef
                 role: doc.get("role"),
               }
             });
-            functions.logger.info(`dispatching message ${messageId} to ${bot}`);
-            ({ message, response } = await queryChatGPT(messages, uid));
+            logger.info(`dispatching message ${messageId} to ${bot}`);
+            ({ message, response } = await queryChatGPT(messages, uid, openAIKey.value()));
             break;
           default:
-            functions.logger.info(`dispatching message ${messageId} to default bot`);
+            logger.info(`dispatching message ${messageId} to default bot`);
             ({ message, response } = await queryLatinBot(content));
         }
       } catch (error) {
         const errorMessage = (error as Error).message;
-        functions.logger.error(`message ${messageId} to bot ${bot} has error ${errorMessage}`);
+        logger.error(`message ${messageId} to bot ${bot} has error ${errorMessage}`);
         batch.set(chatRef, {
           waiting: false,
           responding: false,
@@ -330,7 +348,7 @@ const sharedAiResponder = async (chatId: string, receivedEventId: string | undef
 // random phrase of random length. It's a placeholder for a more sophisticated bot. It
 // returns an object with properties content: string, role: string
 async function queryLatinBot(prompt: string) {
-  functions.logger.info(`querying latin bot with prompt: ${prompt}`);
+  logger.info(`querying latin bot with prompt: ${prompt}`);
   const length = Math.floor(Math.random() * 3);
   const url = `https://baconipsum.com/api/?type=meat-and-filler&paras=${length}&format=text`;
   const response = await axios.get(url);
@@ -346,9 +364,7 @@ interface OpenAIChatMessage {
   role: string;
 }
 
-async function queryChatGPT(messages: OpenAIChatMessage[], uid: string) {
-  const apiKey = functions.config().tybalt.openai.key;
-
+async function queryChatGPT(messages: OpenAIChatMessage[], uid: string, apiKey: string) {
   // TODO: put the givenName in the chat document so we don't have to query
   // TODO: just pass the chat document to this function and others that run queries
   const givenName =  await (await (db.collection("Profiles").doc(uid).get())).get("givenName");

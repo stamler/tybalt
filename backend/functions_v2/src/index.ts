@@ -18,3 +18,4 @@ export {
   assignPoNumber,
 } from "./pos";
 export { rejectDoc } from "./rejection";
+export { newAiChat, deleteChat, aiResponder, retryAiChat } from "./ai";
