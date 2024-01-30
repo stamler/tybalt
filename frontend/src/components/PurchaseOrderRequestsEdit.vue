@@ -66,7 +66,7 @@
       />
     </span>
 
-    <DSJobSelector @set-job="setJob" @set-category="setCategory" @clear-job="clearJob"/>
+    <DSJobSelector v-model="item" @change-job="updateManager" />
 
     <span class="field" v-if="item.job === undefined">
       <label for="manager">Manager</label>
@@ -176,7 +176,7 @@ const router = useRouter();
 const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
 
 const store = useStateStore();
-const { user, expenseRates, startTask, endTask } = store;
+const { user, startTask, endTask } = store;
 
 const props = defineProps({
   id: {
@@ -231,25 +231,16 @@ watch(
   }
 );
 
-const clearJob = function () {
-  delete item.value.job;
-  delete item.value.jobDescription;
-  delete item.value.client;
-  delete item.value.jobCategory;
-  item.value.managerUid = profileDoc.value?.managerUid;
-  item.value.managerName = profileDoc.value?.managerName;
-};
-
-const setJob = function (values: any) {
-  item.value.job = values.objectID;
-  item.value.jobDescription = values.description;
-  item.value.client = values.client;
+const updateManager = function (values: any) {
+  // if the job is undefined, the managerUid is set by the user
+  if (item.value.job === undefined) {
+    item.value.managerUid = profileDoc.value?.managerUid;
+    item.value.managerName = profileDoc.value?.managerName;
+    return;
+  }
+  // otherwise, set the manager from the job
   item.value.managerUid = values.managerUid;
   item.value.managerName = values.managerDisplayName;
-};
-
-const setCategory = function (category: string) {
-  item.value.jobCategory = category;
 };
 
 const cleanup = async function () {

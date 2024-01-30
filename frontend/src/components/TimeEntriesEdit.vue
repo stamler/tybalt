@@ -45,20 +45,8 @@
           </option>
         </select>
       </span>
-
-      <span class="field" v-show="job === undefined">
-        <span class="grow">
-          <div id="jobAutocomplete" />
-        </span>
-      </span>
-      <span class="field" v-show="job !== undefined">
-        <span class="grow">
-          <action-button type="delete" @click.prevent="clearJob" />
-          {{ job }} / {{ item.client }}:{{ item.jobDescription }}
-        </span>
-      </span>
-
-      <span class="field" v-if="job && job !== '' && item.division">
+      <DSJobSelector v-model="item"/>
+      <span class="field" v-if="item.job && item.job !== '' && item.division">
         <label for="jobHours">Job Hours</label>
         <input
           class="grow"
@@ -70,16 +58,6 @@
           max="18"
         />
       </span>
-
-      <span class="field" v-if="jobCategories !== null">
-        <label for="category">Category</label>
-        <select class="grow" name="category" v-model="item.category">
-          <option disabled selected value="">-- choose category --</option>
-          <option v-for="c in jobCategories" :value="c" v-bind:key="c">
-            {{ c }}
-          </option>
-        </select>
-      </span>
     </span>
 
     <!--------------------------------------------------->
@@ -88,12 +66,12 @@
 
     <span
       class="field"
-      v-if="!['OR', 'OW', 'OTO'].includes(item.timetype) && job === undefined"
+      v-if="!['OR', 'OW', 'OTO'].includes(item.timetype) && item.job === undefined"
     >
       <label for="hours">
         {{
-          job &&
-          job !== "" &&
+          item.job &&
+          item.job !== "" &&
           item.division &&
           ["R", "RT"].includes(item.timetype)
             ? "Non-Chargeable "
@@ -130,8 +108,8 @@
     <span
       class="field"
       v-if="
-        job &&
-        job !== '' &&
+        item.job &&
+        item.job !== '' &&
         item.division &&
         ['R', 'RT'].includes(item.timetype)
       "
@@ -184,8 +162,9 @@
   </form>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { computed, watch, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { firebaseApp } from "../firebase";
 import { useCollection } from "vuefire";
 import {
@@ -194,7 +173,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  CollectionReference,
   DocumentSnapshot,
   DocumentData,
   serverTimestamp,
@@ -205,358 +183,272 @@ import Datepicker from "@vuepic/vue-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import { shortDateWithWeekday } from "./helpers";
 import _ from "lodash";
-import algoliasearch from "algoliasearch/lite";
-import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
-import ActionButton from "./ActionButton.vue";
+import DSJobSelector from "./DSJobSelector.vue";
 
-export default defineComponent({
-  setup() {
-    // user doesn't need to be reactive so no refs wanted, just the user object,
-    // so we don't use storeToRefs() to toRef()
-    return { user: useStateStore().user };
+const route = useRoute();
+const router = useRouter();
+const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
+
+const store = useStateStore();
+const { user } = store;
+
+const props = defineProps({
+  id: {
+    // https://vuejs.org/api/utility-types.html#proptype-t
+    type: String,
+    required: false,
   },
-  components: { ActionButton, Datepicker },
-  props: ["id", "collectionName"],
-  data() {
-    return {
-      dps: {
-        // date picker state
-        disabled: {
-          to: subWeeks(new Date(), 12),
-          from: addWeeks(new Date(), 4),
-        },
-        highlighted: {
-          dates: [new Date()],
-        },
-      },
-      jobCategories: null as string[] | null,
-      parentPath: "",
-      collectionObject: null as CollectionReference | null,
-      divisions: useCollection(collection(db, "Divisions")),
-      timetypes: useCollection(collection(db, "TimeTypes")),
-      profiles: useCollection(collection(db, "Profiles")),
-      item: {} as DocumentData,
-      job: undefined as string | undefined,
-    };
-  },
-  computed: {
-    trainingTokensInDescriptionWhileRegularHours(): boolean {
-      if (
-        this.item.timetype !== undefined &&
-        this.item.workDescription !== undefined
-      ) {
-        const lowercase = this.item.workDescription.toLowerCase().trim();
-        const lowercaseTokens = lowercase.split(/\s+/);
-        return (
-          this.item.timetype === "R" &&
-          ([
-            "training",
-            "train",
-            "orientation",
-            "course",
-            "whmis",
-            "learning",
-          ].some((token) => lowercaseTokens.includes(token)) ||
-            ["working at heights", "first aid"].some((token) =>
-              lowercase.includes(token)
-            ))
-        );
-      }
-      return false;
-    },
-    jobNumbersInDescription(): boolean {
-      if (this.item.workDescription !== undefined) {
-        const lowercase = this.item.workDescription.toLowerCase().trim();
-        // look for any instances of XX-YYY where XX is a number between 15 and
-        // 40 and YYY is a zero-padded number between 1 and 999 then return true
-        // if any are found
-        return /(1[5-9]|2[0-9]|3[0-9]|40)-(\d{3})/.test(lowercase);
-      }
-      return false;
-    },
-  },
-  watch: {
-    id: function (id) {
-      this.setItem(id);
-    }, // first arg is newVal, second is oldVal
-    "item.timetype": function (newVal, oldVal) {
-      if (["R", "RT"].includes(newVal) && !["R", "RT"].includes(oldVal)) {
-        // The time type has just been changed to R or RT, verify division set
-        if (this.item.division === undefined) {
-          this.item.division = "";
-        }
-      }
-      if (!["R", "RT"].includes(newVal) && ["R", "RT"].includes(oldVal)) {
-        // The time type has just been changed from R or RT, set division
-        // and job to undefined
-        this.item.division = undefined;
-        this.item.job = undefined;
-        this.job = undefined;
-      }
-    },
-  },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = collection(db, this.collectionName);
-    this.setItem(this.id);
-    this.setupInit();
-  },
-  methods: {
-    clearJob() {
-      this.job = undefined;
-      this.jobCategories = null;
-      delete this.item.category;
-    },
-    async loadJobCategories(jobId: string | undefined) {
-      if (jobId === undefined) {
-        this.jobCategories = null;
-        return;
-      }
-      // get the job document from firestore and if the job has a categories
-      // list set the jobCategories list
-      const jobDoc = await getDoc(doc(db, "Jobs", jobId));
-      if (jobDoc.exists()) {
-        const categories = jobDoc.get("categories");
-        // if categories is an array set the flag to true
-        if (Array.isArray(categories)) {
-          this.jobCategories = categories;
-        } else {
-          this.jobCategories = null;
-        }
-      }
-    },
-    shortDateWithWeekday,
-    async setupInit() {
-      const profileSecrets = await getDoc(
-        doc(db, "ProfileSecrets", this.user.uid)
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const writeJobToItem = async (values: any) => {
-        this.job = values.objectID;
-        this.item.jobDescription = values.description;
-        this.item.client = values.client;
-
-        await this.loadJobCategories(values.objectID);
-      };
-      const searchClient = algoliasearch(
-        "F7IPMZB3IW",
-        profileSecrets.get("algoliaSearchKey")
-      );
-      autocomplete({
-        container: "#jobAutocomplete",
-        placeholder: "search jobs...",
-        getSources() {
-          return [
-            {
-              sourceId: "jobs",
-              onSelect({ item }) {
-                writeJobToItem(item);
-              },
-              templates: {
-                item({ item }) {
-                  return `${item.objectID} - ${item.client}:${item.description}`;
-                },
-              },
-              getItems({ query }) {
-                return getAlgoliaResults({
-                  searchClient,
-                  queries: [
-                    {
-                      indexName: "tybalt_jobs",
-                      query,
-                      // params: {
-                      //   hitsPerPage: 7,
-                      // },
-                    },
-                  ],
-                });
-              },
-            },
-          ];
-        },
-      });
-    },
-    async setItem(id: string) {
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-      if (id) {
-        getDoc(doc(this.collectionObject, id))
-          .then((snap: DocumentSnapshot) => {
-            const result = snap.data();
-            if (result === undefined) {
-              // A document with this id doesn't exist in the database,
-              // list instead.
-              this.$router.push(this.parentPath);
-            } else {
-              this.item = result;
-              this.job = this.item.job;
-              this.item.date = result.date.toDate();
-              this.loadJobCategories(this.item.job);
-            }
-          })
-          .catch(() => {
-            this.$router.push(this.parentPath);
-          });
-      } else {
-        const profile = await getDoc(doc(db, "Profiles", this.user.uid));
-        const defaultDivision = profile.get("defaultDivision");
-        this.item = {
-          date: new Date(),
-          timetype: "R",
-          division: defaultDivision ?? "",
-        };
-        if (this.collectionName === "TimeAmendments") {
-          // setting the uid blank surfaces the choose option in the UI
-          this.item.uid = "";
-        }
-      }
-    },
-    save() {
-      // Populate the Time Type Name
-      this.item.timetypeName = this.timetypes.filter(
-        (i: DocumentData) => i.id === this.item.timetype
-      )[0].name;
-
-      // if timetype isn't R or RT, delete disallowed properties
-      if (!["R", "RT"].includes(this.item.timetype)) {
-        [
-          "division",
-          "divisionName",
-          "job",
-          "jobDescription",
-          "client",
-          "jobHours",
-          "mealsHours",
-          "workrecord",
-        ].forEach((x) => delete this.item[x]);
-      } else {
-        // timetype is R or RT, division must be present
-        if (this.item.division && this.item.division.length > 0) {
-          // write divisionName
-          this.item.divisionName = this.divisions.filter(
-            (i: DocumentData) => i.id === this.item.division
-          )[0].name;
-        } else {
-          throw "Division Missing";
-        }
-
-        // TODO: catch the above throw and notify the user.
-        // TODO: build more validation here to notify the user of errors
-        // before hitting the backend.
-
-        // remove values of zero in hours fields
-        if (this.item.mealsHours === 0) {
-          delete this.item.mealsHours;
-        }
-
-        if (this.item.jobHours === 0) {
-          delete this.item.jobHours;
-        }
-
-        if (this.item.hours === 0) {
-          delete this.item.hours;
-        }
-
-        delete this.item.payoutRequestAmount;
-
-        // Clear the Job if it's empty or too short, otherwise clear hours
-        // since we don't allow non-chargeable time with a job number
-        // The back end will actually validate that it exists
-        if (!this.job || this.job.length < 6) {
-          // Clear
-          delete this.item.job;
-          delete this.item.client;
-          delete this.item.jobDescription;
-          delete this.item.jobHours;
-          delete this.item.workorder;
-        } else {
-          // set the job in the item
-          this.item.job = this.job;
-          delete this.item.hours;
-        }
-      }
-
-      // if timetype is OW, OR or OTO, delete hours and workDescription
-      // (other properties already deleted in previous if/else statement)
-      if (["OR", "OW", "OTO"].includes(this.item.timetype)) {
-        delete this.item.hours;
-        delete this.item.workDescription;
-      }
-
-      // delete payoutRequestAmount if it's not a payout request
-      if (this.item.timetype !== "OTO") {
-        delete this.item.payoutRequestAmount;
-      }
-
-      this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
-
-      if (this.collectionName === "TimeEntries") {
-        // include uid of the creating user
-        this.item.uid = this.user.uid;
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(this.item, "date")) {
-        // make the date today if not provided by user
-        this.item.date = new Date();
-      }
-
-      // If we're creating an Amendment rather than a TimeEntry, add a creator
-      // and creator name, set the displayName from the uid given in the UI,
-      // and add a sentinel for the server timestamp
-      if (this.collectionName === "TimeAmendments") {
-        try {
-          // Populate the displayName, surname & givenName
-          const profile = this.profiles.filter(
-            (i: DocumentData) => i.id === this.item.uid
-          )[0];
-          this.item.displayName = profile.displayName;
-          this.item.surname = profile.surname;
-          this.item.givenName = profile.givenName;
-        } catch {
-          alert("Specify an employee");
-        }
-
-        this.item.creator = this.user.uid;
-        this.item.creatorName = this.user.displayName;
-        this.item.created = serverTimestamp();
-        this.item.committed = false;
-      }
-
-      // Write to database
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-
-      if (this.id) {
-        // Editing an existing item
-        setDoc(doc(this.collectionObject, this.id), this.item)
-          .then(() => {
-            this.$router.push(this.parentPath);
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Failed to edit Time Entry: ${error.message}`);
-            } else alert(`Failed to edit Time Entry: ${JSON.stringify(error)}`);
-          });
-      } else {
-        // Creating a new item
-        setDoc(doc(this.collectionObject), this.item)
-          .then(() => {
-            this.$router.push(this.parentPath);
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error) {
-              alert(`Failed to create Time Entry: ${error.message}`);
-            } else
-              alert(`Failed to create Time Entry: ${JSON.stringify(error)}`);
-          });
-      }
-    },
+  collectionName: {
+    type: String,
+    required: true,
   },
 });
+
+const dps = {
+  // date picker state
+  disabled: {
+    to: subWeeks(new Date(), 12),
+    from: addWeeks(new Date(), 4),
+  },
+  highlighted: {
+    dates: [new Date()],
+  },
+};
+
+const collectionObject = collection(db, props.collectionName);
+const divisions = useCollection(collection(db, "Divisions"));
+const timetypes = useCollection(collection(db, "TimeTypes"));
+const profiles = useCollection(collection(db, "Profiles"));
+const item = ref({} as DocumentData);
+
+const trainingTokensInDescriptionWhileRegularHours = computed(() => {
+  if (
+    item.value.timetype !== undefined &&
+    item.value.workDescription !== undefined
+  ) {
+    const lowercase = item.value.workDescription.toLowerCase().trim();
+    const lowercaseTokens = lowercase.split(/\s+/);
+    return (
+      item.value.timetype === "R" &&
+      ([
+        "training",
+        "train",
+        "orientation",
+        "course",
+        "whmis",
+        "learning",
+      ].some((token) => lowercaseTokens.includes(token)) ||
+        ["working at heights", "first aid"].some((token) =>
+          lowercase.includes(token)
+        ))
+    );
+  }
+  return false;
+});
+
+const jobNumbersInDescription = computed(() => {
+  if (item.value.workDescription !== undefined) {
+    const lowercase = item.value.workDescription.toLowerCase().trim();
+    // look for any instances of XX-YYY where XX is a number between 15 and
+    // 40 and YYY is a zero-padded number between 1 and 999 then return true
+    // if any are found
+    return /(1[5-9]|2[0-9]|3[0-9]|40)-(\d{3})/.test(lowercase);
+  }
+  return false;
+});
+
+watch(
+  () => props.id,
+  (id) => {
+    setItem(id);
+  }
+);
+
+watch(
+  () => item.value.timetype,
+  (newVal, oldVal) => {
+    if (["R", "RT"].includes(newVal) && !["R", "RT"].includes(oldVal)) {
+      // The time type has just been changed to R or RT, verify division set
+      if (item.value.division === undefined) {
+        item.value.division = "";
+      }
+    }
+    if (!["R", "RT"].includes(newVal) && ["R", "RT"].includes(oldVal)) {
+      // The time type has just been changed from R or RT, set division
+      // and job to undefined
+      item.value.division = undefined;
+      item.value.job = undefined;
+    }
+  }
+);
+
+const setItem = async function (id: string | undefined) {
+  if (id) {
+    getDoc(doc(collectionObject, id))
+      .then((snap: DocumentSnapshot) => {
+        const result = snap.data();
+        if (result === undefined) {
+          // A document with this id doesn't exist in the database,
+          // list instead.
+          router.push(parentPath.value);
+        } else {
+          item.value = result;
+          item.value.date = result.date.toDate();
+        }
+      })
+      .catch(() => {
+        router.push(parentPath.value);
+      });
+  } else {
+    const profile = await getDoc(doc(db, "Profiles", user.uid));
+    const defaultDivision = profile.get("defaultDivision");
+    item.value = {
+      date: new Date(),
+      timetype: "R",
+      division: defaultDivision ?? "",
+    };
+    if (props.collectionName === "TimeAmendments") {
+      // setting the uid blank surfaces the choose option in the UI
+      item.value.uid = "";
+    }
+  }
+};
+
+const save = function () {
+  // Populate the Time Type Name
+  item.value.timetypeName = timetypes.value.filter(
+    (i: DocumentData) => i.id === item.value.timetype
+  )[0].name;
+
+  // if timetype isn't R or RT, delete disallowed properties
+  if (!["R", "RT"].includes(item.value.timetype)) {
+    [
+      "division",
+      "divisionName",
+      "job",
+      "jobDescription",
+      "client",
+      "jobHours",
+      "mealsHours",
+      "workrecord",
+    ].forEach((x) => delete item.value[x]);
+  } else {
+    // timetype is R or RT, division must be present
+    if (item.value.division && item.value.division.length > 0) {
+      // write divisionName
+      item.value.divisionName = divisions.value.filter(
+        (i: DocumentData) => i.id === item.value.division
+      )[0].name;
+    } else {
+      throw "Division Missing";
+    }
+
+    // TODO: catch the above throw and notify the user.
+    // TODO: build more validation here to notify the user of errors
+    // before hitting the backend.
+
+    // remove values of zero in hours fields
+    if (item.value.mealsHours === 0) {
+      delete item.value.mealsHours;
+    }
+
+    if (item.value.jobHours === 0) {
+      delete item.value.jobHours;
+    }
+
+    if (item.value.hours === 0) {
+      delete item.value.hours;
+    }
+
+    delete item.value.payoutRequestAmount;
+
+    // Clear the Job if it's empty or too short, otherwise clear hours
+    // since we don't allow non-chargeable time with a job number
+    // The back end will actually validate that it exists
+    if (!item.value.job || item.value.job.length < 6) {
+      // Clear
+      delete item.value.job;
+      delete item.value.client;
+      delete item.value.jobDescription;
+      delete item.value.jobHours;
+      delete item.value.workorder;
+    } else {
+      delete item.value.hours;
+    }
+  }
+
+  // if timetype is OW, OR or OTO, delete hours and workDescription
+  // (other properties already deleted in previous if/else statement)
+  if (["OR", "OW", "OTO"].includes(item.value.timetype)) {
+    delete item.value.hours;
+    delete item.value.workDescription;
+  }
+
+  // delete payoutRequestAmount if it's not a payout request
+  if (item.value.timetype !== "OTO") {
+    delete item.value.payoutRequestAmount;
+  }
+
+  item.value = _.pickBy(item.value, (i) => i !== ""); // strip blank fields
+
+  if (props.collectionName === "TimeEntries") {
+    // include uid of the creating user
+    item.value.uid = user.uid;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(item.value, "date")) {
+    // make the date today if not provided by user
+    item.value.date = new Date();
+  }
+
+  // If we're creating an Amendment rather than a TimeEntry, add a creator
+  // and creator name, set the displayName from the uid given in the UI,
+  // and add a sentinel for the server timestamp
+  if (props.collectionName === "TimeAmendments") {
+    try {
+      // Populate the displayName, surname & givenName
+      const profile = profiles.value.filter(
+        (i: DocumentData) => i.id === item.value.uid
+      )[0];
+      item.value.displayName = profile.displayName;
+      item.value.surname = profile.surname;
+      item.value.givenName = profile.givenName;
+    } catch {
+      alert("Specify an employee");
+    }
+
+    item.value.creator = user.uid;
+    item.value.creatorName = user.displayName;
+    item.value.created = serverTimestamp();
+    item.value.committed = false;
+  }
+
+  // Write to database
+  if (props.id) {
+    // Editing an existing item
+    setDoc(doc(collectionObject, props.id), item.value)
+      .then(() => {
+        router.push(parentPath.value);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Failed to edit Time Entry: ${error.message}`);
+        } else alert(`Failed to edit Time Entry: ${JSON.stringify(error)}`);
+      });
+  } else {
+    // Creating a new item
+    setDoc(doc(collectionObject), item.value)
+      .then(() => {
+        router.push(parentPath.value);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          alert(`Failed to create Time Entry: ${error.message}`);
+        } else
+          alert(`Failed to create Time Entry: ${JSON.stringify(error)}`);
+      });
+  }
+};
+
+setItem(props.id);
 </script>
-<style lang="scss">
-@import "./algolia-autocomplete-classic-fork.scss";
-</style>

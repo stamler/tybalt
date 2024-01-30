@@ -42,6 +42,7 @@ export interface TimeEntry {
   client?: string;
   job?: string;
   jobDescription?: string;
+  category?: string;
   workrecord?: string;
   jobHours?: number;
   payoutRequestAmount?: number;
@@ -119,6 +120,7 @@ export interface Amendment {
   client?: string;
   job?: string;
   jobDescription?: string;
+  category?: string;
   workrecord?: string;
   jobHours?: number;
   salary?: boolean;
@@ -209,6 +211,7 @@ interface ExpenseCommon {
   client?: string;
   job?: string;
   jobDescription?: string;
+  category?: string;
 }
 interface ExpenseRegular extends ExpenseCommon {
   paymentType: "Expense" | "CorporateCreditCard" | "FuelCard" | "FuelOnAccount";

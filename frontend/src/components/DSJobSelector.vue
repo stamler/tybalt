@@ -1,18 +1,19 @@
 <template>
-  <span class="field" v-show="job === undefined">
+  <span class="field" v-show="item.job === undefined">
     <span class="grow">
       <div id="jobAutocomplete" />
     </span>
   </span>
-  <span class="field" v-show="job !== undefined">
+  <span class="field" v-show="item.job !== undefined">
     <span class="grow">
       <action-button type="delete" @click.prevent="clearJob" />
-      {{ job }} / {{ client }}:{{ jobDescription }}
+      {{ item.job }} / {{ item.client }}:{{ item.jobDescription }}
     </span>
   </span>
-  <span class="field" v-if="job !== undefined && categories !== null">
+  <!-- find another way to determine whether to show that that isn't categories !== null -->
+  <span class="field" v-if="item.job !== undefined && categories !== null">
     <label for="category">Category</label>
-    <select class="grow" name="category" v-model="category" @change="setCategory">
+    <select class="grow" name="category" v-model="item.category">
       <option disabled selected value="">-- choose category --</option>
       <option v-for="c in categories" :value="c" v-bind:key="c">
         {{ c }}
@@ -34,22 +35,24 @@
  **/
 
 import { firebaseApp } from "../firebase";
-import { doc, getDoc, getFirestore } from "@firebase/firestore";
-import { ref, onMounted } from "vue";
+import { doc, getDoc, getFirestore, DocumentData } from "@firebase/firestore";
+import { ref, onMounted, watch } from "vue";
 import { useStateStore } from "../stores/state";
 import algoliasearch from "algoliasearch/lite";
 import { autocomplete, getAlgoliaResults } from "@algolia/autocomplete-js";
 import ActionButton from "./ActionButton.vue";
 
-const emits = defineEmits(["set-job", "set-category","clear-job"]);
+// TODO: implement two-way binding for the job and category so that the parent
+// component can set the job and category from the outside. This will also
+// obviate the need for all emits but especially the clear-job emit since this
+// component can just set the job and category to undefined when the clear button
+// is clicked.
+const emits = defineEmits(["change-job"]);
 const store = useStateStore();
 const db = getFirestore(firebaseApp);
 
-const job = ref(undefined as string | undefined);
-const client = ref(undefined as string | undefined);
-const jobDescription = ref(undefined as string | undefined);
 const categories = ref(null as string[] | null);
-const category = ref(undefined as string | undefined);
+const item = defineModel<DocumentData>({required: true});
 
 const loadJobCategories = async function(jobId: string | undefined) {
   if (jobId === undefined) {
@@ -71,16 +74,12 @@ const loadJobCategories = async function(jobId: string | undefined) {
 };
 
 const clearJob = function() {
-  job.value = undefined;
-  client.value = undefined;
-  jobDescription.value = undefined;
+  delete item.value.job;
+  delete item.value.client;
+  delete item.value.jobDescription;
+  delete item.value.category;
   categories.value = null;
-  category.value = undefined;
-  emits("clear-job");
-};
-
-const setCategory = function() {
-  emits("set-category", category.value);
+  emits("change-job");
 };
 
 const setupAlgolia = async function() {
@@ -90,15 +89,14 @@ const setupAlgolia = async function() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const writeJobToItem = async (values: any) => {
     // save the job to the local state so it is reflected in the UI
-    job.value = values.objectID;
-    client.value = values.client;
-    jobDescription.value = values.description;
+    item.value.job = values.objectID;
+    item.value.client = values.client;
+    item.value.jobDescription = values.description;
 
-    // load the job categories corresponding to the job if they exist
-    await loadJobCategories(values.objectID);
-
-    // emit the event to the parent component containing the job object
-    emits("set-job", values);
+    // alert the parent component to update the job-related properties (such as
+    // manager for PurchaseOrderRequest documents), including the payload from
+    // the index that the parent can use to get values from the index.
+    emits("change-job", values);
   };
   const searchClient = algoliasearch(
     "F7IPMZB3IW",
@@ -139,8 +137,19 @@ const setupAlgolia = async function() {
   });
 };
 
+watch(
+  () => item.value.job,
+  async (newVal, oldVal) => {
+    // if newJob is not undefined, load the job categories
+    if (item.value.job !== undefined) {
+      await loadJobCategories(item.value.job);
+    }
+  }
+);
 onMounted(async () => {
   await setupAlgolia();
 });
-
 </script>
+<style lang="scss">
+  @import "./algolia-autocomplete-classic-fork.scss";
+</style>

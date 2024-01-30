@@ -33,7 +33,7 @@
         <option value="Mileage">
           <!-- NB: This mileage rate doesn't update in realtime because the
           profile is loaded once in setItem() -->
-          Personal Mileage ${{ getMileageRate(item.date, profile) }}/km
+          Personal Mileage ${{ getMileageRate(item.date) }}/km
         </option>
         <option v-if="allowPersonalReimbursement" value="PersonalReimbursement">
           Personal Reimbursement
@@ -132,34 +132,7 @@
         }})
       </label>
     </span>
-    <span class="field">
-      <label for="job">Job</label>
-      <input
-        class="jobNumberInput"
-        type="text"
-        name="job"
-        placeholder="Proj/Prop"
-        v-bind:value="item.job"
-        v-on:keydown.arrow-down="onArrowDown"
-        v-on:keydown.arrow-up="onArrowUp"
-        v-on:keyup.enter="setJob(jobCandidates[selectedIndex].id)"
-        v-on:input="updateJobCandidates"
-      />
-      <span class="jobDescription">{{ item.jobDescription }}</span>
-    </span>
-    <div id="suggestions" v-if="showSuggestions && jobCandidates.length > 0">
-      <ul>
-        <li
-          v-for="(c, index) in jobCandidates"
-          v-bind:class="{ selected: index === selectedIndex }"
-          v-bind:key="c.id"
-          v-on:click="setJob(c.id)"
-        >
-          {{ c.id }} - {{ c.client }}: {{ c.description }}
-        </li>
-      </ul>
-    </div>
-
+    <DSJobSelector v-model="item"/>
     <span
       class="field"
       v-if="
@@ -254,45 +227,44 @@
   </form>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { ref, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { Profile } from "./types";
 import { firebaseApp } from "../firebase";
 import {
   getFirestore,
   collection,
-  CollectionReference,
   DocumentData,
   DocumentSnapshot,
   getDoc,
-  query,
-  where,
-  limit,
   doc,
-  documentId,
   setDoc,
   FirestoreError,
 } from "firebase/firestore";
 import {
   getStorage,
-  ref,
+  ref as storageRef,
   getDownloadURL,
   StorageError,
   uploadBytes,
 } from "firebase/storage";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { useCollection } from "vuefire";
+import { useCollection, useDocument } from "vuefire";
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 const functions = getFunctions(firebaseApp);
 import { useStateStore } from "../stores/state";
 import Datepicker from "@vuepic/vue-datepicker";
 import { addWeeks } from "date-fns";
-import { isInteger, pickBy, debounce, defaults } from "lodash";
+import { isInteger, pickBy, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import ActionButton from "./ActionButton.vue";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { downloadAttachment, shortDateWithWeekday } from "./helpers";
+import DSJobSelector from "./DSJobSelector.vue";
+
 
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
@@ -303,402 +275,350 @@ function isHTMLInputEvent(event: Event): event is HTMLInputEvent {
   return "target" in event;
 }
 
-export default defineComponent({
-  setup() {
-    const store = useStateStore();
-    const { startTask, endTask } = store;
-    return {
-      startTask,
-      endTask,
-      user: store.user,
-      expenseRates: store.expenseRates,
-    };
-  },
-  components: { ActionButton, Datepicker },
-  props: ["id", "collectionName"],
-  data() {
-    return {
-      dps: {
-        // date picker state
-        disabled: {
-          //to: subWeeks(new Date(), 6),
-          from: addWeeks(new Date(), 4),
-        },
-        highlighted: {
-          dates: [new Date()],
-        },
-      },
-      parentPath: "",
-      collectionObject: null as CollectionReference | null,
-      divisions: useCollection(collection(db, "Divisions")),
-      showSuggestions: false,
-      selectedIndex: 0 as number,
-      jobCandidates: [] as DocumentData[],
-      item: {} as DocumentData,
-      profile: {} as DocumentData,
-      allowPersonalReimbursement: false,
-      //expensetypes: [] as DocumentData[],
-      attachmentPreviouslyUploaded: false,
-      validAttachmentType: true,
-      newAttachment: null as string | null,
-      localFile: {} as File,
-    };
-  },
-  computed: {
-    mileageTokensInDescWhileOtherPaymentType(): boolean {
-      if (
-        this.item.paymentType !== undefined &&
-        this.item.description !== undefined
-      ) {
-        const lowercase = this.item.description.toLowerCase().trim();
-        const lowercaseTokens = lowercase.split(/\s+/);
-        return (
-          !["Mileage", "FuelCard"].includes(this.item.paymentType) &&
-          [
-            "mileage",
-            "miles",
-            "distance",
-            "travel",
-            "travelled",
-            "km",
-            "kms",
-            "kilometers",
-            "kilometres",
-            "drove",
-            "drive",
-          ].some((token) => lowercaseTokens.includes(token))
-        );
-      }
-      return false;
-    },
-    validItem(): boolean {
-      // TODO: build out client-side validation
-      const validVendor =
-        (typeof this.item.vendorName === "string" &&
-          this.item.vendorName.length > 2) ||
-        ![
-          "Expense",
-          "FuelCard",
-          "FuelOnAccount",
-          "CorporateCreditCard",
-        ].includes(this.item.paymentType);
-      const validDescription =
-        (typeof this.item.description === "string" &&
-          this.item.description.length > 3) ||
-        ["Allowance", "FuelOnAccount"].includes(this.item.paymentType);
-      const validTotal =
-        (typeof this.item.total === "number" && this.item.total > 0) ||
-        this.item.paymentType === "Allowance";
-      const validDistance =
-        typeof this.item.distance === "number" &&
-        isInteger(this.item.distance) &&
-        this.item.distance > 0;
-      return (
-        (validTotal || validDistance) &&
-        validDescription &&
-        validVendor &&
-        !this.attachmentPreviouslyUploaded &&
-        this.validAttachmentType
-      );
-    },
-    validInsuranceExpiry(): boolean {
-      if (this.item.paymentType === "Mileage") {
-        const expiryDate = this.profile.get("personalVehicleInsuranceExpiry");
-        return expiryDate === undefined
-          ? false
-          : expiryDate.toDate() >= this.item.date;
-      }
-      return true;
-    },
-  },
-  watch: {
-    id: function (id) {
-      this.setItem(id);
-    },
-  },
-  created() {
-    this.parentPath =
-      this?.$route?.matched[this.$route.matched.length - 2]?.path ?? "";
-    this.collectionObject = collection(db, this.collectionName);
-    this.cleanup();
-    //this.$bind("expensetypes", db.collection("ExpenseTypes"));
-    this.setItem(this.id);
-  },
-  methods: {
-    downloadAttachment,
-    shortDateWithWeekday,
-    // get the value of an expense rate on a specified date
-    getExpenseRate(rate: string, date: Date | undefined) {
-      if (this.expenseRates === null) return 0;
-      if (date === undefined) return 0;
-      // get the timezone of the user
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      // make an ISO string from the date
-      const ISODate = format(utcToZonedTime(date, timezone), "yyyy-MM-dd");
-      // sort dates in descending order
-      const dates = Object.keys(this.expenseRates).sort().reverse();
-      // find the first date that is less than or equal to the specified date
-      const index = dates.findIndex((d: string) => d <= ISODate);
-      if (this.expenseRates?.[dates[index]]?.[rate] === undefined) {
-        throw new Error(`No expense rate found for ${rate} on ${date}`);
-      }
-      return this.expenseRates?.[dates[index]]?.[rate];
-    },
-    getMileageRate(date: Date | undefined, profile: DocumentData) {
-      if (this.expenseRates === null) return 0;
-      if (date === undefined) return 0;
-      if (profile === undefined) return 0;
-      const previousMileage = profile.get("mileageClaimed");
-      if (previousMileage === undefined) return 0;
-      const rateMap = this.getExpenseRate("MILEAGE", date);
-      const tiers = Object.keys(rateMap).sort(
-        (a, b) => parseInt(b, 10) - parseInt(a, 10)
-      );
-      const index = tiers.findIndex(
-        (d: string) => previousMileage >= parseInt(d, 10)
-      );
-      return rateMap[tiers[index]];
-    },
-    cleanup() {
-      // clean up any existing orphaned attachments
-      const cleanup = httpsCallable(
-        functions,
-        "cleanUpUsersExpenseAttachments"
-      );
-      return cleanup().catch((error: unknown) => {
-        alert(`Attachment cleanup failed: ${JSON.stringify(error)}`);
-      });
-    },
-    async updateAttachment(event: Event) {
-      if (!isHTMLInputEvent(event)) {
-        throw new Error("Event is not an HTMLInputEvent");
-      }
-      this.attachmentPreviouslyUploaded = false;
-      const allowedTypes: { [subtype: string]: string } = {
-        pdf: "pdf",
-        jpeg: "jpeg",
-        png: "png",
-      };
-      const files = event.target.files;
-      if (files && files[0]) {
-        this.localFile = files[0];
-        const reader = new FileReader();
-        reader.onload = async (/*event: ProgressEvent*/) => {
-          const checksum = sha256(reader.result as ArrayBuffer);
-          const subtype = this.localFile.type.replace(/.+\//g, "");
-          if (subtype in allowedTypes) {
-            this.validAttachmentType = true;
-            const extension = allowedTypes[subtype];
-            const pathReference = [
-              "Expenses",
-              this.user.uid,
-              [checksum, extension].join("."),
-            ].join("/");
+const route = useRoute();
+const router = useRouter();
+const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
 
-            // Notify if the file already exist in storage,
-            // otherwise set a flag and save the ref to item
-            // let url;
-            try {
-              /*url = */ await getDownloadURL(ref(storage, pathReference));
-              this.attachmentPreviouslyUploaded = true;
-            } catch (error) {
-              const err = error as StorageError;
-              if (err.code === "storage/object-not-found") {
-                this.newAttachment = pathReference;
-                this.attachmentPreviouslyUploaded = false;
-              }
-            }
-          } else {
-            this.validAttachmentType = false;
-          }
-        };
-        return reader.readAsArrayBuffer(this.localFile);
-      }
-    },
-    async setItem(id: string) {
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
-      this.profile = await getDoc(doc(db, "Profiles", this.user.uid));
-      this.allowPersonalReimbursement =
-        this.profile.get("allowPersonalReimbursement") || false;
-      if (id) {
-        getDoc(doc(this.collectionObject, id))
-          .then((snap: DocumentSnapshot) => {
-            const result = snap.data();
-            if (result === undefined) {
-              // A document with this id doesn't exist in the database,
-              // list instead.
-              this.$router.push(this.parentPath);
-            } else {
-              this.item = result;
-              this.item.date = result.date.toDate();
-            }
-          })
-          .catch(() => {
-            this.$router.push(this.parentPath);
-          });
-      } else {
-        this.item = {
-          date: new Date(),
-          uid: this.user.uid,
-          displayName: this.profile.get("displayName"),
-          givenName: this.profile.get("givenName"),
-          surname: this.profile.get("surname"),
-          managerName: this.profile.get("managerName"),
-          managerUid: this.profile.get("managerUid"),
-          division: this.profile.get("defaultDivision"),
-          payrollId: this.profile.get("payrollId"),
-          paymentType: "Allowance",
-          submitted: false,
-          approved: false,
-        };
-      }
-    },
-    setJob(id: string) {
-      this.item.job = id;
-      this.showSuggestions = false;
-      const job = this.jobCandidates.filter(
-        (i: DocumentData) => i.id === id
-      )[0];
-      this.item.jobDescription = job.description;
-      this.item.client = job.client;
-    },
-    onArrowUp() {
-      const count = this.jobCandidates.length;
-      this.selectedIndex = (this.selectedIndex + count - 1) % count;
-      this.item.job = this.jobCandidates[this.selectedIndex].id;
-    },
-    onArrowDown() {
-      const count = this.jobCandidates.length;
-      this.selectedIndex = (this.selectedIndex + 1) % count;
-      this.item.job = this.jobCandidates[this.selectedIndex].id;
-    },
-    // any annotation in next line due to the following:
-    // https://forum.vuejs.org/t/how-to-get-typescript-method-callback-working/36825
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateJobCandidates: debounce(function (this: any, e: Event) {
-      // TODO: possibly use full text search like
-      // https://www.npmjs.com/package/adv-firestore-functions
-      this.showSuggestions = true;
-      const loBound = (e.target as HTMLInputElement).value.trim();
-      if (loBound.length > 0) {
-        const hiBound = (e.target as HTMLInputElement).value.trim() + "\uf8ff";
-        this.item.job = loBound; // preserve the value in the input field
-        this.$firestoreBind(
-          "jobCandidates",
-          query(
-            collection(db, "Jobs"),
-            where(documentId(), ">=", loBound),
-            where(documentId(), "<=", hiBound),
-            limit(5)
-          )
-        );
-      } else {
-        this.jobCandidates = [];
-        delete this.item.job;
-      }
-    }, 500),
-    async save() {
-      // Write to database
-      if (this.collectionObject === null) {
-        throw "There is no valid collection object";
-      }
+const store = useStateStore();
+const { user, expenseRates, startTask, endTask } = store;
 
-      if (this.attachmentPreviouslyUploaded === true) {
-        throw "You cannot upload a proof of expense twice";
-      }
-      // TODO: restrict uploading twice in the backend
-
-      /*
-      // Populate the Expense Type Name
-      this.item.expensetypeName = this.expensetypes.filter(
-        (i) => i.id === this.item.expensetype
-      )[0].name;
-      */
-      this.item = pickBy(this.item, (i) => i !== ""); // strip blank fields
-      delete this.item.rejected;
-      delete this.item.rejectorId;
-      delete this.item.rejectorName;
-      delete this.item.rejectionReason;
-
-      if (this.item.job && this.item.job.length < 6) {
-        delete this.item.job;
-        delete this.item.jobDescription;
-        delete this.item.client;
-      }
-
-      // division must be present
-      if (this.item.division && this.item.division.length > 0) {
-        // write divisionName
-        this.item.divisionName = this.divisions.filter(
-          (i: DocumentData) => i.id === this.item.division
-        )[0].name;
-      } else {
-        throw "Division Missing";
-      }
-
-      // if paymentType is Allowance, delete total and description and set
-      // unset meal types to false
-      if (this.item.paymentType === "Allowance") {
-        defaults(this.item, {
-          breakfast: false,
-          lunch: false,
-          dinner: false,
-          lodging: false,
-        });
-        delete this.item.description;
-        delete this.item.total;
-      }
-
-      // TODO: catch the above throw and notify the user.
-      // TODO: build more validation here to notify the user of errors
-      // before hitting the backend.
-
-      // If there's an attachment, upload it. If successful
-      // complete the rest. Otherwise cleanup and abort.
-      let uploadFailed = false;
-      if (this.newAttachment !== null) {
-        this.startTask({
-          id: `upload${this.newAttachment}`,
-          message: "uploading",
-        });
-
-        // upload the attachment
-        try {
-          await uploadBytes(ref(storage, this.newAttachment), this.localFile);
-          uploadFailed = false;
-          this.endTask(`upload${this.newAttachment}`);
-        } catch (error) {
-          this.endTask(`upload${this.newAttachment}`);
-          alert(`Attachment Upload failed: ${error}`);
-          uploadFailed = true;
-        }
-      }
-
-      // Create or edit the document
-      if (!uploadFailed) {
-        const currentDoc = this.id
-          ? doc(this.collectionObject, this.id)
-          : doc(this.collectionObject);
-
-        try {
-          if (this.newAttachment !== null) {
-            // a new attachment was successfully uploaded, save in document
-            this.item.attachment = this.newAttachment;
-          }
-          await setDoc(currentDoc, this.item);
-          this.$router.push(this.parentPath);
-        } catch (error) {
-          const err = error as FirestoreError;
-          alert(`Failed to edit Expense Entry: ${err.message}`);
-        }
-      } else {
-        alert("Uploading the attachment failed");
-      }
-    },
+const props = defineProps({
+  id: {
+    // https://vuejs.org/api/utility-types.html#proptype-t
+    type: String,
+    required: false,
   },
 });
+
+const dps = {
+  // date picker state
+  disabled: {
+    //to: subWeeks(new Date(), 6),
+    from: addWeeks(new Date(), 4),
+  },
+  highlighted: {
+    dates: [new Date()],
+  },
+};
+
+const expenses = collection(db, "Expenses");
+const divisions = useCollection(collection(db, "Divisions"));
+const profileDoc = useDocument<Profile>(doc(db, "Profiles", user.uid));
+
+const item = ref({} as DocumentData);
+let newAttachment: string | null = null;
+let attachmentPreviouslyUploaded = false; // does this have to be reactive? It appears in template. Also check PurchaseOrdersEdit.vue
+let localFile = {} as File;
+let validAttachmentType = true; // does this have to be reactive? PurchaseOrdersEdit.vue as well
+let allowPersonalReimbursement = false; // does this have to be reactive?
+
+const validItem = computed(() => {
+  // TODO: build out client-side validation
+  const validVendor =
+    (typeof item.value.vendorName === "string" &&
+      item.value.vendorName.length > 2) ||
+    ![
+      "Expense",
+      "FuelCard",
+      "FuelOnAccount",
+      "CorporateCreditCard",
+    ].includes(item.value.paymentType);
+  const validDescription =
+    (typeof item.value.description === "string" &&
+      item.value.description.length > 3) ||
+    ["Allowance", "FuelOnAccount"].includes(item.value.paymentType);
+  const validTotal =
+    (typeof item.value.total === "number" && item.value.total > 0) ||
+    item.value.paymentType === "Allowance";
+  const validDistance =
+    typeof item.value.distance === "number" &&
+    isInteger(item.value.distance) &&
+    item.value.distance > 0;
+  return (
+    (validTotal || validDistance) &&
+    validDescription &&
+    validVendor &&
+    !attachmentPreviouslyUploaded &&
+    validAttachmentType
+  );
+});
+
+const mileageTokensInDescWhileOtherPaymentType = computed(() => {
+  if (
+    item.value.paymentType !== undefined &&
+    item.value.description !== undefined
+  ) {
+    const lowercase = item.value.description.toLowerCase().trim();
+    const lowercaseTokens = lowercase.split(/\s+/);
+    return (
+      !["Mileage", "FuelCard"].includes(item.value.paymentType) &&
+      [
+        "mileage",
+        "miles",
+        "distance",
+        "travel",
+        "travelled",
+        "km",
+        "kms",
+        "kilometers",
+        "kilometres",
+        "drove",
+        "drive",
+      ].some((token) => lowercaseTokens.includes(token))
+    );
+  }
+  return false;
+});
+
+const validInsuranceExpiry = computed(() => {
+  if (item.value.paymentType === "Mileage") {
+    const expiryDate = profileDoc.value?.personalVehicleInsuranceExpiry;
+    return expiryDate === undefined
+      ? false
+      : expiryDate.toDate() >= item.value.date;
+  }
+  return true;
+});
+
+watch(
+  () => props.id,
+  (id) => {
+    setItem(id);
+  }
+);
+
+// get the value of an expense rate on a specified date
+const getExpenseRate = function (rate: string, date: Date | undefined) {
+  if (expenseRates === null) return 0;
+  if (date === undefined) return 0;
+  // get the timezone of the user
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // make an ISO string from the date
+  const ISODate = format(utcToZonedTime(date, timezone), "yyyy-MM-dd");
+  // sort dates in descending order
+  const dates = Object.keys(expenseRates).sort().reverse();
+  // find the first date that is less than or equal to the specified date
+  const index = dates.findIndex((d: string) => d <= ISODate);
+  if (expenseRates?.[dates[index]]?.[rate] === undefined) {
+    throw new Error(`No expense rate found for ${rate} on ${date}`);
+  }
+  return expenseRates?.[dates[index]]?.[rate];
+};
+
+const getMileageRate = function (date: Date | undefined) {
+  const profile = profileDoc.value;
+  if (expenseRates === null) return 0;
+  if (date === undefined) return 0;
+  if (profile === undefined || profile === null) return 0;
+  const previousMileage = profile.mileageClaimed;
+  if (previousMileage === undefined) return 0;
+  const rateMap = getExpenseRate("MILEAGE", date);
+  const tiers = Object.keys(rateMap).sort(
+    (a, b) => parseInt(b, 10) - parseInt(a, 10)
+  );
+  const index = tiers.findIndex(
+    (d: string) => previousMileage >= parseInt(d, 10)
+  );
+  return rateMap[tiers[index]];
+};
+
+const cleanup = async function () {
+  // clean up any existing orphaned attachments
+  const cleanup = httpsCallable(
+    functions,
+    "cleanUpUsersExpenseAttachments"
+  );
+  return cleanup().catch((error: unknown) => {
+    alert(`Attachment cleanup failed: ${JSON.stringify(error)}`);
+  });
+};
+
+const updateAttachment = async function (event: Event) {
+  if (!isHTMLInputEvent(event)) {
+    throw new Error("Event is not an HTMLInputEvent");
+  }
+  attachmentPreviouslyUploaded = false;
+  const allowedTypes: { [subtype: string]: string } = {
+    pdf: "pdf",
+    jpeg: "jpeg",
+    png: "png",
+  };
+  const files = event.target.files;
+  if (files && files[0]) {
+    localFile = files[0];
+    const reader = new FileReader();
+    reader.onload = async (/*event: ProgressEvent*/) => {
+      const checksum = sha256(reader.result as ArrayBuffer);
+      const subtype = localFile.type.replace(/.+\//g, "");
+      if (subtype in allowedTypes) {
+        validAttachmentType = true;
+        const extension = allowedTypes[subtype];
+        const pathReference = [
+          "Expenses",
+          user.uid,
+          [checksum, extension].join("."),
+        ].join("/");
+
+        // Notify if the file already exist in storage,
+        // otherwise set a flag and save the ref to item
+        // let url;
+        try {
+          /*url = */ await getDownloadURL(storageRef(storage, pathReference));
+          attachmentPreviouslyUploaded = true;
+        } catch (error) {
+          const err = error as StorageError;
+          if (err.code === "storage/object-not-found") {
+            newAttachment = pathReference;
+            attachmentPreviouslyUploaded = false;
+          }
+        }
+      } else {
+        validAttachmentType = false;
+      }
+    };
+    return reader.readAsArrayBuffer(localFile);
+  }
+};
+
+const setItem = async function (id: string | undefined) {
+  const profile = await profileDoc.promise.value;
+  if (!profile) {
+    alert("Can't load profile");
+    return;
+  }
+  allowPersonalReimbursement = profile.allowPersonalReimbursement || false;
+  if (id) {
+    getDoc(doc(expenses, id))
+      .then((snap: DocumentSnapshot) => {
+        const result = snap.data();
+        if (result === undefined) {
+          // A document with this id doesn't exist in the database,
+          // list instead.
+          router.push(parentPath.value);
+        } else {
+          item.value = result;
+          item.value.date = result.date.toDate();
+        }
+      })
+      .catch(() => {
+        router.push(parentPath.value);
+      });
+  } else {
+    item.value = {
+        date: new Date(),
+        uid: user.uid,
+        displayName: profile.displayName,
+        givenName: profile.givenName,
+        surname: profile.surname,
+        managerName: profile.managerName,
+        managerUid: profile.managerUid,
+        division: profile.defaultDivision,
+        payrollId: profile.payrollId,
+        paymentType: "Allowance",
+        submitted: false,
+        approved: false,
+      };
+  }
+};
+
+const save = async function () {
+  // Write to database
+ 
+  if (attachmentPreviouslyUploaded === true) {
+    throw "You cannot upload a proof of expense twice";
+  }
+  // TODO: restrict uploading twice in the backend
+
+  /*
+  // Populate the Expense Type Name
+  this.item.expensetypeName = this.expensetypes.filter(
+    (i) => i.id === this.item.expensetype
+  )[0].name;
+  */
+  item.value = pickBy(item.value, (i) => i !== ""); // strip blank fields
+  delete item.value.rejected;
+  delete item.value.rejectorId;
+  delete item.value.rejectorName;
+  delete item.value.rejectionReason;
+
+  if (item.value.job && item.value.job.length < 6) {
+    delete item.value.job;
+    delete item.value.jobDescription;
+    delete item.value.client;
+  }
+
+  // division must be present
+  if (item.value.division && item.value.division.length > 0) {
+    // write divisionName
+    item.value.divisionName = divisions.value.filter(
+      (i: DocumentData) => i.id === item.value.division
+    )[0].name;
+  } else {
+    throw "Division Missing";
+  }
+
+  // if paymentType is Allowance, delete total and description and set
+  // unset meal types to false
+  if (item.value.paymentType === "Allowance") {
+    defaults(item.value, {
+      breakfast: false,
+      lunch: false,
+      dinner: false,
+      lodging: false,
+    });
+    delete item.value.description;
+    delete item.value.total;
+  }
+
+  // TODO: catch the above throw and notify the user.
+  // TODO: build more validation here to notify the user of errors
+  // before hitting the backend.
+
+  // If there's an attachment, upload it. If successful
+  // complete the rest. Otherwise cleanup and abort.
+  let uploadFailed = false;
+  if (newAttachment !== null) {
+    startTask({
+      id: `upload${newAttachment}`,
+      message: "uploading",
+    });
+
+    // upload the attachment
+    try {
+      await uploadBytes(storageRef(storage, newAttachment), localFile);
+      uploadFailed = false;
+      endTask(`upload${newAttachment}`);
+    } catch (error) {
+      endTask(`upload${newAttachment}`);
+      alert(`Attachment Upload failed: ${error}`);
+      uploadFailed = true;
+    }
+  }
+
+  // Create or edit the document
+  if (!uploadFailed) {
+    const currentDoc = props.id
+      ? doc(expenses, props.id)
+      : doc(expenses);
+
+    try {
+      if (newAttachment !== null) {
+        // a new attachment was successfully uploaded, save in document
+        item.value.attachment = newAttachment;
+      }
+      await setDoc(currentDoc, item.value);
+      router.push(parentPath.value);
+    } catch (error) {
+      const err = error as FirestoreError;
+      alert(`Failed to edit Expense Entry: ${err.message}`);
+    }
+  } else {
+    alert("Uploading the attachment failed");
+  }
+};
+
+cleanup();
+setItem(props.id);
 </script>
 <style>
 .checkoption {
@@ -707,23 +627,4 @@ export default defineComponent({
   padding-left: 0.2em;
   margin-right: 0.2em;
 }
-#suggestions {
-  padding: 0.25em;
-  border-radius: 0em 0em 1em 1em;
-  border-bottom: 1px solid #ccc;
-  border-left: 1px solid #ccc;
-  border-right: 1px solid #ccc;
-}
-#suggestions ul,
-#suggestions li {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  list-style-type: none;
-}
-#suggestions li.selected,
-#suggestions li:hover {
-  background-color: #ddd;
-}
-/* https://www.digitalocean.com/community/tutorials/vuejs-vue-autocomplete-component#async-loading */
 </style>
