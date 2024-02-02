@@ -124,15 +124,6 @@ service cloud.firestore {
           "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed", 
           "category" ]) &&
 
-        // if a category property is specified, it must be a string and that
-        // string must be in the categories list of the corresponding job
-        // Document. if the category property is not specified, the job must not
-        // have any categories
-        (
-          (isMissing("category") && !("categories" in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data)) ||
-          (newDoc().category is string && newDoc().category in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.categories)
-        ) &&
-
         // required fields
         newDoc.keys().hasAll(["date", "uid", "displayName",
           "surname", "givenName", "submitted", "approved", "payrollId",
@@ -239,7 +230,16 @@ service cloud.firestore {
           ( isInCollection("job","Jobs") && 
             newDoc.keys().hasAll(["jobDescription", "client"]) &&
             get(/databases/$(database)/documents/Jobs/$(newDoc.job)).data.description == newDoc.jobDescription &&
-            get(/databases/$(database)/documents/Jobs/$(newDoc.job)).data.client == newDoc.client
+            get(/databases/$(database)/documents/Jobs/$(newDoc.job)).data.client == newDoc.client &&
+
+            // if a category property is specified, it must be a string and that
+            // string must be in the categories list of the corresponding job
+            // Document. if the category property is not specified, the job must not
+            // have any categories
+            (
+              (isMissing("category") && !("categories" in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data)) ||
+              (newDoc().category is string && newDoc().category in get(/databases/$(database)/documents/Jobs/$(newDoc().job)).data.categories)
+            )
           ) || 
           isMissing("job")
         )
