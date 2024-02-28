@@ -68,9 +68,9 @@ export const rejectDoc = onCall(async (callableRequest) => {
         if (documentData?.submitted === true && documentData?.locked === false) {
           // the document is rejectable because it is submitted and not locked
           
-          // If tapr is rejecting the document, throw if the managerUid is not
-          // the same as the tapr uid
-          if (authT.token.tapr === true && documentData?.managerUid !== authT.uid) {
+          // If tapr is rejecting the document (the caller is not tsrej), throw
+          // if the managerUid is not the same as the tapr uid
+          if (authT.token.tapr === true && authT.token.tsrej !== true && documentData?.managerUid !== authT.uid) {
             throw new HttpsError("permission-denied", "You are not the manager of this document.");
           }
 
@@ -97,8 +97,10 @@ export const rejectDoc = onCall(async (callableRequest) => {
 
           // If tapr is rejecting the document, throw if the managerUid is not
           // the same as the tapr uid
-          if (authE.token.tapr === true && documentData?.managerUid !== authE.uid) {
-            throw new HttpsError("permission-denied", "You are not the manager of this document.");
+          if (authE.token.eapr !== true) {
+            if (authE.token.tapr === true && documentData?.managerUid !== authE.uid) {
+              throw new HttpsError("permission-denied", "You are not the manager of this document.");
+            }
           }
           
           logger.info(`Rejecting ${collectionName} document ${requestData.id} by ${authE.token.name}`)
