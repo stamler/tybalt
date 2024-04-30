@@ -462,7 +462,7 @@ service cloud.firestore {
       return (
         value is list &&
         value.size() > 0 &&
-        value.size() < 10 &&
+        value.size() < 11 &&
 
         // the first element must be a division
         isDivisionNotGroup(value[0]) &&
@@ -478,6 +478,7 @@ service cloud.firestore {
         (value.size() < 8 || isDivisionNotGroup(value[7])) &&
         (value.size() < 9 || isDivisionNotGroup(value[8])) &&
         (value.size() < 10 || isDivisionNotGroup(value[9])) &&
+        (value.size() < 11 || isDivisionNotGroup(value[10])) &&
         containsNoDuplicates(value)
       );
     }
