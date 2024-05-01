@@ -176,7 +176,7 @@ export default defineComponent({
     prettyMsg(text: string) {
       let output = text;
       // create html from markdown
-      output = marked.parse(output);
+      output = marked.parse(output, { async: false }) as string;
 
       // parse the html and add the hljs class to code blocks
       const parser = new DOMParser();
