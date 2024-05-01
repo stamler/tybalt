@@ -1,0 +1,8 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Locks 
+Dumping schema from collection Locks ...
+Found 3 documents
+Map(3) {
+  'description' => Set(1) { 'string' },
+  'timestamp' => Set(1) { 'object' },
+  'message' => Set(1) { 'string' }
+}

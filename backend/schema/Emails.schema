@@ -1,0 +1,8 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Emails   
+Dumping schema from collection Emails ...
+Found 709 documents
+Map(3) {
+  'toUids' => Set(1) { 'object' },
+  'message' => Set(1) { 'object' },
+  'delivery' => Set(1) { 'object' }
+}

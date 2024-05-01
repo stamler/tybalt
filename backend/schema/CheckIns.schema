@@ -1,0 +1,9 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts CheckIns 
+Dumping schema from collection CheckIns ...
+Found 699 documents
+Map(4) {
+  'uid' => Set(1) { 'string' },
+  'displayName' => Set(1) { 'string' },
+  'location' => Set(1) { 'string' },
+  'time' => Set(1) { 'object' }
+}

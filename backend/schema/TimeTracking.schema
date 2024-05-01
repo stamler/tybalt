@@ -1,0 +1,12 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts TimeTracking  
+Dumping schema from collection TimeTracking ...
+Found 174 documents
+Map(7) {
+  'weekEnding' => Set(1) { 'object' },
+  'created' => Set(1) { 'object' },
+  'notMissingUids' => Set(1) { 'object' },
+  'submitted' => Set(1) { 'object' },
+  'pending' => Set(1) { 'object' },
+  'timeSheets' => Set(1) { 'object' },
+  'json' => Set(1) { 'string' }
+}

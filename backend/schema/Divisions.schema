@@ -1,0 +1,4 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Divisions
+Dumping schema from collection Divisions ...
+Found 30 documents
+Map(1) { 'name' => Set(1) { 'string' } }

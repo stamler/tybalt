@@ -1,0 +1,13 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Keys  
+Dumping schema from collection Keys ...
+Found 1 documents
+Map(8) {
+  'd' => Set(1) { 'string' },
+  'crv' => Set(1) { 'string' },
+  'use' => Set(1) { 'string' },
+  'kid' => Set(1) { 'string' },
+  'kty' => Set(1) { 'string' },
+  'x' => Set(1) { 'string' },
+  'y' => Set(1) { 'string' },
+  'alg' => Set(1) { 'string' }
+}

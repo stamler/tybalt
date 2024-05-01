@@ -1,0 +1,11 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts PayrollTracking
+Dumping schema from collection PayrollTracking ...
+Found 86 documents
+Map(6) {
+  'payPeriodEnding' => Set(1) { 'object' },
+  'created' => Set(1) { 'object' },
+  'week1TimeJson' => Set(1) { 'string' },
+  'expenses' => Set(1) { 'object' },
+  'zip' => Set(1) { 'string' },
+  'week2TimeJson' => Set(1) { 'string' }
+}

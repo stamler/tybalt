@@ -1,0 +1,16 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Invoices
+Dumping schema from collection Invoices ...
+Found 32 documents
+Map(11) {
+  'date' => Set(1) { 'object' },
+  'lineItems' => Set(1) { 'object' },
+  'number' => Set(1) { 'string' },
+  'creatorUid' => Set(1) { 'string' },
+  'revisionNumber' => Set(1) { 'number' },
+  'creatorName' => Set(1) { 'string' },
+  'replaced' => Set(1) { 'boolean' },
+  'billingNumber' => Set(1) { 'number' },
+  'job' => Set(1) { 'string' },
+  'createdDate' => Set(1) { 'object' },
+  'exported' => Set(1) { 'boolean' }
+}

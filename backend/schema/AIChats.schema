@@ -1,0 +1,14 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts AIChats
+Dumping schema from collection AIChats ...
+Found 35 documents
+Map(9) {
+  'uid' => Set(1) { 'string' },
+  'bot' => Set(1) { 'string' },
+  'title' => Set(1) { 'string' },
+  'last_updated' => Set(1) { 'object' },
+  'responding' => Set(1) { 'boolean' },
+  'waiting' => Set(1) { 'boolean' },
+  'count' => Set(1) { 'number' },
+  'errorMessage' => Set(1) { 'string' },
+  'error' => Set(1) { 'boolean' }
+}

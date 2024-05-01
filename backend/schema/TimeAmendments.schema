@@ -1,0 +1,36 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts TimeAmendments 
+Dumping schema from collection TimeAmendments ...
+Found 392 documents
+Map(31) {
+  'date' => Set(1) { 'object' },
+  'creator' => Set(1) { 'string' },
+  'jobHours' => Set(1) { 'number' },
+  'displayName' => Set(1) { 'string' },
+  'givenName' => Set(1) { 'string' },
+  'creatorName' => Set(1) { 'string' },
+  'divisionName' => Set(1) { 'string' },
+  'workDescription' => Set(1) { 'string' },
+  'timetypeName' => Set(1) { 'string' },
+  'division' => Set(1) { 'string' },
+  'uid' => Set(1) { 'string' },
+  'surname' => Set(1) { 'string' },
+  'client' => Set(1) { 'string' },
+  'jobDescription' => Set(1) { 'string' },
+  'timetype' => Set(1) { 'string' },
+  'job' => Set(1) { 'string' },
+  'created' => Set(1) { 'object' },
+  'weekEnding' => Set(1) { 'object' },
+  'committed' => Set(1) { 'boolean' },
+  'commitTime' => Set(1) { 'object' },
+  'commitUid' => Set(1) { 'string' },
+  'tbtePayrollId' => Set(1) { 'number' },
+  'commitName' => Set(1) { 'string' },
+  'salary' => Set(1) { 'boolean' },
+  'workWeekHours' => Set(1) { 'number' },
+  'committedWeekEnding' => Set(1) { 'object' },
+  'exported' => Set(1) { 'boolean' },
+  'workrecord' => Set(1) { 'string' },
+  'mealsHours' => Set(1) { 'number' },
+  'payrollId' => Set(2) { 'number', 'string' },
+  'hours' => Set(1) { 'number' }
+}

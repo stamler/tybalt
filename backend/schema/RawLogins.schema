@@ -1,0 +1,26 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts RawLogins     
+Dumping schema from collection RawLogins ...
+Found 400 documents
+Map(21) {
+  'bootDriveFS' => Set(1) { 'string' },
+  'osArch' => Set(1) { 'string' },
+  'osSku' => Set(1) { 'number' },
+  'networkConfig' => Set(1) { 'object' },
+  'userSourceAnchor' => Set(1) { 'string' },
+  'bootDriveFree' => Set(1) { 'number' },
+  'bootDriveCap' => Set(1) { 'number' },
+  'error' => Set(1) { 'object' },
+  'mfg' => Set(1) { 'string' },
+  'upn' => Set(1) { 'string' },
+  'osVersion' => Set(1) { 'string' },
+  'serial' => Set(1) { 'string' },
+  'computerName' => Set(1) { 'string' },
+  'bootDrive' => Set(1) { 'string' },
+  'radiatorVersion' => Set(1) { 'number' },
+  'systemType' => Set(1) { 'number' },
+  'model' => Set(1) { 'string' },
+  'userGivenName' => Set(1) { 'string' },
+  'ram' => Set(1) { 'number' },
+  'userSurname' => Set(1) { 'string' },
+  'created' => Set(1) { 'object' }
+}

@@ -1,0 +1,13 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Config 
+Dumping schema from collection Config ...
+Found 3 documents
+Map(8) {
+  'openingMileageDate' => Set(1) { 'object' },
+  'timeOffResetDates' => Set(1) { 'object' },
+  'Peer' => Set(1) { 'object' },
+  'IPRange' => Set(1) { 'object' },
+  'Interface' => Set(1) { 'object' },
+  'sourceAnchor' => Set(1) { 'string' },
+  'app_id' => Set(1) { 'string' },
+  'allowed_tenants' => Set(1) { 'object' }
+}

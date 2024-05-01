@@ -1,0 +1,11 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Vacations       
+Dumping schema from collection Vacations ...
+Found 1 documents
+Map(6) {
+  'uid' => Set(1) { 'string' },
+  'displayName' => Set(1) { 'string' },
+  'start' => Set(1) { 'object' },
+  'description' => Set(1) { 'string' },
+  'end' => Set(1) { 'object' },
+  'availability' => Set(1) { 'string' }
+}

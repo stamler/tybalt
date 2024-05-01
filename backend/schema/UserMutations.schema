@@ -1,0 +1,17 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts UserMutations
+Dumping schema from collection UserMutations ...
+Found 98 documents
+Map(12) {
+  'creatorUid' => Set(1) { 'string' },
+  'surname' => Set(1) { 'string' },
+  'givenName' => Set(1) { 'string' },
+  'verb' => Set(1) { 'string' },
+  'creatorName' => Set(1) { 'string' },
+  'userSourceAnchor' => Set(1) { 'string' },
+  'userId' => Set(1) { 'string' },
+  'created' => Set(1) { 'object' },
+  'returnedData' => Set(2) { 'object', 'string' },
+  'statusUpdated' => Set(1) { 'object' },
+  'status' => Set(1) { 'string' },
+  'data' => Set(1) { 'object' }
+}

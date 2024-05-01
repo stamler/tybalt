@@ -1,0 +1,24 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Users        
+Dumping schema from collection Users ...
+Found 355 documents
+Map(19) {
+  'givenName' => Set(1) { 'string' },
+  'userSourceAnchor' => Set(1) { 'string' },
+  'lastComputer' => Set(2) { 'string', 'object' },
+  'upn' => Set(1) { 'string' },
+  'surname' => Set(1) { 'string' },
+  'email' => Set(2) { 'string', 'object' },
+  'isInOnPremisesAD' => Set(1) { 'boolean' },
+  'telephoneNumber' => Set(2) { 'string', 'object' },
+  'description' => Set(1) { 'object' },
+  'department' => Set(2) { 'object', 'string' },
+  'title' => Set(2) { 'string', 'object' },
+  'updated' => Set(1) { 'object' },
+  'adEnabled' => Set(1) { 'boolean' },
+  'OU' => Set(1) { 'string' },
+  'isInOnPremisesADLastSet' => Set(1) { 'object' },
+  'created' => Set(1) { 'object' },
+  'addedWithoutComputerLogin' => Set(1) { 'object' },
+  'currentMutationId' => Set(1) { 'string' },
+  'currentMutationVerb' => Set(1) { 'string' }
+}

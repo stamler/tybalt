@@ -1,0 +1,14 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts WireGuardClients
+Dumping schema from collection WireGuardClients ...
+Found 89 documents
+Map(9) {
+  'computerId' => Set(2) { 'object', 'string' },
+  'uid' => Set(2) { 'object', 'string' },
+  'computerName' => Set(1) { 'string' },
+  'PublicKey' => Set(1) { 'string' },
+  'displayName' => Set(1) { 'string' },
+  'Peer' => Set(1) { 'object' },
+  'samAccountName' => Set(2) { 'object', 'string' },
+  'enabled' => Set(1) { 'boolean' },
+  'Interface' => Set(1) { 'object' }
+}

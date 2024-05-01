@@ -1,0 +1,10 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts ExpenseTracking
+Dumping schema from collection ExpenseTracking ...
+Found 164 documents
+Map(5) {
+  'weekEnding' => Set(1) { 'object' },
+  'created' => Set(1) { 'object' },
+  'expenses' => Set(1) { 'object' },
+  'json' => Set(1) { 'string' },
+  'zip' => Set(1) { 'string' }
+}

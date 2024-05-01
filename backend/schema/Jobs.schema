@@ -1,0 +1,24 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Jobs       
+Dumping schema from collection Jobs ...
+Found 10519 documents
+Map(19) {
+  'manager' => Set(1) { 'string' },
+  'client' => Set(1) { 'string' },
+  'description' => Set(1) { 'string' },
+  'clientContact' => Set(1) { 'string' },
+  'status' => Set(1) { 'string' },
+  'managerDisplayName' => Set(1) { 'string' },
+  'managerUid' => Set(1) { 'string' },
+  'hasTimeEntries' => Set(1) { 'boolean' },
+  'lastTimeEntryDate' => Set(1) { 'object' },
+  'proposal' => Set(1) { 'string' },
+  'projectAwardDate' => Set(1) { 'object' },
+  'jobOwner' => Set(1) { 'string' },
+  'fnAgreement' => Set(1) { 'boolean' },
+  'divisions' => Set(1) { 'object' },
+  'alternateManagerUid' => Set(1) { 'string' },
+  'alternateManagerDisplayName' => Set(1) { 'string' },
+  'categories' => Set(1) { 'object' },
+  'proposalSubmissionDueDate' => Set(1) { 'object' },
+  'proposalOpeningDate' => Set(1) { 'object' }
+}

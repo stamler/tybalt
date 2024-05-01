@@ -1,0 +1,31 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts PurchaseOrders       
+Dumping schema from collection PurchaseOrders ...
+Found 20 documents
+Map(26) {
+  'managerApprovedDate' => Set(1) { 'object' },
+  'endDate' => Set(1) { 'object' },
+  'smgName' => Set(1) { 'string' },
+  'divisionName' => Set(1) { 'string' },
+  'creatorName' => Set(1) { 'string' },
+  'description' => Set(1) { 'string' },
+  'smgApprovedDate' => Set(1) { 'object' },
+  'managerName' => Set(1) { 'string' },
+  'type' => Set(1) { 'string' },
+  'vendorName' => Set(1) { 'string' },
+  'smgUid' => Set(1) { 'string' },
+  'paymentType' => Set(1) { 'string' },
+  'division' => Set(1) { 'string' },
+  'total' => Set(1) { 'number' },
+  'creatorUid' => Set(1) { 'string' },
+  'createdDate' => Set(1) { 'object' },
+  'managerUid' => Set(1) { 'string' },
+  'nextApproverClaim' => Set(2) { 'string', 'object' },
+  'status' => Set(1) { 'string' },
+  'poNumberAssignedDate' => Set(1) { 'object' },
+  'cancellingName' => Set(1) { 'string' },
+  'cancellingUid' => Set(1) { 'string' },
+  'cancellingDate' => Set(1) { 'object' },
+  'vpUid' => Set(1) { 'string' },
+  'vpName' => Set(1) { 'string' },
+  'vpApprovedDate' => Set(1) { 'object' }
+}

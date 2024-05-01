@@ -1,0 +1,10 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts ExpenseRates
+Dumping schema from collection ExpenseRates ...
+Found 3 documents
+Map(5) {
+  'LODGING_RATE' => Set(1) { 'number' },
+  'LUNCH_RATE' => Set(1) { 'number' },
+  'BREAKFAST_RATE' => Set(1) { 'number' },
+  'DINNER_RATE' => Set(1) { 'number' },
+  'MILEAGE' => Set(1) { 'object' }
+}

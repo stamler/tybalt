@@ -1,0 +1,16 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Logins  
+Dumping schema from collection Logins ...
+Found 71969 documents
+Map(11) {
+  'givenName' => Set(1) { 'string' },
+  'userSourceAnchor' => Set(1) { 'string' },
+  'computer' => Set(1) { 'string' },
+  'surname' => Set(1) { 'string' },
+  'created' => Set(1) { 'object' },
+  'user_given_name' => Set(1) { 'string' },
+  'user_surname' => Set(1) { 'string' },
+  'user_sourceAnchor' => Set(1) { 'string' },
+  'time' => Set(1) { 'object' },
+  'user_objectGUID' => Set(1) { 'string' },
+  'user' => Set(1) { 'string' }
+}

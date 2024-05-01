@@ -1,0 +1,8 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts ManagerNames
+Dumping schema from collection ManagerNames ...
+Found 47 documents
+Map(3) {
+  'displayName' => Set(1) { 'string' },
+  'givenName' => Set(1) { 'string' },
+  'surname' => Set(1) { 'string' }
+}

@@ -1,0 +1,7 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts TimeTypes   
+Dumping schema from collection TimeTypes ...
+Found 11 documents
+Map(2) {
+  'name' => Set(1) { 'string' },
+  'description' => Set(1) { 'string' }
+}

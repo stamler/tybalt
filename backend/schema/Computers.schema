@@ -1,0 +1,29 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts Computers
+Dumping schema from collection Computers ...
+Found 245 documents
+Map(24) {
+  'bootDriveFS' => Set(1) { 'string' },
+  'created' => Set(1) { 'object' },
+  'osArch' => Set(1) { 'string' },
+  'osSku' => Set(1) { 'number' },
+  'networkConfig' => Set(1) { 'object' },
+  'userSourceAnchor' => Set(1) { 'string' },
+  'bootDriveFree' => Set(1) { 'number' },
+  'bootDriveCap' => Set(1) { 'number' },
+  'mfg' => Set(1) { 'string' },
+  'upn' => Set(1) { 'string' },
+  'osVersion' => Set(1) { 'string' },
+  'serial' => Set(1) { 'string' },
+  'computerName' => Set(1) { 'string' },
+  'bootDrive' => Set(1) { 'string' },
+  'radiatorVersion' => Set(1) { 'number' },
+  'systemType' => Set(1) { 'number' },
+  'retired' => Set(1) { 'object' },
+  'model' => Set(1) { 'string' },
+  'assigned' => Set(1) { 'object' },
+  'userGivenName' => Set(1) { 'string' },
+  'updated' => Set(1) { 'object' },
+  'email' => Set(1) { 'string' },
+  'ram' => Set(1) { 'number' },
+  'userSurname' => Set(1) { 'string' }
+}

@@ -1,0 +1,21 @@
+(base) dean:~/code/tybalt/backend/functions/src >npx ts-node get-schema.ts TimeEntries
+Dumping schema from collection TimeEntries ...
+Found 496 documents
+Map(16) {
+  'date' => Set(1) { 'object' },
+  'division' => Set(1) { 'string' },
+  'uid' => Set(1) { 'string' },
+  'hours' => Set(1) { 'number' },
+  'divisionName' => Set(1) { 'string' },
+  'workDescription' => Set(1) { 'string' },
+  'timetype' => Set(1) { 'string' },
+  'weekEnding' => Set(1) { 'object' },
+  'timetypeName' => Set(1) { 'string' },
+  'mealsHours' => Set(1) { 'number' },
+  'jobHours' => Set(1) { 'number' },
+  'client' => Set(1) { 'string' },
+  'jobDescription' => Set(1) { 'string' },
+  'job' => Set(1) { 'string' },
+  'workrecord' => Set(1) { 'string' },
+  'category' => Set(1) { 'string' }
+}
