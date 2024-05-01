@@ -43,7 +43,7 @@
         :clearable="false"
         :auto-apply="true"
         :min-date="dps.disabled.to"
-        :highlight="dps.highlighted.dates"
+        :highlight="dps.highlight"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
         week-start="0"
@@ -58,7 +58,7 @@
         :clearable="false"
         :auto-apply="true"
         :min-date="dps.disabled.to"
-        :highlight="dps.highlighted.dates"
+        :highlight="dps.highlight"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
         week-start="0"
@@ -185,7 +185,7 @@ export default defineComponent({
         disabled: {
           to: new Date(2021, 5, 12), // stopped allowing hours (not jobHours) to be billed with job numbers on June 12, 2021
         },
-        highlighted: {
+        highlight: {
           dates: [new Date()],
         },
       },

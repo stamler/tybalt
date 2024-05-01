@@ -14,7 +14,7 @@
       :auto-apply="true"
       :min-date="dps.disabled.to"
       :max-date="dps.disabled.from"
-      :highlight="dps.highlighted.dates"
+      :highlight="dps.highlight"
       :enable-time-picker="false"
       :format="shortDateWithWeekday"
       hide-input-icon
@@ -210,7 +210,7 @@ const dps = {
     to: subWeeks(new Date(), 12),
     from: addWeeks(new Date(), 4),
   },
-  highlighted: {
+  highlight: {
     dates: [new Date()],
   },
 };

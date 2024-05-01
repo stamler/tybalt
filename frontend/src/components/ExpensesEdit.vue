@@ -5,7 +5,7 @@
       placeholder="Date"
       :auto-apply="true"
       :max-date="dps.disabled.from"
-      :highlight="dps.highlighted.dates"
+      :highlight="dps.highlight"
       :enable-time-picker="false"
       :format="shortDateWithWeekday"
       week-start="0"
@@ -296,7 +296,7 @@ const dps = {
     //to: subWeeks(new Date(), 6),
     from: addWeeks(new Date(), 4),
   },
-  highlighted: {
+  highlight: {
     dates: [new Date()],
   },
 };

@@ -28,7 +28,7 @@
         :auto-apply="true"
         :min-date="dps.disabled.to"
         :max-date="dps.disabled.from"
-        :highlight="dps.highlighted.dates"
+        :highlight="dps.highlight"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
         week-start="0"
@@ -45,7 +45,7 @@
         :auto-apply="true"
         :min-date="dps.disabled.to"
         :max-date="dps.disabled.from"
-        :highlight="dps.highlighted.dates"
+        :highlight="dps.highlight"
         :enable-time-picker="false"
         :format="shortDateWithWeekday"
         week-start="0"
@@ -123,7 +123,7 @@ export default defineComponent({
           to: subWeeks(new Date(), 1),
           from: addWeeks(new Date(), 12),
         },
-        highlighted: {
+        highlight: {
           dates: [new Date()],
         },
       },
