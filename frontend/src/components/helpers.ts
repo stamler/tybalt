@@ -1,4 +1,4 @@
-import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import {
   format,
   addDays,
@@ -49,8 +49,8 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
   // There will not be integer days if epoch and weekEnding are in different
   // time zones (EDT vs EST). Convert them both to the same timezone prior
   // to calculating the difference
-  const zonedEpoch = utcToZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
-  const zonedWeekEnding = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
+  const zonedEpoch = toZonedTime(PAYROLL_EPOCH, APP_NATIVE_TZ);
+  const zonedWeekEnding = toZonedTime(weekEnding, APP_NATIVE_TZ);
   const difference = differenceInDays(zonedWeekEnding, zonedEpoch);
 
   return difference % 14 === 0 ? true : false;
@@ -58,9 +58,9 @@ export function isPayrollWeek2(weekEnding: Date): boolean {
 
 export function nextSaturday(date: Date): Date {
   let calculatedSaturday;
-  const zonedTime = utcToZonedTime(date, APP_NATIVE_TZ);
+  const zonedTime = toZonedTime(date, APP_NATIVE_TZ);
   if (zonedTime.getDay() === 6) {
-    calculatedSaturday = zonedTimeToUtc(
+    calculatedSaturday = fromZonedTime(
       new Date(
         zonedTime.getFullYear(),
         zonedTime.getMonth(),
@@ -75,7 +75,7 @@ export function nextSaturday(date: Date): Date {
   } else {
     const nextsat = new Date(zonedTime.getTime());
     nextsat.setDate(nextsat.getDate() - nextsat.getDay() + 6);
-    calculatedSaturday = zonedTimeToUtc(
+    calculatedSaturday = fromZonedTime(
       new Date(
         nextsat.getFullYear(),
         nextsat.getMonth(),
@@ -96,8 +96,8 @@ export function thisTimeNextWeekInTimeZone(
   datetime: Date,
   timezone: string
 ): Date {
-  const zone_time = utcToZonedTime(datetime, timezone);
-  return zonedTimeToUtc(addDays(zone_time, 7), timezone);
+  const zone_time = toZonedTime(datetime, timezone);
+  return fromZonedTime(addDays(zone_time, 7), timezone);
 }
 
 // This generator creates an iterable object that yields all pay period ending
@@ -388,7 +388,7 @@ export async function timeSummary(weekEnding: Date) {
     id: `getTimeSummary${start.getTime()}`,
     message: "Getting Time Summary",
   });
-  const weekEndingZoned = utcToZonedTime(weekEnding, APP_NATIVE_TZ);
+  const weekEndingZoned = toZonedTime(weekEnding, APP_NATIVE_TZ);
   const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
   let response: HttpsCallableResult;
@@ -611,7 +611,7 @@ export async function generatePayablesCSVSQL(
     id: `getExpensesSQL${start.getTime()}`,
     message: "Getting Expenses",
   });
-  const weekEndingZoned = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
+  const weekEndingZoned = toZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
   const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
   try {

@@ -261,7 +261,7 @@ import { isInteger, pickBy, defaults } from "lodash";
 import { sha256 } from "js-sha256";
 import ActionButton from "./ActionButton.vue";
 import { format } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import { downloadAttachment, shortDateWithWeekday } from "./helpers";
 import DSJobSelector from "./DSJobSelector.vue";
 
@@ -394,7 +394,7 @@ const getExpenseRate = function (rate: string, date: Date | undefined) {
   // get the timezone of the user
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // make an ISO string from the date
-  const ISODate = format(utcToZonedTime(date, timezone), "yyyy-MM-dd");
+  const ISODate = format(toZonedTime(date, timezone), "yyyy-MM-dd");
   // sort dates in descending order
   const dates = Object.keys(expenseRates).sort().reverse();
   // find the first date that is less than or equal to the specified date

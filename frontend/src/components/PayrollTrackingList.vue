@@ -68,7 +68,7 @@ import {
   generateAttachmentZip,
 } from "./helpers";
 import { format, subDays } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
@@ -127,11 +127,11 @@ const tryToMakeNumber = function (input: null | string | number | undefined) {
 };
 
 const generateSQLPayrollCSVForWeek = async function (timestamp: Timestamp, week1 = false) {
-  let weekEndingZoned = utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
+  let weekEndingZoned = toZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
   if (week1) {
     // must calculate the week1 ending and run the query
     weekEndingZoned = subDays(
-      utcToZonedTime(timestamp.toDate(), APP_NATIVE_TZ),
+      toZonedTime(timestamp.toDate(), APP_NATIVE_TZ),
       7
     );
   }
