@@ -1,5 +1,18 @@
-import { User } from "firebase/auth";
+import { firebaseApp } from "../firebase";
 import { defineStore } from "pinia";
+import {
+  getAuth,
+  onAuthStateChanged,
+  User,
+  OAuthProvider,
+  signInWithPopup,
+  signOut,
+  getIdTokenResult,
+} from "firebase/auth";
+import { getFirestore, getDoc, doc } from "firebase/firestore";
+import { MICROSOFT_TENANT_ID } from "../config";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { subDays } from "date-fns";
 
 interface TaskList {
   [key: string]: { message: string };
@@ -9,9 +22,16 @@ interface Task {
   message: string;
 }
 
+const auth = getAuth(firebaseApp);
+const functions = getFunctions(firebaseApp);
+
+const provider = new OAuthProvider("microsoft.com");
+provider.setCustomParameters({ tenant: MICROSOFT_TENANT_ID });
+
 export const useStateStore = defineStore({
   id: "state",
   state: () => ({
+    isAuthenticated: null as boolean | null,
     sidenav: false,
     user: { uid: "", email: "" } as User,
     claims: {} as { [claim: string]: boolean },
@@ -22,6 +42,10 @@ export const useStateStore = defineStore({
 
     // state of the notification system
     notifications: {}, // notifications to display in UI
+
+    // this function will be called upon sign out to unsubscribe from the auth
+    // state change listener
+    unsubscribe: null as (() => void) | null,
   }),
   getters: {
     // getters for the waiting message system
@@ -35,6 +59,109 @@ export const useStateStore = defineStore({
     },
   },
   actions: {
+    initialize() {
+      const _this = this;
+      this.unsubscribe = onAuthStateChanged(auth, async function (user) {
+        if (user) {
+          _this.isAuthenticated = true;
+          const tasks = [];
+            
+          // get the expense rates and store them in the store
+          const getExpenseRates = httpsCallable(functions, "expenseRates");
+          tasks.push(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            getExpenseRates().then((result: Record<string, any>) =>
+              _this.setExpenseRates(result.data)
+            )
+          );
+      
+          // TODO: Vuex won't survive a page reload and this code won't be
+          // retriggered if the user is still signed in, meaning the state will
+          // disappear breaking the app. Further since components are loaded
+          // by the router, any component which depends on state will fail on
+          // app load.
+          // TODO: avoid casting to firebase.User
+          tasks.push(_this.setUser(auth.currentUser as User));
+          tasks.push(
+            // Using true here will force a refresh of the token test this to see if a
+            // simple refresh will suffice instead of logging out after claims are
+            // updated, then figure out how to refresh the token in the background
+            // periodically without logging out
+            // https://firebase.google.com/docs/auth/admin/custom-claims
+            // https://firebase.google.com/docs/reference/js/auth.user.md#usergetidtokenresult
+            getIdTokenResult(user, true).then((token) => {
+              const allClaims = token.claims;
+              // filter out the properties that don't have a value of true
+              const claims = Object.keys(allClaims)
+                .filter((key) => allClaims[key] === true)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .reduce((obj: Record<string, any>, key) => {
+                  obj[key] = allClaims[key];
+                  return obj;
+                }, {});
+              _this.setClaims(claims);
+            })
+          );
+        } else {
+          _this.isAuthenticated = false;
+        }
+      });
+    },
+    async loginWithMicrosoftOAuth() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (result === null || OAuthProvider.credentialFromResult === null) {
+          return null;
+        } 
+        const credential = OAuthProvider.credentialFromResult(result);
+        
+        // get token and call graph to load first name, last name
+        // and other important data, then save it to the profile
+        // https://firebase.google.com/docs/auth/web/microsoft-oauth
+        const updateProfileFromMSGraph = httpsCallable(
+          functions,
+          "updateProfileFromMSGraph"
+        );
+        if (credential) {
+          updateProfileFromMSGraph({
+            accessToken: credential.accessToken,
+          }).catch((error) => alert(`Update from MS Graph failed: ${error}`));
+        } else {
+          const currentUser = auth.currentUser;
+          if (currentUser !== null) {
+            // Validate the age of the profile
+            // sign out if the profile is missing msGraphDataUpdated
+            // or it was updated more than 7 days ago
+            const db = getFirestore(firebaseApp);
+            const snap = await getDoc(doc(db, "Profiles", currentUser.uid));
+            const profile = snap.data();
+            
+            if (
+              profile !== undefined &&
+              (profile.msGraphDataUpdated === undefined ||
+                profile.msGraphDataUpdated.toDate() < subDays(new Date(), 7))
+              ) {
+                alert("Your profile needs an update. Please sign back in.");
+                this.signOutTybalt();
+            }
+          }
+        }
+      } catch (error) {
+        const _error = error as AuthError;
+        if (_error.code === "auth/account-exists-with-different-credential") {
+          alert(
+            `You have already signed up with a different auth provider for email ${_error.email}.`
+          );
+          // If you are using multiple auth providers on your app you should handle linking
+          // the user's accounts here.
+        } else if (_error.code === "auth/timeout") {
+          history.go();
+        } else {
+          // eslint-disable-next-line no-console
+          console.error(error);
+        }    
+      }
+    },
     toggleMenu() {
       this.sidenav = !this.sidenav;
     },
@@ -60,5 +187,12 @@ export const useStateStore = defineStore({
     setExpenseRates(rates: { [key: string]: any }) {
       this.expenseRates = rates;
     },
+    async signOutTybalt() {
+      if (this.unsubscribe !== null) {
+        this.unsubscribe();
+      }
+      await signOut(auth);
+      this.isAuthenticated = false;
+    }
   },
 });
