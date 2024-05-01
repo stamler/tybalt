@@ -30,7 +30,7 @@
     "@types/json2csv": "^5.0.1",
     "@types/lodash": "^4.14.168",
     "@types/uuid": "^9.0.1",
-    "@vuepic/vue-datepicker": "^7.2.0",
+    "@vuepic/vue-datepicker": "^8.5.0",
     "algoliasearch": "^4.8.6",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^2.0.0",
