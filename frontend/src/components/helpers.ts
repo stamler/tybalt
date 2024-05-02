@@ -30,9 +30,9 @@ import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { TimeSheet, isTimeSheet, Amendment } from "./types";
 import _ from "lodash";
 import { Parser } from "@json2csv/plainjs";
-import { useStateStore } from "../stores/state";
-import router from "../router";
-import { pinia } from "../piniainit";
+import { useStateStore } from "@/stores/state";
+import router from "@/router";
+import { pinia } from "@/piniainit";
 
 const parser = new Parser();
 const db = getFirestore(firebaseApp);

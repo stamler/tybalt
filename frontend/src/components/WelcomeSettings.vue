@@ -120,9 +120,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { LIB_VERSION } from "../version";
+import { LIB_VERSION } from "@/version";
 import { computed } from "vue";
-import { firebaseApp } from "../firebase";
+import { firebaseApp } from "@/firebase";
 import { Profile } from "./types";
 import {
   getFirestore,
@@ -133,22 +133,21 @@ import {
   setDoc,
   DocumentData,
 } from "firebase/firestore";
-import { User } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import ActionButton from "./ActionButton.vue";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { generateKeypair } from "./wireguard";
 import { shortDate, downloadBlob } from "./helpers";
-import { useStateStore } from "../stores/state";
+import { useStateStore } from "@/stores/state";
 import WaitMessages from "./WaitMessages.vue";
 import { useCollection, useDocument } from "vuefire";
 import { storeToRefs } from "pinia";
-import { COMPANY_SHORTNAME } from "../config";
+import { COMPANY_SHORTNAME } from "@/config";
 const db = getFirestore(firebaseApp);
 
 const stateStore = useStateStore();
-const { user, showTasks, isFirebaseAuthenticated } = storeToRefs(stateStore);
+const { user, showTasks } = storeToRefs(stateStore);
 // user has no type information when accessing this.user.uid below
 // this discussion may be relevant:
 // https://github.com/vuejs/pinia/discussions/1178

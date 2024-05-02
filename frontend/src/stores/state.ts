@@ -100,6 +100,12 @@ export const useStateStore = defineStore({
             _this.setClaims(claims);
           });
         } else {
+          // clear the user and claims when signing out
+          _this.setUser({ uid: "", email: "" } as User);
+          _this.setClaims({});
+          _this.setExpenseRates(null);
+          
+          // clear the state of the app
           _this.isFirebaseAuthenticated = false;
         }
         _this.initializing = false;
@@ -182,7 +188,7 @@ export const useStateStore = defineStore({
       this.claims = claims;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setExpenseRates(rates: { [key: string]: any }) {
+    setExpenseRates(rates: { [key: string]: any } | null) {
       this.expenseRates = rates;
     },
     async signOutTybalt() {
