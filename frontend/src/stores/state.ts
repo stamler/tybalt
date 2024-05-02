@@ -31,7 +31,8 @@ provider.setCustomParameters({ tenant: MICROSOFT_TENANT_ID });
 export const useStateStore = defineStore({
   id: "state",
   state: () => ({
-    isAuthenticated: null as boolean | null,
+    initializing: false,
+    isFirebaseAuthenticated: null as boolean | null,
     sidenav: false,
     user: { uid: "", email: "" } as User,
     claims: {} as { [claim: string]: boolean },
@@ -60,19 +61,17 @@ export const useStateStore = defineStore({
   },
   actions: {
     initialize() {
+      this.initializing = true;
       const _this = this;
       this.unsubscribe = onAuthStateChanged(auth, async function (user) {
         if (user) {
-          _this.isAuthenticated = true;
-          const tasks = [];
+          _this.isFirebaseAuthenticated = true;
             
           // get the expense rates and store them in the store
           const getExpenseRates = httpsCallable(functions, "expenseRates");
-          tasks.push(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getExpenseRates().then((result: Record<string, any>) =>
-              _this.setExpenseRates(result.data)
-            )
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          getExpenseRates().then((result: Record<string, any>) =>
+            _this.setExpenseRates(result.data)
           );
       
           // TODO: Vuex won't survive a page reload and this code won't be
@@ -81,30 +80,29 @@ export const useStateStore = defineStore({
           // by the router, any component which depends on state will fail on
           // app load.
           // TODO: avoid casting to firebase.User
-          tasks.push(_this.setUser(auth.currentUser as User));
-          tasks.push(
-            // Using true here will force a refresh of the token test this to see if a
-            // simple refresh will suffice instead of logging out after claims are
-            // updated, then figure out how to refresh the token in the background
-            // periodically without logging out
-            // https://firebase.google.com/docs/auth/admin/custom-claims
-            // https://firebase.google.com/docs/reference/js/auth.user.md#usergetidtokenresult
-            getIdTokenResult(user, true).then((token) => {
-              const allClaims = token.claims;
-              // filter out the properties that don't have a value of true
-              const claims = Object.keys(allClaims)
-                .filter((key) => allClaims[key] === true)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .reduce((obj: Record<string, any>, key) => {
-                  obj[key] = allClaims[key];
-                  return obj;
-                }, {});
-              _this.setClaims(claims);
-            })
-          );
+          _this.setUser(auth.currentUser as User);
+          // Using true here will force a refresh of the token test this to see if a
+          // simple refresh will suffice instead of logging out after claims are
+          // updated, then figure out how to refresh the token in the background
+          // periodically without logging out
+          // https://firebase.google.com/docs/auth/admin/custom-claims
+          // https://firebase.google.com/docs/reference/js/auth.user.md#usergetidtokenresult
+          getIdTokenResult(user, true).then((token) => {
+            const allClaims = token.claims;
+            // filter out the properties that don't have a value of true
+            const claims = Object.keys(allClaims)
+              .filter((key) => allClaims[key] === true)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .reduce((obj: Record<string, any>, key) => {
+                obj[key] = allClaims[key];
+                return obj;
+              }, {});
+            _this.setClaims(claims);
+          });
         } else {
-          _this.isAuthenticated = false;
+          _this.isFirebaseAuthenticated = false;
         }
+        _this.initializing = false;
       });
     },
     async loginWithMicrosoftOAuth() {
@@ -192,7 +190,7 @@ export const useStateStore = defineStore({
         this.unsubscribe();
       }
       await signOut(auth);
-      this.isAuthenticated = false;
+      this.isFirebaseAuthenticated = false;
     }
   },
 });

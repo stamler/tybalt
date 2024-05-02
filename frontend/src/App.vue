@@ -6,30 +6,20 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 // @ is an alias to /src
 import "@vuepic/vue-datepicker/dist/main.css";
 import SideNav from "./components/SideNav.vue";
 import AppHeader from "./components/AppHeader.vue";
 import { useStateStore } from "./stores/state";
 import { storeToRefs } from "pinia";
-// import { toRef } from "vue";
+import { onMounted } from "vue";
 
-export default {
-  setup: () => {
-    // using toRef() to create a reactive reference to the store here works just
-    // as well but I'm using storeToRefs() for consistency when I'll need to
-    // access multiple store properties elsewhere in the app
-
-    // const sidenav = toRef(store, "sidenav");
-    const { sidenav } = storeToRefs(useStateStore());
-    return { sidenav };
-  },
-  components: {
-    SideNav,
-    AppHeader,
-  },
-};
+const store = useStateStore();
+const { sidenav } = storeToRefs(store);
+onMounted(() => {
+  store.initialize();
+});
 </script>
 
 <style>

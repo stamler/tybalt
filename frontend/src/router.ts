@@ -1,8 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { v4 as uuidv4 } from "uuid";
+import { storeToRefs } from "pinia";
+import { useStateStore } from "@/stores/state";
 // Components
 import MainView from "@/views/MainView.vue";
 import WelcomeSettings from "@/components/WelcomeSettings.vue";
+import LoginNotice from "./components/LoginNotice.vue";
 import CheckIn from "@/components/CheckIn.vue";
 import VacationsEdit from "@/components/VacationsEdit.vue";
 import VacationsList from "@/components/VacationsList.vue";
@@ -62,7 +65,15 @@ const router = createRouter({
     },
     {
       path: "/me",
+      name: "Welcome",
       component: WelcomeSettings,
+      meta: { requiresFirebaseAuth: true },
+    },
+    {
+      path: "/login",
+      name: "Login",
+      component: LoginNotice,
+      meta: { showInUi: false, requiresFirebaseAuth: false },
     },
     {
       path: "/presence",
@@ -883,5 +894,15 @@ router.beforeEach((to, from, next) => {
   }
 });
 */
+router.beforeEach((to) => {
+  const { isFirebaseAuthenticated } = storeToRefs(useStateStore());
+  // https://github.com/vuejs/pinia/discussions/723
+  // https://pinia.vuejs.org/core-concepts/outside-component-usage.html#single-page-applications
 
+  // redirect to login if the route requires authentication and the user is not
+  // authenticated or the authentication status is unknown
+  if (!(isFirebaseAuthenticated.value === true) && to.meta.requiresFirebaseAuth) {
+    return { name: "Login" };
+  }
+});
 export default router;
