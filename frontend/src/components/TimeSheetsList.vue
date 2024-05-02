@@ -8,6 +8,7 @@
     :rowAltVisualFn="altVisual"
   >
     <template #anchor="{ id, weekEnding }">
+      <!-- in vue 3.4.24 and later, id has no value. WHY? -->
       <router-link :to="[parentPath, id, 'details'].join('/')">
         {{ shortDate(weekEnding.toDate()) }}
       </router-link>
