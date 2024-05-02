@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useStateStore } from "@/stores/state";
 import { storeToRefs } from "pinia";
-const email = ref("");
-const password = ref("");
 const store = useStateStore();
 const { isFirebaseAuthenticated, initializing } = storeToRefs(store);
 
 const router = useRouter();
 const route = useRoute();
-const message = ref("");
-const messageIsError = ref(false);
 
 watch(
   isFirebaseAuthenticated,
@@ -24,14 +20,6 @@ watch(
   { immediate: true },
 );
 
-const login = async function (email: string, password: string) {
-  const { error } = await auth.login(email, password);
-  if (error !== null) {
-    message.value = error.message;
-    messageIsError.value = true;
-    return;
-  }
-};
 </script>
 
 <template>

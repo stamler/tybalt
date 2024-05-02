@@ -7,12 +7,14 @@ import {
   OAuthProvider,
   signInWithPopup,
   signOut,
+  AuthError,
   getIdTokenResult,
 } from "firebase/auth";
 import { getFirestore, getDoc, doc } from "firebase/firestore";
 import { MICROSOFT_TENANT_ID } from "../config";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { subDays } from "date-fns";
+import router from "@/router";
 
 interface TaskList {
   [key: string]: { message: string };
@@ -74,11 +76,6 @@ export const useStateStore = defineStore({
             _this.setExpenseRates(result.data)
           );
       
-          // TODO: Vuex won't survive a page reload and this code won't be
-          // retriggered if the user is still signed in, meaning the state will
-          // disappear breaking the app. Further since components are loaded
-          // by the router, any component which depends on state will fail on
-          // app load.
           // TODO: avoid casting to firebase.User
           _this.setUser(auth.currentUser as User);
           // Using true here will force a refresh of the token test this to see if a
@@ -107,6 +104,12 @@ export const useStateStore = defineStore({
           
           // clear the state of the app
           _this.isFirebaseAuthenticated = false;
+
+          // TODO: redirect to the login page here using the router
+          // This currently causes the following error:
+          // Uncaught ReferenceError: can't access lexical declaration 'useStateStore' before initialization
+          // TODO: figure out how to fix this
+          // router.push({ name: "Login" });
         }
         _this.initializing = false;
       });
@@ -154,7 +157,7 @@ export const useStateStore = defineStore({
         const _error = error as AuthError;
         if (_error.code === "auth/account-exists-with-different-credential") {
           alert(
-            `You have already signed up with a different auth provider for email ${_error.email}.`
+            `You have already signed up with a different auth provider for email ${_error.customData.email}.`
           );
           // If you are using multiple auth providers on your app you should handle linking
           // the user's accounts here.
