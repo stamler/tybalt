@@ -203,6 +203,10 @@ export const useStateStore = defineStore({
         this.unsubscribe();
       }
       this.isFirebaseAuthenticated = false;
+
+      // Sign out of Microsoft
+      const redirectUri = encodeURIComponent("http://localhost/myapp/");
+      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${redirectUri}`;
     }
   },
 });
