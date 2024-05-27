@@ -109,7 +109,7 @@ export const useStateStore = defineStore({
           // This currently causes the following error:
           // Uncaught ReferenceError: can't access lexical declaration 'useStateStore' before initialization
           // TODO: figure out how to fix this
-          // router.push({ name: "Login" });
+          router.push({ name: "Login" });
         }
         _this.initializing = false;
       });
@@ -195,10 +195,13 @@ export const useStateStore = defineStore({
       this.expenseRates = rates;
     },
     async signOutTybalt() {
+      // signOut prior to unsubscribing from the auth state change listener
+      await signOut(auth);
+
+      // When we unsubscribe the login button no longer works. Why?
       if (this.unsubscribe !== null) {
         this.unsubscribe();
       }
-      await signOut(auth);
       this.isFirebaseAuthenticated = false;
     }
   },

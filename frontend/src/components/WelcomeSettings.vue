@@ -2,7 +2,7 @@
   <div>
     <div id="spacer"></div>
     <div class="actions">
-      <action-button @click="signOutWrapper" :color="'000'">
+      <action-button @click="stateStore.signOutTybalt()" :color="'000'">
         Sign Out
       </action-button>
       <WaitMessages v-if="showTasks" />
@@ -246,14 +246,6 @@ Add-LocalGroupMember -Group 'Network Configuration Operators' -Member '${COMPANY
   );
 
   downloadBlob(blob, "SetupWireguard.ps1");
-};
-
-const signOutWrapper = async function () {
-  // wrap the signOut because it was causing issues of not working at all
-  // may be because the function depended on async stuff being loaded
-  // but it's not clear why
-  console.debug("signOutWrapper");
-  stateStore.signOutTybalt();
 };
 
 const save = function (): void {

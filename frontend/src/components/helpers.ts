@@ -38,7 +38,7 @@ const parser = new Parser();
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp);
 const storage = getStorage(firebaseApp);
-const store = useStateStore(pinia);
+// const store = useStateStore(pinia);
 
 // Given a number (result of getTime() from js Date object), verify that it is
 // 23:59:59 in APP_NATIVE_TZ on a saturday and that the saturday is a week 2 of
@@ -384,10 +384,12 @@ export async function generateTimeReportCSV(
 
 export async function timeSummary(weekEnding: Date) {
   const start = new Date();
-  store.startTask({
-    id: `getTimeSummary${start.getTime()}`,
-    message: "Getting Time Summary",
-  });
+  // TODO: replace this with an emit() which will be caught further up the
+  // component tree
+  //store.startTask({
+  //   id: `getTimeSummary${start.getTime()}`,
+  //   message: "Getting Time Summary",
+  // });
   const weekEndingZoned = toZonedTime(weekEnding, APP_NATIVE_TZ);
   const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
@@ -403,10 +405,10 @@ export async function timeSummary(weekEnding: Date) {
     const filename = `time_summary_${exportDateWeekStart(
       weekEnding
     )}-${exportDate(weekEnding)}.csv`;
-    store.endTask(`getTimeSummary${start.getTime()}`);
+    //store.endTask(`getTimeSummary${start.getTime()}`);
     downloadBlob(blob, filename);
   } catch (error) {
-    store.endTask(`getTimeSummary${start.getTime()}`);
+    //store.endTask(`getTimeSummary${start.getTime()}`);
     alert(`Error: ${error}`);
   }
 }
@@ -472,16 +474,16 @@ export async function downloadAttachment(
 
 export function submitExpense(expenseId: string) {
   const submitExpense = httpsCallable(functions, "submitExpense");
-  store.startTask({
-    id: `submit${expenseId}`,
-    message: "submitting",
-  });
+  //store.startTask({
+  //   id: `submit${expenseId}`,
+  //   message: "submitting",
+  // });
   return submitExpense({ id: expenseId })
     .then(() => {
-      store.endTask(`submit${expenseId}`);
+      //store.endTask(`submit${expenseId}`);
     })
     .catch((error) => {
-      store.endTask(`submit${expenseId}`);
+      //store.endTask(`submit${expenseId}`);
       alert(`Error submitting expense: ${error}`);
     });
 }
@@ -503,16 +505,16 @@ export function copyEntry(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { date, ...newItem } = item;
     newItem.date = addDays(item.date.toDate(), 1);
-    store.startTask({
-      id: `copy${item.id}`,
-      message: "copying",
-    });
+    //store.startTask({
+    //   id: `copy${item.id}`,
+    //   message: "copying",
+    // });
     return addDoc(collection, newItem)
       .then(() => {
-        store.endTask(`copy${item.id}`);
+        //store.endTask(`copy${item.id}`);
       })
       .catch((error) => {
-        store.endTask(`copy${item.id}`);
+        //store.endTask(`copy${item.id}`);
         alert(`Error copying: ${error.message}`);
       });
   }
@@ -537,10 +539,10 @@ export function recallTs(timesheetId: string) {
   // first verifying that approved is false. Similarly an approve
   // function for the approving manager must use a transaction and
   // verify that the timesheet is submitted before marking it approved
-  store.startTask({
-    id: `recall${timesheetId}`,
-    message: "recalling",
-  });
+  //store.startTask({
+  //   id: `recall${timesheetId}`,
+  //   message: "recalling",
+  // });
   const timesheet = doc(collection(db, "TimeSheets"), timesheetId);
 
   return runTransaction(db, async (transaction) => {
@@ -558,46 +560,46 @@ export function recallTs(timesheetId: string) {
     });
   })
     .then(() => {
-      store.endTask(`recall${timesheetId}`);
+      //store.endTask(`recall${timesheetId}`);
       return unbundle(timesheetId);
     })
     .catch((error: unknown) => {
-      store.endTask(`recall${timesheetId}`);
+      //store.endTask(`recall${timesheetId}`);
       if (error instanceof Error) alert(`Recall failed: ${error.message}`);
       else alert(`Recall failed: ${JSON.stringify(error)}`);
     });
 }
 
 export async function unbundle(timesheetId: string) {
-  store.startTask({ id: "unbundle", message: "unbundling" });
+  //store.startTask({ id: "unbundle", message: "unbundling" });
   const unbundleTimesheet = httpsCallable(functions, "unbundleTimesheet");
   return unbundleTimesheet({ id: timesheetId })
     .then(() => {
-      store.endTask("unbundle");
+      //store.endTask("unbundle");
       router.push({ name: "Time Entries" });
     })
     .catch((error) => {
-      store.endTask("unbundle");
+      //store.endTask("unbundle");
       alert(`Error unbundling timesheet: ${error.message}`);
     });
 }
 
 export function submitTs(timesheetId: string) {
-  store.startTask({
-    id: `submit${timesheetId}`,
-    message: "submitting",
-  });
+  //store.startTask({
+  //   id: `submit${timesheetId}`,
+  //   message: "submitting",
+  // });
   setDoc(
     doc(db, "TimeSheets", timesheetId),
     { submitted: true },
     { merge: true }
   )
     .then(() => {
-      store.endTask(`submit${timesheetId}`);
+      //store.endTask(`submit${timesheetId}`);
       router.push({ name: "Time Sheets" });
     })
     .catch((error) => {
-      store.endTask(`submit${timesheetId}`);
+      //store.endTask(`submit${timesheetId}`);
       alert(`Error submitting timesheet: ${error}`);
     });
 }
@@ -607,10 +609,10 @@ export async function generatePayablesCSVSQL(
   type: "payroll" | "weekly"
 ) {
   const start = new Date();
-  store.startTask({
-    id: `getExpensesSQL${start.getTime()}`,
-    message: "Getting Expenses",
-  });
+  //store.startTask({
+  //   id: `getExpensesSQL${start.getTime()}`,
+  //   message: "Getting Expenses",
+  // });
   const weekEndingZoned = toZonedTime(timestamp.toDate(), APP_NATIVE_TZ);
   const queryValues = [format(weekEndingZoned, "yyyy-MM-dd")];
   const queryMySQL = httpsCallable(functions, "queryMySQL");
@@ -655,10 +657,10 @@ export async function generatePayablesCSVSQL(
     } else {
       throw new Error("Invalid type in generatePayablesCSVSQL");
     }
-    store.endTask(`getExpensesSQL${start.getTime()}`);
+    //store.endTask(`getExpensesSQL${start.getTime()}`);
     downloadBlob(blob, `${filename}.csv`);
   } catch (error) {
-    store.endTask(`getExpensesSQL${start.getTime()}`);
+    //store.endTask(`getExpensesSQL${start.getTime()}`);
     alert(`Error: ${error}`);
   }
 }
@@ -709,10 +711,10 @@ export async function generateAttachmentZip(
     // TODO: verify that this is true
   }
 
-  store.startTask({
-    id: `generateAttachments${item.id}`,
-    message: "Generating Attachments",
-  });
+  //store.startTask({
+  //   id: `generateAttachments${item.id}`,
+  //   message: "Generating Attachments",
+  // });
   try {
     if (kind === "payPeriod") {
       await generateExpenseAttachmentArchive({ payPeriodEnding });
@@ -722,7 +724,7 @@ export async function generateAttachmentZip(
   } catch (error) {
     alert(error);
   }
-  store.endTask(`generateAttachments${item.id}`);
+  //store.endTask(`generateAttachments${item.id}`);
 }
 
 export function relativeTime(date: Timestamp | undefined): string {
