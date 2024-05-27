@@ -17,7 +17,8 @@
         attachments.zip<Icon icon="feather:download" width="24px" />
       </a>
       <action-button
-        v-if="canRefresh"
+        title="This will generate a new attachments.zip file for this tracking document."
+        v-if="isAdmin"
         type="refresh"
         @click="generateAttachmentZip(item, 'weekEnding', true)"
       />
@@ -30,6 +31,12 @@
       >
         payablesSQL
       </action-button>
+      <a
+        title="This rebuilds the expenses map for this tracking document by counting all expenses. It then rebuilds the JSON and the Zip file."
+        v-if="isAdmin" 
+        @click="rebuildExpensesMap(item.id)">
+        <Icon icon="ion:construct" width="24px" />
+      </a>
     </template>
   </DSList>
 </template>
@@ -49,7 +56,9 @@ import {
 } from "./helpers";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
+const functions = getFunctions(firebaseApp);
 const store = useStateStore();
 const route = useRoute();
 const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
@@ -60,10 +69,15 @@ const itemsQuery = ref(
   )
 );
 
-const canRefresh = computed(() => {
+const isAdmin = computed(() => {
   return (
     Object.prototype.hasOwnProperty.call(store.claims, "admin") &&
     store.claims["admin"] === true
   );
 });
+
+const rebuildExpensesMap = async (id: string) => {
+  const rebuildExpenses = httpsCallable(functions, "rebuildExpenseTracking");
+  await rebuildExpenses({ id });
+};
 </script>

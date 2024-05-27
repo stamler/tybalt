@@ -1,7 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { isDocIdObject, createPersistentDownloadUrl, getTrackingDoc, getAuthObject /*, isWeekReference, isPayrollWeek2, thisTimeNextWeekInTimeZone */ } from "./utilities";
-// import { updateProfileTallies } from "./profiles";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
@@ -54,13 +53,10 @@ export const cleanUpOrphanedAttachment = functions.firestore
 
 /*
   If an expense is committed, add it to the expenses property of the
-  ExpenseTracking document for the corresponding weekEnding. Update the profile
-  tallies at the same time to account for any mileage claims.
+  ExpenseTracking document for the corresponding weekEnding.
 
   If an expense is manually uncommitted, remove it from the expenses property of
-  the ExpenseTracking document for the corresponding weekEnding. Update the
-  profile tallies at the same time to account for any mileage claims that were
-  removed.
+  the ExpenseTracking document for the corresponding weekEnding.
  */
 export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSeconds: 180}).firestore
   .document("Expenses/{expenseId}")
@@ -88,13 +84,6 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
           [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, date: afterData.date },
         }
       );
-      // update the Time Off and mileage Tallies on the corresponding profile
-      // 2022-10-12 this is now done in syncToSQL
-      // try {
-      //   await updateProfileTallies(afterData.uid);
-      // } catch (error) {
-      //   functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
-      // }      
     }
     if (
       afterData &&
@@ -119,18 +108,69 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
         committedWeekEnding: admin.firestore.FieldValue.delete(),
         payPeriodEnding: admin.firestore.FieldValue.delete(),
       });
-
-      // update the Time Off and mileage Tallies on the corresponding profile
-      // update 2022-10-12 this is now done in syncToSQL
-      // try {
-      //   await updateProfileTallies(afterData.uid);
-      // } catch (error) {
-      //   functions.logger.error(`Error on updateProfileTallies for user ${afterData.uid}: ${error}`)
-      // }      
     }
     await exportJson({ id: expenseTrackingDocRef.id });
     return generateExpenseAttachmentArchiveUnwrapped({ id: expenseTrackingDocRef.id });
   });
+
+// This function, rebuildExpenseTracking(), is called by the frontend to rebuild
+// the expenses property (Map) of the ExpenseTracking document for the
+// corresponding weekEnding. It is called by an admin from the the frontend when
+// the expenses property is missing or incomplete or otherwise damaged. It does
+// almost everything that updateExpenseTracking() does, but it does not listen
+// for changes in the Expenses collection. It is called by an admin from the
+// frontend. The only argument is the id of the ExpenseTracking document to
+// rebuild. The function will get the weekEnding from the ExpenseTracking
+// document and then get all the expenses for that weekEnding from the Expenses
+// collection and rebuild the expenses property of the ExpenseTracking document.
+export const rebuildExpenseTracking = functions.runWith({memory: "1GB", timeoutSeconds: 180}).https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+
+  // caller must have the admin claim to run this
+  getAuthObject(context, ["admin"])
+
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid document reference"
+    );
+  }
+
+  // load the ExpenseTracking document from the ExpenseTracking collection and
+  // get the weekEnding as a Date object. Throw if the document doesn't exist.
+  const db = admin.firestore();
+  const expenseTrackingDoc = await db.collection("ExpenseTracking").doc(data.id).get();
+  if (!expenseTrackingDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "The ExpenseTracking document doesn't exist"
+    );
+  }
+
+  // get all the committed expenses for the weekEnding
+  const expensesSnapshot = await db
+    .collection("Expenses")
+    .where("approved", "==", true)
+    .where("committed", "==", true)
+    .where("committedWeekEnding", "==", expenseTrackingDoc.get("weekEnding"))
+    .get();
+
+  // create a new expenses object
+  const expenses: Record<string, any> = {};
+  expensesSnapshot.forEach((doc) => {
+    const docData = doc.data();
+    expenses[doc.id] = { displayName: docData.displayName, uid: docData.uid, date: docData.date };
+  });
+
+  // update the ExpenseTracking document with the new expenses object
+  await expenseTrackingDoc.ref.update({ expenses });
+  
+  // export the JSON and generate the attachment archive
+  await exportJson({ id: expenseTrackingDoc.ref.id });
+  return generateExpenseAttachmentArchiveUnwrapped({ id: expenseTrackingDoc.ref.id });
+});
+
 
 // Given an ExpenseTracking id, create or update a file on Google storage
 // with the committed expenses. Must be called by another

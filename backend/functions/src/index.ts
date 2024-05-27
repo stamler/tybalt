@@ -22,7 +22,7 @@ export { assignComputerToUser } from "./computers";
 export { currentADDump } from "./syncUsersFromOnPrem";
 export { updateTimeTracking, manuallyUpdateTimeTracking, updateViewers, auditTimeTracking, unbundleTimesheet, lockTimesheet, unlockTimesheet, exportOnAmendmentCommit, commitTimeAmendment } from "./timesheets";
 export { updatePayrollFromTimeTracking, updatePayrollFromExpenses } from "./payroll";
-export { updateExpenseTracking, expenseRates, uncommitExpense, submitExpense, cleanUpOrphanedAttachment } from "./expenses";
+export { updateExpenseTracking, rebuildExpenseTracking, expenseRates, uncommitExpense, submitExpense, cleanUpOrphanedAttachment } from "./expenses";
 export { writeFileLinks, expensesPayPeriodEnding } from "./utilities";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
