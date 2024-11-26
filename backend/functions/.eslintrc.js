@@ -19,6 +19,10 @@ module.exports = {
     "import",
   ],
   rules: {
+    "array-element-newline": ["error", "consistent"],
+    "array-bracket-newline": ["error", { "multiline": true }],
+    "indent": ["error", 2, { "ArrayExpression": 1 }],
+    "quotes": ["error", "double", { "avoidEscape": true }],
     "@typescript-eslint/adjacent-overload-signatures": "error",
     "@typescript-eslint/no-empty-function": "error",
     "@typescript-eslint/no-empty-interface": "warn",

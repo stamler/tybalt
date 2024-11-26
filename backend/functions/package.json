@@ -9,7 +9,7 @@
     "clean": "rimraf lib/",
     "copyfiles": "copyfiles -u 1 src/**/*.sql lib",
     "postbuild": "npm run copyfiles",
-    "lint": "eslint --ext .ts \"src/\"",
+    "lint": "eslint --ext .ts \"src/\" --fix",
     "build": "npm run clean && tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
