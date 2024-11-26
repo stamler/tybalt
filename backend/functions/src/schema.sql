@@ -190,6 +190,31 @@ CREATE TABLE `MileageTiers` (
   CONSTRAINT `fk_rate_groups` FOREIGN KEY (`rate_group_id`) REFERENCES `MileageRateGroups` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
+CREATE TABLE `Jobs` (
+  `id` varchar(24) COLLATE utf8_unicode_ci NOT NULL,
+  `alternateManagerDisplayName` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `alternateManagerUid` varchar(512) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `categories` varchar(256) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `client` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `clientContact` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` varchar(512) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `divisions` varchar(256) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `fnAgreement` tinyint(1) NOT NULL DEFAULT '0',
+  `hasTimeEntries` tinyint(1) NOT NULL DEFAULT '0',
+  `jobOwner` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `lastTimeEntryDate` date DEFAULT NULL,
+  `manager` varchar(512) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `managerDisplayName` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `managerUid` varchar(512) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `projectAwardDate` date DEFAULT NULL,
+  `proposal` varchar(24) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `proposalOpeningDate` date DEFAULT NULL,
+  `proposalSubmissionDueDate` date DEFAULT NULL,
+  `status` varchar(24) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `timestamp` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+
 /* This query calculates the mileageTotal, that is the amount of each expense in
  dollars based on the distance claimed and the mileage tier for each claim. IF
  the claim spans two mileage tiers, this is accounted for and the calculation is

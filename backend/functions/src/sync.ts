@@ -38,10 +38,10 @@ export const syncToSQL = functions
       await db.collection("Emails").add({
         toUids: ["UAmV8K6DcXVhSrMAtZua0OmCUPu2"],
         message: {
-          subject: `Profile writeback failed during syncToSQL()`,
+          subject: "Profile writeback failed during syncToSQL()",
           text: 
-            `Hi,\n\n` +
-            `The scheduled syncToSQL() taks failed to writeback profile changes. ` +
+            "Hi,\n\n" +
+            "The scheduled syncToSQL() taks failed to writeback profile changes. " +
             `The error is\n ${
               JSON.stringify(error)
             }\n. Please solve this issue\n\n` +
@@ -49,6 +49,7 @@ export const syncToSQL = functions
         },
       });
     }
+    await exportJobs(mysqlConnection);
     return mysqlConnection.end();
   });
 
@@ -538,6 +539,70 @@ export async function clearFlags(collection: string, flag: "exported" | "exportI
   return batch.commit();
 }
 
+/* 
+exportJobs(): Export Jobs documents to MySQL
+*/
+export async function exportJobs(mysqlConnection: Connection) {
+  functions.logger.debug("exporting jobs");
+  const allJobsQuerySnap = await db.collection("Jobs").get();
+  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allJobsQuerySnap.docs.map((jobSnap) => {
+    const job = jobSnap.data();
+    job.id = jobSnap.id;
+    job.timestamp = now;
+    if (job.categories !== null && job.categories !== undefined) {
+      job.categories = job.categories.join(",");
+    }
+    if (job.divisions !== null && job.divisions !== undefined) {
+      job.divisions = job.divisions.join(",");
+    }
+    if (job.lastTimeEntryDate !== null && job.lastTimeEntryDate !== undefined) {
+      job.lastTimeEntryDate = format(utcToZonedTime(job.lastTimeEntryDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
+    }
+    if (job.projectAwardDate !== null && job.projectAwardDate !== undefined) {
+      job.projectAwardDate = format(utcToZonedTime(job.projectAwardDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
+    }
+    if (job.proposalOpeningDate !== null && job.proposalOpeningDate !== undefined) {
+      job.proposalOpeningDate = format(utcToZonedTime(job.proposalOpeningDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
+    }
+    if (job.proposalSubmissionDueDate !== null && job.proposalSubmissionDueDate !== undefined) {
+      job.proposalSubmissionDueDate = format(utcToZonedTime(job.proposalSubmissionDueDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
+    }
+    return jobsFields.map(x => job[x]);
+  })
+
+  // CLEANUP FROM HERE
+  // UPSERT the Jobs data into the MySQL table NOTE: Jobs that have been
+  // deleted from Firestore will remain in MySQL. For this reason we delete all
+  // rows where the timestamp is older than expected. We can safely assume that
+  // 2 minutes prior to now is too old.
+  const q = `REPLACE INTO Jobs (${jobsFields.toString()}) VALUES ? `;
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export Jobs documents: ${error}`);
+    throw error
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} Jobs documents`);
+  const cleanupQuery = "DELETE FROM Jobs j WHERE j.timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  let cleanupResult;
+  try {
+    cleanupResult = await mysqlConnection.query(cleanupQuery);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale Jobs rows: ${error}`);
+    throw error
+  }
+  functions.logger.debug("Cleaned up stale Jobs rows");
+
+  // The affectedRows property is the number of rows that were deleted, but I'm
+  // lazy and this is typescript so I'm just going to show the whole object
+  // instead of declaring a type and then using it to extract the property
+  functions.logger.debug(cleanupResult[0]);
+
+}
+
 /*
 exportProfiles(): Export Profiles documents to MySQL, but only fields including
 id, surname, givenName, openingDateTimeOff, openingOP, openingOV. These will be
@@ -553,13 +618,7 @@ export async function exportProfiles(mysqlConnection: Connection) {
   // Get specified fields from all profiles and store them in an array of arrays
   // to be used in the INSERT query
   const allProfilesQuerySnap = await db.collection("Profiles").get();
-  const profilesFields = [
-    "id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "untrackedTimeOff", "timestamp", "defaultChargeOutRate",
-    "email", "userSourceAnchor64", "userSourceAnchor", "mobilePhone", "jobTitle", "azureId", "salary", "defaultDivision", "managerUid", "managerName",
-    "timeSheetExpected", "payrollId", "offRotation", "personalVehicleInsuranceExpiry",
-    "allowPersonalReimbursement", "bot", "skipMinTimeCheckOnNextBundle", "workWeekHours", "alternateManager", "location", "location_time", "doNotAcceptSubmissions",
-    "msGraphDataUpdated", "customClaims",
-  ];
+  const profilesFields = ["id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "untrackedTimeOff", "timestamp", "defaultChargeOutRate", "email", "userSourceAnchor64", "userSourceAnchor", "mobilePhone", "jobTitle", "azureId", "salary", "defaultDivision", "managerUid", "managerName", "timeSheetExpected", "payrollId", "offRotation", "personalVehicleInsuranceExpiry", "allowPersonalReimbursement", "bot", "skipMinTimeCheckOnNextBundle", "workWeekHours", "alternateManager", "location", "location_time", "doNotAcceptSubmissions", "msGraphDataUpdated", "customClaims"];
   const now = new Date();
   const insertValues = allProfilesQuerySnap.docs.map((profileSnap) => {
     const profile = profileSnap.data();
@@ -586,7 +645,7 @@ export async function exportProfiles(mysqlConnection: Connection) {
     if (profile.msGraphDataUpdated !== null && profile.msGraphDataUpdated !== undefined) {
       profile.msGraphDataUpdated = profile.msGraphDataUpdated.toDate()
     }
-    profile.customClaims = Object.keys(profile.customClaims).join(',')
+    profile.customClaims = Object.keys(profile.customClaims).join(",")
     return profilesFields.map(x => profile[x]);
   });
   // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been
@@ -609,7 +668,7 @@ export async function exportProfiles(mysqlConnection: Connection) {
     functions.logger.error(`Failed to cleanup stale Profiles rows: ${error}`);
     throw error
   }
-  functions.logger.debug(`Cleaned up stale Profiles rows`);
+  functions.logger.debug("Cleaned up stale Profiles rows");
 
   // The affectedRows property is the number of rows that were deleted, but I'm
   // lazy and this is typescript so I'm just going to show the whole object
@@ -626,13 +685,13 @@ documents.
 
 export async function writebackProfiles(mysqlConnection: Connection) {
   // Load and run the query
-  functions.logger.debug(`writing back profiles`);
+  functions.logger.debug("writing back profiles");
   const mileageSql = loadSQLFileToString("mileageClaimed");
   const timeOffSql = loadSQLFileToString("timeOffTallies");
 
   const [mr, _fields0] = await mysqlConnection.query(mileageSql);
   const [tr, _fields1] = await mysqlConnection.query(timeOffSql);
-  functions.logger.debug(`got mileage and time off tallies`);
+  functions.logger.debug("got mileage and time off tallies");
 
   const profilesQuery = await db.collection("Profiles").get();
   const profiles = profilesQuery.docs;
@@ -866,7 +925,7 @@ export async function deleteReplacedInvoices(mysqlConnection: Connection){
   const invoiceDocSnaps = await pendingDeletionQuery.get();
   const invoiceResults = invoiceDocSnaps.docs.map(async invoiceSnap => {
     const invoiceid = invoiceSnap.id;
-    const q = `DELETE FROM Invoices WHERE id=?`;
+    const q = "DELETE FROM Invoices WHERE id=?";
     const invoiceSQLResponse = mysqlConnection.query(q, [invoiceid]);
     try {
       await invoiceSQLResponse;
