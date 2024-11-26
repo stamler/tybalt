@@ -558,6 +558,7 @@ export async function exportProfiles(mysqlConnection: Connection) {
     "email", "userSourceAnchor64", "userSourceAnchor", "mobilePhone", "jobTitle", "azureId", "salary", "defaultDivision", "managerUid", "managerName",
     "timeSheetExpected", "payrollId", "offRotation", "personalVehicleInsuranceExpiry",
     "allowPersonalReimbursement", "bot", "skipMinTimeCheckOnNextBundle", "workWeekHours", "alternateManager", "location", "location_time", "doNotAcceptSubmissions",
+    "msGraphDataUpdated", "customClaims",
   ];
   const now = new Date();
   const insertValues = allProfilesQuerySnap.docs.map((profileSnap) => {
@@ -582,13 +583,17 @@ export async function exportProfiles(mysqlConnection: Connection) {
     if (profile.location_time !== null && profile.location_time !== undefined) {
       profile.location_time = profile.location_time.toDate()
     }
+    if (profile.msGraphDataUpdated !== null && profile.msGraphDataUpdated !== undefined) {
+      profile.msGraphDataUpdated = profile.msGraphDataUpdated.toDate()
+    }
+    profile.customClaims = Object.keys(profile.customClaims).join(',')
     return profilesFields.map(x => profile[x]);
   });
   // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been
   // deleted from Firestore will remain in MySQL. For this reason we delete all
   // rows where the timestamp is older than expected. We can safely assume that
   // 5 minutes prior to now is too old.
-  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP(), defaultChargeOutRate=VALUES(defaultChargeOutRate), email=VALUES(email), userSourceAnchor64=VALUES(userSourceAnchor64), userSourceAnchor=VALUES(userSourceAnchor), mobilePhone=VALUES(mobilePhone), jobTitle=VALUES(jobTitle), azureId=VALUES(azureId), salary=VALUES(salary), defaultDivision=VALUES(defaultDivision), managerUid=VALUES(managerUid), managerName=VALUES(managerName), timeSheetExpected=VALUES(timeSheetExpected), payrollId=VALUES(payrollId), offRotation=VALUES(offRotation), personalVehicleInsuranceExpiry=VALUES(personalVehicleInsuranceExpiry), allowPersonalReimbursement=VALUES(allowPersonalReimbursement), bot=VALUES(bot), skipMinTimeCheckOnNextBundle=VALUES(skipMinTimeCheckOnNextBundle), workWeekHours=VALUES(workWeekHours), alternateManager=VALUES(alternateManager), location=VALUES(location), location_time=VALUES(location_time), doNotAcceptSubmissions=VALUES(doNotAcceptSubmissions)`;
+  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP(), defaultChargeOutRate=VALUES(defaultChargeOutRate), email=VALUES(email), userSourceAnchor64=VALUES(userSourceAnchor64), userSourceAnchor=VALUES(userSourceAnchor), mobilePhone=VALUES(mobilePhone), jobTitle=VALUES(jobTitle), azureId=VALUES(azureId), salary=VALUES(salary), defaultDivision=VALUES(defaultDivision), managerUid=VALUES(managerUid), managerName=VALUES(managerName), timeSheetExpected=VALUES(timeSheetExpected), payrollId=VALUES(payrollId), offRotation=VALUES(offRotation), personalVehicleInsuranceExpiry=VALUES(personalVehicleInsuranceExpiry), allowPersonalReimbursement=VALUES(allowPersonalReimbursement), bot=VALUES(bot), skipMinTimeCheckOnNextBundle=VALUES(skipMinTimeCheckOnNextBundle), workWeekHours=VALUES(workWeekHours), alternateManager=VALUES(alternateManager), location=VALUES(location), location_time=VALUES(location_time), doNotAcceptSubmissions=VALUES(doNotAcceptSubmissions), msGraphDataUpdated=VALUES(msGraphDataUpdated), customClaims=VALUES(customClaims)`;
   try {
     await mysqlConnection.query(q, [insertValues]);
   } catch (error) {
