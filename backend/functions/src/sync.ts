@@ -556,6 +556,7 @@ export async function exportProfiles(mysqlConnection: Connection) {
   const profilesFields = [
     "id", "surname", "givenName", "openingDateTimeOff", "openingOP", "openingOV", "untrackedTimeOff", "timestamp", "defaultChargeOutRate",
     "email", "userSourceAnchor64", "userSourceAnchor", "mobilePhone", "jobTitle", "azureId", "salary", "defaultDivision", "managerUid", "managerName",
+    "timeSheetExpected", "payrollId", "offRotation", "personalVehicleInsuranceExpiry",
   ];
   const now = new Date();
   const insertValues = allProfilesQuerySnap.docs.map((profileSnap) => {
@@ -574,13 +575,14 @@ export async function exportProfiles(mysqlConnection: Connection) {
       return;
     }
     profile.openingDateTimeOff = format(utcToZonedTime(stamp.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
+    profile.personalVehicleInsuranceExpiry = format(utcToZonedTime(stamp.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
     return profilesFields.map(x => profile[x]);
   });
   // UPSERT the Profiles data into the MySQL table NOTE: Profiles that have been
   // deleted from Firestore will remain in MySQL. For this reason we delete all
   // rows where the timestamp is older than expected. We can safely assume that
   // 5 minutes prior to now is too old.
-  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP(), defaultChargeOutRate=VALUES(defaultChargeOutRate), email=VALUES(email), userSourceAnchor64=VALUES(userSourceAnchor64), userSourceAnchor=VALUES(userSourceAnchor), mobilePhone=VALUES(mobilePhone), jobTitle=VALUES(jobTitle), azureId=VALUES(azureId), salary=VALUES(salary), defaultDivision=VALUES(defaultDivision), managerUid=VALUES(managerUid), managerName=VALUES(managerName)`;
+  const q = `INSERT INTO Profiles (${profilesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE surname=VALUES(surname), givenName=VALUES(givenName), openingDateTimeOff=VALUES(openingDateTimeOff), openingOP=VALUES(openingOP), openingOV=VALUES(openingOV), untrackedTimeOff=VALUES(untrackedTimeOff), timestamp=UTC_TIMESTAMP(), defaultChargeOutRate=VALUES(defaultChargeOutRate), email=VALUES(email), userSourceAnchor64=VALUES(userSourceAnchor64), userSourceAnchor=VALUES(userSourceAnchor), mobilePhone=VALUES(mobilePhone), jobTitle=VALUES(jobTitle), azureId=VALUES(azureId), salary=VALUES(salary), defaultDivision=VALUES(defaultDivision), managerUid=VALUES(managerUid), managerName=VALUES(managerName), timeSheetExpected=VALUES(timeSheetExpected), payrollId=VALUES(payrollId), offRotation=VALUES(offRotation), personalVehicleInsuranceExpiry=VALUES(personalVehicleInsuranceExpiry)`;
   try {
     await mysqlConnection.query(q, [insertValues]);
   } catch (error) {
