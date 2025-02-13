@@ -347,6 +347,13 @@ const router = createRouter({
               component: PurchaseOrderRequestsEdit,
             },
             {
+              meta: { showInUi: true, uiName: "All" },
+              path: "all",
+              name: "All Purchase Orders",
+              props: { requests: false, all: true },
+              component: PurchaseOrderRequestsList,
+            },
+            {
               path: ":id/edit",
               props: (route) => {
                 return { id: route.params.id, collectionName: "PurchaseOrderRequests" };

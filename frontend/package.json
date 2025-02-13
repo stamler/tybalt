@@ -1,6 +1,6 @@
 {
   "name": "tybalt-frontend",
-  "version": "0.16.3",
+  "version": "0.16.4",
   "private": true,
   "scripts": {
     "copyconfig": "cp ../config.ts src/config.ts",

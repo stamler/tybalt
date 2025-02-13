@@ -92,6 +92,12 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  all: {
+    // This prop is only used if requests is false. If true, the user will see
+    // all purchase orders, not just their own.
+    type: Boolean,
+    default: false,
+  },
 });
 
 const rejectModal = ref<typeof RejectModal | null>(null);
@@ -269,7 +275,7 @@ let lists:DSListConfig[];
 
 // change list being displayed based on props.requests
 watch(
-  () => props.requests,
+  [() => props.requests, () => props.all],
   () => {
     if (props.requests) {
       lists = [
@@ -302,7 +308,9 @@ watch(
       lists = [
         {
           header: "My Purchase Orders",
-          query: query(purchaseOrders, where("creatorUid", "==", user.uid)),
+          // if props.all is true, query for all purchase orders, otherwise only
+          // those created by the user
+          query: props.all ? query(purchaseOrders) : query(purchaseOrders, where("creatorUid", "==", user.uid)),
           actions: [
             {
               type: "add",
