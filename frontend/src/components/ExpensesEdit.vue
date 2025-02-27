@@ -463,7 +463,8 @@ const updateAttachment = async function (event: Event) {
         // otherwise set a flag and save the ref to item
         // let url;
         try {
-          /*url = */ await getDownloadURL(storageRef(storage, pathReference));
+          const url = await getDownloadURL(storageRef(storage, pathReference));
+          console.log(`Previous upload URL ${url}`);
           attachmentPreviouslyUploaded = true;
         } catch (error) {
           const err = error as StorageError;
