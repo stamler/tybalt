@@ -20,4 +20,4 @@ SELECT payrollId,
   managerName "Approved By"
 FROM ExpensePayablesShell e
 WHERE e.committedWeekEnding = ?
-ORDER BY e.date
+ORDER BY e.date, payrollId, mergedTotal
