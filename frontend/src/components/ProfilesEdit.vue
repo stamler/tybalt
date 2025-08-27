@@ -14,6 +14,17 @@
       />
     </span>
     <span class="field">
+      <label for="defaultBranch">Default Branch</label>
+      <select class="grow" name="defaultBranch" v-model="item.defaultBranch">
+        <option value="ThunderBay">ThunderBay</option>
+        <option value="FortFrances">FortFrances</option>
+        <option value="Kenora">Kenora</option>
+        <option value="Ottawa">Ottawa</option>
+        <option value="Collingwood">Collingwood</option>
+        <option value="KitchenerWaterloo">KitchenerWaterloo</option>
+      </select>
+    </span>
+    <span class="field">
       <label for="datepicker">Vehicle Insurance Expiry</label>
       <datepicker
         name="datepicker"
