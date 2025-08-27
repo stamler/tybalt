@@ -290,6 +290,7 @@ export default defineComponent({
           displayName: string;
           managerUid: string;
           email: string;
+          defaultBranch: string;
           customClaims: { [x: string]: boolean };
           defaultDivision: string;
           salary: boolean;
@@ -309,6 +310,7 @@ export default defineComponent({
           displayName: this.item.displayName,
           managerUid: this.item.managerUid,
           email: this.item.email,
+          defaultBranch: this.item.defaultBranch,
           customClaims: this.item.customClaims,
           salary: this.item.salary ?? false,
           offRotation: this.item.offRotation ?? false,

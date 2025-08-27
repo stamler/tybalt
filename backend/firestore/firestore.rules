@@ -376,8 +376,9 @@ service cloud.firestore {
       return
         nd.keys().hasAll(["email", "displayName", "payrollId", "salary"]) &&
         nd.diff(resource.data).affectedKeys().hasOnly([
-          "bot", "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff", "workWeekHours", "defaultChargeOutRate"
+          "bot", "managerUid", "alternateManager", "displayName","email","customClaims", "allowPersonalReimbursement", "skipMinTimeCheckOnNextBundle", "doNotAcceptSubmissions", "defaultDivision", "payrollId", "salary", "personalVehicleInsuranceExpiry", "timeSheetExpected", "offRotation", "untrackedTimeOff", "workWeekHours", "defaultChargeOutRate", "defaultBranch"
         ]) &&
+        (nd.defaultBranch is string || isMissing("defaultBranch")) &&
         (
           (nd.bot is string && newDoc().bot.size() > 2) || isMissing("bot")
         ) &&
