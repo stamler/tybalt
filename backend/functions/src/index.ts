@@ -67,13 +67,13 @@ exports.algoliaUpdateDivisionsIndex = functions.firestore
   });
 
 const writeCreated = function (
-    snap: admin.firestore.DocumentSnapshot,
-    context: functions.EventContext
-  ) {
-    return snap.ref.set(
-      { created: admin.firestore.FieldValue.serverTimestamp() },
-      { merge: true }
-    );
+  snap: admin.firestore.DocumentSnapshot,
+  context: functions.EventContext
+) {
+  return snap.ref.set(
+    { created: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
 };
 // Write the weekEnding on TimeEntries, TimeAmendments, and Expenses
 exports.timeEntriesWeekEnding = functions.firestore
@@ -93,7 +93,7 @@ exports.expensesCommittedWeekEnding = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (change, context) => { await writeWeekEnding(change, context, "commitTime", "committedWeekEnding") });
 
-  // Write the created timestamp on created Documents
+// Write the created timestamp on created Documents
 exports.computersCreatedDate = functions.firestore
   .document("Computers/{computerId}")
   .onCreate(writeCreated);

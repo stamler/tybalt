@@ -11,7 +11,7 @@ const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json"
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 async function expireMsGraphDataUpdated() {
-  console.log(`Expiring all profiles with current msGraphDataUpdated field ...`);
+  console.log("Expiring all profiles with current msGraphDataUpdated field ...");
   const db = admin.firestore();
 
   // get all Profiles documents with msGraphDataUpdated field

@@ -15,10 +15,10 @@ const uidMap = JSON.parse(fs.readFileSync("uid-map.json", "utf8"));
 setManagerUid().then((vals) => {
   process.exit(0);
 })
-.catch(err => {
-  console.error(err)
-  process.exit(1)
-});
+  .catch(err => {
+    console.error(err)
+    process.exit(1)
+  });
 
 async function setManagerUid() {
   const firestore = admin.firestore();

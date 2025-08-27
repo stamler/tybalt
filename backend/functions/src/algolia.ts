@@ -56,7 +56,7 @@ export async function updateAlgoliaIndex({
   // when provided with a data object. The data object is the afterData
   // object.
   if (searchKeysFunction !== undefined) {
-    functions.logger.info(`searchKeys function provided. Creating searchKeys field`);
+    functions.logger.info("searchKeys function provided. Creating searchKeys field");
     afterData.searchKeys = searchKeysFunction(change.after);
   }
 

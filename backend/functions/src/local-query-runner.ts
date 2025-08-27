@@ -32,20 +32,20 @@ export async function runThem() {
     .where("timetype","==","OV")
     .get();
     
-    querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
-      usedOV += amendSnap.get("hours");
-    });
+  querySnapTimeAmendmentsOV.docs.map((amendSnap) => {
+    usedOV += amendSnap.get("hours");
+  });
 
-    const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
+  const querySnapTimeAmendmentsOP = await db.collection("TimeAmendments")
     .where("uid", "==", "0Eb8siijQShe2x29cZmIKYAvIYI3")
     .where("committed", "==", true)
     .where("committedWeekEnding", ">", openingDate)
     .where("timetype","==","OP")
     .get();
 
-    querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
-      usedOP += amendSnap.get("hours");
-    });
+  querySnapTimeAmendmentsOP.docs.map((amendSnap) => {
+    usedOP += amendSnap.get("hours");
+  });
 
   // the first TimeSheets doc in the query is the latest so will have
   // the latest weekEnding for reporting effective date to the user

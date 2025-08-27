@@ -34,7 +34,7 @@ ajv.addKeyword("removeIfFails", {
         delete data${it.dataLevel - 1 || ""}[${it.dataPathArr[it.dataLevel]}];
       }`;
     }
-    return ``;
+    return "";
     // TODO: test validation-time code and branching
   },
   metaSchema: { type: "boolean" },
@@ -114,7 +114,7 @@ export const rawLogins = functions.https.onRequest(async (req: functions.https.R
     }
     if (reqSecret !== appSecret) {
       return res.status(401).send(
-        `request secret doesn't match expected`
+        "request secret doesn't match expected"
       );
     }
   }
@@ -240,56 +240,56 @@ async function getUserRef(d: ValidLogin) {
 export const rawLoginsCleanup = functions.firestore
   .document("RawLogins/{loginId}")
   .onCreate(async (
-  snapshot: admin.firestore.DocumentSnapshot, 
-  context: functions.EventContext
-) =>{
-  const data = snapshot.data();
-  const db = admin.firestore();
+    snapshot: admin.firestore.DocumentSnapshot, 
+    context: functions.EventContext
+  ) =>{
+    const data = snapshot.data();
+    const db = admin.firestore();
 
-  if (data === undefined) {
-    throw new Error("cleanup() failed because the DocumentSnapshot is undefined");
-  }
-
-  functions.logger.info(`cleanup ${data.computerName}`);
-  // Get the latest rawLogin with specified computerName
-  const latest_item_snapshot = await db
-    .collection("RawLogins")
-    .where("computerName", "==", data.computerName)
-    .orderBy("created", "desc")
-    .limit(1)
-    .get();
-
-  if (latest_item_snapshot.empty) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "The provided computerName doesn't exist"
-    );
-  }
-
-  // Get previous rawLogin with specified computerName for deletion
-  const old_items_snapshot = await db
-    .collection("RawLogins")
-    .where("computerName", "==", data.computerName)
-    .where("created", "<", latest_item_snapshot.docs[0].data().created)
-    .orderBy("created", "desc")
-    .get();
-
-  if (old_items_snapshot.size > 0) {
-    // Do the deletion here
-    const batch = db.batch();
-    old_items_snapshot.forEach((element) => {
-      batch.delete(element.ref);
-    });
-    try {
-      await batch.commit();
-      return `Deleted ${old_items_snapshot.size} entries of ${
-        data.computerName
-      } prior to ${latest_item_snapshot.docs[0].data().created.toDate()}`;
-    } catch (error: unknown) {
-      const typedError = error as Error;
-      return typedError.message;
+    if (data === undefined) {
+      throw new Error("cleanup() failed because the DocumentSnapshot is undefined");
     }
-  } else {
-    return `No items to cleanup for computerName ${data.computerName}`;
-  }
-});
+
+    functions.logger.info(`cleanup ${data.computerName}`);
+    // Get the latest rawLogin with specified computerName
+    const latest_item_snapshot = await db
+      .collection("RawLogins")
+      .where("computerName", "==", data.computerName)
+      .orderBy("created", "desc")
+      .limit(1)
+      .get();
+
+    if (latest_item_snapshot.empty) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "The provided computerName doesn't exist"
+      );
+    }
+
+    // Get previous rawLogin with specified computerName for deletion
+    const old_items_snapshot = await db
+      .collection("RawLogins")
+      .where("computerName", "==", data.computerName)
+      .where("created", "<", latest_item_snapshot.docs[0].data().created)
+      .orderBy("created", "desc")
+      .get();
+
+    if (old_items_snapshot.size > 0) {
+    // Do the deletion here
+      const batch = db.batch();
+      old_items_snapshot.forEach((element) => {
+        batch.delete(element.ref);
+      });
+      try {
+        await batch.commit();
+        return `Deleted ${old_items_snapshot.size} entries of ${
+          data.computerName
+        } prior to ${latest_item_snapshot.docs[0].data().created.toDate()}`;
+      } catch (error: unknown) {
+        const typedError = error as Error;
+        return typedError.message;
+      }
+    } else {
+      return `No items to cleanup for computerName ${data.computerName}`;
+    }
+  });

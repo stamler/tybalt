@@ -23,9 +23,9 @@ import { ChangeJson } from "firebase-functions/lib/common/change";
 export const cleanUpOrphanedAttachment = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (
-  change: ChangeJson,
-  context: functions.EventContext,
-) =>{
+    change: ChangeJson,
+    context: functions.EventContext,
+  ) =>{
     const beforeData = change.before.data();
     const afterData = change.after.data();
     let beforeAttachment: string;
@@ -49,7 +49,7 @@ export const cleanUpOrphanedAttachment = functions.firestore
     }
     // document was just created, do nothing
     return;
-});
+  });
 
 /*
   If an expense is committed, add it to the expenses property of the
@@ -66,7 +66,7 @@ export const updateExpenseTracking = functions.runWith({memory: "1GB", timeoutSe
     const beforeCommitted: boolean = beforeData?.committed ?? false;
     const weekEnding: Date = beforeData?.committedWeekEnding?.toDate() ?? afterData?.committedWeekEnding?.toDate();
     if ( weekEnding === undefined ) {
-      console.log(`failed to get weekEnding, terminating`);
+      console.log("failed to get weekEnding, terminating");
       return;      
     }
 

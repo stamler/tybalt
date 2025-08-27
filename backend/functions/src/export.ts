@@ -9,7 +9,7 @@ export const scheduledFirestoreExport = functions.pubsub
   .schedule("59 23 * * 2,4,6")
   .onRun((context) => {
     const projectId = (process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT) as string;
-    const databaseName = client.databasePath(projectId, '(default)');
+    const databaseName = client.databasePath(projectId, "(default)");
 
     return client.exportDocuments({
       name: databaseName,
@@ -17,9 +17,9 @@ export const scheduledFirestoreExport = functions.pubsub
       collectionIds: [],
     }).then(responses => {
       const response = responses[0];
-      console.log(`Operation Name: ${response['name']}`);
+      console.log(`Operation Name: ${response["name"]}`);
     }).catch(err => {
       console.error(err);
       throw new Error("Export operation failed");
     });
-});
+  });

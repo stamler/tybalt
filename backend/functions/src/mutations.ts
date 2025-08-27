@@ -1,8 +1,8 @@
 // Cloud functions to receive mutation requests from the client and to handle
 // callbacks from the Azure Automation service.
 
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
 import { getAuthObject, requestHasValidSecret } from "./utilities";
 
 // The supported mutations are:
@@ -77,14 +77,14 @@ function isExistingADUserData(data: any): data is ExistingADUserData {
   const centralOfficeInt = parseInt(data.centralOffice, 10);
   const stationInt = parseInt(data.station, 10);
   if (
-      typeof data.surname === "string" && data.surname.length > 2 &&
+    typeof data.surname === "string" && data.surname.length > 2 &&
       typeof data.givenName === "string" && data.givenName.length > 2 &&
       typeof data.department === "string" &&
       typeof data.title === "string" &&
       areaCodeInt > 199 && areaCodeInt < 1000 &&
       centralOfficeInt > 199 && centralOfficeInt < 1000 &&
       stationInt > 0 && stationInt < 10000
-    ) {
+  ) {
     return true;
   }
   return false;
@@ -94,7 +94,7 @@ function isNewADUserData(data: any): data is NewADUserData {
   const centralOfficeInt = parseInt(data.centralOffice, 10);
   const stationInt = parseInt(data.station, 10);
   if (
-      typeof data.defaultChargeOutRate === "number" && data.defaultChargeOutRate >= 40 && data.defaultChargeOutRate < 500 &&
+    typeof data.defaultChargeOutRate === "number" && data.defaultChargeOutRate >= 40 && data.defaultChargeOutRate < 500 &&
       typeof data.surname === "string" && data.surname.length > 2 &&
       typeof data.givenName === "string" && data.givenName.length > 2 &&
       typeof data.department === "string" &&
@@ -108,7 +108,7 @@ function isNewADUserData(data: any): data is NewADUserData {
       typeof data.defaultDivision === "string" && data.defaultDivision.length > 0 &&
       (data.remuneration === "Hourly" || data.remuneration === "Salary") &&
       (data.license === "O365_BUSINESS_ESSENTIALS" || data.license === "O365_BUSINESS_PREMIUM" || data.license === "SPB")
-    ) {
+  ) {
     return true;
   }
   return false;
@@ -253,7 +253,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
     if (userDoc.get("currentMutationVerb") !== undefined) {
       throw new functions.https.HttpsError(
         "already-exists",
-        `A mutation (${userDoc.get('currentMutationVerb')}) already exists for the user. Please wait for it to complete.`
+        `A mutation (${userDoc.get("currentMutationVerb")}) already exists for the user. Please wait for it to complete.`
       );
     }
 
@@ -338,7 +338,7 @@ export const addMutation = functions.https.onCall(async (data: unknown, context:
           if (userDoc.get("currentMutationVerb") !== undefined) {
             throw new functions.https.HttpsError(
               "already-exists",
-              `A mutation (${userDoc.get('currentMutationVerb')}) already exists for the user. Please wait for it to complete.`
+              `A mutation (${userDoc.get("currentMutationVerb")}) already exists for the user. Please wait for it to complete.`
             );
           }
           const newMutationDocRef = db.collection("UserMutations").doc();
@@ -395,7 +395,7 @@ export const deleteMutation = functions.https.onCall(async (data: unknown, conte
         if (status !== "unapproved" && status !== "pending" && status !== "complete") {
           throw new functions.https.HttpsError(
             "failed-precondition",
-            `Only mutations with status unapproved, pending or completed can be deleted.`
+            "Only mutations with status unapproved, pending or completed can be deleted."
           );
         }
         // This update shouldn't be done if the mutation is a create operation
@@ -424,7 +424,7 @@ export const dispatchMutations = functions.https.onRequest(async (req: functions
   // authenticate the caller
   if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
     return res.status(401).send(
-      `request secret doesn't match expected`
+      "request secret doesn't match expected"
     );
   }
 
@@ -471,7 +471,7 @@ export const mutationComplete = functions.https.onRequest(async (req: functions.
   // authenticate the caller
   if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
     return res.status(401).send(
-      `request secret doesn't match expected`
+      "request secret doesn't match expected"
     );
   }
 

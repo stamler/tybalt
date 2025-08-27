@@ -8,7 +8,7 @@ export async function tallyAndValidate(
   profile: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>,
   timeEntries: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>, 
   weekEnding: Date,
-  ) {
+) {
 
   const db = admin.firestore();
 
@@ -293,7 +293,7 @@ export async function tallyAndValidate(
       if (Object.prototype.hasOwnProperty.call(nonWorkHoursTally, x)) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          `Staff with untracked time off are only permitted to create TimeEntries of type “Hours Worked” or “Training”`
+          "Staff with untracked time off are only permitted to create TimeEntries of type “Hours Worked” or “Training”"
         )
       }  
     });
@@ -364,16 +364,16 @@ export async function tallyAndValidate(
   // throw if usedOP isn't a positive number or undefined
   const usedOPRaw = profile.get("usedOP");
   if (
-      usedOPRaw !== undefined && 
+    usedOPRaw !== undefined && 
       (
         typeof usedOPRaw !== "number" || 
         usedOPRaw < 0
       )
-    ) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "The Profile for this user doesn't contain a valid usedOP value"
-      )
+  ) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The Profile for this user doesn't contain a valid usedOP value"
+    )
   }
   // if usedOP is undefined, set it to zero
   const usedOP = usedOPRaw || 0;

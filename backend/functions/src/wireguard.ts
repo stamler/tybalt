@@ -210,42 +210,42 @@ export const wgDeleteClient = functions.https.onCall(async (data: unknown, conte
 
 // deliver the peers list to the wireguard server at regular intervals
 export const wgPeersIni = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
-    // authenticate the caller
-    if (!requestHasValidSecret(req, "wireguard.secret")) {
-      // TODO: consider not returning anything here and just timing out
-      // return;
-      return res.status(401).send(
-        `request secret doesn't match expected`
-      );
-    }
+  // authenticate the caller
+  if (!requestHasValidSecret(req, "wireguard.secret")) {
+    // TODO: consider not returning anything here and just timing out
+    // return;
+    return res.status(401).send(
+      "request secret doesn't match expected"
+    );
+  }
   
-    if (req.method !== "GET") {
-      res.header("Allow", "GET");
-      return res.status(405).send();
-    }
+  if (req.method !== "GET") {
+    res.header("Allow", "GET");
+    return res.status(405).send();
+  }
   
-    // get the list of enabled peers
-    const wireguardClients = await db.collection("WireGuardClients").where("enabled", "==", true).get();
-    const peers = wireguardClients.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        displayName: data.displayName,
-        computerName: data.computerName,
-        PublicKey: data.PublicKey,
-        AllowedIPs: `${doc.id}/32`,
-      };
-    });
+  // get the list of enabled peers
+  const wireguardClients = await db.collection("WireGuardClients").where("enabled", "==", true).get();
+  const peers = wireguardClients.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      displayName: data.displayName,
+      computerName: data.computerName,
+      PublicKey: data.PublicKey,
+      AllowedIPs: `${doc.id}/32`,
+    };
+  });
 
-    // generate the wireguard config peers.conf file (ini format) and return it
-    const config = peers.map((peer) => {
-      return `[Peer]
+  // generate the wireguard config peers.conf file (ini format) and return it
+  const config = peers.map((peer) => {
+    return `[Peer]
 # ${peer.displayName} - ${peer.computerName}
 PublicKey = ${peer.PublicKey}
 AllowedIPs = ${peer.AllowedIPs}
 `;
-    });
-    res.setHeader('content-type', 'text/plain');
-    return res.status(200).send(config.join("\n"));
+  });
+  res.setHeader("content-type", "text/plain");
+  return res.status(200).send(config.join("\n"));
 });
 
 // receive the wireguard client's public key and store it in the config

@@ -26,7 +26,7 @@ export const scheduledSubmitReminder = functions.pubsub
       await db.collection("Emails").add({
         toUids: [profile.id],
         message: {
-          subject: `Please submit a timesheet for last week`,
+          subject: "Please submit a timesheet for last week",
           text: 
             `Hi ${ profile.get("givenName")},\n\n` +
             `Your time sheet for the week ending ${
@@ -36,7 +36,7 @@ export const scheduledSubmitReminder = functions.pubsub
         },
       });
     }
-});
+  });
 
 // Send reminder emails to managers who have submitted expenses they must approve at 9am on Thu and Fri "0 12 * * 4,5"
 export const scheduledExpenseApprovalReminder = functions.pubsub
@@ -63,54 +63,54 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
       await db.collection("Emails").add({
         toUids: [profile.id],
         message: {
-          subject: `There are expenses awaiting your approval`,
+          subject: "There are expenses awaiting your approval",
           text: 
             `Hi ${ profile.get("givenName")},\n\n` +
-            `One or more of the staff who report to you have submitted ` +
-            `expenses requiring your approval. Please approve them at your ` + 
-            `earliest convenience by visiting ` + 
+            "One or more of the staff who report to you have submitted " +
+            "expenses requiring your approval. Please approve them at your " + 
+            "earliest convenience by visiting " + 
             `${APP_URL}/expense/entries/pending\n\n` +
             "- Tybalt",
         },
       });
     }
-});
+  });
 
 // Send reminder emails to managers who have submitted timesheets they must approve at 9am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledTimeSheetApprovalReminder = functions.pubsub
-.schedule("0 12 * * 2,3,4")
-.timeZone(APP_NATIVE_TZ)
-.onRun(async (context) => {
-  const db = admin.firestore();
-  const pendingDocuments = await db.collection("TimeSheets")
-    .where("submitted","==", true)
-    .where("approved", "==", false)
-    .get();
-  const managerUids = [...new Set(pendingDocuments.docs.map(x => x.get("managerUid")))];
-  functions.logger.info("creating time sheet approval reminders");
-  for (const managerUid of managerUids) {
-    const profile = await db.collection("Profiles").doc(managerUid).get();
-    if (!profile.exists) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        `The profile doesn't exist for managerUid ${managerUid}`
-      );
-    }
-    await db.collection("Emails").add({
-      toUids: [profile.id],
-      message: {
-        subject: `There are time sheets awaiting your approval`,
-        text: 
+  .schedule("0 12 * * 2,3,4")
+  .timeZone(APP_NATIVE_TZ)
+  .onRun(async (context) => {
+    const db = admin.firestore();
+    const pendingDocuments = await db.collection("TimeSheets")
+      .where("submitted","==", true)
+      .where("approved", "==", false)
+      .get();
+    const managerUids = [...new Set(pendingDocuments.docs.map(x => x.get("managerUid")))];
+    functions.logger.info("creating time sheet approval reminders");
+    for (const managerUid of managerUids) {
+      const profile = await db.collection("Profiles").doc(managerUid).get();
+      if (!profile.exists) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `The profile doesn't exist for managerUid ${managerUid}`
+        );
+      }
+      await db.collection("Emails").add({
+        toUids: [profile.id],
+        message: {
+          subject: "There are time sheets awaiting your approval",
+          text: 
           `Hi ${ profile.get("givenName")},\n\n` +
-          `One or more of the staff who report to you have submitted ` +
-          `time sheets requiring your approval. Please approve them at your ` + 
-          `earliest convenience by visiting ` + 
+          "One or more of the staff who report to you have submitted " +
+          "time sheets requiring your approval. Please approve them at your " + 
+          "earliest convenience by visiting " + 
           `${APP_URL}/time/sheets/pending\n\n` +
           "- Tybalt",
-      },
-    });
-  }
-});
+        },
+      });
+    }
+  });
 
 // delete emails more than OLD_AGE_DAYS old at midnight
 // TODO: if the batch isn't complete before the next run, it's possible that
@@ -138,7 +138,7 @@ export const scheduledEmailCleanup = functions.pubsub
       batches.push(batch.commit());
     }
     return Promise.all(batches);
-});
+  });
 
 // onUpdate of TimeSheets or Expenses document
 export async function emailOnReject(
@@ -151,7 +151,7 @@ export async function emailOnReject(
 
   // Return with no action if the Document wasn't just rejected.
   if (!(
-      afterData.rejected !== beforeData.rejected && 
+    afterData.rejected !== beforeData.rejected && 
       afterData.rejected === true
   )) { return; }
 
@@ -164,11 +164,11 @@ export async function emailOnReject(
     await db.collection("Emails").add({
       toUids: [afterData.uid],
       message: {
-        subject: `Your time sheet was rejected`,
+        subject: "Your time sheet was rejected",
         text: `Hi ${ afterData.givenName },\n\n` +
         `Your time sheet for the week ending ${ weekEndingString} was rejected by ${
-        afterData.rejectorName }. The following reason was provided: \n\n"${
-        afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
+          afterData.rejectorName }. The following reason was provided: \n\n"${
+          afterData.rejectionReason }"\n\nPlease edit your time sheet then resubmit as` +
         ` soon as possible by visiting ${APP_URL}/time/sheets/list\n\n- Tybalt`,
       },
     });
@@ -181,7 +181,7 @@ export async function emailOnReject(
         text: `Hi ${ afterData.rejectorName },\n\n` +
         `You rejected ${ afterData.displayName }'s time sheet for the week ` +
         `ending ${weekEndingString}. You provided the following reason:\n\n"${
-        afterData.rejectionReason }"\n\n- Tybalt`,
+          afterData.rejectionReason }"\n\n- Tybalt`,
       },
     });
 
@@ -194,7 +194,7 @@ export async function emailOnReject(
           text: `Hi ${ afterData.managerName },\n\n` +
           `${afterData.rejectorName} rejected ${ afterData.displayName }'s time sheet for the week ` +
           `ending ${weekEndingString}. They provided the following reason:\n\n"${
-          afterData.rejectionReason }"\n\n- Tybalt`,
+            afterData.rejectionReason }"\n\n- Tybalt`,
         },
       });
     }
@@ -207,12 +207,12 @@ export async function emailOnReject(
     await db.collection("Emails").add({
       toUids: [afterData.uid],
       message: {
-        subject: `Your expense was rejected`,
+        subject: "Your expense was rejected",
         text: `Hi ${ afterData.givenName },\n\n` +
         `Your expense with payment type ${afterData.paymentType} dated ${
-        expenseDateString } was rejected by ${ afterData.rejectorName }. ` +
+          expenseDateString } was rejected by ${ afterData.rejectorName }. ` +
         `The following reason was provided: \n\n"${
-        afterData.rejectionReason }"\n\nPlease edit your expense as required by visiting ${APP_URL}/expense/entries/list` +
+          afterData.rejectionReason }"\n\nPlease edit your expense as required by visiting ${APP_URL}/expense/entries/list` +
         "\n\n- Tybalt",
       },
     });
@@ -224,7 +224,7 @@ export async function emailOnReject(
         subject: `You rejected ${ afterData.displayName }'s expense`,
         text: `Hi ${ afterData.rejectorName },\n\n` +
         `You rejected ${ afterData.displayName }'s expense with payment type ${
-        afterData.paymentType} dated ${expenseDateString }. ` +
+          afterData.paymentType} dated ${expenseDateString }. ` +
         `You provided the following reason: \n\n"${afterData.rejectionReason 
         }"\n\n- Tybalt`,
       },
@@ -238,9 +238,9 @@ export async function emailOnReject(
           subject: `${afterData.rejectorName} rejected ${ afterData.displayName }'s expense`,
           text: `Hi ${ afterData.managerName },\n\n` +
           `${afterData.rejectorName} rejected ${ afterData.displayName }'s expense with payment type ${
-          afterData.paymentType} dated ${expenseDateString }. ` + 
+            afterData.paymentType} dated ${expenseDateString }. ` + 
           `They provided the following reason:\n\n"${
-          afterData.rejectionReason }"\n\n- Tybalt`,
+            afterData.rejectionReason }"\n\n- Tybalt`,
         },
       });
     }
@@ -265,7 +265,7 @@ export async function emailOnShare(
   if (
     afterViewerIds.length === beforeViewerIds.length &&
     difference.length === 0
-    ) {
+  ) {
     return;
   }
   
@@ -286,7 +286,7 @@ export async function emailOnShare(
           subject: `${profile.get("displayName")}'s time sheet was shared with you`,
           text: `Hi ${ viewerProfile.get("givenName")},\n\n` +
           `${profile.get("displayName")}'s time sheet for the week ending ${ 
-          weekEndingString } has been shared with you by ${ profile.get("managerName") 
+            weekEndingString } has been shared with you by ${ profile.get("managerName") 
           }. You can review timesheets that have been shared with you by` +
           ` visiting ${APP_URL}/time/sheets/shared\n\n- Tybalt`,
         },

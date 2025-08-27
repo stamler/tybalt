@@ -546,125 +546,125 @@ export const lockTimesheet = functions.https.onCall(async (data: unknown, contex
 // with the locked timeSheets and amendments. Must be called by another
 // authenticated function.
 export async function exportJson(data: unknown) {
-    // Get locked TimeSheets
-    const db = admin.firestore();
+  // Get locked TimeSheets
+  const db = admin.firestore();
 
-    // Validate the data or throw
-    // use a User Defined Type Guard
-    if (!isDocIdObject(data)) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "The provided data doesn't contain a document id"
-      );
-    }
+  // Validate the data or throw
+  // use a User Defined Type Guard
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data doesn't contain a document id"
+    );
+  }
 
-    const trackingSnapshot = await db
-      .collection("TimeTracking")
-      .doc(data.id)
-      .get();
-    const timeSheetsSnapshot = await db
-      .collection("TimeSheets")
-      .where("approved", "==", true)
-      .where("locked", "==", true)
-      .where("weekEnding", "==", trackingSnapshot.get("weekEnding"))
-      .get();
+  const trackingSnapshot = await db
+    .collection("TimeTracking")
+    .doc(data.id)
+    .get();
+  const timeSheetsSnapshot = await db
+    .collection("TimeSheets")
+    .where("approved", "==", true)
+    .where("locked", "==", true)
+    .where("weekEnding", "==", trackingSnapshot.get("weekEnding"))
+    .get();
 
-    // delete internal properties for each timeSheet
-    const timeSheets = timeSheetsSnapshot.docs.map((doc) => {
-      const docData = doc.data();
-      delete docData.submitted;
-      delete docData.approved;
-      delete docData.locked;
-      delete docData.rejected;
-      delete docData.rejectorId;
-      delete docData.rejectorName;
-      delete docData.rejectionReason;
-      docData.weekEnding = docData.weekEnding.toDate();
-      docData.entries.map((entry: TimeEntry) => {
-        const cleaned: any = entry;
-        delete cleaned.weekEnding;
-        cleaned.date = entry.date.toDate();
-        return cleaned;
-      });
-      return docData;
+  // delete internal properties for each timeSheet
+  const timeSheets = timeSheetsSnapshot.docs.map((doc) => {
+    const docData = doc.data();
+    delete docData.submitted;
+    delete docData.approved;
+    delete docData.locked;
+    delete docData.rejected;
+    delete docData.rejectorId;
+    delete docData.rejectorName;
+    delete docData.rejectionReason;
+    docData.weekEnding = docData.weekEnding.toDate();
+    docData.entries.map((entry: TimeEntry) => {
+      const cleaned: any = entry;
+      delete cleaned.weekEnding;
+      cleaned.date = entry.date.toDate();
+      return cleaned;
     });
+    return docData;
+  });
 
-    // Get any outstanding amendments to include in the export.
-    const amendmentsSnapshot = await db
+  // Get any outstanding amendments to include in the export.
+  const amendmentsSnapshot = await db
     .collection("TimeAmendments")
     .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
     .get();
   
-    // prep internal properties for export
-    const amendments = amendmentsSnapshot.docs.map((doc) => {
-      const docData = doc.data();
-      docData.created = docData.created.toDate();
-      docData.commitTime = docData.commitTime.toDate();
-      docData.committedWeekEnding = docData.committedWeekEnding.toDate();
-      docData.weekEnding = docData.weekEnding.toDate();
-      docData.date = docData.date.toDate();
-      docData.amendment = true;
-      return docData;
-    });
+  // prep internal properties for export
+  const amendments = amendmentsSnapshot.docs.map((doc) => {
+    const docData = doc.data();
+    docData.created = docData.created.toDate();
+    docData.commitTime = docData.commitTime.toDate();
+    docData.committedWeekEnding = docData.committedWeekEnding.toDate();
+    docData.weekEnding = docData.weekEnding.toDate();
+    docData.date = docData.date.toDate();
+    docData.amendment = true;
+    return docData;
+  });
   
-    // generate JSON output
-    const output = JSON.stringify(timeSheets.concat(amendments));
+  // generate JSON output
+  const output = JSON.stringify(timeSheets.concat(amendments));
 
-    // make the filename based on milliseconds since UTC epoch
-    const filename = `${trackingSnapshot
-      .get("weekEnding")
-      .toDate()
-      .getTime()}.json`;
-    const tempLocalFileName = path.join(os.tmpdir(), filename);
+  // make the filename based on milliseconds since UTC epoch
+  const filename = `${trackingSnapshot
+    .get("weekEnding")
+    .toDate()
+    .getTime()}.json`;
+  const tempLocalFileName = path.join(os.tmpdir(), filename);
 
-    return new Promise<void>((resolve, reject) => {
-      //write contents of json into the temp file
-      fs.writeFile(tempLocalFileName, output, (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+  return new Promise<void>((resolve, reject) => {
+    //write contents of json into the temp file
+    fs.writeFile(tempLocalFileName, output, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
 
-        const bucket = admin.storage().bucket();
-        const destination = "TimeTrackingExports/" + filename;
-        const newToken = uuidv4();
+      const bucket = admin.storage().bucket();
+      const destination = "TimeTrackingExports/" + filename;
+      const newToken = uuidv4();
 
-        // upload the file into the current firebase project default bucket
-        bucket
-          .upload(tempLocalFileName, {
-            destination,
-            // Workaround: firebase console not generating token for files
-            // uploaded via Firebase Admin SDK
-            // https://github.com/firebase/firebase-admin-node/issues/694
+      // upload the file into the current firebase project default bucket
+      bucket
+        .upload(tempLocalFileName, {
+          destination,
+          // Workaround: firebase console not generating token for files
+          // uploaded via Firebase Admin SDK
+          // https://github.com/firebase/firebase-admin-node/issues/694
+          metadata: {
             metadata: {
-              metadata: {
-                firebaseStorageDownloadTokens: newToken,
-              },
+              firebaseStorageDownloadTokens: newToken,
             },
-          })
-          .then(async (uploadResponse) => {
-            // put the path to the new file into the TimeTracking document
-            await trackingSnapshot.ref.update({
-              json: createPersistentDownloadUrl(
-                admin.storage().bucket().name,
-                destination,
-                newToken
-              ),
-            });
-            return resolve();
-          })
-          .catch((err) => reject(err));
-      });
+          },
+        })
+        .then(async (uploadResponse) => {
+          // put the path to the new file into the TimeTracking document
+          await trackingSnapshot.ref.update({
+            json: createPersistentDownloadUrl(
+              admin.storage().bucket().name,
+              destination,
+              newToken
+            ),
+          });
+          return resolve();
+        })
+        .catch((err) => reject(err));
     });
+  });
 };
 
 // call exportJson as soon as a TimeAmendment is committed
 export const exportOnAmendmentCommit = functions.firestore
   .document("TimeAmendments/{amendmentId}")
   .onUpdate(async(
-  change: ChangeJson,
-  context: functions.EventContext,
-) => {
+    change: ChangeJson,
+    context: functions.EventContext,
+  ) => {
     const committedWeekEnding = change.after.data().committedWeekEnding;
     if (committedWeekEnding !== undefined) {
       const timeTrackingDocRef = await getTrackingDoc(committedWeekEnding.toDate(),"TimeTracking","weekEnding");
@@ -708,17 +708,17 @@ export const commitTimeAmendment = functions.https.onCall(async (data: unknown, 
   // This does not need to be a transaction because amendments are neither
   // submitted nor approved.
   return db.collection("TimeAmendments").doc(data.id).update({
-      committed: true,
-      commitTime: admin.firestore.FieldValue.serverTimestamp(),
-      commitUid,
-      commitName,
-      salary: profile.salary,
-      payrollId: profile.payrollId,
-      // NB: The workWeekHours value on the profile may not be the same as the
-      // value at the time of the amendment.
-      workWeekHours: profile.workWeekHours === undefined ? 40 : profile.workWeekHours,
-      exported: false,
-    });
+    committed: true,
+    commitTime: admin.firestore.FieldValue.serverTimestamp(),
+    commitUid,
+    commitName,
+    salary: profile.salary,
+    payrollId: profile.payrollId,
+    // NB: The workWeekHours value on the profile may not be the same as the
+    // value at the time of the amendment.
+    workWeekHours: profile.workWeekHours === undefined ? 40 : profile.workWeekHours,
+    exported: false,
+  });
 });
 
 // create object summary of TimeSheet
@@ -755,9 +755,9 @@ export const auditTimeTracking = functions.https.onCall(async (data: unknown, co
   }
 
   const trackingSnapshot = await db
-  .collection("TimeTracking")
-  .doc(data.id)
-  .get();
+    .collection("TimeTracking")
+    .doc(data.id)
+    .get();
 
   if (!trackingSnapshot.exists) {
     throw new functions.https.HttpsError(
@@ -771,9 +771,9 @@ export const auditTimeTracking = functions.https.onCall(async (data: unknown, co
 
   // get the TimeSheets for the weekEnding date
   const timeSheetsSnapshot = await db
-  .collection("TimeSheets")
-  .where("weekEnding", "==", weekEndingTimeStamp)
-  .get();
+    .collection("TimeSheets")
+    .where("weekEnding", "==", weekEndingTimeStamp)
+    .get();
 
   functions.logger.info(`Auditing ${timeSheetsSnapshot.size} TimeSheets for weekEnding ${weekEndingTimeStamp.toDate()}`);
 

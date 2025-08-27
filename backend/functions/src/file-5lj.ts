@@ -21,7 +21,7 @@
 // Note that the Config document is initialized with an empty errors field if it
 // doesn't already exist.
 
-import * as admin from 'firebase-admin';
+import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 
 interface ApplyProcessState {
@@ -36,14 +36,14 @@ export async function applyFunctionToFirestoreCollection(
 ) {
   const db = admin.firestore();
   const batchSize = 499;
-  const stateDoc = db.collection('Config').doc('collectionBatchProcess');
+  const stateDoc = db.collection("Config").doc("collectionBatchProcess");
   const stateSnap = await stateDoc.get();
   const state: ApplyProcessState = stateSnap.exists ? (stateSnap.data() as ApplyProcessState) : { errors: [] };
   let startAt = state.startAt || null;
   let batchCount = 0;
   let successCount = 0;
 
-  functions.logger.info(`Starting batch process at document ${startAt || 'start'}`);
+  functions.logger.info(`Starting batch process at document ${startAt || "start"}`);
 
   while (true) {
     // https://firebase.google.com/docs/firestore/query-data/order-limit-data 
@@ -79,7 +79,7 @@ export async function applyFunctionToFirestoreCollection(
       successCount += querySnap.docs.length;
       batchCount++;
 
-      console.log(`Processed ${successCount} documents with ${batchCount} batches. Starting from document ${startAt || 'start'}.`);
+      console.log(`Processed ${successCount} documents with ${batchCount} batches. Starting from document ${startAt || "start"}.`);
 
       if (!hasMoreData(querySnap)) break;
 

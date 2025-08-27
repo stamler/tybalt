@@ -7,7 +7,7 @@ export const currentADDump = functions.https.onRequest(async (req: functions.htt
   // authenticate the caller
   if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
     return res.status(401).send(
-      `request secret doesn't match expected`
+      "request secret doesn't match expected"
     );
   }
 

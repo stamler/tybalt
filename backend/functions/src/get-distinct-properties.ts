@@ -19,10 +19,10 @@ if (!histoMode) {
     }
     process.exit(0);
   })
-  .catch(err => {
-    console.error(err)
-    process.exit(1)
-  });
+    .catch(err => {
+      console.error(err)
+      process.exit(1)
+    });
 }
 // make a histogram of the values where a given item's property value is treated
 // as monolithic but cleaned up
@@ -36,10 +36,10 @@ getDistinctPropertyValues(collection, property, true).then((vals) => {
   }
   process.exit(0);
 })
-.catch(err => {
-  console.error(err)
-  process.exit(1)
-});
+  .catch(err => {
+    console.error(err)
+    process.exit(1)
+  });
 
 async function getDistinctPropertyValues(collectionPath: string, propertyName: string, histogramMode = false): Promise<string[] | Map<string,number>> {
   const firestore = admin.firestore();

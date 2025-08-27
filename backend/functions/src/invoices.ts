@@ -79,9 +79,9 @@ export const createInvoice = functions.https.onCall(async (data: unknown, contex
   const newInvoiceRef = db.collection("Invoices").doc();
   await db.runTransaction(async (transaction) => {
     const existingInvoices = db
-    .collection("Invoices")
-    .where("number", "==", invoice.number)
-    .where("replaced", "==", false);
+      .collection("Invoices")
+      .where("number", "==", invoice.number)
+      .where("replaced", "==", false);
 
     return transaction.get(existingInvoices).then((existingInvoicesQuerySnap) => {
       // if there are no existing invoices, throw an error if the revisionNumber isn't 0

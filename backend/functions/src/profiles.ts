@@ -55,9 +55,9 @@ function isOpeningValuesPayload(data: any): data is OpeningValuesPayload {
   
   // validate that the openingDateTimeOff is a number
   if (!(
-      data.openingDateTimeOff !== undefined && 
+    data.openingDateTimeOff !== undefined && 
       typeof data.openingDateTimeOff === "number"
-    )) {
+  )) {
     return false;
   }
 
@@ -203,7 +203,7 @@ export const updateAuthAndManager = functions.firestore.document("Profiles/{uid}
       }
       if (!isCustomClaims(newClaims)) {
         throw new Error(
-          `The provided data isn't a valid custom claims object`
+          "The provided data isn't a valid custom claims object"
         );
       }
       promises.push(
@@ -308,7 +308,7 @@ export const updateProfileFromMSGraph = functions.https.onCall(async (data: unkn
       email: response.data.mail,
       azureId: response.data.id,
       userSourceAnchor64: response.data.onPremisesImmutableId,
-      userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, 'base64').toString("hex"),
+      userSourceAnchor: Buffer.from(response.data.onPremisesImmutableId, "base64").toString("hex"),
       jobTitle: response.data.jobTitle,
       mobilePhone: response.data.mobilePhone,
       msGraphDataUpdated: admin.firestore.FieldValue.serverTimestamp(), 
@@ -323,19 +323,19 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   .document("Profiles/{profileId}")
   .onWrite(async (change, context) => {
 
-  // Any change to a profile will trigger this function. Since the Azure Graph
-  // Data is updated on a regular basis, (the msGraphDataUpdated field) this
-  // occurs at the same interval as a downstream consequence of this.
+    // Any change to a profile will trigger this function. Since the Azure Graph
+    // Data is updated on a regular basis, (the msGraphDataUpdated field) this
+    // occurs at the same interval as a downstream consequence of this.
 
-  const db = admin.firestore();
-  functions.logger.log(`update of profile ${change.after.id} triggered Secured API Key generation for Algolia search`);
+    const db = admin.firestore();
+    functions.logger.log(`update of profile ${change.after.id} triggered Secured API Key generation for Algolia search`);
 
 
-  if (!change.after.exists) {
-    functions.logger.log(`profile ${change.after.id} was deleted, aborting.`);
-    return;
-  }
-/*
+    if (!change.after.exists) {
+      functions.logger.log(`profile ${change.after.id} was deleted, aborting.`);
+      return;
+    }
+    /*
   // if algoliaSearchKeyUpdated is after the date 14 days ago, 
   // return and do nothing. This prevents an infinite loop.
   const algoliaSearchKeyUpdated = change.after.get("algoliaSearchKeyUpdated")
@@ -344,41 +344,41 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
     return;
   } 
 */
-  // setup the Algolia client
-  const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
+    // setup the Algolia client
+    const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
 
-  functions.logger.log("Restricting Indices via tybalt claims is currently disabled.");
-  // const claimIndexMap = {
-  //   job: "tybalt_jobs",
-  //   time: "tybalt_jobs",
-  // }
+    functions.logger.log("Restricting Indices via tybalt claims is currently disabled.");
+    // const claimIndexMap = {
+    //   job: "tybalt_jobs",
+    //   time: "tybalt_jobs",
+    // }
 
-  const customClaims = change.after.get("customClaims");
-  if (customClaims === undefined) {
-    functions.logger.error(`profile ${change.after.id} has no customClaims from which to derive restrictIndices`);
-    return;
-  }
+    const customClaims = change.after.get("customClaims");
+    if (customClaims === undefined) {
+      functions.logger.error(`profile ${change.after.id} has no customClaims from which to derive restrictIndices`);
+      return;
+    }
   
-  // get the list of unique indices mapped by the profiles customClaims
-  // const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims)));
+    // get the list of unique indices mapped by the profiles customClaims
+    // const restrictIndices = Object.values(_.pick(claimIndexMap,Object.keys(customClaims)));
 
-  // Generate a secured api key using the search-only API key secret stored in functions.config().algolia.searchkey
-  // specify userToken to match the profile id (which in turn matches the firebase auth uid)
-  // specify restrictIndices here based on indices calculated from claims above 
-  // https://www.algolia.com/doc/api-reference/api-methods/generate-secured-api-key/
-  const key = client.generateSecuredApiKey(env.algolia.searchkey, {
-    userToken: change.after.id,
+    // Generate a secured api key using the search-only API key secret stored in functions.config().algolia.searchkey
+    // specify userToken to match the profile id (which in turn matches the firebase auth uid)
+    // specify restrictIndices here based on indices calculated from claims above 
+    // https://www.algolia.com/doc/api-reference/api-methods/generate-secured-api-key/
+    const key = client.generateSecuredApiKey(env.algolia.searchkey, {
+      userToken: change.after.id,
     // restrictIndices: [...new Set(restrictIndices)],
+    });
+
+    functions.logger.info(`generated algolia key for profile ${change.after.id}`);
+
+    // save the key to the ProfileSecrets doc
+    return db.collection("ProfileSecrets").doc(change.after.id).set({
+      algoliaSearchKey: key,
+      algoliaSearchKeyUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
   });
-
-  functions.logger.info(`generated algolia key for profile ${change.after.id}`);
-
-  // save the key to the ProfileSecrets doc
-  return db.collection("ProfileSecrets").doc(change.after.id).set({
-    algoliaSearchKey: key,
-    algoliaSearchKeyUpdated: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-});
 
 // This function validates that the caller has permission then receives and
 // checks new opening values for time off (PPTO and VAC) and the corresponding

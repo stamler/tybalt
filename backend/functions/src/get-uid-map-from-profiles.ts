@@ -5,7 +5,7 @@ import * as fs from "fs";
 const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount),databaseURL: "https://charade-ca63f.firebaseio.com" });
 
-console.log(`Creating mappings of various display name interpretations to UIDs...`);
+console.log("Creating mappings of various display name interpretations to UIDs...");
 
 
 // generate and output the mappings
@@ -13,14 +13,14 @@ createMap().then((map) => {
   for (const [key, value] of map) {
     console.log(`${key}: ${JSON.stringify(value)}`);
   }
-  console.log(`Writing mappings to file...`);
+  console.log("Writing mappings to file...");
   fs.writeFileSync("uid-map.json", JSON.stringify(Object.fromEntries(map)));
   process.exit(0);
 })
-.catch(err => {
-  console.error(err)
-  process.exit(1)
-});
+  .catch(err => {
+    console.error(err)
+    process.exit(1)
+  });
 
 async function createMap(): Promise<Map<string,{ uid: string, displayName: string }>> {
   const firestore = admin.firestore();

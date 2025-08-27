@@ -64,7 +64,7 @@ export const updatePayrollFromExpenses = functions.firestore
 
     if (afterData?.committed) {
     // the expense is committed, add to expenses property of PayrollTracking doc
-    return payrollTrackingDocRef.update(
+      return payrollTrackingDocRef.update(
         {
           [`expenses.${change.after.ref.id}`]: { displayName: afterData.displayName, uid: afterData.uid, date: afterData.date, commitTime: afterData.commitTime },
         }

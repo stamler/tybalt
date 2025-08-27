@@ -474,56 +474,56 @@ export async function writeWeekEnding(
   dateProperty: string,
   weekEndingProperty: string
 ) {
-    if (change.after.exists) {
-      // The Document was not deleted
-      const afterData = change.after.data();
-      if (afterData === undefined) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          `Cannot read Document with id ${change.after.id} during writeWeekEnding`
-        )
-      }
-      let date;
-      try {
-        // get the date from the Document
-        date = afterData[dateProperty].toDate();
-      } catch (error) {
-        console.log(
-          `unable to read property ${dateProperty} for Document with id ${change.after.id}`
-        );
-        return null;
-      }
-      // If weekEnding is defined on the Document, get it, otherwise set null
-      const weekEnding = Object.prototype.hasOwnProperty.call(
-        afterData,
-        weekEndingProperty
+  if (change.after.exists) {
+    // The Document was not deleted
+    const afterData = change.after.data();
+    if (afterData === undefined) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Cannot read Document with id ${change.after.id} during writeWeekEnding`
       )
-        ? afterData[weekEndingProperty].toDate()
-        : null;
-
-      // Calculate the correct saturday of the weekEnding
-      // (in APP_NATIVE_TZ timezone)
-      const calculatedSaturday = nextSaturday(date);
-
-      // update the Document only if required
-      if (
-        weekEnding === null ||
-        weekEnding.getTime() !== calculatedSaturday.getTime()
-      ) {
-        return change.after.ref.set(
-          { [weekEndingProperty]: calculatedSaturday },
-          { merge: true }
-        );
-      }
-
-      // no changes to be made
-      return null;
-    } else {
-      // The Document was deleted, do nothing
-      console.log("writeWeekEnding() called but Document was deleted");
+    }
+    let date;
+    try {
+      // get the date from the Document
+      date = afterData[dateProperty].toDate();
+    } catch (error) {
+      console.log(
+        `unable to read property ${dateProperty} for Document with id ${change.after.id}`
+      );
       return null;
     }
-  };
+    // If weekEnding is defined on the Document, get it, otherwise set null
+    const weekEnding = Object.prototype.hasOwnProperty.call(
+      afterData,
+      weekEndingProperty
+    )
+      ? afterData[weekEndingProperty].toDate()
+      : null;
+
+    // Calculate the correct saturday of the weekEnding
+    // (in APP_NATIVE_TZ timezone)
+    const calculatedSaturday = nextSaturday(date);
+
+    // update the Document only if required
+    if (
+      weekEnding === null ||
+        weekEnding.getTime() !== calculatedSaturday.getTime()
+    ) {
+      return change.after.ref.set(
+        { [weekEndingProperty]: calculatedSaturday },
+        { merge: true }
+      );
+    }
+
+    // no changes to be made
+    return null;
+  } else {
+    // The Document was deleted, do nothing
+    console.log("writeWeekEnding() called but Document was deleted");
+    return null;
+  }
+};
 
 // Write the payPeriodEnding on Expenses
 // add timestamp of pay period ending (23:59:59.999 EST on saturday of week2) 
@@ -531,70 +531,70 @@ export async function writeWeekEnding(
 export const expensesPayPeriodEnding = functions.firestore
   .document("Expenses/{expenseId}")
   .onWrite(async (
-  change: ChangeJson,
-  context: functions.EventContext,
-) => {
-  if (!change.after.exists) {
+    change: ChangeJson,
+    context: functions.EventContext,
+  ) => {
+    if (!change.after.exists) {
     // The Document was deleted, do nothing
-    console.log("writePayPeriodEnding() called but Document was deleted");
-    return null;
-  }
-  const afterData = change.after.data();
-  if (afterData === undefined) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      `Cannot read Document with id ${change.after.id} during writePayPeriodEnding()`
-    )
-  }
-  const date = afterData.date?.toDate();
-  if (date === undefined) {
-    console.log(
-      `unable to read property date for Document with id ${change.after.id}`
-    );
-    return null;
-  }
-  const committedWeekEnding = afterData.committedWeekEnding?.toDate();
-  if (committedWeekEnding === undefined) {
-    console.log(
-      `unable to read property committedWeekEnding for Document with id ${change.after.id}`
-    );
-    return null;
-  }
+      console.log("writePayPeriodEnding() called but Document was deleted");
+      return null;
+    }
+    const afterData = change.after.data();
+    if (afterData === undefined) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Cannot read Document with id ${change.after.id} during writePayPeriodEnding()`
+      )
+    }
+    const date = afterData.date?.toDate();
+    if (date === undefined) {
+      console.log(
+        `unable to read property date for Document with id ${change.after.id}`
+      );
+      return null;
+    }
+    const committedWeekEnding = afterData.committedWeekEnding?.toDate();
+    if (committedWeekEnding === undefined) {
+      console.log(
+        `unable to read property committedWeekEnding for Document with id ${change.after.id}`
+      );
+      return null;
+    }
 
-  // If payPeriodEnding is defined on the Document, get it, otherwise set null
-  const payPeriodEnding = afterData.payPeriodEnding?.toDate();
+    // If payPeriodEnding is defined on the Document, get it, otherwise set null
+    const payPeriodEnding = afterData.payPeriodEnding?.toDate();
 
-  // Calculate the correct payPeriodEnding based on commitTime AND date
-  // (in APP_NATIVE_TZ timezone)
-  let calculatedPayPeriodEnding
-  if (isPayrollWeek2(committedWeekEnding)) {
-    calculatedPayPeriodEnding = committedWeekEnding;
-  } else {
+    // Calculate the correct payPeriodEnding based on commitTime AND date
+    // (in APP_NATIVE_TZ timezone)
+    let calculatedPayPeriodEnding
+    if (isPayrollWeek2(committedWeekEnding)) {
+      calculatedPayPeriodEnding = committedWeekEnding;
+    } else {
     // committedWeekEnding is week1 of this pay period
     // if the expense date is before the end of the last pay period set 
     // calculatedPayPeriodEnding to the previous one
-    const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
-    if (date.getTime() <= lastPayPeriodEnding ) {
-      calculatedPayPeriodEnding = lastPayPeriodEnding;
-    } else {
+      const lastPayPeriodEnding = thisTimeLastWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
+      if (date.getTime() <= lastPayPeriodEnding ) {
+        calculatedPayPeriodEnding = lastPayPeriodEnding;
+      } else {
       // the date is after the end of the last pay period
-      calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
+        calculatedPayPeriodEnding = thisTimeNextWeekInTimeZone(committedWeekEnding, APP_NATIVE_TZ);
+      }
     }
-  }
   
-  // update the Document only if required
-  if (
-    payPeriodEnding === undefined ||
+    // update the Document only if required
+    if (
+      payPeriodEnding === undefined ||
     payPeriodEnding.getTime() !== calculatedPayPeriodEnding.getTime()
-  ) {
-    return change.after.ref.set(
-      { payPeriodEnding: calculatedPayPeriodEnding },
-      { merge: true }
-    );
-  }
-  // no changes to be made
-  return null;
-});
+    ) {
+      return change.after.ref.set(
+        { payPeriodEnding: calculatedPayPeriodEnding },
+        { merge: true }
+      );
+    }
+    // no changes to be made
+    return null;
+  });
 
 // Calculate the correct saturday of the weekEnding in APP_NATIVE_TZ 
 // assuming input is in APP_NATIVE_TZ timezone as well.
