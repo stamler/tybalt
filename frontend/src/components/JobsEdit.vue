@@ -87,6 +87,18 @@
         v-model="item.clientContact"
       />
     </span>
+    <span class="field">
+      <label for="branch">Branch</label>
+      <select class="grow" name="branch" v-model="item.branch">
+        <option disabled selected value="">-- choose branch --</option>
+        <option value="ThunderBay">ThunderBay</option>
+        <option value="FortFrances">FortFrances</option>
+        <option value="Kenora">Kenora</option>
+        <option value="Ottawa">Ottawa</option>
+        <option value="Collingwood">Collingwood</option>
+        <option value="KitchenerWaterloo">KitchenerWaterloo</option>
+      </select>
+    </span>
     <span class="field" v-if="isProject">
       <label for="projectAwardDate">Project Award Date</label>
       <datepicker
