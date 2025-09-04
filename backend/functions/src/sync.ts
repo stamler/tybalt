@@ -545,7 +545,7 @@ exportJobs(): Export Jobs documents to MySQL
 export async function exportJobs(mysqlConnection: Connection) {
   functions.logger.debug("exporting jobs");
   const allJobsQuerySnap = await db.collection("Jobs").get();
-  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
+  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
   const now = new Date();
 
   const insertValues = allJobsQuerySnap.docs.map((jobSnap) => {
@@ -570,6 +570,8 @@ export async function exportJobs(mysqlConnection: Connection) {
     if (job.proposalSubmissionDueDate !== null && job.proposalSubmissionDueDate !== undefined) {
       job.proposalSubmissionDueDate = format(utcToZonedTime(job.proposalSubmissionDueDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
     }
+    // Ensure branch is present (may be undefined on some documents)
+    job.branch = job.branch === undefined || job.branch === null ? null : job.branch;
     return jobsFields.map(x => job[x]);
   })
 
