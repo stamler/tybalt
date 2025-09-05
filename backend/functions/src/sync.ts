@@ -497,7 +497,14 @@ export async function exportExpenses(mysqlConnection: Connection) {
     return expensesFields.map(x => expense[x]);
   });
 
-  const q = `INSERT INTO Expenses (${expensesFields.toString()}) VALUES ?`;
+  // Build an ON DUPLICATE KEY UPDATE clause so re-exporting (exported=false)
+  // doesn't fail with a duplicate primary key error. We update all columns
+  // except the primary key `id`.
+  const updateClause = expensesFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO Expenses (${expensesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
   try {
     if (insertValues.length > 0) {
       await mysqlConnection.query(q, [insertValues]);
