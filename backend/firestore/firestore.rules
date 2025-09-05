@@ -168,6 +168,12 @@ service cloud.firestore {
           !(newDoc.paymentType in ["FuelCard", "FuelOnAccount"])
         ) &&
 
+        // if po is provided it must match the format 2DDD-DDDD (e.g. 2000-0000)
+        (
+          isMissing("po") ||
+          (newDoc.po is string && newDoc.po.matches('^2[0-9]{3}-[0-9]{4}$'))
+        ) &&
+
         // unitNumber must only be present for FuelOnAccount, and must be a positive integer
         (
           (newDoc.unitNumber is int && newDoc().unitNumber > 0 && newDoc.paymentType == "FuelOnAccount") ||
