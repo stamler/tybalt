@@ -19,6 +19,7 @@ export const useStateStore = defineStore({
     expenseRates: null as { [key: string]: any } | null,
     activeTasks: {} as TaskList, // items to show in the progress UI element
     showTasks: false, // whether to display the progress UI element
+    timeEnabled: false, // whether time tracking is enabled based on Config/Enable
 
     // state of the notification system
     notifications: {}, // notifications to display in UI
@@ -59,6 +60,9 @@ export const useStateStore = defineStore({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setExpenseRates(rates: { [key: string]: any }) {
       this.expenseRates = rates;
+    },
+    setTimeEnabled(enabled: boolean) {
+      this.timeEnabled = enabled;
     },
   },
 });

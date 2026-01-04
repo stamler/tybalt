@@ -146,6 +146,20 @@ const unsubscribe = onAuthStateChanged(auth, async function (user) {
         store.setClaims(claims);
       })
     );
+
+    // load timeEnabled from Config/Enable document
+    const db = getFirestore(firebaseApp);
+    tasks.push(
+      getDoc(doc(db, "Config", "Enable")).then((snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          store.setTimeEnabled(data.time === true);
+        } else {
+          store.setTimeEnabled(false);
+        }
+      })
+    );
+
     Promise.all(tasks).then(() => {
       if (!app) {
         app = createApp(AppRootComponent);

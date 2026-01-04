@@ -1,5 +1,9 @@
 <template>
-  <form id="editor">
+  <div id="editor">
+    <p v-if="!timeEnabled">
+      Please use <a href="https://turbo.tbte.ca/time/entries/add" target="_blank">tybalt turbo</a> to track your time.
+    </p>
+    <form v-if="timeEnabled">
     <span class="field" v-if="collectionName === 'TimeAmendments'">
       <select class="grow" name="uid" v-model="item.uid">
         <option disabled selected value="">-- choose an employee --</option>
@@ -160,6 +164,7 @@
       </button>
     </span>
   </form>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -179,6 +184,7 @@ import {
 } from "firebase/firestore";
 const db = getFirestore(firebaseApp);
 import { useStateStore } from "../stores/state";
+import { storeToRefs } from "pinia";
 import Datepicker from "@vuepic/vue-datepicker";
 import { addWeeks, subWeeks } from "date-fns";
 import { shortDateWithWeekday } from "./helpers";
@@ -190,7 +196,7 @@ const router = useRouter();
 const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
 
 const store = useStateStore();
-const { user } = store;
+const { user, timeEnabled } = storeToRefs(store);
 
 const props = defineProps({
   id: {
@@ -300,7 +306,7 @@ const setItem = async function (id: string | undefined) {
         router.push(parentPath.value);
       });
   } else {
-    const profile = await getDoc(doc(db, "Profiles", user.uid));
+    const profile = await getDoc(doc(db, "Profiles", user.value.uid));
     const defaultDivision = profile.get("defaultDivision");
     item.value = {
       date: new Date(),
@@ -393,7 +399,7 @@ const save = function () {
 
   if (props.collectionName === "TimeEntries") {
     // include uid of the creating user
-    item.value.uid = user.uid;
+    item.value.uid = user.value.uid;
   }
 
   if (!Object.prototype.hasOwnProperty.call(item.value, "date")) {
@@ -417,8 +423,8 @@ const save = function () {
       alert("Specify an employee");
     }
 
-    item.value.creator = user.uid;
-    item.value.creatorName = user.displayName;
+    item.value.creator = user.value.uid;
+    item.value.creatorName = user.value.displayName;
     item.value.created = serverTimestamp();
     item.value.committed = false;
   }
