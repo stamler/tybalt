@@ -1,6 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isEnabled(flag) {
+      return get(/databases/$(database)/documents/Config/Enable).data[flag] == true;
+    }
     function isSignedIn() {
       return request.auth.uid != null;
     }
@@ -669,8 +672,8 @@ service cloud.firestore {
     }
     match /TimeEntries/{entry} {
       allow read, delete: if hasClaim("time") && uidMatches();
-      allow update: if hasClaim("time") && validTimeEntry() && uidMatches() && uidUnchanged();
-      allow create: if hasClaim("time") && validTimeEntry();
+      allow update: if isEnabled("time") && hasClaim("time") && validTimeEntry() && uidMatches() && uidUnchanged();
+      allow create: if isEnabled("time") && hasClaim("time") && validTimeEntry();
     }
     match /Expenses/{entry} {
       allow read: if (
@@ -764,7 +767,8 @@ service cloud.firestore {
       );
       // Allow submission by directly editing the 'submitted' field
       // Prevent setting 'submitted' to false if already 'approved'
-      allow update: if (
+      allow update: if isEnabled("time") && (
+      (
         hasClaim("time") && 
         uidMatches() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["submitted"]) &&
@@ -809,6 +813,7 @@ service cloud.firestore {
           !("reviewedIds" in resource.data) ||
           !(request.auth.uid in resource.data.reviewedIds)
         )
+      )
       );
     }
     match /TimeTypes/{timetype} {
