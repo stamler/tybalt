@@ -553,6 +553,9 @@ service cloud.firestore {
         )
       );
     }
+    match /Config/Enable {
+      allow read: if isSignedIn();
+    }
     match /Computers/{computer} {
       allow read: if hasClaim("admin") || hasClaim("computers");
     }
