@@ -21,6 +21,16 @@ export const bundleTimesheet = functions.https.onCall(async (
   // throw if the caller isn't authenticated & authorized
   const auth = getAuthObject(context, ["time"]);
 
+  // Check if time tracking is enabled
+  const configDoc = await db.collection("Config").doc("Enable").get();
+  const timeEnabled = configDoc.exists ? configDoc.get("time") : false;
+  if (timeEnabled !== true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Time tracking has been disabled in tybalt"
+    );
+  }
+
   // Validate the data or throw
   // use a User Defined Type Guard
   if (!isWeekReference(data)) {
