@@ -496,7 +496,7 @@ service cloud.firestore {
       return (
         jobId.matches('(P)?[0-9]{2}-[0-9]{3,4}(-[0-9]{1,2})?(-[0-9])?L?') &&
         newDoc().keys().hasAll([ "client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement", "branch"]) &&
-        newDoc().keys().hasOnly(["client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "projectAwardDate", "categories", "branch"]) &&
+        newDoc().keys().hasOnly(["client", "clientContact", "description", "managerUid", "managerDisplayName", "status", "divisions", "jobOwner", "fnAgreement", "alternateManagerUid", "alternateManagerDisplayName", "lastTimeEntryDate", "hasTimeEntries", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "projectAwardDate", "categories", "branch", "immutableID"]) &&
         isInCollection("managerUid","Profiles") &&
         (
           (isInCollection("alternateManagerUid","Profiles") && newDoc().managerUid != newDoc().alternateManagerUid) || 
@@ -637,13 +637,14 @@ service cloud.firestore {
         // ensure user doesn't set some fields
         newDoc().hasTimeEntries == false &&
         isMissing("lastTimeEntryDate") &&
+        isMissing("immutableID") &&
 
         // new jobs must have 4 characters in second segment of jobId, no trailing L
         jobId.matches('(P)?[0-9]{2}-[0-9]{4}(-[0-9]{1,2})?(-[0-9])?');
       allow update: if hasClaim("job") && (
         validJob(jobId) &&
         // ensure user doesn't change some fields
-        !newDoc().diff(resource.data).affectedKeys().hasAny(["lastTimeEntryDate", "hasTimeEntries"])
+        !newDoc().diff(resource.data).affectedKeys().hasAny(["lastTimeEntryDate", "hasTimeEntries", "immutableID"])
       ) || 
       (
         newDoc().diff(resource.data).affectedKeys().hasOnly(["status"]) && 

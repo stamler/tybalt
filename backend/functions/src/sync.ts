@@ -552,7 +552,7 @@ exportJobs(): Export Jobs documents to MySQL
 export async function exportJobs(mysqlConnection: Connection) {
   functions.logger.debug("exporting jobs");
   const allJobsQuerySnap = await db.collection("Jobs").get();
-  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
+  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "immutableID", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
   const now = new Date();
 
   const insertValues = allJobsQuerySnap.docs.map((jobSnap) => {
