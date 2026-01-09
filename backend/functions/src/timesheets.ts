@@ -22,7 +22,7 @@ report: true
 Holders of this claim can view reports and exports
 
 */
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";

@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as firestore from "@google-cloud/firestore";
 
 const client = new firestore.v1.FirestoreAdminClient();

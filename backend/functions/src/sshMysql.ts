@@ -1,10 +1,7 @@
-import * as functions from "firebase-functions";
 import * as mysql from "mysql2";
 import * as mysqlPromise from "mysql2/promise";
 import { Client } from "ssh2";
-
-const env = functions.config();
-//import { env } from "./dev_creds";
+import { functionsConfig } from "./secrets";
 
 export type QueryResponse = Promise<
   mysql.RowDataPacket[] |
@@ -30,12 +27,13 @@ try {
 }
 */
 export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.Connection>((resolve, reject) => {
+  const env = functionsConfig();
   sshClient.on("ready", () => {
     sshClient.forwardOut(
       "127.0.0.1",
       3306,
       env.mysql.host,
-      env.mysql.port,
+      parseInt(env.mysql.port),
       async (err, stream) => {
         if (err) reject(err);
         try {
@@ -61,7 +59,7 @@ export const createSSHMySQLConnection2 = () => {return new Promise<mysqlPromise.
     );
   }).connect({
     host: env.mysqlssh.host,
-    port: env.mysqlssh.port,
+    port: parseInt(env.mysqlssh.port),
     username: env.mysqlssh.user,
     password: env.mysqlssh.pass,
   });
@@ -73,12 +71,13 @@ Create a mysql database pool behind an SSH server by reading credentials
 from google cloud functions environment variables
 */
 export const createSSHMySQLPool = () => {return new Promise<mysqlPromise.Pool>((resolve, reject) => {
+  const env = functionsConfig();
   sshClient.on("ready", () => {
     sshClient.forwardOut(
       "127.0.0.1",
       3306,
       env.mysql.host,
-      env.mysql.port,
+      parseInt(env.mysql.port),
       async (err, stream) => {
         if (err) reject(err);
         try {
@@ -104,7 +103,7 @@ export const createSSHMySQLPool = () => {return new Promise<mysqlPromise.Pool>((
     );
   }).connect({
     host: env.mysqlssh.host,
-    port: env.mysqlssh.port,
+    port: parseInt(env.mysqlssh.port),
     username: env.mysqlssh.user,
     password: env.mysqlssh.pass,
   });

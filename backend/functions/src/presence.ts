@@ -2,7 +2,7 @@
 // support check-ins, whether a user is on vacation, their availability
 // calendar, etc.
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import { getAuthObject, isLocationStringObject, isVacationObject } from "./utilities";
 import * as admin from "firebase-admin";
 

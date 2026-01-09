@@ -3,7 +3,7 @@ import * as path from "path";
 import { thisTimeNextWeekInTimeZone } from "./utilities";
 import { format, addDays } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import { APP_NATIVE_TZ } from "./config";
 
 // the array of the filenames without the extension. Will also be used as the

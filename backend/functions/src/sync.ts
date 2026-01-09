@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { TimeEntry, InvoiceLineObject } from "./utilities";
@@ -7,13 +7,14 @@ import { APP_NATIVE_TZ } from "./config";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket, Connection } from "mysql2/promise";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const db = admin.firestore();
 
 export const syncToSQL = functions
-  .runWith({ memory: "1GB", timeoutSeconds:180 })
+  .runWith({ memory: "1GB", timeoutSeconds:180, secrets: [FUNCTIONS_CONFIG_SECRET] })
   .pubsub
   .schedule("0 12,17 * * 1-5") // M-F noon & 5pm, 10 times per week
 //  .schedule("0 * * * *") // every hour

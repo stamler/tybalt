@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import {thisTimeLastWeekInTimeZone, nextSaturday} from "./utilities";
 import {format, subDays} from "date-fns";
 import {utcToZonedTime} from "date-fns-tz";

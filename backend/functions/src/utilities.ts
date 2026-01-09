@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as path from "path";
 import * as _ from "lodash";
@@ -6,6 +6,7 @@ import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 import { differenceInCalendarDays, addDays, subDays, subMilliseconds, addMilliseconds } from "date-fns";
 import { PAYROLL_EPOCH, APP_NATIVE_TZ } from "./config";
 import { ChangeJson } from "firebase-functions/lib/common/change";
+import { functionsConfig } from "./secrets";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
@@ -65,7 +66,7 @@ export function getAuthObject(context: functions.https.CallableContext, authoriz
 }
 
 export function requestHasValidSecret(req: functions.https.Request, secret: string): boolean {
-  const appSecret = _.get(functions.config().tybalt, secret);
+  const appSecret = _.get(functionsConfig().tybalt, secret);
   if (appSecret !== undefined) {
     const authHeader = req.get("Authorization");
 

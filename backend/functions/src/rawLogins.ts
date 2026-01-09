@@ -1,9 +1,10 @@
 import { makeSlug } from "./utilities";
 import * as schema from "./RawLogins.schema.json";
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as _ from "lodash";
 import * as Ajv from "ajv";
+import { functionsConfig, FUNCTIONS_CONFIG_SECRET } from "./secrets";
 
 const serverTimestamp = admin.firestore.FieldValue.serverTimestamp;
 const ajv = new Ajv({
@@ -101,54 +102,56 @@ function isValidLogin(data: any): data is ValidLogin {
 
 // Get a raw login and update Computers, Logins, and Users. If it's somehow
 // incorrect, write it to RawLogins collection for later processing
-export const rawLogins = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
-  const db = admin.firestore();
-  // Validate the secret sent in the header from the client.
-  const appSecret = functions.config().tybalt.radiator.secret;
-  if (appSecret !== undefined) {
-    const authHeader = req.get("Authorization");
+export const rawLogins = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
+    const db = admin.firestore();
+    // Validate the secret sent in the header from the client.
+    const appSecret = functionsConfig().tybalt.radiator.secret;
+    if (appSecret !== undefined) {
+      const authHeader = req.get("Authorization");
 
-    let reqSecret = null;
-    if (authHeader !== undefined) {
-      reqSecret = authHeader.replace("TYBALT ", "").trim();
-    }
-    if (reqSecret !== appSecret) {
-      return res.status(401).send(
-        "request secret doesn't match expected"
-      );
-    }
-  }
-
-  // req.body can be used directly as JSON if this passes
-  if (req.get("Content-Type") !== "application/json") {
-    return res.status(415).send();
-  }
-
-  if (req.method !== "POST") {
-    res.header("Allow", "POST");
-    return res.status(405).send();
-  }
-
-  const d = req.body;
-
-  try {
-    if (!isValidLogin(d)) {
-      if (_.isEmpty(d)) {
-        return res.status(400).send("empty submission, not saving");
-      } else {
-        // write a rawlogin with submitted data and include the error field
-        await db.collection("RawLogins").doc().set({...d, error: validate.errors });
+      let reqSecret = null;
+      if (authHeader !== undefined) {
+        reqSecret = authHeader.replace("TYBALT ", "").trim();
       }
-    } else {
-      // write valid object to database
-      await storeValidLogin(d);
+      if (reqSecret !== appSecret) {
+        return res.status(401).send(
+          "request secret doesn't match expected"
+        );
+      }
     }
-    return res.status(202).send();
-  } catch (error: unknown) {
-    const typedError = error as Error;
-    return res.status(500).send(typedError.message);
-  }
-});
+
+    // req.body can be used directly as JSON if this passes
+    if (req.get("Content-Type") !== "application/json") {
+      return res.status(415).send();
+    }
+
+    if (req.method !== "POST") {
+      res.header("Allow", "POST");
+      return res.status(405).send();
+    }
+
+    const d = req.body;
+
+    try {
+      if (!isValidLogin(d)) {
+        if (_.isEmpty(d)) {
+          return res.status(400).send("empty submission, not saving");
+        } else {
+        // write a rawlogin with submitted data and include the error field
+          await db.collection("RawLogins").doc().set({...d, error: validate.errors });
+        }
+      } else {
+      // write valid object to database
+        await storeValidLogin(d);
+      }
+      return res.status(202).send();
+    } catch (error: unknown) {
+      const typedError = error as Error;
+      return res.status(500).send(typedError.message);
+    }
+  });
 
 // Creates or updates Computers and Users document, creates Logins document
 async function storeValidLogin(d: ValidLogin) {

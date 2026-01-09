@@ -1,9 +1,10 @@
 // Cloud functions to receive mutation requests from the client and to handle
 // callbacks from the Azure Automation service.
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { getAuthObject, requestHasValidSecret } from "./utilities";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 
 // The supported mutations are:
 type VerbTypes = "disable" | "enable" | "reset" | "archive" | "restore" | "create" | "edit";
@@ -419,45 +420,47 @@ export const deleteMutation = functions.https.onCall(async (data: unknown, conte
 // basis. It returns a list of the pending mutations. The script then uses this
 // list to action the mutations and then calls the mutationComplete function to
 // do any further processing including error handling.
-export const dispatchMutations = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
+export const dispatchMutations = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
 
-  // authenticate the caller
-  if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
-    return res.status(401).send(
-      "request secret doesn't match expected"
-    );
-  }
+    // authenticate the caller
+    if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
+      return res.status(401).send(
+        "request secret doesn't match expected"
+      );
+    }
 
-  // validate the request type
-  if (req.method !== "GET") {
-    res.header("Allow", "GET");
-    return res.status(405).send();
-  }
+    // validate the request type
+    if (req.method !== "GET") {
+      res.header("Allow", "GET");
+      return res.status(405).send();
+    }
 
-  // Get all of the pending mutations in a transaction, build the response, then
-  // update the status of the mutations to dispatched.
-  const db = admin.firestore();
-  const pendingMutations = db.collection("UserMutations").where("status", "==", "pending");
-  await db.runTransaction(t => {
-    return t.get(pendingMutations).then(async (querySnapshot) => {
-      const mutations = querySnapshot.docs.map(doc => {
-        return {
-          id: doc.id,
-          verb: doc.get("verb"),
-          userSourceAnchor: doc.get("userSourceAnchor"),
-          data: doc.get("data"),
+    // Get all of the pending mutations in a transaction, build the response, then
+    // update the status of the mutations to dispatched.
+    const db = admin.firestore();
+    const pendingMutations = db.collection("UserMutations").where("status", "==", "pending");
+    await db.runTransaction(t => {
+      return t.get(pendingMutations).then(async (querySnapshot) => {
+        const mutations = querySnapshot.docs.map(doc => {
+          return {
+            id: doc.id,
+            verb: doc.get("verb"),
+            userSourceAnchor: doc.get("userSourceAnchor"),
+            data: doc.get("data"),
+          };
+        });
+        const response = {
+          mutations,
         };
+        mutations.forEach(mutation => {
+          t.update(db.collection("UserMutations").doc(mutation.id), { status: "dispatched" });
+        });
+        return res.status(200).send(response);
       });
-      const response = {
-        mutations,
-      };
-      mutations.forEach(mutation => {
-        t.update(db.collection("UserMutations").doc(mutation.id), { status: "dispatched" });
-      });
-      return res.status(200).send(response);
-    });
-  })
-});
+    })
+  });
 
 // This is called by the Azure Automation Powershell script after it completes
 // actioning an individual mutation. The request will contain the mutation id
@@ -467,183 +470,185 @@ export const dispatchMutations = functions.https.onRequest(async (req: functions
 // simply set the status of the UserMutations document to either "complete" or
 // "error". Any errors will written to the UserMutations document in the
 // returnedData property.
-export const mutationComplete = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
+export const mutationComplete = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onRequest(async (req: functions.https.Request, res: functions.Response<any>): Promise<any> => {
   // authenticate the caller
-  if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
-    return res.status(401).send(
-      "request secret doesn't match expected"
-    );
-  }
+    if (!requestHasValidSecret(req, "azureuserautomation.secret")) {
+      return res.status(401).send(
+        "request secret doesn't match expected"
+      );
+    }
 
-  // validate the request type. Use post since the URL doesn't contain the ID of
-  // the mutation and the response can only be received once (don't expect
-  // idempontent requests)
-  if (req.method !== "POST") {
-    res.header("Allow", "POST");
-    return res.status(405).send();
-  }
+    // validate the request type. Use post since the URL doesn't contain the ID of
+    // the mutation and the response can only be received once (don't expect
+    // idempontent requests)
+    if (req.method !== "POST") {
+      res.header("Allow", "POST");
+      return res.status(405).send();
+    }
   
-  // req.body can be used directly as JSON if this passes
-  if (req.get("Content-Type") !== "application/json") {
-    return res.status(415).send();
-  }
+    // req.body can be used directly as JSON if this passes
+    if (req.get("Content-Type") !== "application/json") {
+      return res.status(415).send();
+    }
   
-  // get the request body as JSON, ensure it contains the id and result fields,
-  // possibly the data field
-  const d = req.body;
+    // get the request body as JSON, ensure it contains the id and result fields,
+    // possibly the data field
+    const d = req.body;
 
-  if (!isAzureAutomationMutationResponse(d)) {
-    return res.status(400).send("The request body is not a valid Azure Automation Mutation Response");
-  }
+    if (!isAzureAutomationMutationResponse(d)) {
+      return res.status(400).send("The request body is not a valid Azure Automation Mutation Response");
+    }
 
-  const db = admin.firestore();
+    const db = admin.firestore();
 
-  // update the mutation document with the new status and data if it exists
-  const mutation = db.collection("UserMutations").doc(d.id);
-  await db.runTransaction(async t => {
-    return t.get(mutation).then(async (docSnap) => {
-      if (!docSnap.exists) {
+    // update the mutation document with the new status and data if it exists
+    const mutation = db.collection("UserMutations").doc(d.id);
+    await db.runTransaction(async t => {
+      return t.get(mutation).then(async (docSnap) => {
+        if (!docSnap.exists) {
         // If the mutation doesn't exist, it was deleted after being dispatched.
         // Don't update the status. Throw an error to prevent the transaction
         // from committing.
-        functions.logger.error(`The mutation ${d.id} was not found`);
-        throw new functions.https.HttpsError(
-          "not-found",
-          "The mutation doesn't exist"
-        );
-      }
-      if (docSnap.get("status") !== "dispatched") {
+          functions.logger.error(`The mutation ${d.id} was not found`);
+          throw new functions.https.HttpsError(
+            "not-found",
+            "The mutation doesn't exist"
+          );
+        }
+        if (docSnap.get("status") !== "dispatched") {
         // If the mutation has been updated since it was dispatched, don't
         // update the status. Throw an error to prevent the transaction from
         // committing.
-        throw new functions.https.HttpsError(
-          "invalid-argument",
-          "The mutation status is not dispatched as expected. Aborting update."
-        );
-      }
-      if (d.result === "complete") {
+          throw new functions.https.HttpsError(
+            "invalid-argument",
+            "The mutation status is not dispatched as expected. Aborting update."
+          );
+        }
+        if (d.result === "complete") {
  
-        // If the verb is not "create", we need to get the existing user
-        // document from the firestore Users collection so the current mutation
-        // can be finished.
-        if (d.verb !== "create") {
+          // If the verb is not "create", we need to get the existing user
+          // document from the firestore Users collection so the current mutation
+          // can be finished.
+          if (d.verb !== "create") {
 
-          const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
-          const userDocSnap = await userDocRef.get();
-          if (!userDocSnap.exists) {
-            throw new functions.https.HttpsError("not-found", `The user document ${docSnap.get("userId")} was not found`);
-          }
+            const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
+            const userDocSnap = await userDocRef.get();
+            if (!userDocSnap.exists) {
+              throw new functions.https.HttpsError("not-found", `The user document ${docSnap.get("userId")} was not found`);
+            }
 
-          // The mutation, which has a verb other than create, is completed.
-          // Update the corresponding Users document by deleting the
-          // currentMutationVerb and currentMutationId properties.
-          t.update(userDocRef, {
-            currentMutationVerb: admin.firestore.FieldValue.delete(), 
-            currentMutationId: admin.firestore.FieldValue.delete(),
-          });
-
-          // If the mutation is an edit operation, update the status to
-          // "onPremEdited". The next sync will ensure that the Users document
-          // is updated.
-
-          // TODO: the currentADDump function will check for any onPremEdited
-          // mutations and update the corresponding Profiles document the next
-          // time it runs. currentADDump will then set the status of the
-          // UserMutations document to "complete".
-          if (d.verb === "edit") {
-            return t.update(mutation, {
-              status: "onPremEdited",
-              statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+            // The mutation, which has a verb other than create, is completed.
+            // Update the corresponding Users document by deleting the
+            // currentMutationVerb and currentMutationId properties.
+            t.update(userDocRef, {
+              currentMutationVerb: admin.firestore.FieldValue.delete(), 
+              currentMutationId: admin.firestore.FieldValue.delete(),
             });
-          }
 
-          // If the mutation verb is reset or archive, write back the new
-          // password to the UserMutations document under the "returnedData"
-          // property then set the status to "complete". The administrator can
-          // then communicate this password to the user. In the future an
-          // automated SMS message could be sent to the user.
-          if (d.verb === "reset" || d.verb === "archive") {
+            // If the mutation is an edit operation, update the status to
+            // "onPremEdited". The next sync will ensure that the Users document
+            // is updated.
+
+            // TODO: the currentADDump function will check for any onPremEdited
+            // mutations and update the corresponding Profiles document the next
+            // time it runs. currentADDump will then set the status of the
+            // UserMutations document to "complete".
+            if (d.verb === "edit") {
+              return t.update(mutation, {
+                status: "onPremEdited",
+                statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+
+            // If the mutation verb is reset or archive, write back the new
+            // password to the UserMutations document under the "returnedData"
+            // property then set the status to "complete". The administrator can
+            // then communicate this password to the user. In the future an
+            // automated SMS message could be sent to the user.
+            if (d.verb === "reset" || d.verb === "archive") {
             // Archived users must have timeSheetExpected set to false in their
             // profile after the complete mutation is received. The profile
             // document is retrieved by querying on the userSourceAnchor
             // property of the UserMutations document to uniquely find it in the
             // Profiles collection.
-            let profilesQuerySnap: admin.firestore.QuerySnapshot
-            try {
-              profilesQuerySnap = await db.collection("Profiles").where("userSourceAnchor", "==", docSnap.get("userSourceAnchor")).get();
-            } catch (error) {
-              throw new functions.https.HttpsError("internal", `Error querying Profiles for document with userSourceAnchor ${docSnap.get("userSourceAnchor")}`);
+              let profilesQuerySnap: admin.firestore.QuerySnapshot
+              try {
+                profilesQuerySnap = await db.collection("Profiles").where("userSourceAnchor", "==", docSnap.get("userSourceAnchor")).get();
+              } catch (error) {
+                throw new functions.https.HttpsError("internal", `Error querying Profiles for document with userSourceAnchor ${docSnap.get("userSourceAnchor")}`);
+              }
+
+              // Verify that there's only one profile document returned
+              if (profilesQuerySnap.size !== 1) {
+                throw new functions.https.HttpsError("failed-precondition", `There is not one single Profiles document matching userSourceAnchor ${docSnap.get("userSourceAnchor")} found while trying to set the timeSheetExpected property to false on the Profiles document`);
+              }
+
+              // Update the profile document
+              t.update(profilesQuerySnap.docs[0].ref, {
+                timeSheetExpected: false,
+              });
+
+              // Update the UserMutations document
+              return t.update(mutation, {
+                status: "complete",
+                statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+                returnedData: {
+                  password: d.password,
+                },
+              });
             }
 
-            // Verify that there's only one profile document returned
-            if (profilesQuerySnap.size !== 1) {
-              throw new functions.https.HttpsError("failed-precondition", `There is not one single Profiles document matching userSourceAnchor ${docSnap.get("userSourceAnchor")} found while trying to set the timeSheetExpected property to false on the Profiles document`);
-            }
-
-            // Update the profile document
-            t.update(profilesQuerySnap.docs[0].ref, {
-              timeSheetExpected: false,
-            });
-
-            // Update the UserMutations document
+            // For all other verbs, just update the status to "complete"
             return t.update(mutation, {
               status: "complete",
               statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-              returnedData: {
-                password: d.password,
-              },
             });
           }
 
-          // For all other verbs, just update the status to "complete"
+          // If we arrived here then the mutation verb is create. Write back the
+          // password and upn and email to the UserMutation document under the
+          // "returnedData" property then set the status to "onPremCreated". 
+
+          // Upon first user login, the createProfile function will be
+          // called to create the user profile using the data from the
+          // UserMutation document. createProfile will then set the status
+          // of the UserMutations document to "complete".
           return t.update(mutation, {
-            status: "complete",
+            status: "onPremCreated",
             statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
+            returnedData: {
+              password: d.password,
+              upn: d.upn,
+              email: d.email,
+            },
           });
-        }
-
-        // If we arrived here then the mutation verb is create. Write back the
-        // password and upn and email to the UserMutation document under the
-        // "returnedData" property then set the status to "onPremCreated". 
-
-        // Upon first user login, the createProfile function will be
-        // called to create the user profile using the data from the
-        // UserMutation document. createProfile will then set the status
-        // of the UserMutations document to "complete".
-        return t.update(mutation, {
-          status: "onPremCreated",
-          statusUpdated: admin.firestore.FieldValue.serverTimestamp(),
-          returnedData: {
-            password: d.password,
-            upn: d.upn,
-            email: d.email,
-          },
-        });
-      } else {
+        } else {
         // The mutation is complete in an error state. Update the corresponding
         // Users document if this wasn't a create mutation by deleting the
         // currentMutationVerb and currentMutationId properties.
-        if (d.verb !== "create") {
-          const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
-          const userDocSnap = await userDocRef.get();
-          if (userDocSnap.exists) {
-            t.update(userDocRef, {
-              currentMutationVerb: admin.firestore.FieldValue.delete(), 
-              currentMutationId: admin.firestore.FieldValue.delete(),
-            });
-          } else {
-            functions.logger.error(`The user document ${docSnap.get("userId")} was not found when it should exist, but the error that caused this request is still being recorded in the mutation document.`);
+          if (d.verb !== "create") {
+            const userDocRef = db.collection("Users").doc(docSnap.get("userId"));
+            const userDocSnap = await userDocRef.get();
+            if (userDocSnap.exists) {
+              t.update(userDocRef, {
+                currentMutationVerb: admin.firestore.FieldValue.delete(), 
+                currentMutationId: admin.firestore.FieldValue.delete(),
+              });
+            } else {
+              functions.logger.error(`The user document ${docSnap.get("userId")} was not found when it should exist, but the error that caused this request is still being recorded in the mutation document.`);
+            }
           }
+          return t.update(mutation, {
+            status: "error",
+            returnedData: d.error,
+          });
         }
-        return t.update(mutation, {
-          status: "error",
-          returnedData: d.error,
-        });
-      }
-    })
+      })
+    });
+    return res.status(202).send();
   });
-  return res.status(202).send();
-});
 
 export const approveMutation = functions.https.onCall(async (data: any, context: functions.https.CallableContext): Promise<any> => {
   if (!context.auth) {

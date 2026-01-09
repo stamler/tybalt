@@ -5,7 +5,7 @@
 
 // Entry point for tybalt app
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -13,6 +13,7 @@ admin.firestore().settings({ timestampsInSnapshots: true });
 
 import { writeWeekEnding } from "./utilities";
 import { updateAlgoliaIndex, jobSearchKeys, profileFilter, divisionsFilter } from "./algolia";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 import { emailOnReject, emailOnShare } from "./email";
 export { generateExpenseAttachmentArchive, cleanUpUsersExpenseAttachments, cleanUpUsersPurchaseOrderRequestAttachments } from "./storage";
 export { updateAuthAndManager, createProfile, deleteProfile, updateProfileFromMSGraph, algoliaUpdateSecuredAPIKey, updateOpeningValues } from "./profiles";
@@ -50,18 +51,21 @@ exports.emailOnExpenseRejection = functions.firestore
   .onUpdate(async (change, context) => { await emailOnReject(change, context, "Expenses") });
 
 // update algolia indexes
-exports.algoliaUpdateJobsIndex = functions.firestore
-  .document("Jobs/{jobId}")
+exports.algoliaUpdateJobsIndex = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .firestore.document("Jobs/{jobId}")
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_jobs", searchKeysFunction: jobSearchKeys});
   });
-exports.algoliaUpdateProfilesIndex = functions.firestore
-  .document("Profiles/{profileId}")
+exports.algoliaUpdateProfilesIndex = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .firestore.document("Profiles/{profileId}")
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_profiles", allowedFields: ["displayName", "givenName", "surname"], filterFunction: profileFilter });
   });
-exports.algoliaUpdateDivisionsIndex = functions.firestore
-  .document("Divisions/{divisionId}")
+exports.algoliaUpdateDivisionsIndex = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .firestore.document("Divisions/{divisionId}")
   .onWrite((change, context) => {
     return updateAlgoliaIndex({change, context, indexName: "tybalt_divisions", filterFunction: divisionsFilter });
   });

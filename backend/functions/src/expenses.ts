@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { isDocIdObject, createPersistentDownloadUrl, getTrackingDoc, getAuthObject /*, isWeekReference, isPayrollWeek2, thisTimeNextWeekInTimeZone */ } from "./utilities";
 import { v4 as uuidv4 } from "uuid";

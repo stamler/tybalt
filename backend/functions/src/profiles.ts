@@ -13,7 +13,7 @@
 //      https://firebase.google.com/docs/functions/callable
 
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as _ from "lodash";
 import axios from "axios";
 import { jwtDecode, JwtPayload } from "jwt-decode";
@@ -21,7 +21,7 @@ import { jwtDecode, JwtPayload } from "jwt-decode";
 import { getAuthObject, isPayrollWeek2 } from "./utilities";
 import algoliasearch from "algoliasearch";
 import { ChangeJson } from "firebase-functions/lib/common/change";
-const env = functions.config();
+import { functionsConfig, FUNCTIONS_CONFIG_SECRET } from "./secrets";
 
 interface MSJwtPayload extends JwtPayload {
   oid: string;
@@ -319,8 +319,9 @@ export const updateProfileFromMSGraph = functions.https.onCall(async (data: unkn
   );
 });
 
-export const algoliaUpdateSecuredAPIKey = functions.firestore
-  .document("Profiles/{profileId}")
+export const algoliaUpdateSecuredAPIKey = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .firestore.document("Profiles/{profileId}")
   .onWrite(async (change, context) => {
 
     // Any change to a profile will trigger this function. Since the Azure Graph
@@ -345,6 +346,7 @@ export const algoliaUpdateSecuredAPIKey = functions.firestore
   } 
 */
     // setup the Algolia client
+    const env = functionsConfig();
     const client = algoliasearch(env.algolia.appid, env.algolia.searchkey);
 
     functions.logger.log("Restricting Indices via tybalt claims is currently disabled.");

@@ -1,7 +1,7 @@
 // invoices.ts
 // support creating and replacing invoices attached to jobs
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import { getAuthObject, isInvoiceObject } from "./utilities";
 import * as admin from "firebase-admin";
 

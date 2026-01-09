@@ -1,8 +1,8 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import algoliasearch from "algoliasearch";
 import * as _ from "lodash";
 import { ChangeJson } from "firebase-functions/lib/common/change";
-const env = functions.config();
+import { functionsConfig } from "./secrets";
 
 // This interface defines the named parameters for the updateAlgoliaIndex
 // function
@@ -29,6 +29,7 @@ export async function updateAlgoliaIndex({
 }: UpdateAlgoliaIndexParams) {
 
   // setup the Algolia client and index
+  const env = functionsConfig();
   const client = algoliasearch(env.algolia.appid, env.algolia.apikey);
   const index = client.initIndex(indexName);
   
