@@ -636,7 +636,10 @@ service cloud.firestore {
       allow create: if hasClaim("job") && validJob(jobId) &&
         // ensure user doesn't set some fields
         newDoc().hasTimeEntries == false &&
-        isMissing("lastTimeEntryDate");
+        isMissing("lastTimeEntryDate") &&
+
+        // new jobs must have 4 characters in second segment of jobId, no trailing L
+        jobId.matches('(P)?[0-9]{2}-[0-9]{4}(-[0-9]{1,2})?(-[0-9])?');
       allow update: if hasClaim("job") && (
         validJob(jobId) &&
         // ensure user doesn't change some fields
