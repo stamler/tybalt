@@ -11,9 +11,12 @@ import { format } from "date-fns";
 // Given an ExpenseTracking id in a DocIdObject or a payPeriodEnding, create a
 // zip archive of all attachments from Google storage for the corresponding week
 // with the committed expenses. Store zip under ExpenseTrackingExports prefix
-
-// TODO: rework without using temp storage and upload
-//https://stackoverflow.com/questions/51563883/can-i-zip-files-in-firebase-storage-via-firebase-cloud-functions
+//
+// NOTE: Uses a temp file + buffer-based GCS IO instead of streaming directly to
+// Cloud Storage. This is a workaround for an observed production failure in the
+// transitive streaming stack (e.g. duplexify/stream-shift) that may depend on a
+// combination of Node runtime and dependency versions.
+// https://stackoverflow.com/questions/51563883/can-i-zip-files-in-firebase-storage-via-firebase-cloud-functions
 export const generateExpenseAttachmentArchive = functions
   .runWith({memory: "2GB", timeoutSeconds: 180})
   .https
@@ -38,19 +41,24 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
       .doc(data.id)
       .get();
 
+    const weekEnding = trackingSnapshot.get("weekEnding");
+    if (!weekEnding) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `ExpenseTracking document ${data.id} has no weekEnding property`
+      );
+    }
+
     // get committed Expense documents with attachments for the week
     expensesSnapshot = await db
       .collection("Expenses")
       .where("approved", "==", true)
       .where("committed", "==", true)
-      .where("committedWeekEnding", "==", trackingSnapshot.get("weekEnding"))
+      .where("committedWeekEnding", "==", weekEnding)
       .orderBy("attachment") // only docs where attachment exists
       .get();
 
-    zipFilename = `attachments${trackingSnapshot
-      .get("weekEnding")
-      .toDate()
-      .getTime()}.zip`;
+    zipFilename = `attachments${weekEnding.toDate().getTime()}.zip`;
     
     destination = "ExpenseTrackingExports/" + zipFilename;
 
@@ -60,19 +68,24 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
     const trackingDocRef = await getTrackingDoc(new Date(data.payPeriodEnding), "PayrollTracking", "payPeriodEnding");
     trackingSnapshot = await trackingDocRef.get();
 
+    const payPeriodEnding = trackingSnapshot.get("payPeriodEnding");
+    if (!payPeriodEnding) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "PayrollTracking document has no payPeriodEnding property"
+      );
+    }
+
     // get committed Expense documents with attachments for the pay period
     expensesSnapshot = await db
       .collection("Expenses")
       .where("approved", "==", true)
       .where("committed", "==", true)
-      .where("payPeriodEnding", "==", trackingSnapshot.get("payPeriodEnding"))
+      .where("payPeriodEnding", "==", payPeriodEnding)
       .orderBy("attachment") // only docs where attachment exists
       .get();
     
-    zipFilename = `attachmentsPayroll${trackingSnapshot
-      .get("payPeriodEnding")
-      .toDate()
-      .getTime()}.zip`;
+    zipFilename = `attachmentsPayroll${payPeriodEnding.toDate().getTime()}.zip`;
   
     destination = "PayrollExpenseExportsAttachmentCache/" + zipFilename;
 
@@ -84,89 +97,157 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
     );
   }
 
+  // If there are no expenses with attachments, skip archive generation
+  if (expensesSnapshot.empty) {
+    functions.logger.info("No expenses with attachments found, skipping archive generation");
+    return;
+  }
+
   // define the bucket containing the attachments
   const bucket = admin.storage().bucket();
+  const bucketName = bucket.name;
+  
+  if (!bucketName) {
+    throw new functions.https.HttpsError(
+      "internal",
+      "Could not determine storage bucket name"
+    );
+  }
 
-  // upload the zip file
+  // Generate a token for the download URL
   const newToken = uuidv4();
-
-  // create the outputStreamBuffer
-  const outputStreamBuffer = bucket.file(destination).createWriteStream({
-    gzip: true,
-    contentType: "application/zip",
-    // Workaround: firebase console not generating token for files
-    // uploaded via Firebase Admin SDK
-    // https://github.com/firebase/firebase-admin-node/issues/694
-    metadata: {
-      metadata: {
-        firebaseStorageDownloadTokens: newToken,
-      },
-    },
-  });
+  
+  // Create temp file path for the zip
+  const tempZipPath = path.join(os.tmpdir(), zipFilename);
+  const output = fs.createWriteStream(tempZipPath);
 
   // initialize the archiver
   const archive = archiver("zip", {
     zlib: { level: 9 }, // Sets the compression level.
   });
   functions.logger.log("initialized archiver");
-    
-  // listen for all archive data to be written
-  // 'close' event is fired only when a file descriptor is involved
-  archive.on("finish", async () => {
-    functions.logger.log(archive.pointer() + " total bytes");
 
-    // put the path to the new file into the TimeTracking document
-    await trackingSnapshot.ref.update({
-      zip: createPersistentDownloadUrl(
-        admin.storage().bucket().name,
-        destination,
-        newToken
-      ),
+  // Create a promise that resolves when the archive is complete
+  const archivePromise = new Promise<void>((resolve, reject) => {
+    output.on("close", () => {
+      functions.logger.log(archive.pointer() + " total bytes written to temp file");
+      resolve();
+    });
+
+    output.on("error", (err) => {
+      reject(err);
+    });
+
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    archive.on("warning", function(err) {
+      if (err.code === "ENOENT") {
+        functions.logger.log(`archiver warning: ${err}`);
+      } else {
+        reject(err);
+      }
+    });
+
+    // good practice to catch this error explicitly
+    archive.on("error", (err) => {
+      reject(err);
     });
   });
 
-  // good practice to catch warnings (ie stat failures and other non-blocking errors)
-  archive.on("warning", function(err) {
-    if (err.code === "ENOENT") {
-      functions.logger.log(`archiver error: ${err}`);
-    } else {
-      throw err;
-    }
-  });
-
-  // good practice to catch this error explicitly
-  archive.on("error", (err) => {
-    throw err;
-  });
-
-  // pipe archive data to the file
-  archive.pipe(outputStreamBuffer);
-  functions.logger.log("configured archiver to pipe to Cloud Storage");
+  // pipe archive data to the temp file
+  archive.pipe(output);
+  functions.logger.log("configured archiver to pipe to temp file");
     
-  // iterate over the documents with attachments, adding their
-  // contents to the zip file with descriptive names
-  const contents: { filename: string, tempLocalAttachmentName: string }[] = [];
-  const downloadPromises: Promise<any>[] = [];
-  await expensesSnapshot.forEach( (expenseDoc) => {
-    // download the attachment to the working directory
+  // Build list of attachments to download
+  const attachmentsToDownload: { attachment: string, filename: string }[] = [];
+  expensesSnapshot.forEach((expenseDoc) => {
     const attachment = expenseDoc.get("attachment");
-    const first8 = path.basename(attachment).substr(0,8);
-    const filename = `${expenseDoc.get("paymentType")}-${expenseDoc.get("surname")},${expenseDoc.get("givenName")}-${format(expenseDoc.get("date").toDate(), "yyyy_MMM_dd")}-${expenseDoc.get("total")}-${first8}${path.extname(attachment)}`;
-    const tempLocalAttachmentName = path.join(os.tmpdir(), filename);
-    downloadPromises.push(bucket.file(attachment).download({destination: tempLocalAttachmentName}))
-    contents.push({filename, tempLocalAttachmentName});
+    
+    // Skip documents where attachment is null or undefined
+    if (!attachment || typeof attachment !== "string") {
+      functions.logger.warn(`Expense ${expenseDoc.id} has invalid attachment value: ${attachment}`);
+      return;
+    }
+    
+    const first8 = path.basename(attachment).substring(0, 8);
+    const paymentType = expenseDoc.get("paymentType") || "Unknown";
+    const surname = expenseDoc.get("surname") || "Unknown";
+    const givenName = expenseDoc.get("givenName") || "Unknown";
+    const date = expenseDoc.get("date");
+    const total = expenseDoc.get("total") || 0;
+    
+    let dateStr = "Unknown_Date";
+    if (date && typeof date.toDate === "function") {
+      dateStr = format(date.toDate(), "yyyy_MMM_dd");
+    }
+    
+    const filename = `${paymentType}-${surname},${givenName}-${dateStr}-${total}-${first8}${path.extname(attachment)}`;
+    attachmentsToDownload.push({ attachment, filename });
   });
 
-  await Promise.all(downloadPromises);
-  functions.logger.log(contents);
-  contents.forEach((file) => {
-    archive.append(fs.createReadStream(file.tempLocalAttachmentName), { name: file.filename});
-    functions.logger.log(`${file.filename} appended to zip file`);
+  // If no valid attachments were found after filtering, skip archive generation
+  if (attachmentsToDownload.length === 0) {
+    functions.logger.info("No valid attachments found after filtering, skipping archive generation");
+    return;
+  }
+
+  // Download files as buffers (not streams) to avoid issues in the transitive
+  // streaming stack (which can vary by Node runtime and dependency versions).
+  // file.download() without destination returns [Buffer]
+  functions.logger.log(`downloading ${attachmentsToDownload.length} attachments as buffers`);
+  const downloadResults = await Promise.all(
+    attachmentsToDownload.map(async ({ attachment, filename }) => {
+      const [buffer] = await bucket.file(attachment).download();
+      return { filename, buffer };
+    })
+  );
+  functions.logger.log(`downloaded ${downloadResults.length} attachments`);
+
+  // Append buffers directly to archive (no streaming)
+  downloadResults.forEach(({ filename, buffer }) => {
+    archive.append(buffer, { name: filename });
+    functions.logger.log(`${filename} appended to zip file`);
   });
 
-  // close the archive which will trigger the "close" event handler
+  // close the archive which will trigger the "close" event on output
   functions.logger.log("calling finalize");
   await archive.finalize();
+  
+  // Wait for the archive to be fully written to temp file
+  await archivePromise;
+  
+  // Read the temp file as a buffer and upload using file.save() to avoid
+  // streaming operations (which have hit issues in the transitive stream stack).
+  functions.logger.log(`reading ${tempZipPath} and uploading to ${destination}`);
+  const zipBuffer = fs.readFileSync(tempZipPath);
+  await bucket.file(destination).save(zipBuffer, {
+    contentType: "application/zip",
+    // Custom metadata must be nested under metadata.metadata for Firebase Storage
+    // download tokens to work properly
+    metadata: {
+      metadata: {
+        firebaseStorageDownloadTokens: newToken,
+      },
+    },
+  });
+  functions.logger.log("upload complete");
+
+  // Update the tracking document with the download URL
+  await trackingSnapshot.ref.update({
+    zip: createPersistentDownloadUrl(
+      bucketName,
+      destination,
+      newToken
+    ),
+  });
+  functions.logger.log("tracking document updated");
+
+  // Clean up temp zip file
+  try {
+    fs.unlinkSync(tempZipPath);
+    functions.logger.log("temp zip file cleaned up");
+  } catch (cleanupError) {
+    functions.logger.warn(`Failed to clean up temp zip file: ${cleanupError}`);
+  }
 }
 
 // UI calls this prior to attempting to upload an expense attachment, cleaning
