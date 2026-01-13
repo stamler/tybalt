@@ -51,6 +51,9 @@ export const syncToSQL = functions
       });
     }
     await exportJobs(mysqlConnection);
+    // Export Turbo writeback data (clients before contacts due to FK constraint)
+    await exportTurboClients(mysqlConnection);
+    await exportTurboClientContacts(mysqlConnection);
     return mysqlConnection.end();
   });
 
@@ -553,7 +556,7 @@ exportJobs(): Export Jobs documents to MySQL
 export async function exportJobs(mysqlConnection: Connection) {
   functions.logger.debug("exporting jobs");
   const allJobsQuerySnap = await db.collection("Jobs").get();
-  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "immutableID", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp"];
+  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "immutableID", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp", "clientId", "clientContactId", "jobOwnerId"];
   const now = new Date();
 
   const insertValues = allJobsQuerySnap.docs.map((jobSnap) => {
@@ -580,6 +583,10 @@ export async function exportJobs(mysqlConnection: Connection) {
     }
     // Ensure branch is present (may be undefined on some documents)
     job.branch = job.branch === undefined || job.branch === null ? null : job.branch;
+    // Include new ID fields (will be populated after TurboJobsWriteback fold operation)
+    job.clientId = job.clientId || null;
+    job.clientContactId = job.clientContactId || null;
+    job.jobOwnerId = job.jobOwnerId || null;
     return jobsFields.map(x => job[x]);
   })
 
@@ -611,6 +618,117 @@ export async function exportJobs(mysqlConnection: Connection) {
   // instead of declaring a type and then using it to extract the property
   functions.logger.debug(cleanupResult[0]);
 
+}
+
+/*
+exportTurboClients(): Export TurboClientsWriteback documents to MySQL TurboClients table.
+These are clients that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+*/
+export async function exportTurboClients(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboClients");
+  const allClientsQuerySnap = await db.collection("TurboClientsWriteback").get();
+  
+  if (allClientsQuerySnap.empty) {
+    functions.logger.log("No TurboClientsWriteback documents to export");
+    return;
+  }
+
+  const clientsFields = ["id", "name", "businessDevelopmentLeadUid", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allClientsQuerySnap.docs.map((clientSnap) => {
+    const client = clientSnap.data();
+    return [
+      clientSnap.id, // id (PocketBase ID used as doc key)
+      client.name || null,
+      client.businessDevelopmentLead || null, // field is businessDevelopmentLead in Firestore, businessDevelopmentLeadUid in MySQL
+      now,
+    ];
+  });
+
+  // UPSERT the TurboClients data into the MySQL table
+  const updateClause = clientsFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboClients (${clientsFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboClients documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboClients documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboClients WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboClients rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboClients rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboClientContacts(): Export TurboClientContactsWriteback documents to MySQL TurboClientContacts table.
+These are client contacts that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+Must be called AFTER exportTurboClients due to foreign key constraint.
+*/
+export async function exportTurboClientContacts(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboClientContacts");
+  const allContactsQuerySnap = await db.collection("TurboClientContactsWriteback").get();
+  
+  if (allContactsQuerySnap.empty) {
+    functions.logger.log("No TurboClientContactsWriteback documents to export");
+    return;
+  }
+
+  const contactsFields = ["id", "surname", "givenName", "email", "clientId", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allContactsQuerySnap.docs.map((contactSnap) => {
+    const contact = contactSnap.data();
+    return [
+      contactSnap.id, // id (PocketBase ID used as doc key)
+      contact.surname || null,
+      contact.givenName || null,
+      contact.email || null,
+      contact.clientId || null,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboClientContacts data into the MySQL table
+  const updateClause = contactsFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboClientContacts (${contactsFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboClientContacts documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboClientContacts documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboClientContacts WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboClientContacts rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboClientContacts rows: ${error}`);
+    throw error;
+  }
 }
 
 /*
