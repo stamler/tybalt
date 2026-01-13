@@ -1,0 +1,183 @@
+/**
+ * Sync data from Turbo writeback API routes to legacy Firestore collections.
+ * 
+ * This module provides utilities to poll Turbo every 30 minutes and store
+ * the returned data in legacy Tybalt's Firestore collections.
+ */
+
+import * as admin from "firebase-admin";
+import * as functions from "firebase-functions/v1";
+import { defineSecret } from "firebase-functions/params";
+import axios from "axios";
+import { TURBO_BASE_URL } from "./config";
+
+const db = admin.firestore();
+
+/**
+ * Generic transform function type.
+ * Takes an object from the API response and returns the transformed object
+ * to be stored in Firestore.
+ * 
+ * Use this to modify data before writing, for example:
+ * - Adding a sync timestamp
+ * - Renaming or removing fields
+ * - Converting data types
+ * 
+ * @example
+ * // Add a timestamp to each synced document
+ * const addTimestamp: TransformFunction = (item) => ({
+ *   ...item,
+ *   syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+ * });
+ * 
+ * @example
+ * // Rename a field and remove another
+ * const transformJob: TransformFunction = (item) => {
+ *   const { oldFieldName, fieldToRemove, ...rest } = item;
+ *   return {
+ *     ...rest,
+ *     newFieldName: oldFieldName,
+ *   };
+ * };
+ */
+export type TransformFunction<T = Record<string, unknown>> = (item: T) => Record<string, unknown>;
+
+/**
+ * Options for the fetchAndSyncToFirestore function.
+ */
+export interface FetchAndSyncOptions<T = Record<string, unknown>> {
+  /** The URL to fetch JSON data from */
+  url: string;
+  /** The field name in each object to use as the Firestore document ID */
+  idField: string;
+  /** The Firestore collection name to write documents to */
+  collectionName: string;
+  /** Optional transform function to modify objects before writing */
+  transform?: TransformFunction<T>;
+  /** Optional authorization header value (e.g., "Bearer <token>") */
+  authHeader?: string;
+}
+
+/**
+ * Fetches a JSON array from a URL and writes each object to a Firestore collection.
+ * 
+ * For each object in the array:
+ * 1. Extracts the value of the specified id field to use as the document ID
+ * 2. Optionally transforms the object using the provided transform function
+ * 3. Writes the object to the specified Firestore collection
+ * 
+ * @param options Configuration options for the sync operation
+ * @returns Promise resolving to the number of documents written
+ * @throws Error if the fetch fails or the response is not a valid JSON array
+ */
+export async function fetchAndSyncToFirestore<T extends Record<string, unknown>>(
+  options: FetchAndSyncOptions<T>
+): Promise<number> {
+  const { url, idField, collectionName, transform, authHeader } = options;
+  
+  functions.logger.info(`Fetching data from ${url} to sync to ${collectionName}`);
+  
+  // Fetch the data from the URL
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (authHeader) {
+    headers["Authorization"] = authHeader;
+  }
+  
+  let response;
+  try {
+    response = await axios.get(url, { headers });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      functions.logger.error(`Failed to fetch from ${url}: ${error.message}`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+    }
+    throw error;
+  }
+  
+  const data = response.data;
+  
+  // Validate that the response is an array
+  if (!Array.isArray(data)) {
+    throw new Error(`Expected JSON array from ${url}, got ${typeof data}`);
+  }
+  
+  if (data.length === 0) {
+    functions.logger.info(`No data returned from ${url}, nothing to sync`);
+    return 0;
+  }
+  
+  // Process in batches of 500 (Firestore batch limit)
+  const BATCH_SIZE = 500;
+  let totalWritten = 0;
+  
+  for (let i = 0; i < data.length; i += BATCH_SIZE) {
+    const batchData = data.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+    
+    for (const item of batchData) {
+      // Extract the document ID from the specified field
+      const docId = item[idField];
+      if (docId === undefined || docId === null) {
+        functions.logger.warn(`Skipping item without ${idField} field`, { item });
+        continue;
+      }
+      
+      // Convert the ID to string (in case it's a number or other type)
+      const docIdStr = String(docId);
+      
+      // Apply transform if provided, otherwise use the item as-is
+      const docData = transform ? transform(item as T) : item;
+      
+      // Write to Firestore (full overwrite since this is staging data)
+      const docRef = db.collection(collectionName).doc(docIdStr);
+      batch.set(docRef, docData);
+      totalWritten++;
+    }
+    
+    await batch.commit();
+    functions.logger.debug(`Committed batch of ${batchData.length} documents to ${collectionName}`);
+  }
+  
+  functions.logger.info(`Successfully synced ${totalWritten} documents to ${collectionName}`);
+  return totalWritten;
+}
+
+// =============================================================================
+// Scheduled sync functions
+// =============================================================================
+
+// Secret name in Google Cloud Secret Manager
+const TURBO_AUTH_TOKEN_SECRET_NAME = "TURBO_AUTH_TOKEN";
+const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
+
+/**
+ * Scheduled function that syncs Jobs data from Turbo every 30 minutes.
+ * 
+ * Fetches all jobs updated since 2026-01-01 from Turbo's export_legacy API
+ * and writes them to the TurboJobsWriteback collection in Firestore.
+ */
+export const scheduledTurboJobsWritebackSync = functions
+  .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
+  .pubsub
+  .schedule("every 30 minutes")
+  .onRun(async (context) => {
+    functions.logger.info("Starting scheduled Turbo Jobs sync");
+    
+    try {
+      await fetchAndSyncToFirestore({
+        url: `${TURBO_BASE_URL}/api/export_legacy/jobs/2026-01-01`,
+        idField: "immutableID",
+        collectionName: "TurboJobsWriteback",
+        authHeader: `Bearer ${TURBO_AUTH_TOKEN.value()}`,
+      });
+      
+      functions.logger.info("Scheduled Turbo Jobs sync completed successfully");
+    } catch (error) {
+      functions.logger.error("Scheduled Turbo Jobs sync failed", { error });
+      throw error;
+    }
+  });
