@@ -8,7 +8,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions/v1";
 import { defineSecret } from "firebase-functions/params";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { TURBO_BASE_URL } from "./config";
 
 const db = admin.firestore();
@@ -59,6 +59,16 @@ export interface FetchAndSyncOptions<T = Record<string, unknown>> {
 }
 
 /**
+ * Response format from jobs writeback endpoint.
+ * Contains separate arrays for jobs, clients, and client contacts.
+ */
+export interface JobsWritebackResponse {
+  jobs: Record<string, unknown>[];
+  clients: Record<string, unknown>[];
+  clientContacts: Record<string, unknown>[];
+}
+
+/**
  * Fetches a JSON array from a URL and writes each object to a Firestore collection.
  * 
  * For each object in the array:
@@ -89,7 +99,7 @@ export async function fetchAndSyncToFirestore<T extends Record<string, unknown>>
   try {
     response = await axios.get(url, { headers });
   } catch (error) {
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       functions.logger.error(`Failed to fetch from ${url}: ${error.message}`, {
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -146,6 +156,126 @@ export async function fetchAndSyncToFirestore<T extends Record<string, unknown>>
   return totalWritten;
 }
 
+/**
+ * Syncs an array of objects to a Firestore collection in batches.
+ * 
+ * @param data Array of objects to sync
+ * @param idField The field name to use as the Firestore document ID
+ * @param collectionName The Firestore collection to write to
+ * @returns Promise resolving to the number of documents written
+ */
+async function syncArrayToFirestore(
+  data: Record<string, unknown>[],
+  idField: string,
+  collectionName: string
+): Promise<number> {
+  if (data.length === 0) {
+    functions.logger.info(`No data to sync to ${collectionName}`);
+    return 0;
+  }
+
+  // Process in batches of 500 (Firestore batch limit)
+  const BATCH_SIZE = 500;
+  let totalWritten = 0;
+
+  for (let i = 0; i < data.length; i += BATCH_SIZE) {
+    const batchData = data.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+
+    for (const item of batchData) {
+      // Extract the document ID from the specified field
+      const docId = item[idField];
+      if (docId === undefined || docId === null) {
+        functions.logger.warn(`Skipping item without ${idField} field`, { item });
+        continue;
+      }
+
+      // Convert the ID to string (in case it's a number or other type)
+      const docIdStr = String(docId);
+
+      // Write to Firestore (full overwrite since this is staging data)
+      const docRef = db.collection(collectionName).doc(docIdStr);
+      batch.set(docRef, item);
+      totalWritten++;
+    }
+
+    await batch.commit();
+    functions.logger.debug(`Committed batch of ${batchData.length} documents to ${collectionName}`);
+  }
+
+  functions.logger.info(`Successfully synced ${totalWritten} documents to ${collectionName}`);
+  return totalWritten;
+}
+
+/**
+ * Fetches the jobs writeback response (object with jobs, clients, clientContacts arrays)
+ * and syncs each array to its respective Firestore collection.
+ * 
+ * @param url The URL to fetch the structured response from
+ * @param authHeader Authorization header value
+ * @returns Promise resolving to counts of documents written per collection
+ */
+export async function fetchAndSyncJobsWriteback(
+  url: string,
+  authHeader: string
+): Promise<{ jobs: number; clients: number; clientContacts: number }> {
+  functions.logger.info(`Fetching jobs writeback data from ${url}`);
+
+  // Fetch the data from the URL
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: authHeader,
+  };
+
+  let response;
+  try {
+    response = await axios.get(url, { headers });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      functions.logger.error(`Failed to fetch from ${url}: ${error.message}`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+    }
+    throw error;
+  }
+
+  const data = response.data as JobsWritebackResponse;
+
+  // Validate that the response has the expected structure
+  if (!data || typeof data !== "object") {
+    throw new Error(`Expected object response from ${url}, got ${typeof data}`);
+  }
+  if (!Array.isArray(data.jobs)) {
+    throw new Error(`Expected jobs array in response from ${url}`);
+  }
+  if (!Array.isArray(data.clients)) {
+    throw new Error(`Expected clients array in response from ${url}`);
+  }
+  if (!Array.isArray(data.clientContacts)) {
+    throw new Error(`Expected clientContacts array in response from ${url}`);
+  }
+
+  functions.logger.info(
+    `Fetched ${data.jobs.length} jobs, ${data.clients.length} clients, ${data.clientContacts.length} contacts`
+  );
+
+  // Sync each array to its respective collection
+  // Jobs use "number" as key (to match legacy Jobs collection for fold operation)
+  // Clients and contacts use "id" (PocketBase ID) as key
+  const [jobsWritten, clientsWritten, contactsWritten] = await Promise.all([
+    syncArrayToFirestore(data.jobs, "number", "TurboJobsWriteback"),
+    syncArrayToFirestore(data.clients, "id", "TurboClientsWriteback"),
+    syncArrayToFirestore(data.clientContacts, "id", "TurboClientContactsWriteback"),
+  ]);
+
+  return {
+    jobs: jobsWritten,
+    clients: clientsWritten,
+    clientContacts: contactsWritten,
+  };
+}
+
 // =============================================================================
 // Scheduled sync functions
 // =============================================================================
@@ -155,29 +285,34 @@ const TURBO_AUTH_TOKEN_SECRET_NAME = "TURBO_AUTH_TOKEN";
 const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
 
 /**
- * Scheduled function that syncs Jobs data from Turbo every 30 minutes.
+ * Scheduled function that syncs Jobs, Clients, and ClientContacts data from Turbo every 30 minutes.
  * 
  * Fetches all jobs updated since 2026-01-01 from Turbo's export_legacy API
- * and writes them to the TurboJobsWriteback collection in Firestore.
+ * and writes:
+ * - jobs array to TurboJobsWriteback collection
+ * - clients array to TurboClientsWriteback collection  
+ * - clientContacts array to TurboClientContactsWriteback collection
  */
 export const scheduledTurboJobsWritebackSync = functions
   .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
   .pubsub
   .schedule("every 30 minutes")
   .onRun(async (context) => {
-    functions.logger.info("Starting scheduled Turbo Jobs sync");
+    functions.logger.info("Starting scheduled Turbo Jobs/Clients/Contacts sync");
     
     try {
-      await fetchAndSyncToFirestore({
-        url: `${TURBO_BASE_URL}/api/export_legacy/jobs/2026-01-01`,
-        idField: "immutableID",
-        collectionName: "TurboJobsWriteback",
-        authHeader: `Bearer ${TURBO_AUTH_TOKEN.value()}`,
-      });
+      const result = await fetchAndSyncJobsWriteback(
+        `${TURBO_BASE_URL}/api/export_legacy/jobs/2026-01-01`,
+        `Bearer ${TURBO_AUTH_TOKEN.value()}`
+      );
       
-      functions.logger.info("Scheduled Turbo Jobs sync completed successfully");
+      functions.logger.info("Scheduled Turbo sync completed successfully", {
+        jobsWritten: result.jobs,
+        clientsWritten: result.clients,
+        contactsWritten: result.clientContacts,
+      });
     } catch (error) {
-      functions.logger.error("Scheduled Turbo Jobs sync failed", { error });
+      functions.logger.error("Scheduled Turbo sync failed", { error });
       throw error;
     }
   });

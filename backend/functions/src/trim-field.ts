@@ -93,17 +93,17 @@ if (process.argv.length < 4 || process.argv.length > 5) {
   process.exit(1);
 }
 
-const collectionName = process.argv[2];
-const fieldName = process.argv[3];
-const maxChanges = process.argv[4] ? parseInt(process.argv[4], 10) : undefined;
+const argCollection = process.argv[2];
+const argField = process.argv[3];
+const argMaxChanges = process.argv[4] ? parseInt(process.argv[4], 10) : undefined;
 
-if (maxChanges !== undefined && (isNaN(maxChanges) || maxChanges <= 0)) {
+if (argMaxChanges !== undefined && (isNaN(argMaxChanges) || argMaxChanges <= 0)) {
   console.error("Error: MaxChanges must be a positive integer.");
   printUsage();
   process.exit(1);
 }
 
-trimFieldInCollection(collectionName, fieldName, maxChanges)
+trimFieldInCollection(argCollection, argField, argMaxChanges)
   .then((totalChanges) => {
     console.log(`\nDone! Made ${totalChanges} changes.`);
     process.exit(0);
