@@ -43,6 +43,10 @@ service cloud.firestore {
     function valueOrZero(field) {
       return newDoc().get(field, 0)
     }
+    function noLeadingTrailingWhitespace(value) {
+      // Matches strings that don't start or end with whitespace
+      return value.matches('^\\S(.*\\S)?$');
+    }
     function isPositiveMultipleOfPointFive(field) {
       return request.resource.data[field] is number && int(request.resource.data[field] * 2) == (request.resource.data[field] * 2) && request.resource.data[field] > 0;
     }
@@ -503,6 +507,7 @@ service cloud.firestore {
           isMissing("alternateManagerUid")
         ) &&
         newDoc().description.size() > 3 &&
+        noLeadingTrailingWhitespace(newDoc().description) &&
         newDoc().status is string &&
         newDoc().fnAgreement is bool &&
         // require branch to be one of the allowed office locations
@@ -516,6 +521,7 @@ service cloud.firestore {
         // 2. jobOwner matches client if the client is the actual owner of the
         //    job
         newDoc().jobOwner is string && newDoc().jobOwner.size() > 5 &&
+        noLeadingTrailingWhitespace(newDoc().jobOwner) &&
 
         // The job may have a list of one or more categories in list.
         // categories must be strings and must be at least 1 character long
@@ -527,6 +533,10 @@ service cloud.firestore {
 
         // clientContact must be a string
         newDoc().clientContact is string && newDoc().clientContact.size() > 5 &&
+        noLeadingTrailingWhitespace(newDoc().clientContact) &&
+
+        // client must not have leading or trailing whitespace
+        noLeadingTrailingWhitespace(newDoc().client) &&
 
         // validate properties that are only present on either proposals or projects
         (
@@ -543,7 +553,7 @@ service cloud.firestore {
           ( jobId.matches('^[0-9].*') &&
             // the projects branch
             (
-              (isMissing("proposal") || ( isInCollection("proposal","Jobs") && newDoc().proposal.matches('^(P).*')) ) &&
+              (isMissing("proposal") || ( isInCollection("proposal","Jobs") && newDoc().proposal.matches('^(P).*') && noLeadingTrailingWhitespace(newDoc().proposal)) ) &&
               isMissing("proposalOpeningDate") &&
               isMissing("proposalSubmissionDueDate") &&
               newDoc().projectAwardDate is timestamp &&

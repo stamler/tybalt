@@ -444,6 +444,18 @@ export default defineComponent({
     save() {
       this.item = _.pickBy(this.item, (i) => i !== ""); // strip blank fields
 
+      // Trim leading and trailing whitespace from string fields
+      const fieldsToTrim = ["client", "jobOwner", "clientContact", "proposal", "description"];
+      for (const field of fieldsToTrim) {
+        if (typeof this.item[field] === "string") {
+          this.item[field] = this.item[field].trim();
+        }
+      }
+      // Trim the job id field for new items
+      if (!this.editing && typeof this.item.id === "string") {
+        this.item.id = this.item.id.trim();
+      }
+
       // delete the legacy manager field
       // TODO:*** This is temporary, until all the old data is migrated ***
       delete this.item.manager;
