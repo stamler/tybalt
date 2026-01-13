@@ -20,6 +20,7 @@ export const useStateStore = defineStore({
     activeTasks: {} as TaskList, // items to show in the progress UI element
     showTasks: false, // whether to display the progress UI element
     timeEnabled: false, // whether time tracking is enabled based on Config/Enable
+    jobsEnabled: false, // whether job creation/editing is enabled based on Config/Enable
 
     // state of the notification system
     notifications: {}, // notifications to display in UI
@@ -63,6 +64,9 @@ export const useStateStore = defineStore({
     },
     setTimeEnabled(enabled: boolean) {
       this.timeEnabled = enabled;
+    },
+    setJobsEnabled(enabled: boolean) {
+      this.jobsEnabled = enabled;
     },
   },
 });

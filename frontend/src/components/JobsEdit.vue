@@ -1,5 +1,13 @@
 <template>
-  <form id="editor">
+  <div id="editor">
+    <div v-if="!jobsEnabled" class="disabled-notice">
+      <p>
+        Job creation and editing has been moved to 
+        <a href="https://turbo.tbte.ca" target="_blank">tybalt turbo</a>.
+        Please use turbo to create or edit jobs.
+      </p>
+    </div>
+    <form v-if="jobsEnabled">
     <span class="field">
       <label for="job">Project/Proposal #</label>
       <span v-if="editing">{{ id }}</span>
@@ -187,7 +195,8 @@
         Cancel
       </button>
     </span>
-  </form>
+    </form>
+  </div>
 </template>
 
 <script lang="ts">
@@ -239,7 +248,8 @@ export default defineComponent({
   setup() {
     // user doesn't need to be reactive so no refs wanted, just the user object,
     // so we don't use storeToRefs() to toRef()
-    return { user: useStateStore().user };
+    const store = useStateStore();
+    return { user: store.user, jobsEnabled: store.jobsEnabled };
   },
   props: ["id", "collectionName"],
   components: {
@@ -587,5 +597,22 @@ button.del_but:hover {
 
 button:active {
   filter: brightness(0.7) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.3));
+}
+
+.disabled-notice {
+  background-color: var(--attention-background, #fff3cd);
+  border: 1px solid var(--attention-border, #ffc107);
+  border-radius: 4px;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.disabled-notice p {
+  margin: 0;
+}
+
+.disabled-notice a {
+  color: var(--button-link-color);
+  font-weight: bold;
 }
 </style>

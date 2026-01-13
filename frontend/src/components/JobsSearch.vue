@@ -1,5 +1,12 @@
 <template>
   <div id="list" v-if="searchClientLoaded">
+    <div v-if="!jobsEnabled" class="disabled-notice">
+      <p>
+        Job creation and editing has been moved to 
+        <a href="https://turbo.tbte.ca/admin/jobs" target="_blank">tybalt turbo</a>.
+        You can still view job details below, but please use turbo to create or edit jobs.
+      </p>
+    </div>
     <ais-instant-search
       v-bind:search-client="searchClient"
       index-name="tybalt_jobs"
@@ -46,7 +53,7 @@
                 Contact: {{ item.clientContact }}
               </div>
             </div>
-            <div class="rowactionsbox">
+            <div class="rowactionsbox" v-if="jobsEnabled">
               <router-link :to="[parentPath, item.objectID, 'edit'].join('/')">
                 <Icon icon="feather:edit" width="24px" />
               </router-link>
@@ -85,7 +92,7 @@ export default defineComponent({
   setup() {
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { user: store.user, startTask, endTask };
+    return { user: store.user, startTask, endTask, jobsEnabled: store.jobsEnabled };
   },
 
   components: {
@@ -165,5 +172,22 @@ button.ais-SearchBox-submit {
 }
 .anchorbox {
   flex-basis: 6em;
+}
+
+.disabled-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.disabled-notice p {
+  margin: 0;
+}
+
+.disabled-notice a {
+  color: #0066cc;
+  font-weight: bold;
 }
 </style>

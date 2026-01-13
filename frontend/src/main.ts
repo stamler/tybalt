@@ -147,15 +147,17 @@ const unsubscribe = onAuthStateChanged(auth, async function (user) {
       })
     );
 
-    // load timeEnabled from Config/Enable document
+    // load timeEnabled and jobsEnabled from Config/Enable document
     const db = getFirestore(firebaseApp);
     tasks.push(
       getDoc(doc(db, "Config", "Enable")).then((snap) => {
         if (snap.exists()) {
           const data = snap.data();
           store.setTimeEnabled(data.time === true);
+          store.setJobsEnabled(data.jobs === true);
         } else {
           store.setTimeEnabled(false);
+          store.setJobsEnabled(false);
         }
       })
     );
