@@ -280,7 +280,26 @@ export async function fetchAndSyncJobsWriteback(
 // Scheduled sync functions
 // =============================================================================
 
-// Secret name in Google Cloud Secret Manager
+/**
+ * Secret for authenticating with Turbo's export_legacy API.
+ * 
+ * This token is created via Turbo's Machine Secrets UI (/machine_secrets) and
+ * stored in Google Cloud Secret Manager as TURBO_AUTH_TOKEN.
+ * 
+ * ## IMPORTANT: Updating the Secret
+ * 
+ * When you update the secret in Google Secret Manager, **you must redeploy
+ * the Cloud Functions** that depend on it. Cloud Function instances cache
+ * secret values at startup and don't automatically pick up changes.
+ * 
+ * To redeploy after updating the secret:
+ * ```bash
+ * firebase deploy --only functions:scheduledTurboJobsWritebackSync
+ * ```
+ * 
+ * Without redeploying, the function will continue using the old (possibly
+ * disabled/expired) token until the instances are recycled.
+ */
 const TURBO_AUTH_TOKEN_SECRET_NAME = "TURBO_AUTH_TOKEN";
 const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
 
