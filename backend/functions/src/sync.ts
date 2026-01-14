@@ -556,19 +556,24 @@ exportJobs(): Export Jobs documents to MySQL
 export async function exportJobs(mysqlConnection: Connection) {
   functions.logger.debug("exporting jobs");
   const allJobsQuerySnap = await db.collection("Jobs").get();
-  const jobsFields = ["id", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "immutableID", "jobOwner", "lastTimeEntryDate", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp", "clientId", "clientContactId", "jobOwnerId"];
+  const jobsFields = ["id", "number", "alternateManagerDisplayName", "alternateManagerUid", "categories", "client", "branch", "clientContact", "description", "divisions", "fnAgreement", "hasTimeEntries", "immutableID", "jobOwner", "lastTimeEntryDate", "location", "outstandingBalance", "outstandingBalanceDate", "authorizingDocument", "clientPo", "clientReferenceNumber", "created", "updated", "jobTimeAllocations", "manager", "managerDisplayName", "managerUid", "projectAwardDate", "proposal", "proposalOpeningDate", "proposalSubmissionDueDate", "status", "timestamp", "clientId", "clientContactId", "jobOwnerId", "parentId", "proposalId"];
   const now = new Date();
 
   const insertValues = allJobsQuerySnap.docs.map((jobSnap) => {
     const job = jobSnap.data();
     job.id = jobSnap.id;
+    job.number = jobSnap.id; // Job number is the document ID
     job.timestamp = now;
+    
+    // Existing array handling
     if (job.categories !== null && job.categories !== undefined) {
       job.categories = job.categories.join(",");
     }
     if (job.divisions !== null && job.divisions !== undefined) {
       job.divisions = job.divisions.join(",");
     }
+    
+    // Existing date handling (Firestore Timestamps)
     if (job.lastTimeEntryDate !== null && job.lastTimeEntryDate !== undefined) {
       job.lastTimeEntryDate = format(utcToZonedTime(job.lastTimeEntryDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
     }
@@ -581,12 +586,50 @@ export async function exportJobs(mysqlConnection: Connection) {
     if (job.proposalSubmissionDueDate !== null && job.proposalSubmissionDueDate !== undefined) {
       job.proposalSubmissionDueDate = format(utcToZonedTime(job.proposalSubmissionDueDate.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd")
     }
+    
+    // Handle outstandingBalanceDate (string in Firestore from writeback, DATE in MySQL)
+    if (job.outstandingBalanceDate !== null && job.outstandingBalanceDate !== undefined && job.outstandingBalanceDate !== "") {
+      job.outstandingBalanceDate = job.outstandingBalanceDate || null;
+    } else {
+      job.outstandingBalanceDate = null;
+    }
+    
+    // Handle created/updated timestamps (strings from writeback)
+    if (job.created !== null && job.created !== undefined && job.created !== "") {
+      job.created = new Date(job.created);
+    } else {
+      job.created = null;
+    }
+    if (job.updated !== null && job.updated !== undefined && job.updated !== "") {
+      job.updated = new Date(job.updated);
+    } else {
+      job.updated = null;
+    }
+    
+    // Handle jobTimeAllocations (object -> JSON string)
+    if (job.jobTimeAllocations !== null && job.jobTimeAllocations !== undefined) {
+      job.jobTimeAllocations = JSON.stringify(job.jobTimeAllocations);
+    } else {
+      job.jobTimeAllocations = null;
+    }
+    
     // Ensure branch is present (may be undefined on some documents)
     job.branch = job.branch === undefined || job.branch === null ? null : job.branch;
-    // Include new ID fields (will be populated after TurboJobsWriteback fold operation)
+    
+    // Include ID fields (will be populated after TurboJobsWriteback fold operation)
     job.clientId = job.clientId || null;
     job.clientContactId = job.clientContactId || null;
     job.jobOwnerId = job.jobOwnerId || null;
+    job.parentId = job.parentId || null;
+    job.proposalId = job.proposalId || null;
+    
+    // Handle new string fields
+    job.location = job.location || null;
+    job.outstandingBalance = job.outstandingBalance ?? 0;
+    job.authorizingDocument = job.authorizingDocument || null;
+    job.clientPo = job.clientPo || null;
+    job.clientReferenceNumber = job.clientReferenceNumber || null;
+    
     return jobsFields.map(x => job[x]);
   })
 
