@@ -8,6 +8,7 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket, Connection } from "mysql2/promise";
 import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
+import { FieldPair, objDiff, analyzeFoldAction } from "./fold-utils";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -50,6 +51,16 @@ export const syncToSQL = functions
         },
       });
     }
+    // Fold TurboJobsWriteback into Jobs before exporting to MySQL
+    await foldCollection(
+      "TurboJobsWriteback",
+      "Jobs",
+      [
+        { sourceField: "_id", destField: "_id" },
+        { sourceField: "immutableID", destField: "immutableID" },
+      ],
+      ["hasTimeEntries", "lastTimeEntryDate"]
+    );
     await exportJobs(mysqlConnection);
     // Export Turbo writeback data (clients before contacts due to FK constraint)
     await exportTurboClients(mysqlConnection);
@@ -662,6 +673,102 @@ export async function exportJobs(mysqlConnection: Connection) {
   functions.logger.debug(cleanupResult[0]);
 
 }
+
+/*
+foldCollection(): Generic function to merge documents from a source collection into a destination collection.
+
+This "fold" operation moves documents from source to destination based on field pair matching rules.
+For each source document, it checks if destination documents exist that match on the specified field pairs.
+
+Logic:
+- REPLACE: If ALL field pairs match exactly one destination doc AND it's the SAME doc, overwrite it
+- CREATE: If NO field pairs match any destination docs, create new
+- ERROR: Any other case (conflicts, multiple matches) - log and skip, leaving doc in source
+
+@param sourceCollection - Name of the source Firestore collection
+@param destCollection - Name of the destination Firestore collection  
+@param fieldPairs - Array of field pairs defining match rules. Use "_id" to reference document ID.
+*/
+// Maps destination collection names to the corresponding field in Config/Enable document.
+// If that field is true, editing is enabled in legacy Tybalt and fold should be skipped.
+const collectionToEnableField: Record<string, string> = {
+  Jobs: "jobs",
+};
+
+export async function foldCollection(
+  sourceCollection: string,
+  destCollection: string,
+  fieldPairs: FieldPair[],
+  preserveFields: string[] = []
+): Promise<void> {
+  functions.logger.info(`Starting fold of ${sourceCollection} into ${destCollection}`);
+
+  // Check if editing is enabled for this collection in legacy Tybalt
+  const enableField = collectionToEnableField[destCollection];
+  if (enableField) {
+    const enableDoc = await db.collection("Config").doc("Enable").get();
+    const enableData = enableDoc.data() || {};
+    if (enableData[enableField] === true) {
+      functions.logger.info(
+        `Fold skipped: ${destCollection} editing is enabled in legacy Tybalt (Config/Enable.${enableField} = true)`
+      );
+      return;
+    }
+  }
+  
+  const sourceSnap = await db.collection(sourceCollection).get();
+  
+  if (sourceSnap.empty) {
+    functions.logger.info(`No ${sourceCollection} documents to fold`);
+    return;
+  }
+  
+  let replacedCount = 0, createdCount = 0, errorCount = 0;
+
+  for (const sourceDoc of sourceSnap.docs) {
+    const sourceData = sourceDoc.data();
+    const result = await analyzeFoldAction(
+      db,
+      destCollection,
+      fieldPairs,
+      sourceDoc.id,
+      sourceData,
+      preserveFields
+    );
+
+    switch (result.action) {
+    case "create":
+      await db.collection(destCollection).doc(result.destDocId).set(result.data);
+      await sourceDoc.ref.delete();
+      createdCount++;
+      functions.logger.debug(`Created ${destCollection} doc ${result.destDocId}`);
+      break;
+
+    case "replace": {
+      const diff = objDiff(result.existingData, result.newData);
+      await db.collection(destCollection).doc(result.destDocId).set(result.newData);
+      await sourceDoc.ref.delete();
+      replacedCount++;
+      functions.logger.debug(`Replaced ${destCollection} doc ${result.destDocId}`, {
+        diff: JSON.stringify(diff),
+      });
+      break;
+    }
+
+    case "error":
+      functions.logger.error(
+        `${result.reason} for source doc ${sourceDoc.id}`
+      );
+      errorCount++;
+      break;
+    }
+  }
+
+  functions.logger.info(
+    `Fold complete: ${replacedCount} replaced, ${createdCount} created, ${errorCount} errors`
+  );
+}
+
 
 /*
 exportTurboClients(): Export TurboClientsWriteback documents to MySQL TurboClients table.
