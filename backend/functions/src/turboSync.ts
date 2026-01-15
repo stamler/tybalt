@@ -9,7 +9,8 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions/v1";
 import { defineSecret } from "firebase-functions/params";
 import axios, { isAxiosError } from "axios";
-import { TURBO_BASE_URL } from "./config";
+import { zonedTimeToUtc } from "date-fns-tz";
+import { APP_NATIVE_TZ, TURBO_BASE_URL } from "./config";
 
 const db = admin.firestore();
 
@@ -66,6 +67,34 @@ export interface JobsWritebackResponse {
   jobs: Record<string, unknown>[];
   clients: Record<string, unknown>[];
   clientContacts: Record<string, unknown>[];
+}
+
+const WRITEBACK_DATE_FIELDS = [
+  "projectAwardDate",
+  "proposalOpeningDate",
+  "proposalSubmissionDueDate",
+] as const;
+
+function toNoonEasternTimestamp(value: unknown): admin.firestore.Timestamp | unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return value;
+  }
+  const noonEastern = zonedTimeToUtc(`${trimmed}T12:00:00`, APP_NATIVE_TZ);
+  return admin.firestore.Timestamp.fromDate(noonEastern);
+}
+
+function convertWritebackJobDates(job: Record<string, unknown>): Record<string, unknown> {
+  const converted = { ...job };
+  for (const field of WRITEBACK_DATE_FIELDS) {
+    if (field in converted) {
+      converted[field] = toNoonEasternTimestamp(converted[field]);
+    }
+  }
+  return converted;
 }
 
 /**
@@ -263,8 +292,9 @@ export async function fetchAndSyncJobsWriteback(
   // Sync each array to its respective collection
   // Jobs use "number" as key (to match legacy Jobs collection for fold operation)
   // Clients and contacts use "id" (PocketBase ID) as key
+  const convertedJobs = data.jobs.map(convertWritebackJobDates);
   const [jobsWritten, clientsWritten, contactsWritten] = await Promise.all([
-    syncArrayToFirestore(data.jobs, "number", "TurboJobsWriteback"),
+    syncArrayToFirestore(convertedJobs, "number", "TurboJobsWriteback"),
     syncArrayToFirestore(data.clients, "id", "TurboClientsWriteback"),
     syncArrayToFirestore(data.clientContacts, "id", "TurboClientContactsWriteback"),
   ]);
