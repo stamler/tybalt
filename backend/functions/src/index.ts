@@ -28,7 +28,7 @@ export { writeFileLinks, expensesPayPeriodEnding } from "./utilities";
 export { scheduledFirestoreExport } from "./export";
 export { syncToSQL } from "./sync";
 export { queryMySQL } from "./endpoint";
-export { deleteJob, fullSyncLastTimeEntryDate, updateLastTimeEntryDate, clearLastTimeEntryDate } from "./jobs";
+export { deleteJob, fullSyncLastTimeEntryDate, updateLastTimeEntryDate, clearLastTimeEntryDate, clearStaleTurboFields } from "./jobs";
 export { addMutation, deleteMutation, dispatchMutations, mutationComplete, approveMutation } from "./mutations";
 export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprovalReminder, scheduledTimeSheetApprovalReminder } from "./email";
 export { wgCreateKeylessClient, wgToggleEnableClient, wgDeleteClient, wgPeersIni, wgSetPublicKey, wgClearPublicKey } from "./wireguard";

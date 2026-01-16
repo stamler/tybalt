@@ -281,3 +281,80 @@ async function addFieldToCollection(collection: string, fieldName: string, value
   functions.logger.info(`added ${fieldName} field to ${modifiedDocsCounter} documents`);
   return;
 }
+
+/**
+ * Firestore trigger that clears stale Turbo fields when a job is edited in
+ * legacy Tybalt.
+ * 
+ * When editing jobs in legacy Tybalt (Firebase), certain Turbo-written fields
+ * become stale or misleading:
+ * 
+ * 1. TIMESTAMPS: `created` and `updated` are Turbo timestamps. After a legacy
+ *    edit, `updated` becomes misleading (suggests no recent changes when there
+ *    were). We clear both to avoid confusion about the job's provenance/freshness.
+ * 
+ * 2. ID REFERENCES: Fields like `client`, `clientContact`, `jobOwner`, and
+ *    `proposal` have corresponding PocketBase ID fields. If a user changes a
+ *    name field, the corresponding ID becomes incorrect. We clear these to
+ *    prevent data incoherence.
+ * 
+ * When Turbo sync resumes, the fold operation will restore all these fields
+ * with correct values.
+ */
+export const clearStaleTurboFields = functions.firestore
+  .document("Jobs/{jobId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    const updates: Record<string, admin.firestore.FieldValue> = {};
+    
+    // Always clear Turbo timestamps on any edit. These represent when the job
+    // was created/updated in Turbo, not in legacy Tybalt. After a legacy edit:
+    // - `updated` becomes misleading (implies no recent changes)
+    // - `created` loses meaning if the job is substantially modified in legacy
+    if (after.created) {
+      updates.created = admin.firestore.FieldValue.delete();
+    }
+    if (after.updated) {
+      updates.updated = admin.firestore.FieldValue.delete();
+    }
+    
+    // If client name changed, clear clientId.
+    // This could be a typo fix OR a change to a completely different client.
+    // We cannot distinguish between the two cases, so we must clear the ID
+    // to prevent referencing the wrong PocketBase client record.
+    if (before.client !== after.client && after.clientId) {
+      updates.clientId = admin.firestore.FieldValue.delete();
+      
+      // CASCADING: Client contacts belong to specific clients. If the client
+      // changed to a different entity, the clientContactId would now reference
+      // a contact from the wrong client, creating data incoherence.
+      // Since we can't know if this is a typo vs. a real client change,
+      // we conservatively clear clientContactId as well.
+      if (after.clientContactId) {
+        updates.clientContactId = admin.firestore.FieldValue.delete();
+      }
+    }
+    
+    // If clientContact name changed directly (independent of client change),
+    // clear clientContactId
+    if (before.clientContact !== after.clientContact && after.clientContactId) {
+      updates.clientContactId = admin.firestore.FieldValue.delete();
+    }
+    
+    // If jobOwner changed, clear jobOwnerId
+    if (before.jobOwner !== after.jobOwner && after.jobOwnerId) {
+      updates.jobOwnerId = admin.firestore.FieldValue.delete();
+    }
+    
+    // If proposal job number changed, clear proposalId
+    if (before.proposal !== after.proposal && after.proposalId) {
+      updates.proposalId = admin.firestore.FieldValue.delete();
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      functions.logger.info(`Clearing stale Turbo fields for job ${context.params.jobId}:`, Object.keys(updates));
+      return change.after.ref.update(updates);
+    }
+    return null;
+  });
