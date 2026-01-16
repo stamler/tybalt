@@ -723,7 +723,7 @@ export async function foldCollection(
     return;
   }
   
-  let replacedCount = 0, createdCount = 0, errorCount = 0;
+  let replacedCount = 0, createdCount = 0, skippedCount = 0, errorCount = 0;
 
   for (const sourceDoc of sourceSnap.docs) {
     const sourceData = sourceDoc.data();
@@ -746,12 +746,19 @@ export async function foldCollection(
 
     case "replace": {
       const diff = objDiff(result.existingData, result.newData);
-      await db.collection(destCollection).doc(result.destDocId).set(result.newData);
-      await sourceDoc.ref.delete();
-      replacedCount++;
-      functions.logger.debug(`Replaced ${destCollection} doc ${result.destDocId}`, {
-        diff: JSON.stringify(diff),
-      });
+      if (Object.keys(diff).length === 0) {
+        // No actual changes - just delete source without overwriting destination
+        await sourceDoc.ref.delete();
+        skippedCount++;
+        functions.logger.debug(`Skipped ${destCollection} doc ${result.destDocId} (no changes)`);
+      } else {
+        await db.collection(destCollection).doc(result.destDocId).set(result.newData);
+        await sourceDoc.ref.delete();
+        replacedCount++;
+        functions.logger.debug(`Replaced ${destCollection} doc ${result.destDocId}`, {
+          diff: JSON.stringify(diff),
+        });
+      }
       break;
     }
 
@@ -765,7 +772,7 @@ export async function foldCollection(
   }
 
   functions.logger.info(
-    `Fold complete: ${replacedCount} replaced, ${createdCount} created, ${errorCount} errors`
+    `Fold complete: ${replacedCount} replaced, ${createdCount} created, ${skippedCount} skipped (no changes), ${errorCount} errors`
   );
 }
 

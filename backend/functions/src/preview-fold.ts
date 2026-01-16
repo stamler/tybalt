@@ -98,6 +98,7 @@ function parseFieldPairs(arg: string): FieldPair[] {
 interface PreviewResults {
   creates: Array<{ id: string; destDocId: string; data: Record<string, unknown> }>;
   replaces: Array<{ id: string; destDocId: string; diffFormatted: string }>;
+  skips: Array<{ id: string; destDocId: string }>;
   errors: Array<{ id: string; reason: string }>;
 }
 
@@ -113,6 +114,7 @@ async function previewFold(
   const results: PreviewResults = {
     creates: [],
     replaces: [],
+    skips: [],
     errors: [],
   };
 
@@ -144,11 +146,18 @@ async function previewFold(
 
     case "replace": {
       const diff = objDiff(action.existingData, action.newData);
-      results.replaces.push({
-        id: sourceDoc.id,
-        destDocId: action.destDocId,
-        diffFormatted: formatDiff(diff),
-      });
+      if (Object.keys(diff).length === 0) {
+        results.skips.push({
+          id: sourceDoc.id,
+          destDocId: action.destDocId,
+        });
+      } else {
+        results.replaces.push({
+          id: sourceDoc.id,
+          destDocId: action.destDocId,
+          diffFormatted: formatDiff(diff),
+        });
+      }
       break;
     }
 
@@ -245,6 +254,18 @@ Examples:
   }
   console.log("");
 
+  // --- SKIP section ---
+  console.log(`--- SKIP (${results.skips.length} documents, no changes) ---`);
+  console.log("");
+  if (results.skips.length === 0) {
+    console.log("  (none)");
+  } else {
+    for (const item of results.skips) {
+      console.log(`${item.id} -> ${item.destDocId}`);
+    }
+  }
+  console.log("");
+
   // --- ERRORS section ---
   console.log(`--- ERRORS (${results.errors.length} documents) ---`);
   console.log("");
@@ -263,6 +284,7 @@ Examples:
   console.log("=== SUMMARY ===");
   console.log(`Would create: ${results.creates.length}`);
   console.log(`Would replace: ${results.replaces.length}`);
+  console.log(`Would skip (no changes): ${results.skips.length}`);
   console.log(`Errors: ${results.errors.length}`);
 }
 
