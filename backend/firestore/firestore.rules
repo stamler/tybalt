@@ -526,7 +526,7 @@ service cloud.firestore {
         newDoc().fnAgreement is bool &&
         // require branch to be one of the allowed office locations
         newDoc().branch is string &&
-        newDoc().branch in ["ThunderBay","Kenora","Collingwood","FortFrances","Ottawa","KitchenerWaterloo"] &&
+        newDoc().branch in ["ThunderBay","Kenora","Collingwood","FortFrances","Ottawa","KitchenerWaterloo","Toronto"] &&
         validDivisionsArray(newDoc().divisions) &&
 
         // the jobOwner must be a string 
