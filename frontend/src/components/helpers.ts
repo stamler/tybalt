@@ -751,3 +751,12 @@ export function hasLink(item: DocumentData, property: string) {
     item[property].length > 32
   );
 }
+
+/**
+ * Normalizes whitespace in a string:
+ * - Trims leading and trailing whitespace
+ * - Replaces consecutive whitespace characters with a single space
+ */
+export function normalizeWhitespace(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}

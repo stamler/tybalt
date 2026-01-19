@@ -138,7 +138,7 @@ service cloud.firestore {
 
         // description is present except for Allowance
         (
-          newDoc.description.size() > 3 && !(newDoc.paymentType in ["Allowance", "FuelOnAccount"]) ||
+          newDoc.description.size() > 3 && noLeadingTrailingWhitespace(newDoc.description) && !(newDoc.paymentType in ["Allowance", "FuelOnAccount"]) ||
           isMissing("description") && newDoc.paymentType in ["Allowance", "FuelOnAccount"]
         ) &&
 
@@ -160,7 +160,7 @@ service cloud.firestore {
 
         // requires vendorName if paymentType is "Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"
         (
-          newDoc.paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"] && !isMissing("vendorName") ||
+          newDoc.paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"] && !isMissing("vendorName") && noLeadingTrailingWhitespace(newDoc.vendorName) ||
           !(newDoc.paymentType in ["Expense", "FuelCard", "FuelOnAccount", "CorporateCreditCard"])
         ) &&
 

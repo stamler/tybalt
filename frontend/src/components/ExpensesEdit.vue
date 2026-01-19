@@ -262,7 +262,7 @@ import { sha256 } from "js-sha256";
 import ActionButton from "./ActionButton.vue";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { downloadAttachment, shortDateWithWeekday } from "./helpers";
+import { downloadAttachment, shortDateWithWeekday, normalizeWhitespace } from "./helpers";
 import DSJobSelector from "./DSJobSelector.vue";
 
 
@@ -537,6 +537,15 @@ const save = async function () {
   )[0].name;
   */
   item.value = pickBy(item.value, (i) => i !== ""); // strip blank fields
+
+  // Normalize whitespace in text fields
+  const fieldsToNormalize = ["description", "vendorName"];
+  for (const field of fieldsToNormalize) {
+    if (typeof item.value[field] === "string") {
+      item.value[field] = normalizeWhitespace(item.value[field]);
+    }
+  }
+
   delete item.value.rejected;
   delete item.value.rejectorId;
   delete item.value.rejectorName;

@@ -495,6 +495,18 @@ describe("Firestore Rules (Expenses)", function () {
       await assertSucceeds(doc.set(baseline));
       await assertSucceeds(doc.set({ ...baseline, vendorName: "Foobar Company" }));
     });
+    it("rejects expenses with leading/trailing whitespace in description", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      await assertFails(doc.set({ ...baseline, description: " leading space" }));
+      await assertFails(doc.set({ ...baseline, description: "trailing space " }));
+      await assertSucceeds(doc.set({ ...baseline, description: "no extra spaces" }));
+    });
+    it("rejects expenses with leading/trailing whitespace in vendorName", async () => {
+      const doc = timeDb.collection("Expenses").doc();
+      await assertFails(doc.set({ ...baseline, vendorName: " leading" }));
+      await assertFails(doc.set({ ...baseline, vendorName: "trailing " }));
+      await assertSucceeds(doc.set({ ...baseline, vendorName: "Normal Vendor" }));
+    });
     it("allows manager (tapr) to reject submitted expenses they manage", async () => {
       await testEnvironment.withSecurityRulesDisabled(async (context) => {
         const adminDb = context.firestore();
