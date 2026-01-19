@@ -27,8 +27,24 @@ export const syncToSQL = functions
     await exportTime(mysqlConnection);
     await cleanupExport(mysqlConnection, "TimeAmendments");
     await exportAmendments(mysqlConnection);
+    // Fold TurboExpensesWriteback into Expenses before exporting to MySQL
+    // TODO: Ensure we preserve legacy workflow/export fields (e.g., committed/exported)
+    // so the fold does not wipe state needed by exportExpenses(). Alternatively, 
+    // confirm that having the fields missing doesn't break the exportExpenses() function.
+    await foldCollection(
+      "TurboExpensesWriteback",
+      "Expenses",
+      [
+        { sourceField: "_id", destField: "_id" },
+        { sourceField: "immutableID", destField: "immutableID" },
+      ],
+      [] // no fields to preserve from destination
+    );
     await cleanupExport(mysqlConnection, "Expenses");
     await exportExpenses(mysqlConnection);
+    // Export Turbo expenses writeback data (vendors before purchase orders due to FK constraint)
+    await exportTurboVendors(mysqlConnection);
+    await exportTurboPurchaseOrders(mysqlConnection);
     await cleanupExport(mysqlConnection, "Invoices");
     await deleteReplacedInvoices(mysqlConnection);
     await exportInvoices(mysqlConnection);
@@ -748,6 +764,7 @@ Logic:
 // If that field is true, editing is enabled in legacy Tybalt and fold should be skipped.
 const collectionToEnableField: Record<string, string> = {
   Jobs: "jobs",
+  Expenses: "expenses",
 };
 
 export async function foldCollection(
@@ -939,6 +956,157 @@ export async function exportTurboClientContacts(mysqlConnection: Connection) {
     functions.logger.debug(cleanupResult[0]);
   } catch (error) {
     functions.logger.error(`Failed to cleanup stale TurboClientContacts rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboVendors(): Export TurboVendorsWriteback documents to MySQL TurboVendors table.
+These are vendors that have been written back from Turbo (PocketBase) via the expenses writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+*/
+export async function exportTurboVendors(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboVendors");
+  const allVendorsQuerySnap = await db.collection("TurboVendorsWriteback").get();
+  
+  if (allVendorsQuerySnap.empty) {
+    functions.logger.log("No TurboVendorsWriteback documents to export");
+    return;
+  }
+
+  const vendorsFields = ["id", "name", "alias", "status", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allVendorsQuerySnap.docs.map((vendorSnap) => {
+    const vendor = vendorSnap.data();
+    return [
+      vendorSnap.id, // id (PocketBase ID used as doc key)
+      vendor.name || null,
+      vendor.alias || null,
+      vendor.status || null,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboVendors data into the MySQL table
+  const updateClause = vendorsFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboVendors (${vendorsFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboVendors documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboVendors documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboVendors WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboVendors rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboVendors rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboPurchaseOrders(): Export TurboPurchaseOrdersWriteback documents to MySQL TurboPurchaseOrders table.
+These are purchase orders that have been written back from Turbo (PocketBase) via the expenses writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+Must be called AFTER exportTurboVendors due to foreign key constraint.
+*/
+export async function exportTurboPurchaseOrders(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboPurchaseOrders");
+  const allPOsQuerySnap = await db.collection("TurboPurchaseOrdersWriteback").get();
+  
+  if (allPOsQuerySnap.empty) {
+    functions.logger.log("No TurboPurchaseOrdersWriteback documents to export");
+    return;
+  }
+
+  const poFields = [
+    "id",
+    "poNumber",
+    "vendorId",
+    "vendorName",
+    "uid",
+    "job",
+    "jobDescription",
+    "division",
+    "divisionName",
+    "total",
+    "approvalTotal",
+    "date",
+    "approved",
+    "approverUid",
+    "cancelled",
+    "closed",
+    "paymentType",
+    "type",
+    "frequency",
+    "status",
+    "attachment",
+    "timestamp",
+  ];
+  const now = new Date();
+
+  const insertValues = allPOsQuerySnap.docs.map((poSnap) => {
+    const po = poSnap.data();
+    return [
+      poSnap.id, // id (PocketBase ID used as doc key)
+      po.poNumber || null,
+      po.vendorId || null,
+      po.vendorName || null,
+      po.uid || null,
+      po.job || null,
+      po.jobDescription || null,
+      po.division || null,
+      po.divisionName || null,
+      po.total ?? null,
+      po.approvalTotal ?? null,
+      po.date || null,
+      po.approved || null,
+      po.approverUid || null,
+      po.cancelled || null,
+      po.closed || null,
+      po.paymentType || null,
+      po.type || null,
+      po.frequency || null,
+      po.status || null,
+      po.attachment || null,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboPurchaseOrders data into the MySQL table
+  const updateClause = poFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboPurchaseOrders (${poFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboPurchaseOrders documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboPurchaseOrders documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboPurchaseOrders WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboPurchaseOrders rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboPurchaseOrders rows: ${error}`);
     throw error;
   }
 }

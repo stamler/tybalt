@@ -69,6 +69,16 @@ export interface JobsWritebackResponse {
   clientContacts: Record<string, unknown>[];
 }
 
+/**
+ * Response format from expenses writeback endpoint.
+ * Contains separate arrays for expenses, vendors, and purchase orders.
+ */
+export interface ExpensesWritebackResponse {
+  expenses: Record<string, unknown>[];
+  vendors: Record<string, unknown>[];
+  purchaseOrders: Record<string, unknown>[];
+}
+
 const WRITEBACK_DATE_FIELDS = [
   "projectAwardDate",
   "proposalOpeningDate",
@@ -306,6 +316,77 @@ export async function fetchAndSyncJobsWriteback(
   };
 }
 
+/**
+ * Fetches the expenses writeback response (object with expenses, vendors, purchaseOrders arrays)
+ * and syncs each array to its respective Firestore collection.
+ * 
+ * @param url The URL to fetch the structured response from
+ * @param authHeader Authorization header value
+ * @returns Promise resolving to counts of documents written per collection
+ */
+export async function fetchAndSyncExpensesWriteback(
+  url: string,
+  authHeader: string
+): Promise<{ expenses: number; vendors: number; purchaseOrders: number }> {
+  functions.logger.info(`Fetching expenses writeback data from ${url}`);
+
+  // Fetch the data from the URL
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: authHeader,
+  };
+
+  let response;
+  try {
+    response = await axios.get(url, { headers });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      functions.logger.error(`Failed to fetch from ${url}: ${error.message}`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+    }
+    throw error;
+  }
+
+  const data = response.data as ExpensesWritebackResponse;
+
+  // Validate that the response has the expected structure
+  if (!data || typeof data !== "object") {
+    throw new Error(`Expected object response from ${url}, got ${typeof data}`);
+  }
+  if (!Array.isArray(data.expenses)) {
+    throw new Error(`Expected expenses array in response from ${url}`);
+  }
+  if (!Array.isArray(data.vendors)) {
+    throw new Error(`Expected vendors array in response from ${url}`);
+  }
+  if (!Array.isArray(data.purchaseOrders)) {
+    throw new Error(`Expected purchaseOrders array in response from ${url}`);
+  }
+
+  functions.logger.info(
+    `Fetched ${data.expenses.length} expenses, ${data.vendors.length} vendors, ${data.purchaseOrders.length} purchaseOrders`
+  );
+
+  // Sync each array to its respective collection
+  // Expenses use "immutableID" as key (to match legacy Expenses collection for fold operation)
+  // Vendors and purchaseOrders use "id" (PocketBase ID) as key
+  // TODO: Normalize expense date fields to Firestore Timestamps (like jobs) to
+  // avoid exportExpenses() errors when .toDate() is called.
+  const [expensesWritten, vendorsWritten, posWritten] = await Promise.all([
+    syncArrayToFirestore(data.expenses, "immutableID", "TurboExpensesWriteback"),
+    syncArrayToFirestore(data.vendors, "id", "TurboVendorsWriteback"),
+    syncArrayToFirestore(data.purchaseOrders, "id", "TurboPurchaseOrdersWriteback"),
+  ]);
+
+  return {
+    expenses: expensesWritten,
+    vendors: vendorsWritten,
+    purchaseOrders: posWritten,
+  };
+}
+
 // =============================================================================
 // Scheduled sync functions
 // =============================================================================
@@ -362,6 +443,39 @@ export const scheduledTurboJobsWritebackSync = functions
       });
     } catch (error) {
       functions.logger.error("Scheduled Turbo sync failed", { error });
+      throw error;
+    }
+  });
+
+/**
+ * Scheduled function that syncs Expenses, Vendors, and PurchaseOrders data from Turbo every 30 minutes.
+ * 
+ * Fetches all expenses updated since 2026-01-01 from Turbo's export_legacy API
+ * and writes:
+ * - expenses array to TurboExpensesWriteback collection
+ * - vendors array to TurboVendorsWriteback collection
+ * - purchaseOrders array to TurboPurchaseOrdersWriteback collection
+ */
+export const scheduledTurboExpensesWritebackSync = functions
+  .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
+  .pubsub
+  .schedule("every 30 minutes")
+  .onRun(async (context) => {
+    functions.logger.info("Starting scheduled Turbo Expenses/Vendors/PurchaseOrders sync");
+    
+    try {
+      const result = await fetchAndSyncExpensesWriteback(
+        `${TURBO_BASE_URL}/api/export_legacy/expenses/2026-01-01`,
+        `Bearer ${TURBO_AUTH_TOKEN.value()}`
+      );
+      
+      functions.logger.info("Scheduled Turbo expenses sync completed successfully", {
+        expensesWritten: result.expenses,
+        vendorsWritten: result.vendors,
+        purchaseOrdersWritten: result.purchaseOrders,
+      });
+    } catch (error) {
+      functions.logger.error("Scheduled Turbo expenses sync failed", { error });
       throw error;
     }
   });
