@@ -443,74 +443,18 @@ transaction during the exportExpenses() function call
 export async function exportExpenses(mysqlConnection: Connection) {
   const start = process.hrtime.bigint();
 
+  // Set to true to process ALL pending expenses in one call (iterating in batches)
+  // Set to false to process only one batch per call (default behavior)
+  const PROCESS_ALL_BATCHES = false;
+
   // Get the first "batchSize" documents that are committed but not yet exported
   // This batches runs. Since runs are idempotent we can just run it again if
   // there are remaining documents (i.e. initial sync). batchSize must be large
   // enough to, on average, export all the docs generated within the scheduled
   // export cadence
   const batchSize = 499;
-  const pendingExportQuery = db.collection("Expenses")
-    .where("committed", "==", true)
-    .where("exported", "==", false)
-    .limit(batchSize);
-
   const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
-
-  // Run the query and set the flag exportInProgress:true. At the same time
-  // create a batch to delete the exportInProgress:true flag that will be run
-  // only if the export fails.
-  const [expenseDocSnaps, exportFailBatch] = await db.runTransaction(async t => {
-    const rollbackBatch = db.batch();
-    const lockDoc = await t.get(exportLocksDoc);
-    if (lockDoc.exists) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "exportExpenses(): exportTime() or cleanupTime() or exportAmendments() or exportExpenses() are already running"
-      );
-    }
-    const expenseSnaps = await t.get(pendingExportQuery);
-    const docs:admin.firestore.QueryDocumentSnapshot[] = [];
-    expenseSnaps.forEach(expenseSnap => {
-      // skip the Expenses doc if prerequisites aren't met
-      if (
-        expenseSnap.get("exportInProgress") === true || // another export is running
-        expenseSnap.get("committed") !== true || // the Expense hasn't been committed
-        expenseSnap.get("exported") === true // the Expense is already exported
-      ) {
-        // skip this Expenses document
-        return;
-      }
-      docs.push(expenseSnap);
-      rollbackBatch.update(expenseSnap.ref, {
-        exportInProgress: admin.firestore.FieldValue.delete(),
-      });
-      t.update(expenseSnap.ref, { exportInProgress: true });
-    });
-    t.set(exportLocksDoc,{ message: "exportExpense() transaction created this " +
-      "doc to prevent other instances of exportTime() or cleanupTime() or " + 
-      "exportAmendment() from running simultaneously."})
-    return [docs, rollbackBatch];
-  });
-
-  // create the batch that will be run only if the export MySQL COMMIT succeeds
-  const exportSuccessBatch = db.batch();
-
-  // Iterate over the Expenses documents, INSERTing them into MySQL table
-  const expensesFields = ["id", "category", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "payrollId", "total", "uid", "unitNumber", "vendorName"];
-  const insertValues = expenseDocSnaps.map((expenseSnap) => {
-    const expense = expenseSnap.data();
-    expense.id = expenseSnap.id;
-    expense.commitTime = expense.commitTime.toDate();
-    expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
-    expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
-    expense.date = format(utcToZonedTime(expense.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
-    // VALUEs were included in the data set for this doc, include it in success batch
-    exportSuccessBatch.update(expenseSnap.ref, {
-      exported: true,
-      exportInProgress: admin.firestore.FieldValue.delete(),
-    });    
-    return expensesFields.map(x => expense[x]);
-  });
+  const expensesFields = ["id", "category", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "payrollId", "total", "uid", "unitNumber", "vendorName", "immutableID"];
 
   // Build an ON DUPLICATE KEY UPDATE clause so re-exporting (exported=false)
   // doesn't fail with a duplicate primary key error. We update all columns
@@ -520,22 +464,133 @@ export async function exportExpenses(mysqlConnection: Connection) {
     .map(x => `${x}=VALUES(${x})`)
     .join(", ");
   const q = `INSERT INTO Expenses (${expensesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
-  try {
-    if (insertValues.length > 0) {
-      await mysqlConnection.query(q, [insertValues]);
+
+  let totalExported = 0;
+  let batchNumber = 0;
+  let hasMoreDocuments = true;
+  let consecutiveSkippedBatches = 0;
+  const maxConsecutiveSkippedBatches = 3; // Fail if we skip this many batches in a row without progress
+
+  // Acquire the lock atomically using a transaction - holds for entire multi-batch operation
+  await db.runTransaction(async t => {
+    const lockDoc = await t.get(exportLocksDoc);
+    if (lockDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "exportExpenses(): exportTime() or cleanupTime() or exportAmendments() or exportExpenses() are already running"
+      );
     }
-    // delete exportInProgress:true property, set exported:true on local docs
-    await exportSuccessBatch.commit();
-    const end = process.hrtime.bigint();
-    const elapsed = (end - start) / BigInt(1000000000);
-    functions.logger.log(`Exported ${insertValues.length} Expenses documents in ${elapsed.toString()} sec`);
-  } catch (error) {
-    // delete exportInProgress:true property on local docs
-    await exportFailBatch.commit();
-    functions.logger.error(`Export failed ${error}`);
+    t.set(exportLocksDoc, { message: "exportExpense() created this " +
+      "doc to prevent other instances of exportTime() or cleanupTime() or " + 
+      "exportAmendment() from running simultaneously."});
+  });
+
+  try {
+    do {
+      batchNumber++;
+      const pendingExportQuery = db.collection("Expenses")
+        .where("committed", "==", true)
+        .where("exported", "==", false)
+        .limit(batchSize);
+
+      // Run the query and set the flag exportInProgress:true on each doc. At the same
+      // time create a batch to delete the exportInProgress:true flag that will be run
+      // only if the export fails.
+      const [expenseDocSnaps, exportFailBatch, querySize] = await db.runTransaction(async t => {
+        const rollbackBatch = db.batch();
+        const expenseSnaps = await t.get(pendingExportQuery);
+        const docs:admin.firestore.QueryDocumentSnapshot[] = [];
+        expenseSnaps.forEach(expenseSnap => {
+          // skip the Expenses doc if prerequisites aren't met
+          if (
+            expenseSnap.get("exportInProgress") === true || // another export is running
+            expenseSnap.get("committed") !== true || // the Expense hasn't been committed
+            expenseSnap.get("exported") === true // the Expense is already exported
+          ) {
+            // skip this Expenses document
+            return;
+          }
+          docs.push(expenseSnap);
+          rollbackBatch.update(expenseSnap.ref, {
+            exportInProgress: admin.firestore.FieldValue.delete(),
+          });
+          t.update(expenseSnap.ref, { exportInProgress: true });
+        });
+        return [docs, rollbackBatch, expenseSnaps.size];
+      });
+
+      // If the query returned no documents, we're done
+      if (querySize === 0) {
+        hasMoreDocuments = false;
+        break;
+      }
+
+      // If all docs were skipped (e.g., all have exportInProgress), skip to next batch
+      if (expenseDocSnaps.length === 0) {
+        consecutiveSkippedBatches++;
+        functions.logger.warn(`Batch ${batchNumber}: All ${querySize} docs skipped (consecutive skips: ${consecutiveSkippedBatches})`);
+        if (consecutiveSkippedBatches >= maxConsecutiveSkippedBatches) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `exportExpenses(): ${consecutiveSkippedBatches} consecutive batches skipped without progress. ` +
+            "This likely indicates stuck exportInProgress flags that need manual cleanup via clearFlags()."
+          );
+        }
+        hasMoreDocuments = querySize === batchSize;
+        continue;
+      }
+
+      // Reset skip counter since we made progress
+      consecutiveSkippedBatches = 0;
+
+      // create the batch that will be run only if the export MySQL COMMIT succeeds
+      const exportSuccessBatch = db.batch();
+
+      // Iterate over the Expenses documents, INSERTing them into MySQL table
+      const insertValues = expenseDocSnaps.map((expenseSnap) => {
+        const expense = expenseSnap.data();
+        expense.id = expenseSnap.id;
+        expense.commitTime = expense.commitTime.toDate();
+        expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+        expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+        expense.date = format(utcToZonedTime(expense.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+        // VALUEs were included in the data set for this doc, include it in success batch
+        exportSuccessBatch.update(expenseSnap.ref, {
+          exported: true,
+          exportInProgress: admin.firestore.FieldValue.delete(),
+        });    
+        return expensesFields.map(x => expense[x]);
+      });
+
+      try {
+        if (insertValues.length > 0) {
+          await mysqlConnection.query(q, [insertValues]);
+        }
+        // delete exportInProgress:true property, set exported:true on local docs
+        await exportSuccessBatch.commit();
+        totalExported += insertValues.length;
+        functions.logger.log(`Batch ${batchNumber}: Exported ${insertValues.length} Expenses documents (total: ${totalExported})`);
+      } catch (error) {
+        // delete exportInProgress:true property on local docs
+        await exportFailBatch.commit();
+        functions.logger.error(`Export failed ${error}`);
+        throw error;
+      }
+
+      // Check if we should continue (only if PROCESS_ALL_BATCHES is true and there might be more)
+      // Use querySize (not filtered expenseDocSnaps.length) since docs can be skipped
+      hasMoreDocuments = querySize === batchSize;
+
+    } while (PROCESS_ALL_BATCHES && hasMoreDocuments);
+
+  } finally {
+    // Always release the lock when done (success or failure)
+    await exportLocksDoc.delete();
   }
 
-  return exportLocksDoc.delete();
+  const end = process.hrtime.bigint();
+  const elapsed = (end - start) / BigInt(1000000000);
+  functions.logger.log(`Exported ${totalExported} Expenses documents total in ${elapsed.toString()} sec`);
 }
 
 /*

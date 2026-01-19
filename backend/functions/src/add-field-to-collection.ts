@@ -9,7 +9,7 @@ const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json"
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 async function addFieldToCollection(fieldname: string, collection: string, limit?: number) {
-  const limitMsg = limit ? ` (limit: ${limit} documents)` : '';
+  const limitMsg = limit ? ` (limit: ${limit} documents)` : "";
   console.log(`Adding field ${fieldname} to documents in collection ${collection}${limitMsg} ...`);
   const batches = [];
   let runCount = 0;

@@ -129,7 +129,7 @@ service cloud.firestore {
           "vendorName", "distance", "ccLast4digits", "payrollId",
           "job", "jobDescription", "client", "po", "weekEnding", "attachment",
           "rejected", "rejectorId", "rejectorName", "rejectionReason", "committed", 
-          "category" ]) &&
+          "category", "immutableID" ]) &&
 
         // required fields
         newDoc.keys().hasAll(["date", "uid", "displayName",
@@ -740,12 +740,14 @@ service cloud.firestore {
       )
       allow create: if 
         hasClaim("time") && validExpenseEntry() && newDoc().submitted == false && newDoc().approved == false && isMissing("committed") &&
+        // prevent user from setting system-managed fields
+        isMissing("immutableID") &&
         // prevent user from creating an entry for somebody else
         request.auth.uid == request.resource.data['uid'];
       allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
-        // owner can edit
-        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason") && (newDoc().committed == false || isMissing("committed")) && newDoc().approved == false) ||
+        // owner can edit (but cannot modify immutableID)
+        (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason") && (newDoc().committed == false || isMissing("committed")) && newDoc().approved == false && !newDoc().diff(resource.data).affectedKeys().hasAny(["immutableID"])) ||
         // owner can recall unapproved
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted"]) && newDoc().submitted == false) ||
         // tapr can approve submitted expenses if they are manager

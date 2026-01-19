@@ -20,4 +20,4 @@ export {
 export { rejectDoc } from "./rejection";
 export { newAiChat, deleteChat, aiResponder, retryAiChat } from "./ai";
 export { auditExportStatus } from "./audit";
-export { addJobsImmutableID } from "./immutableId";
+export { addJobsImmutableID, addExpensesImmutableID } from "./immutableId";
