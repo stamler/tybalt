@@ -34,10 +34,8 @@ export const syncToSQL = functions
     await foldCollection(
       "TurboExpensesWriteback",
       "Expenses",
-      [
-        { sourceField: "immutableID", destField: "immutableID" },
-      ],
-      [] // no fields to preserve from destination
+      [{ sourceField: "immutableID", destField: "immutableID" }],
+      ["submittedDate"]
     );
     await cleanupExport(mysqlConnection, "Expenses");
     await exportExpenses(mysqlConnection);
