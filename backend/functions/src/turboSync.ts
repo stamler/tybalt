@@ -97,12 +97,47 @@ function toNoonEasternTimestamp(value: unknown): admin.firestore.Timestamp | unk
   return admin.firestore.Timestamp.fromDate(noonEastern);
 }
 
+// For weekEnding fields: 23:59:59.999 Thunder Bay time
+function toEndOfDayTimestamp(value: unknown): admin.firestore.Timestamp | unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return value;
+  const endOfDay = zonedTimeToUtc(`${trimmed}T23:59:59.999`, APP_NATIVE_TZ);
+  return admin.firestore.Timestamp.fromDate(endOfDay);
+}
+
+// For commitTime: parse ISO datetime string
+function toTimestampFromISO(value: unknown): admin.firestore.Timestamp | unknown {
+  if (typeof value !== "string") return value;
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return value;
+  return admin.firestore.Timestamp.fromDate(parsed);
+}
+
 function convertWritebackJobDates(job: Record<string, unknown>): Record<string, unknown> {
   const converted = { ...job };
   for (const field of WRITEBACK_DATE_FIELDS) {
     if (field in converted) {
       converted[field] = toNoonEasternTimestamp(converted[field]);
     }
+  }
+  return converted;
+}
+
+const EXPENSE_NOON_FIELDS = ["date"] as const;
+const EXPENSE_END_OF_DAY_FIELDS = ["committedWeekEnding", "payPeriodEnding"] as const;
+const EXPENSE_ISO_DATETIME_FIELDS = ["commitTime"] as const;
+
+function convertWritebackExpenseDates(expense: Record<string, unknown>): Record<string, unknown> {
+  const converted = { ...expense };
+  for (const field of EXPENSE_NOON_FIELDS) {
+    if (field in converted) converted[field] = toNoonEasternTimestamp(converted[field]);
+  }
+  for (const field of EXPENSE_END_OF_DAY_FIELDS) {
+    if (field in converted) converted[field] = toEndOfDayTimestamp(converted[field]);
+  }
+  for (const field of EXPENSE_ISO_DATETIME_FIELDS) {
+    if (field in converted) converted[field] = toTimestampFromISO(converted[field]);
   }
   return converted;
 }
@@ -372,10 +407,9 @@ export async function fetchAndSyncExpensesWriteback(
   // Sync each array to its respective collection
   // Expenses use "immutableID" as key (to match legacy Expenses collection for fold operation)
   // Vendors and purchaseOrders use "id" (PocketBase ID) as key
-  // TODO: Normalize expense date fields to Firestore Timestamps (like jobs) to
-  // avoid exportExpenses() errors when .toDate() is called.
+  const convertedExpenses = data.expenses.map(convertWritebackExpenseDates);
   const [expensesWritten, vendorsWritten, posWritten] = await Promise.all([
-    syncArrayToFirestore(data.expenses, "immutableID", "TurboExpensesWriteback"),
+    syncArrayToFirestore(convertedExpenses, "immutableID", "TurboExpensesWriteback"),
     syncArrayToFirestore(data.vendors, "id", "TurboVendorsWriteback"),
     syncArrayToFirestore(data.purchaseOrders, "id", "TurboPurchaseOrdersWriteback"),
   ]);

@@ -35,7 +35,6 @@ export const syncToSQL = functions
       "TurboExpensesWriteback",
       "Expenses",
       [
-        { sourceField: "_id", destField: "_id" },
         { sourceField: "immutableID", destField: "immutableID" },
       ],
       [] // no fields to preserve from destination
