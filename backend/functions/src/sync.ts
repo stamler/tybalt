@@ -76,8 +76,11 @@ export const syncToSQL = functions
     );
     await exportJobs(mysqlConnection);
     // Export Turbo writeback data (clients before contacts due to FK constraint)
-    await exportTurboClients(mysqlConnection);
+    const turboClientsExported = await exportTurboClients(mysqlConnection);
     await exportTurboClientContacts(mysqlConnection);
+    if (turboClientsExported > 0) {
+      await cleanupTurboClients(mysqlConnection);
+    }
     return mysqlConnection.end();
   });
 
@@ -849,15 +852,15 @@ export async function foldCollection(
 /*
 exportTurboClients(): Export TurboClientsWriteback documents to MySQL TurboClients table.
 These are clients that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
-Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+Returns the number of exported rows so cleanup can run after contacts cleanup.
 */
-export async function exportTurboClients(mysqlConnection: Connection) {
+export async function exportTurboClients(mysqlConnection: Connection): Promise<number> {
   functions.logger.debug("exporting TurboClients");
   const allClientsQuerySnap = await db.collection("TurboClientsWriteback").get();
   
   if (allClientsQuerySnap.empty) {
     functions.logger.log("No TurboClientsWriteback documents to export");
-    return;
+    return 0;
   }
 
   const clientsFields = ["id", "name", "businessDevelopmentLeadUid", "timestamp"];
@@ -888,6 +891,13 @@ export async function exportTurboClients(mysqlConnection: Connection) {
   }
   functions.logger.log(`UPSERTed ${insertValues.length} TurboClients documents`);
 
+  return insertValues.length;
+}
+
+/*
+cleanupTurboClients(): Remove stale TurboClients rows after TurboClientContacts cleanup.
+*/
+async function cleanupTurboClients(mysqlConnection: Connection) {
   // Cleanup stale rows (older than 2 minutes)
   const cleanupQuery = "DELETE FROM TurboClients WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
   try {
@@ -906,13 +916,13 @@ These are client contacts that have been written back from Turbo (PocketBase) vi
 Uses UPSERT pattern with timestamp-based cleanup for stale rows.
 Must be called AFTER exportTurboClients due to foreign key constraint.
 */
-export async function exportTurboClientContacts(mysqlConnection: Connection) {
+export async function exportTurboClientContacts(mysqlConnection: Connection): Promise<number> {
   functions.logger.debug("exporting TurboClientContacts");
   const allContactsQuerySnap = await db.collection("TurboClientContactsWriteback").get();
   
   if (allContactsQuerySnap.empty) {
     functions.logger.log("No TurboClientContactsWriteback documents to export");
-    return;
+    return 0;
   }
 
   const contactsFields = ["id", "surname", "givenName", "email", "clientId", "timestamp"];
@@ -955,6 +965,8 @@ export async function exportTurboClientContacts(mysqlConnection: Connection) {
     functions.logger.error(`Failed to cleanup stale TurboClientContacts rows: ${error}`);
     throw error;
   }
+
+  return insertValues.length;
 }
 
 /*
