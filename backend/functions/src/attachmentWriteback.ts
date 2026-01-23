@@ -127,7 +127,7 @@ export async function processExpenseWritebackAttachments(): Promise<{
   }
 
   functions.logger.info(
-    `Expense attachment processing complete: ` +
+    "Expense attachment processing complete: " +
       `${processed} processed, ${skipped} skipped, ${errors.length} errors`
   );
 
