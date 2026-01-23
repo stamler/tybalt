@@ -9,6 +9,7 @@ import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket, Connection } from "mysql2/promise";
 import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 import { FieldPair, objDiff, analyzeFoldAction } from "./fold-utils";
+import { processExpenseWritebackAttachments } from "./attachmentWriteback";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
@@ -27,6 +28,16 @@ export const syncToSQL = functions
     await exportTime(mysqlConnection);
     await cleanupExport(mysqlConnection, "TimeAmendments");
     await exportAmendments(mysqlConnection);
+    // Process writeback attachments for EXPENSES ONLY (always runs, even if fold is disabled)
+    // Note: Purchase Orders do NOT need attachment processing - their attachment fields
+    // are reference-only strings pointing to S3 objects.
+    const expenseAttachmentResult = await processExpenseWritebackAttachments();
+    if (expenseAttachmentResult.errors.length > 0) {
+      functions.logger.warn(
+        `${expenseAttachmentResult.errors.length} expense attachment errors, proceeding with fold for processed docs`
+      );
+    }
+
     // Fold TurboExpensesWriteback into Expenses before exporting to MySQL
     // TODO: Ensure we preserve legacy workflow/export fields (e.g., committed/exported)
     // so the fold does not wipe state needed by exportExpenses(). Alternatively, 
