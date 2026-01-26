@@ -86,9 +86,10 @@ export const syncToSQL = functions
       ["hasTimeEntries", "lastTimeEntryDate"]
     );
     await exportJobs(mysqlConnection);
-    // Export Turbo writeback data (clients before contacts due to FK constraint)
+    // Export Turbo writeback data (clients before contacts/notes due to FK constraint)
     const turboClientsExported = await exportTurboClients(mysqlConnection);
     await exportTurboClientContacts(mysqlConnection);
+    await exportTurboClientNotes(mysqlConnection);
     if (turboClientsExported > 0) {
       await cleanupTurboClients(mysqlConnection);
     }
@@ -919,6 +920,86 @@ async function cleanupTurboClients(mysqlConnection: Connection) {
     functions.logger.error(`Failed to cleanup stale TurboClients rows: ${error}`);
     throw error;
   }
+}
+
+/*
+exportTurboClientNotes(): Export client notes from TurboClientsWriteback to MySQL TurboClientNotes table.
+Notes are embedded as arrays within each client document and need to be flattened for MySQL storage.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+Must be called AFTER exportTurboClients due to foreign key constraint on clientId.
+*/
+export async function exportTurboClientNotes(mysqlConnection: Connection): Promise<number> {
+  functions.logger.debug("exporting TurboClientNotes");
+  const allClientsQuerySnap = await db.collection("TurboClientsWriteback").get();
+  
+  if (allClientsQuerySnap.empty) {
+    functions.logger.log("No TurboClientsWriteback documents - no notes to export");
+    return 0;
+  }
+
+  const notesFields = ["id", "created", "updated", "note", "clientId", "jobId", "jobNumber", "uid", "jobNotApplicable", "jobStatusChangedTo", "timestamp"];
+  const now = new Date();
+
+  // Flatten notes from all clients into a single array
+  const insertValues: unknown[][] = [];
+  allClientsQuerySnap.docs.forEach((clientSnap) => {
+    const client = clientSnap.data();
+    const clientId = clientSnap.id;
+    const notes = client.notes as Record<string, unknown>[] | undefined;
+    
+    if (!notes || !Array.isArray(notes) || notes.length === 0) {
+      return; // Skip clients with no notes
+    }
+
+    notes.forEach((note) => {
+      insertValues.push([
+        note.id || null,
+        note.created || null,
+        note.updated || null,
+        note.note || null,
+        clientId,
+        note.jobId || null,
+        note.jobNumber || null,
+        note.uid || null,
+        note.jobNotApplicable ?? false,
+        note.jobStatusChangedTo || null,
+        now,
+      ]);
+    });
+  });
+
+  if (insertValues.length === 0) {
+    functions.logger.log("No client notes found to export");
+    return 0;
+  }
+
+  // UPSERT the TurboClientNotes data into the MySQL table
+  const updateClause = notesFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboClientNotes (${notesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboClientNotes: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboClientNotes documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboClientNotes WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboClientNotes rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboClientNotes rows: ${error}`);
+    throw error;
+  }
+
+  return insertValues.length;
 }
 
 /*
