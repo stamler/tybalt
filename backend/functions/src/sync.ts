@@ -93,6 +93,10 @@ export const syncToSQL = functions
     if (turboClientsExported > 0) {
       await cleanupTurboClients(mysqlConnection);
     }
+    // Export Turbo rate data (roles and sheets before entries due to FK constraints)
+    await exportTurboRateRoles(mysqlConnection);
+    await exportTurboRateSheets(mysqlConnection);
+    await exportTurboRateSheetEntries(mysqlConnection);
     return mysqlConnection.end();
   });
 
@@ -1580,5 +1584,171 @@ export async function deleteReplacedInvoices(mysqlConnection: Connection){
   } catch (error) {
     functions.logger.error(`Delete failed ${error}`);
     return mysqlConnection.query( "ROLLBACK;");
+  }
+}
+
+/*
+exportTurboRateRoles(): Export TurboRateRolesWriteback documents to MySQL TurboRateRoles table.
+These are rate roles that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+*/
+export async function exportTurboRateRoles(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboRateRoles");
+  const allRolesQuerySnap = await db.collection("TurboRateRolesWriteback").get();
+  
+  if (allRolesQuerySnap.empty) {
+    functions.logger.log("No TurboRateRolesWriteback documents to export");
+    return;
+  }
+
+  const rolesFields = ["id", "name", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allRolesQuerySnap.docs.map((roleSnap) => {
+    const role = roleSnap.data();
+    return [
+      roleSnap.id, // id (PocketBase ID used as doc key)
+      role.name || null,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboRateRoles data into the MySQL table
+  const updateClause = rolesFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboRateRoles (${rolesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboRateRoles documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboRateRoles documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboRateRoles WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboRateRoles rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboRateRoles rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboRateSheets(): Export TurboRateSheetsWriteback documents to MySQL TurboRateSheets table.
+These are rate sheets that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+*/
+export async function exportTurboRateSheets(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboRateSheets");
+  const allSheetsQuerySnap = await db.collection("TurboRateSheetsWriteback").get();
+  
+  if (allSheetsQuerySnap.empty) {
+    functions.logger.log("No TurboRateSheetsWriteback documents to export");
+    return;
+  }
+
+  const sheetsFields = ["id", "name", "effectiveDate", "revision", "active", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allSheetsQuerySnap.docs.map((sheetSnap) => {
+    const sheet = sheetSnap.data();
+    return [
+      sheetSnap.id, // id (PocketBase ID used as doc key)
+      sheet.name || null,
+      sheet.effectiveDate || null,
+      sheet.revision ?? 0,
+      sheet.active ?? false,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboRateSheets data into the MySQL table
+  const updateClause = sheetsFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboRateSheets (${sheetsFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboRateSheets documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboRateSheets documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboRateSheets WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboRateSheets rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboRateSheets rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboRateSheetEntries(): Export TurboRateSheetEntriesWriteback documents to MySQL TurboRateSheetEntries table.
+These are rate sheet entries that have been written back from Turbo (PocketBase) via the jobs writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+Must be called AFTER exportTurboRateRoles and exportTurboRateSheets due to foreign key constraints.
+*/
+export async function exportTurboRateSheetEntries(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboRateSheetEntries");
+  const allEntriesQuerySnap = await db.collection("TurboRateSheetEntriesWriteback").get();
+  
+  if (allEntriesQuerySnap.empty) {
+    functions.logger.log("No TurboRateSheetEntriesWriteback documents to export");
+    return;
+  }
+
+  const entriesFields = ["id", "roleId", "rateSheetId", "rate", "overtimeRate", "timestamp"];
+  const now = new Date();
+
+  const insertValues = allEntriesQuerySnap.docs.map((entrySnap) => {
+    const entry = entrySnap.data();
+    return [
+      entrySnap.id, // id (PocketBase ID used as doc key)
+      entry.roleId || null,
+      entry.rateSheetId || null,
+      entry.rate ?? 0,
+      entry.overtimeRate ?? 0,
+      now,
+    ];
+  });
+
+  // UPSERT the TurboRateSheetEntries data into the MySQL table
+  const updateClause = entriesFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboRateSheetEntries (${entriesFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+  
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboRateSheetEntries documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboRateSheetEntries documents`);
+
+  // Cleanup stale rows (older than 2 minutes)
+  const cleanupQuery = "DELETE FROM TurboRateSheetEntries WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboRateSheetEntries rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboRateSheetEntries rows: ${error}`);
+    throw error;
   }
 }

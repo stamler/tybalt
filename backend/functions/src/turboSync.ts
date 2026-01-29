@@ -61,12 +61,15 @@ export interface FetchAndSyncOptions<T = Record<string, unknown>> {
 
 /**
  * Response format from jobs writeback endpoint.
- * Contains separate arrays for jobs, clients, and client contacts.
+ * Contains separate arrays for jobs, clients, client contacts, and rate data.
  */
 export interface JobsWritebackResponse {
   jobs: Record<string, unknown>[];
   clients: Record<string, unknown>[];
   clientContacts: Record<string, unknown>[];
+  rateRoles: Record<string, unknown>[];
+  rateSheets: Record<string, unknown>[];
+  rateSheetEntries: Record<string, unknown>[];
 }
 
 /**
@@ -282,7 +285,7 @@ async function syncArrayToFirestore(
 }
 
 /**
- * Fetches the jobs writeback response (object with jobs, clients, clientContacts arrays)
+ * Fetches the jobs writeback response (object with jobs, clients, clientContacts, and rate data arrays)
  * and syncs each array to its respective Firestore collection.
  * 
  * @param url The URL to fetch the structured response from
@@ -292,7 +295,14 @@ async function syncArrayToFirestore(
 export async function fetchAndSyncJobsWriteback(
   url: string,
   authHeader: string
-): Promise<{ jobs: number; clients: number; clientContacts: number }> {
+): Promise<{
+  jobs: number;
+  clients: number;
+  clientContacts: number;
+  rateRoles: number;
+  rateSheets: number;
+  rateSheetEntries: number;
+}> {
   functions.logger.info(`Fetching jobs writeback data from ${url}`);
 
   // Fetch the data from the URL
@@ -329,25 +339,48 @@ export async function fetchAndSyncJobsWriteback(
   if (!Array.isArray(data.clientContacts)) {
     throw new Error(`Expected clientContacts array in response from ${url}`);
   }
+  if (!Array.isArray(data.rateRoles)) {
+    throw new Error(`Expected rateRoles array in response from ${url}`);
+  }
+  if (!Array.isArray(data.rateSheets)) {
+    throw new Error(`Expected rateSheets array in response from ${url}`);
+  }
+  if (!Array.isArray(data.rateSheetEntries)) {
+    throw new Error(`Expected rateSheetEntries array in response from ${url}`);
+  }
 
   functions.logger.info(
-    `Fetched ${data.jobs.length} jobs, ${data.clients.length} clients, ${data.clientContacts.length} contacts`
+    `Fetched ${data.jobs.length} jobs, ${data.clients.length} clients, ${data.clientContacts.length} contacts, ` +
+    `${data.rateRoles.length} rateRoles, ${data.rateSheets.length} rateSheets, ${data.rateSheetEntries.length} rateSheetEntries`
   );
 
   // Sync each array to its respective collection
   // Jobs use "number" as key (to match legacy Jobs collection for fold operation)
-  // Clients and contacts use "id" (PocketBase ID) as key
+  // All other collections use "id" (PocketBase ID) as key
   const convertedJobs = data.jobs.map(convertWritebackJobDates);
-  const [jobsWritten, clientsWritten, contactsWritten] = await Promise.all([
+  const [
+    jobsWritten,
+    clientsWritten,
+    contactsWritten,
+    rateRolesWritten,
+    rateSheetsWritten,
+    rateSheetEntriesWritten,
+  ] = await Promise.all([
     syncArrayToFirestore(convertedJobs, "number", "TurboJobsWriteback"),
     syncArrayToFirestore(data.clients, "id", "TurboClientsWriteback"),
     syncArrayToFirestore(data.clientContacts, "id", "TurboClientContactsWriteback"),
+    syncArrayToFirestore(data.rateRoles, "id", "TurboRateRolesWriteback"),
+    syncArrayToFirestore(data.rateSheets, "id", "TurboRateSheetsWriteback"),
+    syncArrayToFirestore(data.rateSheetEntries, "id", "TurboRateSheetEntriesWriteback"),
   ]);
 
   return {
     jobs: jobsWritten,
     clients: clientsWritten,
     clientContacts: contactsWritten,
+    rateRoles: rateRolesWritten,
+    rateSheets: rateSheetsWritten,
+    rateSheetEntries: rateSheetEntriesWritten,
   };
 }
 
@@ -449,20 +482,23 @@ const TURBO_AUTH_TOKEN_SECRET_NAME = "TURBO_AUTH_TOKEN";
 const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
 
 /**
- * Scheduled function that syncs Jobs, Clients, and ClientContacts data from Turbo every 30 minutes.
+ * Scheduled function that syncs Jobs, Clients, ClientContacts, and Rate data from Turbo every 30 minutes.
  * 
  * Fetches all jobs updated since 2026-01-01 from Turbo's export_legacy API
  * and writes:
  * - jobs array to TurboJobsWriteback collection
  * - clients array to TurboClientsWriteback collection  
  * - clientContacts array to TurboClientContactsWriteback collection
+ * - rateRoles array to TurboRateRolesWriteback collection
+ * - rateSheets array to TurboRateSheetsWriteback collection
+ * - rateSheetEntries array to TurboRateSheetEntriesWriteback collection
  */
 export const scheduledTurboJobsWritebackSync = functions
   .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
   .pubsub
   .schedule("every 30 minutes")
   .onRun(async (context) => {
-    functions.logger.info("Starting scheduled Turbo Jobs/Clients/Contacts sync");
+    functions.logger.info("Starting scheduled Turbo Jobs/Clients/Contacts/Rates sync");
     
     try {
       const result = await fetchAndSyncJobsWriteback(
@@ -474,6 +510,9 @@ export const scheduledTurboJobsWritebackSync = functions
         jobsWritten: result.jobs,
         clientsWritten: result.clients,
         contactsWritten: result.clientContacts,
+        rateRolesWritten: result.rateRoles,
+        rateSheetsWritten: result.rateSheets,
+        rateSheetEntriesWritten: result.rateSheetEntries,
       });
     } catch (error) {
       functions.logger.error("Scheduled Turbo sync failed", { error });

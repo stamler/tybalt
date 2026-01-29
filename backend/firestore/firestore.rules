@@ -677,6 +677,7 @@ service cloud.firestore {
         isMissing("jobOwnerId") &&
         isMissing("parentId") &&
         isMissing("proposalId") &&
+        isMissing("rateSheetId") &&
 
         // new jobs must have 4 characters in second segment of jobId, no trailing L
         jobId.matches('(P)?[0-9]{2}-[0-9]{4}(-[0-9]{1,2})?(-[0-9])?');
@@ -691,7 +692,7 @@ service cloud.firestore {
           "authorizingDocument", "clientPo", "clientReferenceNumber",
           "created", "updated", "jobTimeAllocations",
           // Turbo ID reference fields (cleared by trigger when corresponding name changes)
-          "clientId", "clientContactId", "jobOwnerId", "parentId", "proposalId"
+          "clientId", "clientContactId", "jobOwnerId", "parentId", "proposalId", "rateSheetId"
         ])
       ) || 
       (
