@@ -10,6 +10,7 @@ import * as functions from "firebase-functions/v1";
 import { defineSecret } from "firebase-functions/params";
 import axios, { isAxiosError } from "axios";
 import { zonedTimeToUtc } from "date-fns-tz";
+import { format } from "date-fns";
 import { APP_NATIVE_TZ, TURBO_BASE_URL } from "./config";
 
 const db = admin.firestore();
@@ -143,6 +144,56 @@ function convertWritebackExpenseDates(expense: Record<string, unknown>): Record<
     if (field in converted) converted[field] = toTimestampFromISO(converted[field]);
   }
   return converted;
+}
+
+/**
+ * Converts date strings in a timesheet writeback object to Firestore Timestamps.
+ * - weekEnding (top-level and in entries): end-of-day (23:59:59.999 Thunder Bay time)
+ * - date (in entries): noon Eastern time
+ */
+function convertWritebackTimesheetDates(timesheet: Record<string, unknown>): Record<string, unknown> {
+  const converted = { ...timesheet };
+  // Convert top-level weekEnding
+  if ("weekEnding" in converted) {
+    converted["weekEnding"] = toEndOfDayTimestamp(converted["weekEnding"]);
+  }
+  // Convert date fields in entries array
+  if (Array.isArray(converted["entries"])) {
+    converted["entries"] = (converted["entries"] as Record<string, unknown>[]).map((entry) => {
+      const convertedEntry = { ...entry };
+      if ("weekEnding" in convertedEntry) {
+        convertedEntry["weekEnding"] = toEndOfDayTimestamp(convertedEntry["weekEnding"]);
+      }
+      if ("date" in convertedEntry) {
+        convertedEntry["date"] = toNoonEasternTimestamp(convertedEntry["date"]);
+      }
+      return convertedEntry;
+    });
+  }
+  return converted;
+}
+
+/**
+ * Returns an array of Saturday dates (YYYY-MM-DD) to sync.
+ * - If today is Saturday: returns today + previous (count-1) Saturdays
+ * - Otherwise: returns next Saturday + previous (count-1) Saturdays
+ */
+function getSaturdaysToSync(count: number): string[] {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
+  
+  // If today is Saturday, use today; otherwise use next Saturday
+  const daysToAdd = dayOfWeek === 6 ? 0 : (6 - dayOfWeek);
+  const baseSaturday = new Date(now);
+  baseSaturday.setDate(now.getDate() + daysToAdd);
+  
+  const saturdays: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(baseSaturday);
+    d.setDate(baseSaturday.getDate() - (i * 7));
+    saturdays.push(format(d, "yyyy-MM-dd"));
+  }
+  return saturdays;
 }
 
 /**
@@ -454,6 +505,76 @@ export async function fetchAndSyncExpensesWriteback(
   };
 }
 
+/**
+ * Fetches time sheets for multiple week endings from Turbo's export_legacy API
+ * and syncs them to the TurboTimeSheetsWriteback Firestore collection.
+ * 
+ * @param baseUrl The base URL of the Turbo API
+ * @param authHeader Authorization header value
+ * @param weekEndings Array of week ending dates (YYYY-MM-DD format)
+ * @returns Promise resolving to count of timesheets written
+ */
+export async function fetchAndSyncTimeSheetsWriteback(
+  baseUrl: string,
+  authHeader: string,
+  weekEndings: string[]
+): Promise<{ timesheets: number }> {
+  functions.logger.info(`Fetching timesheets writeback data for ${weekEndings.length} weeks`, { weekEndings });
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: authHeader,
+  };
+
+  // Fetch all week endings in parallel
+  const fetchPromises = weekEndings.map(async (weekEnding) => {
+    try {
+      const url = `${baseUrl}/api/export_legacy/time_sheets/${weekEnding}`;
+      const response = await axios.get(url, { headers });
+      const data = response.data;
+      
+      if (!Array.isArray(data)) {
+        functions.logger.warn(`Expected array from ${url}, got ${typeof data}`);
+        return [];
+      }
+      return data as Record<string, unknown>[];
+    } catch (error) {
+      if (isAxiosError(error)) {
+        functions.logger.error(`Failed to fetch timesheets for ${weekEnding}: ${error.message}`, {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+        });
+      }
+      // Return empty array on error to allow other weeks to succeed
+      return [];
+    }
+  });
+
+  const results = await Promise.all(fetchPromises);
+  
+  // Flatten all results into a single array
+  const allTimesheets = results.flat();
+  
+  if (allTimesheets.length === 0) {
+    functions.logger.info("No timesheets returned from any week ending");
+    return { timesheets: 0 };
+  }
+
+  functions.logger.info(`Fetched ${allTimesheets.length} timesheets across ${weekEndings.length} weeks`);
+
+  // Convert date fields
+  const convertedTimesheets = allTimesheets.map(convertWritebackTimesheetDates);
+
+  // Sync to Firestore using "id" as document key
+  const timesheetsWritten = await syncArrayToFirestore(
+    convertedTimesheets,
+    "id",
+    "TurboTimeSheetsWriteback"
+  );
+
+  return { timesheets: timesheetsWritten };
+}
+
 // =============================================================================
 // Scheduled sync functions
 // =============================================================================
@@ -549,6 +670,41 @@ export const scheduledTurboExpensesWritebackSync = functions
       });
     } catch (error) {
       functions.logger.error("Scheduled Turbo expenses sync failed", { error });
+      throw error;
+    }
+  });
+
+/**
+ * Scheduled function that syncs TimeSheets data from Turbo every 30 minutes.
+ * 
+ * Fetches committed time sheets for the last 6 weeks from Turbo's export_legacy API:
+ * - If today is Saturday: syncs today + previous 5 Saturdays
+ * - Otherwise: syncs next Saturday + previous 5 Saturdays
+ * 
+ * Writes to:
+ * - timesheets array to TurboTimeSheetsWriteback collection
+ */
+export const scheduledTurboTimeSheetsWritebackSync = functions
+  .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
+  .pubsub
+  .schedule("every 30 minutes")
+  .onRun(async (context) => {
+    const weekEndings = getSaturdaysToSync(6);
+    functions.logger.info("Starting scheduled Turbo TimeSheets sync", { weekEndings });
+    
+    try {
+      const result = await fetchAndSyncTimeSheetsWriteback(
+        TURBO_BASE_URL,
+        `Bearer ${TURBO_AUTH_TOKEN.value()}`,
+        weekEndings
+      );
+      
+      functions.logger.info("Scheduled Turbo timesheets sync completed successfully", {
+        timesheetsWritten: result.timesheets,
+        weekEndings,
+      });
+    } catch (error) {
+      functions.logger.error("Scheduled Turbo timesheets sync failed", { error });
       throw error;
     }
   });

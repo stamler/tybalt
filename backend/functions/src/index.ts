@@ -34,7 +34,7 @@ export { scheduledSubmitReminder, scheduledEmailCleanup, scheduledExpenseApprova
 export { wgCreateKeylessClient, wgToggleEnableClient, wgDeleteClient, wgPeersIni, wgSetPublicKey, wgClearPublicKey } from "./wireguard";
 export { checkIn, createVacation } from "./presence";
 export { createInvoice } from "./invoices";
-export { scheduledTurboJobsWritebackSync, scheduledTurboExpensesWritebackSync } from "./turboSync";
+export { scheduledTurboJobsWritebackSync, scheduledTurboExpensesWritebackSync, scheduledTurboTimeSheetsWritebackSync } from "./turboSync";
 
 // send emails when timesheets are shared
 exports.emailOnTimeSheetShare = functions.firestore
