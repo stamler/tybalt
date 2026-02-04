@@ -617,7 +617,7 @@ const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
 export const scheduledTurboJobsWritebackSync = functions
   .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
   .pubsub
-  .schedule("every 30 minutes")
+  .schedule("every 20 minutes")
   .onRun(async (context) => {
     functions.logger.info("Starting scheduled Turbo Jobs/Clients/Contacts/Rates sync");
     
