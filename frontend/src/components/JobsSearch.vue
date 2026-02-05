@@ -3,7 +3,7 @@
     <div v-if="!jobsEnabled" class="disabled-notice">
       <p>
         Job creation and editing has been moved to 
-        <a href="https://turbo.tbte.ca/admin/jobs" target="_blank">tybalt turbo</a>.
+        <a href="https://turbo.tbte.ca/jobs/list" target="_blank">tybalt turbo</a>.
         You can still view job details below, but please use turbo to create or edit jobs.
       </p>
     </div>
