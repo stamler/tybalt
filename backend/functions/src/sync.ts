@@ -75,16 +75,6 @@ export const syncToSQL = functions
         },
       });
     }
-    // Fold TurboJobsWriteback into Jobs before exporting to MySQL
-    await foldCollection(
-      "TurboJobsWriteback",
-      "Jobs",
-      [
-        { sourceField: "_id", destField: "_id" },
-        { sourceField: "immutableID", destField: "immutableID" },
-      ],
-      ["hasTimeEntries", "lastTimeEntryDate"]
-    );
     await exportJobs(mysqlConnection);
     // Export Turbo writeback data (clients before contacts/notes due to FK constraint)
     const turboClientsExported = await exportTurboClients(mysqlConnection);

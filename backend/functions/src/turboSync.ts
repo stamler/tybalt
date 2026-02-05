@@ -12,6 +12,7 @@ import axios, { isAxiosError } from "axios";
 import { zonedTimeToUtc } from "date-fns-tz";
 import { format } from "date-fns";
 import { APP_NATIVE_TZ, TURBO_BASE_URL } from "./config";
+import { foldCollection } from "./sync";
 
 const db = admin.firestore();
 
@@ -635,6 +636,23 @@ export const scheduledTurboJobsWritebackSync = functions
         rateSheetsWritten: result.rateSheets,
         rateSheetEntriesWritten: result.rateSheetEntries,
       });
+
+      // Fold TurboJobsWriteback into Jobs immediately after writeback
+      // Errors are logged but not thrown - data remains in TurboJobsWriteback for next run
+      try {
+        await foldCollection(
+          "TurboJobsWriteback",
+          "Jobs",
+          [
+            { sourceField: "_id", destField: "_id" },
+            { sourceField: "immutableID", destField: "immutableID" },
+          ],
+          ["hasTimeEntries", "lastTimeEntryDate"]
+        );
+        functions.logger.info("TurboJobsWriteback fold completed successfully");
+      } catch (foldError) {
+        functions.logger.error("TurboJobsWriteback fold failed, will retry next run", { foldError });
+      }
     } catch (error) {
       functions.logger.error("Scheduled Turbo sync failed", { error });
       throw error;
