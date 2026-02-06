@@ -616,7 +616,7 @@ const TURBO_AUTH_TOKEN = defineSecret(TURBO_AUTH_TOKEN_SECRET_NAME);
  * - rateSheetEntries array to TurboRateSheetEntriesWriteback collection
  */
 export const scheduledTurboJobsWritebackSync = functions
-  .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
+  .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME], timeoutSeconds: 180, memory: "1GB" })
   .pubsub
   .schedule("every 20 minutes")
   .onRun(async (context) => {
