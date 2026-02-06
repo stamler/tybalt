@@ -8,7 +8,7 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket, Connection } from "mysql2/promise";
 import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
-import { FieldPair, objDiff, analyzeFoldAction } from "./fold-utils";
+import { FieldPair, FoldAction, objDiff, analyzeFoldAction, chunkArray } from "./fold-utils";
 import { processExpenseWritebackAttachments } from "./attachmentWriteback";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -803,21 +803,36 @@ export async function foldCollection(
   
   let replacedCount = 0, createdCount = 0, skippedCount = 0, errorCount = 0;
 
-  for (const sourceDoc of sourceSnap.docs) {
-    const sourceData = sourceDoc.data();
-    const result = await analyzeFoldAction(
-      db,
-      destCollection,
-      fieldPairs,
-      sourceDoc.id,
-      sourceData,
-      preserveFields
-    );
+  // Analyze all source docs concurrently (10 at a time) using existing
+  // analyzeFoldAction. This turns N sequential Firestore reads into N/10
+  // parallel batches without reimplementing any query logic.
+  const CONCURRENCY = 10;
+  const MAX_BATCH_OPS = 500;
 
+  const actions: { ref: FirebaseFirestore.DocumentReference; id: string; result: FoldAction }[] = [];
+  for (const chunk of chunkArray(sourceSnap.docs, CONCURRENCY)) {
+    const results = await Promise.all(
+      chunk.map(async (doc) => ({
+        ref: doc.ref,
+        id: doc.id,
+        result: await analyzeFoldAction(db, destCollection, fieldPairs, doc.id, doc.data(), preserveFields),
+      }))
+    );
+    actions.push(...results);
+  }
+
+  // Collect writes into Firestore batches instead of individual writes.
+  type Op =
+    | { type: "set"; ref: FirebaseFirestore.DocumentReference; data: Record<string, unknown> }
+    | { type: "delete"; ref: FirebaseFirestore.DocumentReference };
+
+  const ops: Op[] = [];
+
+  for (const { ref, id, result } of actions) {
     switch (result.action) {
     case "create":
-      await db.collection(destCollection).doc(result.destDocId).set(result.data);
-      await sourceDoc.ref.delete();
+      ops.push({ type: "set", ref: db.collection(destCollection).doc(result.destDocId), data: result.data });
+      ops.push({ type: "delete", ref });
       createdCount++;
       functions.logger.debug(`Created ${destCollection} doc ${result.destDocId}`);
       break;
@@ -826,12 +841,12 @@ export async function foldCollection(
       const diff = objDiff(result.existingData, result.newData);
       if (Object.keys(diff).length === 0) {
         // No actual changes - just delete source without overwriting destination
-        await sourceDoc.ref.delete();
+        ops.push({ type: "delete", ref });
         skippedCount++;
         functions.logger.debug(`Skipped ${destCollection} doc ${result.destDocId} (no changes)`);
       } else {
-        await db.collection(destCollection).doc(result.destDocId).set(result.newData);
-        await sourceDoc.ref.delete();
+        ops.push({ type: "set", ref: db.collection(destCollection).doc(result.destDocId), data: result.newData });
+        ops.push({ type: "delete", ref });
         replacedCount++;
         functions.logger.debug(`Replaced ${destCollection} doc ${result.destDocId}`, {
           diff: JSON.stringify(diff),
@@ -841,12 +856,20 @@ export async function foldCollection(
     }
 
     case "error":
-      functions.logger.error(
-        `${result.reason} for source doc ${sourceDoc.id}`
-      );
+      functions.logger.error(`${result.reason} for source doc ${id}`);
       errorCount++;
       break;
     }
+  }
+
+  // Commit all writes in batches of up to 500 operations
+  for (const opChunk of chunkArray(ops, MAX_BATCH_OPS)) {
+    const batch = db.batch();
+    for (const op of opChunk) {
+      if (op.type === "set") batch.set(op.ref, op.data);
+      else batch.delete(op.ref);
+    }
+    await batch.commit();
   }
 
   functions.logger.info(
