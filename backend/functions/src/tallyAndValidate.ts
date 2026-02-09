@@ -437,7 +437,8 @@ export async function tallyAndValidate(
     try {
       // eslint-disable-next-line no-await-in-loop
       const jobData = (await db.collection("Jobs").doc(job).get()).data();
-      if (jobData?.status !== "Active") {
+      const chargeableStatuses = ["Active", "Awarded", "Submitted", "In Progress"];
+      if (!chargeableStatuses.includes(jobData?.status)) {
         throw new functions.https.HttpsError(
           "failed-precondition",
           "Job status isn't Active. Ask a job admin to mark it Active then resubmit."
