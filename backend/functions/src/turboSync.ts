@@ -76,12 +76,13 @@ export interface JobsWritebackResponse {
 
 /**
  * Response format from expenses writeback endpoint.
- * Contains separate arrays for expenses, vendors, and purchase orders.
+ * Contains separate arrays for expenses, vendors, purchase orders, and po approver props.
  */
 export interface ExpensesWritebackResponse {
   expenses: Record<string, unknown>[];
   vendors: Record<string, unknown>[];
   purchaseOrders: Record<string, unknown>[];
+  poApproverProps: Record<string, unknown>[];
 }
 
 const WRITEBACK_DATE_FIELDS = [
@@ -447,7 +448,7 @@ export async function fetchAndSyncJobsWriteback(
 export async function fetchAndSyncExpensesWriteback(
   url: string,
   authHeader: string
-): Promise<{ expenses: number; vendors: number; purchaseOrders: number }> {
+): Promise<{ expenses: number; vendors: number; purchaseOrders: number; poApproverProps: number }> {
   functions.logger.info(`Fetching expenses writeback data from ${url}`);
 
   // Fetch the data from the URL
@@ -484,25 +485,31 @@ export async function fetchAndSyncExpensesWriteback(
   if (!Array.isArray(data.purchaseOrders)) {
     throw new Error(`Expected purchaseOrders array in response from ${url}`);
   }
+  if (!Array.isArray(data.poApproverProps)) {
+    throw new Error(`Expected poApproverProps array in response from ${url}`);
+  }
 
   functions.logger.info(
-    `Fetched ${data.expenses.length} expenses, ${data.vendors.length} vendors, ${data.purchaseOrders.length} purchaseOrders`
+    `Fetched ${data.expenses.length} expenses, ${data.vendors.length} vendors, ` +
+    `${data.purchaseOrders.length} purchaseOrders, ${data.poApproverProps.length} poApproverProps`
   );
 
   // Sync each array to its respective collection
   // Expenses use "immutableID" as key (to match legacy Expenses collection for fold operation)
   // Vendors and purchaseOrders use "id" (PocketBase ID) as key
   const convertedExpenses = data.expenses.map(convertWritebackExpenseDates);
-  const [expensesWritten, vendorsWritten, posWritten] = await Promise.all([
+  const [expensesWritten, vendorsWritten, posWritten, poApproverPropsWritten] = await Promise.all([
     syncArrayToFirestore(convertedExpenses, "immutableID", "TurboExpensesWriteback"),
     syncArrayToFirestore(data.vendors, "id", "TurboVendorsWriteback"),
     syncArrayToFirestore(data.purchaseOrders, "id", "TurboPurchaseOrdersWriteback"),
+    syncArrayToFirestore(data.poApproverProps, "id", "TurboPoApproverProps"),
   ]);
 
   return {
     expenses: expensesWritten,
     vendors: vendorsWritten,
     purchaseOrders: posWritten,
+    poApproverProps: poApproverPropsWritten,
   };
 }
 
@@ -667,6 +674,7 @@ export const scheduledTurboJobsWritebackSync = functions
  * - expenses array to TurboExpensesWriteback collection
  * - vendors array to TurboVendorsWriteback collection
  * - purchaseOrders array to TurboPurchaseOrdersWriteback collection
+ * - poApproverProps array to TurboPoApproverProps collection
  */
 export const scheduledTurboExpensesWritebackSync = functions
   .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
@@ -685,6 +693,7 @@ export const scheduledTurboExpensesWritebackSync = functions
         expensesWritten: result.expenses,
         vendorsWritten: result.vendors,
         purchaseOrdersWritten: result.purchaseOrders,
+        poApproverPropsWritten: result.poApproverProps,
       });
     } catch (error) {
       functions.logger.error("Scheduled Turbo expenses sync failed", { error });

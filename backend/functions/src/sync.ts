@@ -53,6 +53,7 @@ export const syncToSQL = functions
     // Export Turbo expenses writeback data (vendors before purchase orders due to FK constraint)
     await exportTurboVendors(mysqlConnection);
     await exportTurboPurchaseOrders(mysqlConnection);
+    await exportTurboPoApproverProps(mysqlConnection);
     await cleanupExport(mysqlConnection, "Invoices");
     await deleteReplacedInvoices(mysqlConnection);
     await exportInvoices(mysqlConnection);
@@ -1251,6 +1252,117 @@ export async function exportTurboPurchaseOrders(mysqlConnection: Connection) {
     functions.logger.debug(cleanupResult[0]);
   } catch (error) {
     functions.logger.error(`Failed to cleanup stale TurboPurchaseOrders rows: ${error}`);
+    throw error;
+  }
+}
+
+/*
+exportTurboPoApproverProps(): Export TurboPoApproverProps documents to MySQL TurboPoApproverProps table.
+These are po approver props written back from Turbo (PocketBase) via the expenses writeback endpoint.
+Uses UPSERT pattern with timestamp-based cleanup for stale rows.
+*/
+export async function exportTurboPoApproverProps(mysqlConnection: Connection) {
+  functions.logger.debug("exporting TurboPoApproverProps");
+  const allPropsQuerySnap = await db.collection("TurboPoApproverProps").get();
+
+  if (allPropsQuerySnap.empty) {
+    functions.logger.log("No TurboPoApproverProps documents to export");
+    return;
+  }
+
+  const propsFields = [
+    "id",
+    "uid",
+    "max_amount",
+    "project_max",
+    "sponsorship_max",
+    "staff_and_social_max",
+    "media_and_event_max",
+    "computer_max",
+    "divisions",
+    "created",
+    "updated",
+    "timestamp",
+  ];
+  const now = new Date();
+
+  const insertValues = allPropsQuerySnap.docs.map((propSnap) => {
+    const prop = propSnap.data();
+    const requiredNumericFields = [
+      "max_amount",
+      "project_max",
+      "sponsorship_max",
+      "staff_and_social_max",
+      "media_and_event_max",
+      "computer_max",
+    ];
+
+    const uid = prop.uid;
+    if (typeof uid !== "string" || uid.trim() === "") {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} missing required uid`);
+    }
+    for (const field of requiredNumericFields) {
+      if (typeof prop[field] !== "number" || Number.isNaN(prop[field])) {
+        throw new Error(`TurboPoApproverProps ${propSnap.id} missing/invalid required field ${field}`);
+      }
+    }
+    if (typeof prop.divisions !== "string") {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} missing/invalid required field divisions`);
+    }
+    // Ensure divisions is valid JSON array so malformed payloads fail fast.
+    let parsedDivisions: unknown;
+    try {
+      parsedDivisions = JSON.parse(prop.divisions as string);
+    } catch {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} has invalid divisions JSON`);
+    }
+    if (!Array.isArray(parsedDivisions)) {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} divisions must be a JSON array`);
+    }
+    if (typeof prop.created !== "string" || prop.created.trim() === "") {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} missing required created timestamp`);
+    }
+    if (typeof prop.updated !== "string" || prop.updated.trim() === "") {
+      throw new Error(`TurboPoApproverProps ${propSnap.id} missing required updated timestamp`);
+    }
+
+    return [
+      propSnap.id,
+      uid,
+      prop.max_amount,
+      prop.project_max,
+      prop.sponsorship_max,
+      prop.staff_and_social_max,
+      prop.media_and_event_max,
+      prop.computer_max,
+      prop.divisions,
+      prop.created,
+      prop.updated,
+      now,
+    ];
+  });
+
+  const updateClause = propsFields
+    .filter(x => x !== "id")
+    .map(x => `${x}=VALUES(${x})`)
+    .join(", ");
+  const q = `INSERT INTO TurboPoApproverProps (${propsFields.toString()}) VALUES ? ON DUPLICATE KEY UPDATE ${updateClause}`;
+
+  try {
+    await mysqlConnection.query(q, [insertValues]);
+  } catch (error) {
+    functions.logger.error(`Failed to export TurboPoApproverProps documents: ${error}`);
+    throw error;
+  }
+  functions.logger.log(`UPSERTed ${insertValues.length} TurboPoApproverProps documents`);
+
+  const cleanupQuery = "DELETE FROM TurboPoApproverProps WHERE timestamp < UTC_TIMESTAMP() - INTERVAL 2 MINUTE";
+  try {
+    const cleanupResult = await mysqlConnection.query(cleanupQuery);
+    functions.logger.debug("Cleaned up stale TurboPoApproverProps rows");
+    functions.logger.debug(cleanupResult[0]);
+  } catch (error) {
+    functions.logger.error(`Failed to cleanup stale TurboPoApproverProps rows: ${error}`);
     throw error;
   }
 }
