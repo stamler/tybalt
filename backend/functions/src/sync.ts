@@ -1312,7 +1312,7 @@ export async function exportTurboPoApproverProps(mysqlConnection: Connection) {
     // Ensure divisions is valid JSON array so malformed payloads fail fast.
     let parsedDivisions: unknown;
     try {
-      parsedDivisions = JSON.parse(prop.divisions as string);
+      parsedDivisions = JSON.parse(prop.divisions);
     } catch {
       throw new Error(`TurboPoApproverProps ${propSnap.id} has invalid divisions JSON`);
     }
