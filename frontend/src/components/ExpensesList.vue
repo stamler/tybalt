@@ -1,6 +1,14 @@
 <template>
   <div id="list">
     <reject-modal ref="rejectModal" collectionName="Expenses" />
+    <div v-if="!expensesEnabled" class="disabled-notice">
+      <p>
+        Expense creation and editing has been moved to
+        <a href="https://turbo.tbte.ca" target="_blank">tybalt turbo</a>.
+        You can still view expense details below, but please use turbo to
+        create, edit, submit, approve, or reject expenses.
+      </p>
+    </div>
     <div
       v-for="(expenses, weekEnding) in processedItems"
       v-bind:key="weekEnding"
@@ -9,7 +17,7 @@
         Week Ending
         {{ shortDate(new Date(parseInt(weekEnding.toString(), 10))) }}
         <action-button
-          v-if="unsubmittedExpenseIds(expenses).length > 0"
+          v-if="expensesEnabled && unsubmittedExpenseIds(expenses).length > 0"
           type="send"
           @click="submitExpenses(unsubmittedExpenseIds(expenses))"
         />
@@ -141,7 +149,7 @@
           </template>
           <!-- The template for users -->
           <template v-if="approved === undefined">
-            <template v-if="item.submitted === false">
+            <template v-if="expensesEnabled && item.submitted === false">
               <action-button
                 v-if="!item.attachment"
                 type="copy"
@@ -159,7 +167,11 @@
             </template>
 
             <template v-if="item.submitted === true && item.approved === false">
-              <action-button type="recall" @click="recallExpense(item.id)" />
+              <action-button
+                v-if="expensesEnabled"
+                type="recall"
+                @click="recallExpense(item.id)"
+              />
               <span class="label">submitted</span>
             </template>
 
@@ -173,7 +185,7 @@
 
           <!-- The template for "pending" -->
           <template v-if="approved === false">
-            <template v-if="!item.approved && !item.rejected">
+            <template v-if="!item.approved && !item.rejected && expensesEnabled">
               <action-button type="approve" @click="approveExpense(item.id)" />
               <action-button
                 v-if="!item.approved && !item.rejected"
@@ -188,7 +200,7 @@
 
           <!-- The template for "approved" -->
           <template v-if="approved === true">
-            <template v-if="!item.committed">
+            <template v-if="!item.committed && expensesEnabled">
               <action-button
                 type="delete"
                 @click="rejectModal?.openModal(item.id)"
@@ -243,7 +255,13 @@ export default defineComponent({
     const rejectModal = ref<typeof RejectModal | null>(null);
     const store = useStateStore();
     const { startTask, endTask } = store;
-    return { rejectModal, user: store.user, startTask, endTask };
+    return {
+      rejectModal,
+      user: store.user,
+      startTask,
+      endTask,
+      expensesEnabled: store.expensesEnabled,
+    };
   },
   props: ["approved", "collectionName"],
   computed: {
@@ -438,5 +456,22 @@ export default defineComponent({
 <style scoped>
 .reimbursable {
   background-color: rgb(232, 255, 232);
+}
+
+.disabled-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.disabled-notice p {
+  margin: 0;
+}
+
+.disabled-notice a {
+  color: #0066cc;
+  font-weight: bold;
 }
 </style>

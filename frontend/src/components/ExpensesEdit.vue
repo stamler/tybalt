@@ -1,5 +1,13 @@
 <template>
-  <form id="editor">
+  <div id="editor">
+    <div v-if="!expensesEnabled" class="disabled-notice">
+      <p>
+        Expense creation and editing has been moved to
+        <a href="https://turbo.tbte.ca" target="_blank">tybalt turbo</a>.
+        Please use turbo to create or edit expenses.
+      </p>
+    </div>
+    <form v-if="expensesEnabled">
     <datepicker
       name="datepicker"
       placeholder="Date"
@@ -224,7 +232,8 @@
         Cancel
       </button>
     </span>
-  </form>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -280,7 +289,7 @@ const router = useRouter();
 const parentPath = ref(route?.matched[route.matched.length - 2]?.path ?? "");
 
 const store = useStateStore();
-const { user, expenseRates, startTask, endTask } = store;
+const { user, expenseRates, startTask, endTask, expensesEnabled } = store;
 
 const props = defineProps({
   id: {
@@ -636,5 +645,22 @@ setItem(props.id);
   background-color: rgb(240, 228, 255);
   padding-left: 0.2em;
   margin-right: 0.2em;
+}
+
+.disabled-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.disabled-notice p {
+  margin: 0;
+}
+
+.disabled-notice a {
+  color: #0066cc;
+  font-weight: bold;
 }
 </style>

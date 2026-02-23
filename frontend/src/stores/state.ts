@@ -21,6 +21,7 @@ export const useStateStore = defineStore({
     showTasks: false, // whether to display the progress UI element
     timeEnabled: false, // whether time tracking is enabled based on Config/Enable
     jobsEnabled: false, // whether job creation/editing is enabled based on Config/Enable
+    expensesEnabled: false, // whether expense creation/editing is enabled based on Config/Enable
 
     // state of the notification system
     notifications: {}, // notifications to display in UI
@@ -67,6 +68,9 @@ export const useStateStore = defineStore({
     },
     setJobsEnabled(enabled: boolean) {
       this.jobsEnabled = enabled;
+    },
+    setExpensesEnabled(enabled: boolean) {
+      this.expensesEnabled = enabled;
     },
   },
 });

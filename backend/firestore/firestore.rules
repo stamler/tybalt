@@ -740,14 +740,17 @@ service cloud.firestore {
         hasClaim("report") && (resource.data.submitted == true || resource.data.approved == true || resource.data.committed == true)
       )
       allow create: if 
+        isEnabled("expenses") &&
         hasClaim("time") && validExpenseEntry() && newDoc().submitted == false && newDoc().approved == false && isMissing("committed") &&
         // prevent user from setting system-managed fields
         isMissing("immutableID") &&
         // prevent user from creating an entry for somebody else
         request.auth.uid == request.resource.data['uid'];
-      allow delete: if uidMatches() && resource.data.approved == false && resource.data.submitted == false;
+      allow delete: if isEnabled("expenses") && uidMatches() && resource.data.approved == false && resource.data.submitted == false;
       allow update: if 
+        isEnabled("expenses") &&
         // owner can edit (but cannot modify immutableID)
+        (
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && isMissing("rejected") && isMissing("rejectionReason") && (newDoc().committed == false || isMissing("committed")) && newDoc().approved == false && !newDoc().diff(resource.data).affectedKeys().hasAny(["immutableID"])) ||
         // owner can recall unapproved
         (hasClaim("time") && validExpenseEntry() && uidMatches() && uidUnchanged() && resource.data.approved == false && newDoc().diff(resource.data).affectedKeys().hasOnly(["submitted"]) && newDoc().submitted == false) ||
@@ -767,7 +770,7 @@ service cloud.firestore {
               resource.data.date < request.time &&
               (resource.data.rejected == false || !("rejected" in resource.data))
             )
-        );
+        ));
     }
     match /PurchaseOrderRequests/{entry} {
       allow read: if (

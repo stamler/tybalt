@@ -279,6 +279,14 @@ export const submitExpense = functions.https.onCall(async (data: unknown, contex
   }
   
   const db = admin.firestore();
+  const enableSnap = await db.collection("Config").doc("Enable").get();
+  if (enableSnap.get("expenses") !== true) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Expense editing in legacy Tybalt is disabled. Please use tybalt turbo."
+    );
+  }
+
   const expense = await db.collection("Expenses").doc(data.id).get();
   const uid = expense.get("uid");
 

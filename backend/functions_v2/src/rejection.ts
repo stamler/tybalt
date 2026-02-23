@@ -36,6 +36,16 @@ export const rejectDoc = onCall(async (callableRequest) => {
 
   // get the document reference
   const db = admin.firestore();
+  if (collectionName === "Expenses") {
+    const enableSnap = await db.collection("Config").doc("Enable").get();
+    if (enableSnap.get("expenses") !== true) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Expense editing in legacy Tybalt is disabled. Please use tybalt turbo."
+      );
+    }
+  }
+
   const docRef = db.collection(collectionName).doc(requestData.id);
   
   await db.runTransaction(async (transaction) => {

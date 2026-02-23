@@ -119,9 +119,9 @@ if (unknownArgs.length > 0) {
   process.exit(1);
 }
 
-const makeDestructiveChanges = args.includes(DESTRUCTIVE_FLAG);
+const destructiveMode = args.includes(DESTRUCTIVE_FLAG);
 
-clearClaims(makeDestructiveChanges)
+clearClaims(destructiveMode)
   .then(() => {
     process.exit(0);
   })
