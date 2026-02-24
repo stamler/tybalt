@@ -117,6 +117,11 @@ async function previewFold(
     skips: [],
     errors: [],
   };
+  // Keep preview aligned with collection-specific runtime fold behavior.
+  // Today this only applies to Expenses (exported:false on create/changed replace).
+  // If more collections need custom fold behavior, refactor to a shared
+  // per-collection policy instead of adding more `isXxx` booleans.
+  const isExpensesFold = destCollection === "Expenses";
 
   const sourceSnap = await db.collection(sourceCollection).get();
 
@@ -137,21 +142,28 @@ async function previewFold(
 
     switch (action.action) {
     case "create":
+      // Keep preview behavior aligned with foldCollection():
+      // Expenses creates are marked exported:false so they are eligible for export.
+      const createData = isExpensesFold ? { ...action.data, exported: false } : action.data;
       results.creates.push({
         id: sourceDoc.id,
         destDocId: action.destDocId,
-        data: action.data,
+        data: createData,
       });
       break;
 
     case "replace": {
-      const diff = objDiff(action.existingData, action.newData);
-      if (Object.keys(diff).length === 0) {
+      const baseDiff = objDiff(action.existingData, action.newData);
+      if (Object.keys(baseDiff).length === 0) {
         results.skips.push({
           id: sourceDoc.id,
           destDocId: action.destDocId,
         });
       } else {
+        // Keep preview behavior aligned with foldCollection():
+        // Expenses changed replacements are marked exported:false so they are re-exported.
+        const finalNewData = isExpensesFold ? { ...action.newData, exported: false } : action.newData;
+        const diff = objDiff(action.existingData, finalNewData);
         results.replaces.push({
           id: sourceDoc.id,
           destDocId: action.destDocId,

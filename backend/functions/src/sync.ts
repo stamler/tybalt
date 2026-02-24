@@ -46,7 +46,7 @@ export const syncToSQL = functions
       "TurboExpensesWriteback",
       "Expenses",
       [{ sourceField: "immutableID", destField: "immutableID" }],
-      ["submittedDate"]
+      ["submittedDate", "exported"]
     );
     await cleanupExport(mysqlConnection, "Expenses");
     await exportExpenses(mysqlConnection);
@@ -803,6 +803,11 @@ export async function foldCollection(
   }
   
   let replacedCount = 0, createdCount = 0, skippedCount = 0, errorCount = 0;
+  // Collection-specific export flag rule:
+  // Expenses changes must become eligible for MySQL re-export (exported:false).
+  // If more collection-specific fold behaviors are added, refactor this into
+  // a per-collection policy map instead of adding more `isXxx` booleans.
+  const isExpensesFold = destCollection === "Expenses";
 
   // Analyze all source docs concurrently (10 at a time) using existing
   // analyzeFoldAction. This turns N sequential Firestore reads into N/10
@@ -832,7 +837,11 @@ export async function foldCollection(
   for (const { ref, id, result } of actions) {
     switch (result.action) {
     case "create":
-      ops.push({ type: "set", ref: db.collection(destCollection).doc(result.destDocId), data: result.data });
+      ops.push({
+        type: "set",
+        ref: db.collection(destCollection).doc(result.destDocId),
+        data: isExpensesFold ? { ...result.data, exported: false } : result.data
+      });
       ops.push({ type: "delete", ref });
       createdCount++;
       functions.logger.debug(`Created ${destCollection} doc ${result.destDocId}`);
@@ -846,7 +855,11 @@ export async function foldCollection(
         skippedCount++;
         functions.logger.debug(`Skipped ${destCollection} doc ${result.destDocId} (no changes)`);
       } else {
-        ops.push({ type: "set", ref: db.collection(destCollection).doc(result.destDocId), data: result.newData });
+        ops.push({
+          type: "set",
+          ref: db.collection(destCollection).doc(result.destDocId),
+          data: isExpensesFold ? { ...result.newData, exported: false } : result.newData
+        });
         ops.push({ type: "delete", ref });
         replacedCount++;
         functions.logger.debug(`Replaced ${destCollection} doc ${result.destDocId}`, {
