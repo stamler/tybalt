@@ -840,7 +840,7 @@ export async function foldCollection(
       ops.push({
         type: "set",
         ref: db.collection(destCollection).doc(result.destDocId),
-        data: isExpensesFold ? { ...result.data, exported: false } : result.data
+        data: isExpensesFold ? { ...result.data, exported: false } : result.data,
       });
       ops.push({ type: "delete", ref });
       createdCount++;
@@ -858,7 +858,7 @@ export async function foldCollection(
         ops.push({
           type: "set",
           ref: db.collection(destCollection).doc(result.destDocId),
-          data: isExpensesFold ? { ...result.newData, exported: false } : result.newData
+          data: isExpensesFold ? { ...result.newData, exported: false } : result.newData,
         });
         ops.push({ type: "delete", ref });
         replacedCount++;
