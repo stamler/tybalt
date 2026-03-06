@@ -143,6 +143,10 @@
     <span v-if="jobNumbersInDescription" class="attention">
       Job numbers are not allowed in the work description. Enter jobs numbers in
       the appropriate field and create one time entry per job.
+      <label>
+        <input type="checkbox" v-model="noJobNumberInDescription" />
+        I am not using a job number in the description
+      </label>
     </span>
     <span class="field" v-if="item.timetype === 'OTO'">
       $<input
@@ -156,7 +160,7 @@
     </span>
 
     <span class="field">
-      <button type="button" v-on:click="save()" v-if="!jobNumbersInDescription">
+      <button type="button" v-on:click="save()" v-if="!jobNumbersInDescription || noJobNumberInDescription">
         Save
       </button>
       <button type="button" v-on:click="$router.push(parentPath)">
@@ -255,12 +259,17 @@ const trainingTokensInDescriptionWhileRegularHours = computed(() => {
 const jobNumbersInDescription = computed(() => {
   if (item.value.workDescription !== undefined) {
     const lowercase = item.value.workDescription.toLowerCase().trim();
-    // look for any instances of XX-YYY where XX is a number between 15 and
-    // 40 and YYY is a zero-padded number between 1 and 999 then return true
-    // if any are found
-    return /(1[5-9]|2[0-9]|3[0-9]|40)-(\d{3})/.test(lowercase);
+    // look for any instances of XX-YYY or XX-YYYY where XX is a number
+    // between 15 and 40 and YYY/YYYY is a zero-padded number then return
+    // true if any are found
+    return /(?<!\d)(1[5-9]|2[0-9]|3[0-9]|40)-(\d{3,4})(?!\d)/.test(lowercase);
   }
   return false;
+});
+
+const noJobNumberInDescription = ref(false);
+watch(jobNumbersInDescription, (val) => {
+  if (!val) noJobNumberInDescription.value = false;
 });
 
 watch(
@@ -300,6 +309,7 @@ const setItem = async function (id: string | undefined) {
         } else {
           item.value = result;
           item.value.date = result.date.toDate();
+          noJobNumberInDescription.value = result.noJobNumberInDescription === true;
         }
       })
       .catch(() => {
@@ -393,6 +403,13 @@ const save = function () {
   // delete payoutRequestAmount if it's not a payout request
   if (item.value.timetype !== "OTO") {
     delete item.value.payoutRequestAmount;
+  }
+
+  // set noJobNumberInDescription bypass flag if the user has acknowledged the false positive
+  if (noJobNumberInDescription.value) {
+    item.value.noJobNumberInDescription = true;
+  } else {
+    delete item.value.noJobNumberInDescription;
   }
 
   item.value = _.pickBy(item.value, (i) => i !== ""); // strip blank fields

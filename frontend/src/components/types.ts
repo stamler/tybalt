@@ -46,6 +46,7 @@ export interface TimeEntry {
   workrecord?: string;
   jobHours?: number;
   payoutRequestAmount?: number;
+  noJobNumberInDescription?: boolean;
 }
 
 export interface TimeSheet {

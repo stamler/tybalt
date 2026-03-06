@@ -62,7 +62,7 @@ service cloud.firestore {
         newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
           "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
           "timetypeName", "divisionName", "jobDescription", "client", "weekEnding",
-          "creator", "creatorName", "displayName", "created", "committed", "surname", "givenName" ]) &&
+          "creator", "creatorName", "displayName", "created", "committed", "surname", "givenName", "noJobNumberInDescription" ]) &&
         
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
@@ -265,7 +265,7 @@ service cloud.firestore {
         // allowed fields
         newDoc().keys().hasOnly([ "date", "timetype", "division", "job", "payoutRequestAmount",
           "hours", "jobHours", "workrecord", "workDescription", "mealsHours", "uid",
-          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding", "category" ]) &&
+          "timetypeName", "divisionName", "jobDescription", "client", "weekEnding", "category", "noJobNumberInDescription" ]) &&
 
         // timetype exists in db
         isInCollection("timetype","TimeTypes") &&
@@ -338,10 +338,10 @@ service cloud.firestore {
 
         // validate presence and length of description for Regular Hours and Training
         // also ensure workDescription does not contain jobNumbers of the format
-        // XX-YYY where XX is a number between 15 and 40 and YYY is a 3-digit
-        // number between 001 and 999
+        // XX-YYY or XX-YYYY where XX is a number between 15 and 40 and
+        // YYY/YYYY is a 3 or 4-digit number
         (
-          (newDoc().workDescription.size() > 4 && !newDoc().workDescription.matches('.*(1[5-9]|2[0-9]|3[0-9]|40)-([0-9]{3}).*') && newDoc().timetype in ["R", "RT"]) || !(newDoc().timetype in ["R", "RT"])
+          (newDoc().workDescription.size() > 4 && (newDoc().noJobNumberInDescription == true || !newDoc().workDescription.matches('(.*[^0-9])?(1[5-9]|2[0-9]|3[0-9]|40)-([0-9]{3,4})([^0-9].*)?')) && newDoc().timetype in ["R", "RT"]) || !(newDoc().timetype in ["R", "RT"])
         ) &&
 
         // ensure absence of description for Banking, Payout, Off and Off Rotation
