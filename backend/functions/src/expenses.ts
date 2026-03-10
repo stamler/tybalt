@@ -11,6 +11,7 @@ import { generateExpenseAttachmentArchiveUnwrapped } from "./storage";
 import * as _ from "lodash";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { ChangeJson } from "firebase-functions/lib/common/change";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 // import { loadSQLFileToString } from "./sqlQueries";
 // import { RowDataPacket } from "mysql2";
 
@@ -364,7 +365,9 @@ export const expenseRates = functions.https.onCall(async (data: unknown, context
   sets the exportInProgress flag and deletes any corresponding rows in 
   MySQL. Finally it unsets the exportInProgress flag.
 */
-export const uncommitExpense = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+export const uncommitExpense = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   const collection = "Expenses";
   const lockProperty = "committed";
   // caller must have permission to run this

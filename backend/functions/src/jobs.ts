@@ -9,6 +9,7 @@ import { RowDataPacket } from "mysql2";
 import * as _ from "lodash";
 import { subDays } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 
 
 const db = admin.firestore();
@@ -178,17 +179,21 @@ async function writeJobsLastTimeEntryDate(fullSync = false) {
 // this function is called by a cloud scheduler job at 8pm every day in the
 // APP_NATIVE_TZ timezone. It does the incremental sync of Jobs entry dates from
 // SQL to Firestore.
-export const updateLastTimeEntryDate = functions.pubsub.schedule("0 20 * * *").timeZone(APP_NATIVE_TZ).onRun(async (context) => {
-  return writeJobsLastTimeEntryDate(false);
-});
+export const updateLastTimeEntryDate = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .pubsub.schedule("0 20 * * *").timeZone(APP_NATIVE_TZ).onRun(async (context) => {
+    return writeJobsLastTimeEntryDate(false);
+  });
 
 // this callable function is called by the client to do a full sync of Jobs
 // entry dates from SQL to Firestore.
-export const fullSyncLastTimeEntryDate = functions.runWith({ timeoutSeconds: 240 }).https.onCall(async (data, context) => {
-  // throw if the caller isn't authenticated & authorized
-  getAuthObject(context, ["admin"]);
-  return writeJobsLastTimeEntryDate(true);
-});
+export const fullSyncLastTimeEntryDate = functions
+  .runWith({ timeoutSeconds: 240, secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onCall(async (data, context) => {
+    // throw if the caller isn't authenticated & authorized
+    getAuthObject(context, ["admin"]);
+    return writeJobsLastTimeEntryDate(true);
+  });
 
 // this callable function is called by the client to clear the lastTimeEntryDate
 // field on all Jobs in Firestore.

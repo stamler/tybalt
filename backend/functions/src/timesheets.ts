@@ -32,6 +32,7 @@ import * as _ from "lodash";
 import { getAuthObject, TimeEntry, isDocIdObject, createPersistentDownloadUrl, TimeOffTypes, getTrackingDoc, isTimeSheet, isApprovedTimeSheet, isSubmittedTimeSheet, isLockedTimeSheet } from "./utilities";
 import { createSSHMySQLConnection2 } from "./sshMysql";
 import { ChangeJson } from "firebase-functions/lib/common/change";
+import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
 // import { updateProfileTallies } from "./profiles";
 
 interface PendingTimeSheetSummary {
@@ -399,7 +400,9 @@ export const updateViewers = functions.firestore
   sets the exportInProgress flag and deletes any corresponding rows in 
   MySQL. Finally it unsets the exportInProgress flag.
 */
-export const unlockTimesheet = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+export const unlockTimesheet = functions
+  .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
+  .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
   // caller must have permission to run this
   getAuthObject(context, ["tsunlock"])
 
