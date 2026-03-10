@@ -15,6 +15,7 @@ import { APP_NATIVE_TZ, TURBO_BASE_URL } from "./config";
 import { foldCollection } from "./sync";
 
 const db = admin.firestore();
+const FIRESTORE_BATCH_SIZE = 500;
 
 /**
  * Generic transform function type.
@@ -305,11 +306,10 @@ async function syncArrayToFirestore(
   }
 
   // Process in batches of 500 (Firestore batch limit)
-  const BATCH_SIZE = 500;
   let totalWritten = 0;
 
-  for (let i = 0; i < data.length; i += BATCH_SIZE) {
-    const batchData = data.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < data.length; i += FIRESTORE_BATCH_SIZE) {
+    const batchData = data.slice(i, i + FIRESTORE_BATCH_SIZE);
     const batch = db.batch();
 
     for (const item of batchData) {
@@ -335,6 +335,23 @@ async function syncArrayToFirestore(
 
   functions.logger.info(`Successfully synced ${totalWritten} documents to ${collectionName}`);
   return totalWritten;
+}
+
+async function clearFirestoreCollection(collectionName: string): Promise<void> {
+  const querySnap = await db.collection(collectionName).get();
+
+  for (let i = 0; i < querySnap.docs.length; i += FIRESTORE_BATCH_SIZE) {
+    const batchDocs = querySnap.docs.slice(i, i + FIRESTORE_BATCH_SIZE);
+    const batch = db.batch();
+
+    for (const doc of batchDocs) {
+      batch.delete(doc.ref);
+    }
+
+    await batch.commit();
+  }
+
+  functions.logger.info(`Cleared ${querySnap.docs.length} documents from ${collectionName}`);
 }
 
 /**
@@ -498,6 +515,8 @@ export async function fetchAndSyncExpensesWriteback(
   // Expenses use "immutableID" as key (to match legacy Expenses collection for fold operation)
   // Vendors and purchaseOrders use "id" (PocketBase ID) as key
   const convertedExpenses = data.expenses.map(convertWritebackExpenseDates);
+  // poApproverProps is exported as a full snapshot, so clear stale docs before rewriting by id.
+  await clearFirestoreCollection("TurboPoApproverProps");
   const [expensesWritten, vendorsWritten, posWritten, poApproverPropsWritten] = await Promise.all([
     syncArrayToFirestore(convertedExpenses, "immutableID", "TurboExpensesWriteback"),
     syncArrayToFirestore(data.vendors, "id", "TurboVendorsWriteback"),
