@@ -214,16 +214,20 @@ const props = defineProps({
   },
 });
 
-const dps = {
-  // date picker state
-  disabled: {
-    to: subWeeks(new Date(), 12),
-    from: addWeeks(new Date(), 4),
-  },
-  highlight: {
-    dates: [new Date()],
-  },
-};
+const dps = computed(() => {
+  const now = new Date();
+  const pastWeeks = props.collectionName === "TimeAmendments" ? 18 : 12;
+  return {
+    // Time amendments need a longer lookback window than regular entries.
+    disabled: {
+      to: subWeeks(now, pastWeeks),
+      from: addWeeks(now, 4),
+    },
+    highlight: {
+      dates: [now],
+    },
+  };
+});
 
 const collectionObject = collection(db, props.collectionName);
 const divisions = useCollection(collection(db, "Divisions"));
