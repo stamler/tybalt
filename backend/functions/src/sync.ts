@@ -1073,6 +1073,54 @@ export async function exportTurboClientContacts(mysqlConnection: Connection): Pr
   try {
     await mysqlConnection.query(q, [insertValues]);
   } catch (error) {
+    const clientIds = Array.from(
+      new Set(
+        allContactsQuerySnap.docs
+          .map((contactSnap) => {
+            const clientId = contactSnap.get("clientId");
+            return typeof clientId === "string" && clientId !== "" ? clientId : null;
+          })
+          .filter((clientId): clientId is string => clientId !== null)
+      )
+    );
+
+    if (clientIds.length > 0) {
+      const [existingClientRows] = await mysqlConnection.query<RowDataPacket[]>(
+        "SELECT id FROM TurboClients WHERE id IN (?)",
+        [clientIds]
+      );
+      const existingClientIds = new Set(existingClientRows.map((row) => String(row.id)));
+      const missingParentContacts = allContactsQuerySnap.docs
+        .map((contactSnap) => {
+          const clientId = contactSnap.get("clientId");
+          if (typeof clientId !== "string" || clientId === "" || existingClientIds.has(clientId)) {
+            return null;
+          }
+          return {
+            contactId: contactSnap.id,
+            clientId,
+            givenName: contactSnap.get("givenName") || null,
+            surname: contactSnap.get("surname") || null,
+            email: contactSnap.get("email") || null,
+          };
+        })
+        .filter(
+          (contact): contact is {
+            contactId: string;
+            clientId: string;
+            givenName: string | null;
+            surname: string | null;
+            email: string | null;
+          } => contact !== null
+        );
+
+      if (missingParentContacts.length > 0) {
+        functions.logger.error("TurboClientContacts FK diagnostic", {
+          missingParentContactCount: missingParentContacts.length,
+          missingParentContacts: missingParentContacts.slice(0, 25),
+        });
+      }
+    }
     functions.logger.error(`Failed to export TurboClientContacts documents: ${error}`);
     throw error;
   }

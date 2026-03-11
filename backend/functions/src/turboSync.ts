@@ -427,7 +427,11 @@ export async function fetchAndSyncJobsWriteback(
   // Sync each array to its respective collection
   // Jobs use "number" as key (to match legacy Jobs collection for fold operation)
   // All other collections use "id" (PocketBase ID) as key
+  // clients and clientContacts are exported as full snapshots, so clear stale
+  // docs before rewriting by id.
   const convertedJobs = data.jobs.map(convertWritebackJobDates);
+  await clearFirestoreCollection("TurboClientsWriteback");
+  await clearFirestoreCollection("TurboClientContactsWriteback");
   const [
     jobsWritten,
     clientsWritten,
