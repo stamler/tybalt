@@ -700,6 +700,18 @@ export const scheduledTurboExpensesWritebackSync = functions
   .pubsub
   .schedule("every 30 minutes")
   .onRun(async (context) => {
+    // Operational kill switch for the Turbo -> Firestore expenses writeback pull.
+    // This is intentionally separate from Config/Enable.expenses, which controls
+    // legacy expense editing/fold behavior but does not stop new Turbo data from
+    // being fetched into Firestore staging collections.
+    const enableSnap = await db.collection("Config").doc("Enable").get();
+    if (enableSnap.get("disableTurboExpensesWriteback") === true) {
+      functions.logger.info(
+        "Turbo expenses writeback disabled via Config/Enable.disableTurboExpensesWriteback"
+      );
+      return null;
+    }
+
     functions.logger.info("Starting scheduled Turbo Expenses/Vendors/PurchaseOrders sync");
     
     try {
@@ -714,6 +726,7 @@ export const scheduledTurboExpensesWritebackSync = functions
         purchaseOrdersWritten: result.purchaseOrders,
         poApproverPropsWritten: result.poApproverProps,
       });
+      return null;
     } catch (error) {
       functions.logger.error("Scheduled Turbo expenses sync failed", { error });
       throw error;
