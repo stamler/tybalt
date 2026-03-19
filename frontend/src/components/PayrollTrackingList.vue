@@ -1,64 +1,59 @@
 <template>
-  <DSList v-if="itemsQuery !== null" :query="itemsQuery" :search="true">
-    <template #anchor="{ payPeriodEnding }">
-      {{ exportDate(payPeriodEnding.toDate()) }}
-    </template>
-    <template #headline="{ name }">{{ name }}</template>
-    <template #line1="item">
-      <span v-if="hasPending(item)">
-        {{ Object.keys(item.pending).length }} time sheet(s) pending
-      </span>
-    </template>
-    <template #line2="item">
-      <span v-if="hasLocked(item)">
-        {{ Object.keys(item.timeSheets).length }} locked time sheet(s)
-      </span>
-    </template>
-    <template #line3="item">
-      <span v-if="hasSubmitted(item)">
-        {{ Object.keys(item.submitted).length }} submitted time sheet(s)
-          awaiting manager approval
-      </span>
-    </template>
-    <template #actions="item">
-      <action-button
+  <div>
+    <p v-if="committedTimesheetCountsError">
+      {{ committedTimesheetCountsError }}
+    </p>
+    <DSList v-if="itemsQuery !== null" :query="itemsQuery" :search="true">
+      <template #anchor="{ payPeriodEnding }">
+        {{ exportDate(payPeriodEnding.toDate()) }}
+      </template>
+      <template #headline="{ name }">{{ name }}</template>
+      <template #line1="item">
+        {{ getCommittedTimesheetCount(item) }} committed time sheet(s)
+      </template>
+      <template #line2="item">
+        {{ getCommittedExpenseCount(item) }} committed expense(s)
+      </template>
+      <template #actions="item">
+        <action-button
+            type="download"
+            @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)"
+          >
+          week1
+        </action-button>
+        <action-button
           type="download"
-          @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding, true)"
+          @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
         >
-        week1
-      </action-button>
-      <action-button
-        type="download"
-        @click="generateSQLPayrollCSVForWeek(item.payPeriodEnding)"
-      >
-        week2
-      </action-button>
-      <action-button
-        type="download"
-        @click="
-          generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
-            generateAttachmentZip(item, 'payPeriod')
-          )
-        "
-      >
-        expenses
-      </action-button>
-      <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
-        receipts<Icon icon="feather:download" width="24px" />
-      </a>
-      <!-- Regenerate the attachments file -->
-      <action-button
-        v-if="hasLink(item, 'zip')"
-        type="refresh"
-        @click="generateAttachmentZip(item, 'payPeriod', true)"
-      />
-    </template>
-  </DSList>
+          week2
+        </action-button>
+        <action-button
+          type="download"
+          @click="
+            generatePayablesCSVSQL(item.payPeriodEnding, 'payroll').then(() =>
+              generateAttachmentZip(item, 'payPeriod')
+            )
+          "
+        >
+          expenses
+        </action-button>
+        <a v-if="hasLink(item, 'zip')" download v-bind:href="item['zip']">
+          receipts<Icon icon="feather:download" width="24px" />
+        </a>
+        <!-- Regenerate the attachments file -->
+        <action-button
+          v-if="hasLink(item, 'zip')"
+          type="refresh"
+          @click="generateAttachmentZip(item, 'payPeriod', true)"
+        />
+      </template>
+    </DSList>
+  </div>
 </template>
 
 <script setup lang="ts">
 import DSList from "./DSList.vue";
-import { ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import {
   generatePayablesCSVSQL,
   downloadBlob,
@@ -67,47 +62,168 @@ import {
   hasLink,
   generateAttachmentZip,
 } from "./helpers";
-import { format, subDays } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { addMilliseconds, format, subDays, subMilliseconds } from "date-fns";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import ActionButton from "./ActionButton.vue";
 import { Icon } from "@iconify/vue";
 import { firebaseApp } from "../firebase";
 import {
   Timestamp,
+  getDocs,
   getFirestore,
   collection,
   DocumentData,
+  onSnapshot,
   query,
   orderBy,
+  QueryDocumentSnapshot,
+  QuerySnapshot,
+  where,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { Parser } from "@json2csv/plainjs";
 import { APP_NATIVE_TZ } from "../config";
 
 const functions = getFunctions(firebaseApp);
+const db = getFirestore(firebaseApp);
+const committedTimesheetCounts = ref<Record<string, number>>({});
+const committedTimesheetCountsError = ref<string | null>(null);
+let unsubscribePayrollTracking: (() => void) | undefined;
+let isPayrollTrackingMounted = false;
+let committedCountsRefreshQueue: Promise<void> = Promise.resolve();
+const TRACKING_DATE_TOLERANCE_MSEC = 1;
 
 const itemsQuery = ref(
-  query(collection(getFirestore(firebaseApp), "PayrollTracking"), orderBy("payPeriodEnding", "desc"))
+  query(collection(db, "PayrollTracking"), orderBy("payPeriodEnding", "desc"))
 );
 
-const hasSubmitted = function (item: DocumentData) {
-  return (
-    Object.prototype.hasOwnProperty.call(item, "submitted") &&
-    Object.keys(item.submitted).length > 0
-  );
+const countMapEntries = function (value: unknown): number {
+  if (typeof value !== "object" || value === null) {
+    return 0;
+  }
+  return Object.keys(value as Record<string, unknown>).length;
 };
-const hasPending = function (item: DocumentData) {
-  return (
-    Object.prototype.hasOwnProperty.call(item, "pending") &&
-    Object.keys(item.pending).length > 0
-  );
+
+const getCommittedExpenseCount = function (item: DocumentData): number {
+  return countMapEntries(item.expenses);
 };
-const hasLocked = function (item: DocumentData) {
-  return (
-    Object.prototype.hasOwnProperty.call(item, "timeSheets") &&
-    Object.keys(item.timeSheets).length > 0
-  );
+
+const getCommittedTimesheetCount = function (item: DocumentData): number {
+  return committedTimesheetCounts.value[item.id] ?? 0;
 };
+
+const getWeek1Ending = function (payPeriodEnding: Date): Date {
+  const week1Zoned = subDays(toZonedTime(payPeriodEnding, APP_NATIVE_TZ), 7);
+  return fromZonedTime(week1Zoned, APP_NATIVE_TZ);
+};
+
+const fetchLockedTimesheetCountForWeek = async function (weekEnding: Date): Promise<number> {
+  const timeTrackingQuery = query(
+    collection(db, "TimeTracking"),
+    where("weekEnding", ">", Timestamp.fromDate(subMilliseconds(weekEnding, TRACKING_DATE_TOLERANCE_MSEC))),
+    where("weekEnding", "<", Timestamp.fromDate(addMilliseconds(weekEnding, TRACKING_DATE_TOLERANCE_MSEC)))
+  );
+  try {
+    const snapshot = await getDocs(timeTrackingQuery);
+    return snapshot.docs.reduce((total, docSnap) => {
+      return total + countMapEntries(docSnap.data().timeSheets);
+    }, 0);
+  } catch (error) {
+    console.error("Unable to load committed timesheet count", weekEnding, error);
+    throw error;
+  }
+};
+
+const fetchCommittedTimesheetCount = async function (payPeriodEnding: Date): Promise<number> {
+  const week1Ending = getWeek1Ending(payPeriodEnding);
+  const [week1Count, week2Count] = await Promise.all([
+    fetchLockedTimesheetCountForWeek(week1Ending),
+    fetchLockedTimesheetCountForWeek(payPeriodEnding),
+  ]);
+  return week1Count + week2Count;
+};
+
+const buildCommittedCountsUpdate = async function (
+  snapshot: QuerySnapshot<DocumentData>,
+  previousCounts: Record<string, number>
+): Promise<{ counts: Record<string, number>; hasErrors: boolean }> {
+  const nextCounts = { ...previousCounts };
+
+  snapshot.docChanges().forEach((change) => {
+    if (change.type === "removed") {
+      delete nextCounts[change.doc.id];
+    }
+  });
+
+  const changedCounts = await Promise.allSettled(
+    snapshot.docChanges()
+      .filter((change) => change.type !== "removed")
+      .map(async (change) => {
+        const payPeriodEnding = (
+          change.doc as QueryDocumentSnapshot<DocumentData>
+        ).data().payPeriodEnding?.toDate();
+        if (!(payPeriodEnding instanceof Date)) {
+          return [change.doc.id, 0] as const;
+        }
+        const count = await fetchCommittedTimesheetCount(payPeriodEnding);
+        return [change.doc.id, count] as const;
+      })
+  );
+
+  let hasErrors = false;
+  changedCounts.forEach((result) => {
+    if (result.status === "fulfilled") {
+      const [id, count] = result.value;
+      nextCounts[id] = count;
+      return;
+    }
+    hasErrors = true;
+  });
+
+  return { counts: nextCounts, hasErrors };
+};
+
+const refreshCommittedCounts = async function (
+  snapshot: QuerySnapshot<DocumentData>
+): Promise<void> {
+  const { counts, hasErrors } = await buildCommittedCountsUpdate(
+    snapshot,
+    committedTimesheetCounts.value
+  );
+  if (!isPayrollTrackingMounted) {
+    return;
+  }
+  committedTimesheetCounts.value = counts;
+  committedTimesheetCountsError.value = hasErrors
+    ? "Committed time sheet counts may be out of date."
+    : null;
+};
+
+onMounted(() => {
+  isPayrollTrackingMounted = true;
+  unsubscribePayrollTracking = onSnapshot(itemsQuery.value, (snapshot) => {
+    committedCountsRefreshQueue = committedCountsRefreshQueue
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          await refreshCommittedCounts(snapshot);
+        } catch (error) {
+          if (!isPayrollTrackingMounted) {
+            return;
+          }
+          committedTimesheetCountsError.value =
+            "Committed time sheet counts may be out of date.";
+          console.error("Unable to refresh payroll tracking counts", error);
+        }
+      });
+  });
+});
+
+onUnmounted(() => {
+  isPayrollTrackingMounted = false;
+  committedCountsRefreshQueue = Promise.resolve();
+  unsubscribePayrollTracking?.();
+});
 
 // This method attempts to coerce a value into a number. If it cannot it
 // returns false
