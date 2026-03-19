@@ -43,6 +43,15 @@ service firebase.storage {
         resource == null &&
         isValidExpenseAttachment();
     }
+  	match /Writeback/Expenses/{userId}/{expenseFilename} {
+    	// authenticated users can read
+      allow read: if (
+        hasClaim("time") && request.auth.uid == userId ||
+        hasClaim("tapr") ||
+        hasClaim("eapr") ||
+        hasClaim("report")
+      );
+    }
     match /PurchaseOrderRequests/{userId}/{purchaseOrderRequestFilename} {
       // authenticated users can read 
       allow read: if (
