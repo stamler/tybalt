@@ -368,90 +368,90 @@ export const expenseRates = functions.https.onCall(async (data: unknown, context
 export const uncommitExpense = functions
   .runWith({ secrets: [FUNCTIONS_CONFIG_SECRET] })
   .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-  const collection = "Expenses";
-  const lockProperty = "committed";
-  // caller must have permission to run this
-  getAuthObject(context, ["tsunlock"])
+    const collection = "Expenses";
+    const lockProperty = "committed";
+    // caller must have permission to run this
+    getAuthObject(context, ["tsunlock"])
 
-  // Validate the data or throw
-  // use a User Defined Type Guard
-  if (!isDocIdObject(data)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "The provided data isn't a valid document reference"
-    );
-  }
-
-  const db = admin.firestore();
-
-  // create a flag which will be true if rows need to be deleted from MySQL
-  // After the transaction if this flag is true we will continue with the 
-  // DELETEs and then update the exported and exportInProgress flags on the 
-  // document
-  let deleteFromMySQL = false;
-  const successBatch = db.batch();
-  const failBatch = db.batch();
-
-  // run transaction to read the document and if it exists check that it is
-  // locked/committed and an export is not in progress. Then unlock/uncommit it.
-  const doc = db.collection(collection).doc(data.id);
-  await db.runTransaction(async (transaction) => {
-    return transaction.get(doc).then(async (docSnap) => {
-      const snapData = docSnap.data();
-      if (!snapData) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          `The ${collection} document is empty so cannot be unlocked`
-        );
-      }
-      if (snapData[lockProperty] !== true) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          `The ${collection} document can't be un${lockProperty} because it is not ${lockProperty}`
-        );
-      }
-      if (snapData.exportInProgress === true) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          `The ${collection} document can't be un${lockProperty} because it is` + 
-          " currently being exported"
-        );
-      }
-      // if exported is already true, set deleteFromMySQL=true to perform the
-      // deletion next. Update the success and fail batches to run after the
-      // deletion depending on the outcome.
-      if (snapData.exported === true) {
-        deleteFromMySQL = true;
-        functions.logger.info(`${docSnap.id} will be un${lockProperty} after it is ` + 
-          "deleted from the export destination.");
-        successBatch.update(doc, { 
-          exportInProgress: admin.firestore.FieldValue.delete(),
-          [lockProperty]: false,
-          exported: false,
-        });
-        failBatch.update(doc, { 
-          exportInProgress: admin.firestore.FieldValue.delete(),
-        });
-        return transaction.update(doc, { exportInProgress: true });
-      }
-      
-      // doc is unlockable, unlock it, exported flag is already false
-      return transaction.update(doc, { [lockProperty]: false });
-    });
-  });
-
-  if (deleteFromMySQL) {
-    // Delete from MySQL then if successful run successBatch.commit()
-    const mysqlConnection = await createSSHMySQLConnection2();
-    try {
-      await mysqlConnection.query(`DELETE FROM ${collection} WHERE id=?`, [doc.id]);
-    } catch (error) {
-      await failBatch.commit();
+    // Validate the data or throw
+    // use a User Defined Type Guard
+    if (!isDocIdObject(data)) {
       throw new functions.https.HttpsError(
-        "internal",
-        `An error occured while deleting the ${collection} doc from the synced database`);
+        "invalid-argument",
+        "The provided data isn't a valid document reference"
+      );
     }
-    return successBatch.commit();
-  }
-  return;
-});
+
+    const db = admin.firestore();
+
+    // create a flag which will be true if rows need to be deleted from MySQL
+    // After the transaction if this flag is true we will continue with the 
+    // DELETEs and then update the exported and exportInProgress flags on the 
+    // document
+    let deleteFromMySQL = false;
+    const successBatch = db.batch();
+    const failBatch = db.batch();
+
+    // run transaction to read the document and if it exists check that it is
+    // locked/committed and an export is not in progress. Then unlock/uncommit it.
+    const doc = db.collection(collection).doc(data.id);
+    await db.runTransaction(async (transaction) => {
+      return transaction.get(doc).then(async (docSnap) => {
+        const snapData = docSnap.data();
+        if (!snapData) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `The ${collection} document is empty so cannot be unlocked`
+          );
+        }
+        if (snapData[lockProperty] !== true) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `The ${collection} document can't be un${lockProperty} because it is not ${lockProperty}`
+          );
+        }
+        if (snapData.exportInProgress === true) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `The ${collection} document can't be un${lockProperty} because it is` + 
+          " currently being exported"
+          );
+        }
+        // if exported is already true, set deleteFromMySQL=true to perform the
+        // deletion next. Update the success and fail batches to run after the
+        // deletion depending on the outcome.
+        if (snapData.exported === true) {
+          deleteFromMySQL = true;
+          functions.logger.info(`${docSnap.id} will be un${lockProperty} after it is ` + 
+          "deleted from the export destination.");
+          successBatch.update(doc, { 
+            exportInProgress: admin.firestore.FieldValue.delete(),
+            [lockProperty]: false,
+            exported: false,
+          });
+          failBatch.update(doc, { 
+            exportInProgress: admin.firestore.FieldValue.delete(),
+          });
+          return transaction.update(doc, { exportInProgress: true });
+        }
+      
+        // doc is unlockable, unlock it, exported flag is already false
+        return transaction.update(doc, { [lockProperty]: false });
+      });
+    });
+
+    if (deleteFromMySQL) {
+    // Delete from MySQL then if successful run successBatch.commit()
+      const mysqlConnection = await createSSHMySQLConnection2();
+      try {
+        await mysqlConnection.query(`DELETE FROM ${collection} WHERE id=?`, [doc.id]);
+      } catch (error) {
+        await failBatch.commit();
+        throw new functions.https.HttpsError(
+          "internal",
+          `An error occured while deleting the ${collection} doc from the synced database`);
+      }
+      return successBatch.commit();
+    }
+    return;
+  });
