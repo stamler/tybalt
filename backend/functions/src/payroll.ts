@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as _ from "lodash";
-import { getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc } from "./utilities";
+import { getAuthObject, getPayPeriodFromWeekEnding, getTrackingDoc, isDocIdObject, isPayrollWeek2 } from "./utilities";
 
 async function getPayrollTrackingDoc(payPeriodEnding: Date) {
   if (!isPayrollWeek2(payPeriodEnding)) {
@@ -80,3 +80,51 @@ export const updatePayrollFromExpenses = functions.firestore
 
     
   });
+
+export const rebuildPayrollTracking = functions.runWith({memory: "1GB", timeoutSeconds: 180}).https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  getAuthObject(context, ["admin"]);
+
+  if (!isDocIdObject(data)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The provided data isn't a valid document reference"
+    );
+  }
+
+  const db = admin.firestore();
+  const payrollTrackingDoc = await db.collection("PayrollTracking").doc(data.id).get();
+  if (!payrollTrackingDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "The PayrollTracking document doesn't exist"
+    );
+  }
+
+  const payPeriodEnding = payrollTrackingDoc.get("payPeriodEnding");
+  if (!payPeriodEnding) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The PayrollTracking document has no payPeriodEnding property"
+    );
+  }
+
+  const expensesSnapshot = await db
+    .collection("Expenses")
+    .where("committed", "==", true)
+    .where("payPeriodEnding", "==", payPeriodEnding)
+    .get();
+
+  const expenses: Record<string, { displayName: unknown; uid: unknown; date: unknown; commitTime: unknown }> = {};
+  expensesSnapshot.forEach((doc) => {
+    const docData = doc.data();
+    expenses[doc.id] = {
+      displayName: docData.displayName,
+      uid: docData.uid,
+      date: docData.date,
+      commitTime: docData.commitTime,
+    };
+  });
+
+  await payrollTrackingDoc.ref.update({ expenses });
+  return { count: expensesSnapshot.size };
+});

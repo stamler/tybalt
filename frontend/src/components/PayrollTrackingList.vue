@@ -46,6 +46,13 @@
           type="refresh"
           @click="generateAttachmentZip(item, 'payPeriod', true)"
         />
+        <a
+          title="This rebuilds the expenses map for this payroll tracking document by recounting committed expenses for the pay period."
+          v-if="isAdmin"
+          @click="rebuildExpensesMap(item.id)"
+        >
+          <Icon icon="ion:construct" width="24px" />
+        </a>
       </template>
     </DSList>
   </div>
@@ -53,7 +60,7 @@
 
 <script setup lang="ts">
 import DSList from "./DSList.vue";
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
   generatePayablesCSVSQL,
   downloadBlob,
@@ -83,9 +90,11 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { Parser } from "@json2csv/plainjs";
 import { APP_NATIVE_TZ } from "../config";
+import { useStateStore } from "../stores/state";
 
 const functions = getFunctions(firebaseApp);
 const db = getFirestore(firebaseApp);
+const store = useStateStore();
 const committedTimesheetCounts = ref<Record<string, number>>({});
 const committedTimesheetCountsError = ref<string | null>(null);
 let unsubscribePayrollTracking: (() => void) | undefined;
@@ -111,6 +120,13 @@ const getCommittedExpenseCount = function (item: DocumentData): number {
 const getCommittedTimesheetCount = function (item: DocumentData): number {
   return committedTimesheetCounts.value[item.id] ?? 0;
 };
+
+const isAdmin = computed(() => {
+  return (
+    Object.prototype.hasOwnProperty.call(store.claims, "admin") &&
+    store.claims["admin"] === true
+  );
+});
 
 const getWeek1Ending = function (payPeriodEnding: Date): Date {
   const week1Zoned = subDays(toZonedTime(payPeriodEnding, APP_NATIVE_TZ), 7);
@@ -297,5 +313,10 @@ const generateSQLPayrollCSVForWeek = async function (timestamp: Timestamp, week1
   } catch (error) {
     alert(`Error: ${error}`);
   }
+};
+
+const rebuildExpensesMap = async (id: string) => {
+  const rebuildPayroll = httpsCallable(functions, "rebuildPayrollTracking");
+  await rebuildPayroll({ id });
 };
 </script>
