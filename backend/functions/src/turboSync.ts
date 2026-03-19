@@ -519,7 +519,10 @@ export async function fetchAndSyncExpensesWriteback(
   // Expenses use "immutableID" as key (to match legacy Expenses collection for fold operation)
   // Vendors and purchaseOrders use "id" (PocketBase ID) as key
   const convertedExpenses = data.expenses.map(convertWritebackExpenseDates);
-  // poApproverProps is exported as a full snapshot, so clear stale docs before rewriting by id.
+  // vendors and poApproverProps are exported as full snapshots, so clear stale
+  // docs before rewriting by id. This prevents absorbed/deleted vendors from
+  // lingering in Firestore staging after they disappear from Turbo's export.
+  await clearFirestoreCollection("TurboVendorsWriteback");
   await clearFirestoreCollection("TurboPoApproverProps");
   const [expensesWritten, vendorsWritten, posWritten, poApproverPropsWritten] = await Promise.all([
     syncArrayToFirestore(convertedExpenses, "immutableID", "TurboExpensesWriteback"),
