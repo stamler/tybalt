@@ -1,8 +1,10 @@
 /**
- * Sync data from Turbo writeback API routes to legacy Firestore collections.
- * 
+ * Sync data from Turbo writeback API routes into legacy Tybalt's Firestore
+ * staging collections.
+ *
  * This module provides utilities to poll Turbo every 30 minutes and store
- * the returned data in legacy Tybalt's Firestore collections.
+ * returned writeback payloads in Firestore collections that downstream legacy
+ * sync processes can consume.
  */
 
 import * as admin from "firebase-admin";
@@ -84,6 +86,15 @@ export interface ExpensesWritebackResponse {
   vendors: Record<string, unknown>[];
   purchaseOrders: Record<string, unknown>[];
   poApproverProps: Record<string, unknown>[];
+}
+
+/**
+ * Response format from time writeback endpoint.
+ * Contains separate arrays for time sheets and time amendments.
+ */
+export interface TimeWritebackResponse {
+  timeSheets: Record<string, unknown>[];
+  timeAmendments: Record<string, unknown>[];
 }
 
 const WRITEBACK_DATE_FIELDS = [
@@ -174,6 +185,45 @@ function convertWritebackTimesheetDates(timesheet: Record<string, unknown>): Rec
     });
   }
   return converted;
+}
+
+const TIME_AMENDMENT_NOON_FIELDS = ["date"] as const;
+const TIME_AMENDMENT_END_OF_DAY_FIELDS = ["weekEnding", "committedWeekEnding"] as const;
+const TIME_AMENDMENT_ISO_DATETIME_FIELDS = ["committed"] as const;
+
+function convertWritebackTimeAmendmentDates(
+  amendment: Record<string, unknown>
+): Record<string, unknown> {
+  const converted = { ...amendment };
+  for (const field of TIME_AMENDMENT_NOON_FIELDS) {
+    if (field in converted) converted[field] = toNoonEasternTimestamp(converted[field]);
+  }
+  for (const field of TIME_AMENDMENT_END_OF_DAY_FIELDS) {
+    if (field in converted) converted[field] = toEndOfDayTimestamp(converted[field]);
+  }
+  for (const field of TIME_AMENDMENT_ISO_DATETIME_FIELDS) {
+    if (field in converted) converted[field] = toTimestampFromISO(converted[field]);
+  }
+  return converted;
+}
+
+function parseTimeWritebackResponse(url: string, data: unknown): TimeWritebackResponse {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(`Expected object response from ${url}, got ${typeof data}`);
+  }
+
+  const response = data as Partial<TimeWritebackResponse>;
+  if (!Array.isArray(response.timeSheets)) {
+    throw new Error(`Expected timeSheets array in response from ${url}`);
+  }
+  if (!Array.isArray(response.timeAmendments)) {
+    throw new Error(`Expected timeAmendments array in response from ${url}`);
+  }
+
+  return {
+    timeSheets: response.timeSheets,
+    timeAmendments: response.timeAmendments,
+  };
 }
 
 /**
@@ -540,73 +590,88 @@ export async function fetchAndSyncExpensesWriteback(
 }
 
 /**
- * Fetches time sheets for multiple week endings from Turbo's export_legacy API
- * and syncs them to the TurboTimeSheetsWriteback Firestore collection.
- * 
+ * Fetches time writeback data for multiple week endings from Turbo's
+ * export_legacy API and stages both time sheets and time amendments in
+ * Firestore. The requested week window is treated as a full snapshot: every
+ * week must fetch and validate successfully before either staging collection
+ * is cleared and rewritten.
+ *
  * @param baseUrl The base URL of the Turbo API
  * @param authHeader Authorization header value
  * @param weekEndings Array of week ending dates (YYYY-MM-DD format)
- * @returns Promise resolving to count of timesheets written
+ * @returns Promise resolving to counts written for each staging collection
  */
 export async function fetchAndSyncTimeSheetsWriteback(
   baseUrl: string,
   authHeader: string,
   weekEndings: string[]
-): Promise<{ timesheets: number }> {
-  functions.logger.info(`Fetching timesheets writeback data for ${weekEndings.length} weeks`, { weekEndings });
+): Promise<{ timeSheets: number; timeAmendments: number }> {
+  functions.logger.info(`Fetching time writeback data for ${weekEndings.length} weeks`, { weekEndings });
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: authHeader,
   };
 
-  // Fetch all week endings in parallel
   const fetchPromises = weekEndings.map(async (weekEnding) => {
+    const url = `${baseUrl}/api/export_legacy/time_sheets/${weekEnding}`;
+
     try {
-      const url = `${baseUrl}/api/export_legacy/time_sheets/${weekEnding}`;
       const response = await axios.get(url, { headers });
-      const data = response.data;
-      
-      if (!Array.isArray(data)) {
-        functions.logger.warn(`Expected array from ${url}, got ${typeof data}`);
-        return [];
-      }
-      return data as Record<string, unknown>[];
+      const parsed = parseTimeWritebackResponse(url, response.data);
+      functions.logger.info(`Fetched time writeback for ${weekEnding}`, {
+        weekEnding,
+        timeSheets: parsed.timeSheets.length,
+        timeAmendments: parsed.timeAmendments.length,
+      });
+      return parsed;
     } catch (error) {
       if (isAxiosError(error)) {
-        functions.logger.error(`Failed to fetch timesheets for ${weekEnding}: ${error.message}`, {
+        functions.logger.error(`Failed to fetch time writeback for ${weekEnding}: ${error.message}`, {
           status: error.response?.status,
           statusText: error.response?.statusText,
+          url,
+        });
+      } else {
+        functions.logger.error(`Malformed time writeback response for ${weekEnding}`, {
+          url,
+          error: error instanceof Error ? error.message : error,
         });
       }
-      // Return empty array on error to allow other weeks to succeed
-      return [];
+      throw error;
     }
   });
 
   const results = await Promise.all(fetchPromises);
-  
-  // Flatten all results into a single array
-  const allTimesheets = results.flat();
-  
-  if (allTimesheets.length === 0) {
-    functions.logger.info("No timesheets returned from any week ending");
-    return { timesheets: 0 };
-  }
+  const allTimeSheets = results.flatMap((result) => result.timeSheets);
+  const allTimeAmendments = results.flatMap((result) => result.timeAmendments);
 
-  functions.logger.info(`Fetched ${allTimesheets.length} timesheets across ${weekEndings.length} weeks`);
-
-  // Convert date fields
-  const convertedTimesheets = allTimesheets.map(convertWritebackTimesheetDates);
-
-  // Sync to Firestore using "id" as document key
-  const timesheetsWritten = await syncArrayToFirestore(
-    convertedTimesheets,
-    "id",
-    "TurboTimeSheetsWriteback"
+  functions.logger.info(
+    `Validated time writeback snapshot for ${weekEndings.length} weeks`,
+    {
+      weekEndings,
+      timeSheets: allTimeSheets.length,
+      timeAmendments: allTimeAmendments.length,
+    }
   );
 
-  return { timesheets: timesheetsWritten };
+  const convertedTimeSheets = allTimeSheets.map(convertWritebackTimesheetDates);
+  const convertedTimeAmendments = allTimeAmendments.map(convertWritebackTimeAmendmentDates);
+
+  await Promise.all([
+    clearFirestoreCollection("TurboTimeSheetsWriteback"),
+    clearFirestoreCollection("TurboTimeAmendmentsWriteback"),
+  ]);
+
+  const [timeSheetsWritten, timeAmendmentsWritten] = await Promise.all([
+    syncArrayToFirestore(convertedTimeSheets, "id", "TurboTimeSheetsWriteback"),
+    syncArrayToFirestore(convertedTimeAmendments, "id", "TurboTimeAmendmentsWriteback"),
+  ]);
+
+  return {
+    timeSheets: timeSheetsWritten,
+    timeAmendments: timeAmendmentsWritten,
+  };
 }
 
 // =============================================================================
@@ -741,36 +806,39 @@ export const scheduledTurboExpensesWritebackSync = functions
   });
 
 /**
- * Scheduled function that syncs TimeSheets data from Turbo every 30 minutes.
- * 
- * Fetches committed time sheets for the last 6 weeks from Turbo's export_legacy API:
- * - If today is Saturday: syncs today + previous 5 Saturdays
- * - Otherwise: syncs next Saturday + previous 5 Saturdays
- * 
- * Writes to:
- * - timesheets array to TurboTimeSheetsWriteback collection
+ * Scheduled function that syncs staged time writeback data from Turbo every 30 minutes.
+ *
+ * Fetches the last 4 week endings from Turbo's export_legacy API:
+ * - If today is Saturday: syncs today + previous 3 Saturdays
+ * - Otherwise: syncs next Saturday + previous 3 Saturdays
+ *
+ * Writes the validated snapshot to:
+ * - timeSheets array to TurboTimeSheetsWriteback collection
+ * - timeAmendments array to TurboTimeAmendmentsWriteback collection
  */
 export const scheduledTurboTimeSheetsWritebackSync = functions
   .runWith({ secrets: [TURBO_AUTH_TOKEN_SECRET_NAME] })
   .pubsub
   .schedule("every 30 minutes")
   .onRun(async (context) => {
-    const weekEndings = getSaturdaysToSync(6);
-    functions.logger.info("Starting scheduled Turbo TimeSheets sync", { weekEndings });
-    
+    const weekEndings = getSaturdaysToSync(4);
+    functions.logger.info("Starting scheduled Turbo time writeback sync", { weekEndings });
+
     try {
       const result = await fetchAndSyncTimeSheetsWriteback(
         TURBO_BASE_URL,
         `Bearer ${TURBO_AUTH_TOKEN.value()}`,
         weekEndings
       );
-      
-      functions.logger.info("Scheduled Turbo timesheets sync completed successfully", {
-        timesheetsWritten: result.timesheets,
+
+      functions.logger.info("Scheduled Turbo time writeback sync completed successfully", {
+        timeSheetsWritten: result.timeSheets,
+        timeAmendmentsWritten: result.timeAmendments,
         weekEndings,
       });
+      return null;
     } catch (error) {
-      functions.logger.error("Scheduled Turbo timesheets sync failed", { error });
+      functions.logger.error("Scheduled Turbo time writeback sync failed", { error, weekEndings });
       throw error;
     }
   });
