@@ -5,7 +5,7 @@ import "mocha";
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
-const assert = chai.assert;
+const assert: Chai.Assert = chai.assert;
 
 import * as test from "firebase-functions-test";
 const tester = test();
@@ -24,7 +24,7 @@ describe("tallyAndValidate", async () => {
   //const bob = { uid: "bob", displayName: "Bob Example" };
 
   // a mock auth object
-  const auth = { uid: "alice", token: {} as admin.auth.DecodedIdToken };
+  const auth = { uid: "alice", token: {} as import("firebase-admin").auth.DecodedIdToken };
 
   // a mock profile object
   const openingVals = { openingDateTimeOff: new Date(2020,0,1), openingOV: 120, usedOV: 113, openingOP: 80 };

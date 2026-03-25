@@ -5,7 +5,7 @@ import "mocha";
 import * as chai from "chai";    
 import * as chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
-const assert = chai.assert;
+const assert: Chai.Assert = chai.assert;
 
 import { makeSlug, getAuthObject, getPayPeriodFromWeekEnding, isPayrollWeek2, getTrackingDoc, nextSaturday } from "../src/utilities";
 import { CallableContext } from "firebase-functions/v1/https";

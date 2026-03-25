@@ -6,7 +6,7 @@ import { admin } from "./index.test";
 
 import "mocha";
 
-const assert = chai.assert;
+const assert: Chai.Assert = chai.assert;
 
 import { createInvoice } from '../src/invoices';
 

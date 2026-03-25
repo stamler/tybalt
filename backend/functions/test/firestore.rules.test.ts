@@ -1,7 +1,8 @@
 import firebase from 'firebase/compat/app';
 import "mocha";
 import { readFileSync } from 'fs';
-import { initializeTestEnvironment, assertSucceeds, assertFails, RulesTestEnvironment } from "@firebase/rules-unit-testing";
+import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
+import type { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { setLogLevel } from "firebase/firestore";
 import { addDays } from "date-fns";
 

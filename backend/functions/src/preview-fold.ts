@@ -15,7 +15,12 @@
  */
 
 import * as admin from "firebase-admin";
-import { FieldPair, objDiff, analyzeFoldAction, FoldAction } from "./fold-utils";
+import { FieldPair, objDiff, FoldAction } from "./fold-utils";
+import {
+  applyFoldPolicyData,
+  getFoldAnalyzer,
+  getFoldSkipReason,
+} from "./fold-policies";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
@@ -86,6 +91,9 @@ function formatDocData(data: Record<string, unknown>): string {
  * Format: "sourceField:destField,sourceField:destField,..."
  */
 function parseFieldPairs(arg: string): FieldPair[] {
+  if (arg.trim() === "-") {
+    return [];
+  }
   return arg.split(",").map((pair) => {
     const [sourceField, destField] = pair.split(":");
     if (!sourceField || !destField) {
@@ -96,8 +104,10 @@ function parseFieldPairs(arg: string): FieldPair[] {
 }
 
 interface PreviewResults {
+  skippedReason?: string;
   creates: Array<{ id: string; destDocId: string; data: Record<string, unknown> }>;
   replaces: Array<{ id: string; destDocId: string; diffFormatted: string }>;
+  conflicts: Array<{ id: string; blockingDocId?: string; reason: string }>;
   skips: Array<{ id: string; destDocId: string }>;
   errors: Array<{ id: string; reason: string }>;
 }
@@ -114,14 +124,16 @@ async function previewFold(
   const results: PreviewResults = {
     creates: [],
     replaces: [],
+    conflicts: [],
     skips: [],
     errors: [],
   };
-  // Keep preview aligned with collection-specific runtime fold behavior.
-  // Today this only applies to Expenses (exported:false on create/changed replace).
-  // If more collections need custom fold behavior, refactor to a shared
-  // per-collection policy instead of adding more `isXxx` booleans.
-  const isExpensesFold = destCollection === "Expenses";
+  const skipReason = await getFoldSkipReason(db, destCollection);
+  if (skipReason) {
+    results.skippedReason = skipReason;
+  }
+
+  const analyze = getFoldAnalyzer(destCollection);
 
   const sourceSnap = await db.collection(sourceCollection).get();
 
@@ -131,7 +143,7 @@ async function previewFold(
 
   for (const sourceDoc of sourceSnap.docs) {
     const sourceData = sourceDoc.data();
-    const action: FoldAction = await analyzeFoldAction(
+    const action: FoldAction = await analyze(
       db,
       destCollection,
       fieldPairs,
@@ -142,13 +154,10 @@ async function previewFold(
 
     switch (action.action) {
     case "create":
-      // Keep preview behavior aligned with foldCollection():
-      // Expenses creates are marked exported:false so they are eligible for export.
-      const createData = isExpensesFold ? { ...action.data, exported: false } : action.data;
       results.creates.push({
         id: sourceDoc.id,
         destDocId: action.destDocId,
-        data: createData,
+        data: applyFoldPolicyData(destCollection, action.data),
       });
       break;
 
@@ -160,9 +169,7 @@ async function previewFold(
           destDocId: action.destDocId,
         });
       } else {
-        // Keep preview behavior aligned with foldCollection():
-        // Expenses changed replacements are marked exported:false so they are re-exported.
-        const finalNewData = isExpensesFold ? { ...action.newData, exported: false } : action.newData;
+        const finalNewData = applyFoldPolicyData(destCollection, action.newData);
         const diff = objDiff(action.existingData, finalNewData);
         results.replaces.push({
           id: sourceDoc.id,
@@ -172,6 +179,14 @@ async function previewFold(
       }
       break;
     }
+
+    case "conflict":
+      results.conflicts.push({
+        id: sourceDoc.id,
+        blockingDocId: action.blockingDocId,
+        reason: action.reason,
+      });
+      break;
 
     case "error":
       results.errors.push({
@@ -199,12 +214,14 @@ Arguments:
   destCollection    Name of the destination Firestore collection
   fieldPairs        Comma-separated field pairs in format "sourceField:destField"
                     Use "_id" to reference document ID
+                    Use "-" for collection-specific matchers such as TimeSheets
   preserveFields    (Optional) Comma-separated field names to preserve from destination
                     doc during REPLACE operations (destination wins)
 
 Examples:
   npx ts-node src/preview-fold.ts TurboJobsWriteback Jobs "_id:_id,immutableID:immutableID"
   npx ts-node src/preview-fold.ts TurboJobsWriteback Jobs "_id:_id,immutableID:immutableID" "hasTimeEntries,lastTimeEntryDate"
+  npx ts-node src/preview-fold.ts TurboTimeSheetsWriteback TimeSheets - "exported"
 `);
     process.exit(1);
   }
@@ -229,7 +246,7 @@ Examples:
   console.log("=== FOLD PREVIEW ===");
   console.log(`Source: ${sourceCollection} -> Destination: ${destCollection}`);
   console.log(
-    `Field pairs: ${fieldPairs.map((p) => `${p.sourceField} -> ${p.destField}`).join(", ")}`
+    `Field pairs: ${fieldPairs.length > 0 ? fieldPairs.map((p) => `${p.sourceField} -> ${p.destField}`).join(", ") : "(collection-specific matcher)"}`
   );
   if (preserveFields.length > 0) {
     console.log(`Preserve fields: ${preserveFields.join(", ")}`);
@@ -237,6 +254,11 @@ Examples:
   console.log("");
 
   const results = await previewFold(sourceCollection, destCollection, fieldPairs, preserveFields);
+
+  if (results.skippedReason) {
+    console.log(results.skippedReason);
+    console.log("");
+  }
 
   // --- CREATE section ---
   console.log(`--- CREATE (${results.creates.length} documents) ---`);
@@ -261,6 +283,22 @@ Examples:
     for (const item of results.replaces) {
       console.log(`${item.id} -> ${item.destDocId}`);
       console.log(item.diffFormatted);
+      console.log("");
+    }
+  }
+  console.log("");
+
+  // --- CONFLICTS section ---
+  console.log(`--- CONFLICTS (${results.conflicts.length} documents) ---`);
+  console.log("");
+  if (results.conflicts.length === 0) {
+    console.log("  (none)");
+  } else {
+    for (const item of results.conflicts) {
+      console.log(
+        item.blockingDocId ? `${item.id} -> ${item.blockingDocId}` : `${item.id}`
+      );
+      console.log(`  ${item.reason}`);
       console.log("");
     }
   }
@@ -296,6 +334,7 @@ Examples:
   console.log("=== SUMMARY ===");
   console.log(`Would create: ${results.creates.length}`);
   console.log(`Would replace: ${results.replaces.length}`);
+  console.log(`Would conflict: ${results.conflicts.length}`);
   console.log(`Would skip (no changes): ${results.skips.length}`);
   console.log(`Errors: ${results.errors.length}`);
 }

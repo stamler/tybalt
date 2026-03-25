@@ -16,9 +16,11 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "firebase emulators:exec --only firestore 'nyc mocha'",
-    "test_no_coverage": "firebase emulators:exec --only firestore mocha",
-    "test_no_emulator": "mocha"
+    "test": "node scripts/run-emulator-nyc.cjs",
+    "test_no_coverage": "node scripts/run-emulator-mocha.cjs",
+    "test_no_emulator": "npx mocha",
+    "pretest_types": "cp ../../config.ts src/config.ts",
+    "test_types": "tsc -p tsconfig.tests.json"
   },
   "mocha": {
     "require": [

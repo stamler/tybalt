@@ -10,7 +10,7 @@ import { cleanupFirestore } from "./helpers";
 import { APP_NATIVE_TZ } from "../src/config";
 import { fetchAndSyncTimeSheetsWriteback } from "../src/turboSync";
 
-const assert = chai.assert;
+const assert: Chai.Assert = chai.assert;
 
 describe("turboSync time writeback staging", () => {
   const db = admin.firestore();

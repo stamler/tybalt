@@ -6,7 +6,7 @@ chai.use(chaiAsPromised);
 
 import "mocha";
 
-const assert = chai.assert;
+const assert: Chai.Assert = chai.assert;
 
 import * as sinon from "sinon";
 import { cleanupFirestore } from "./helpers";

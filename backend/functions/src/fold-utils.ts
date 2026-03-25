@@ -44,6 +44,14 @@ export function objDiff(
 
 /**
  * Result of analyzing what fold action should be taken for a source document.
+ *
+ * `conflict` means the source document is valid but cannot be folded automatically.
+ * In that case the source/staging document is left in place and may be annotated with
+ * metadata such as a blocking legacy document ID.
+ *
+ * `error` means the fold analyzer found invalid source data or detected corruption in
+ * destination data. The source/staging document is also left in place, but the result
+ * is treated as an operational problem rather than a normal reconciliation conflict.
  */
 export type FoldAction =
   | {
@@ -58,8 +66,15 @@ export type FoldAction =
       newData: Record<string, unknown>;
     }
   | {
+      action: "conflict";
+      reason: string;
+      blockingDocId?: string;
+      sourceDataPatch: Record<string, unknown>;
+    }
+  | {
       action: "error";
       reason: string;
+      sourceDataPatch?: Record<string, unknown>;
     };
 
 /**

@@ -8,7 +8,8 @@ import { createSSHMySQLConnection2 } from "./sshMysql";
 import { loadSQLFileToString } from "./sqlQueries";
 import { RowDataPacket, Connection } from "mysql2/promise";
 import { FUNCTIONS_CONFIG_SECRET } from "./secrets";
-import { FieldPair, FoldAction, objDiff, analyzeFoldAction, chunkArray } from "./fold-utils";
+import { FieldPair, FoldAction, objDiff, chunkArray } from "./fold-utils";
+import { getFoldAnalyzer, getFoldPolicy } from "./fold-policies";
 import { processExpenseWritebackAttachments } from "./attachmentWriteback";
 //const serviceAccount = require("../../../../../Downloads/serviceAccountKey.json");
 //admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -25,8 +26,20 @@ export const syncToSQL = functions
     // create a single connection to MySQL and use it for all operations
     const mysqlConnection = await createSSHMySQLConnection2();
     await cleanupTime(mysqlConnection);
+    await foldCollection(
+      "TurboTimeSheetsWriteback",
+      "TimeSheets",
+      [],
+      ["exported"]
+    );
     await exportTime(mysqlConnection);
     await cleanupExport(mysqlConnection, "TimeAmendments");
+    await foldCollection(
+      "TurboTimeAmendmentsWriteback",
+      "TimeAmendments",
+      [{ sourceField: "_id", destField: "_id" }],
+      ["exported"]
+    );
     await exportAmendments(mysqlConnection);
     // Process writeback attachments for EXPENSES ONLY (always runs, even if fold is disabled)
     // Note: Purchase Orders do NOT need attachment processing - their attachment fields
@@ -767,13 +780,6 @@ Logic:
 @param destCollection - Name of the destination Firestore collection  
 @param fieldPairs - Array of field pairs defining match rules. Use "_id" to reference document ID.
 */
-// Maps destination collection names to the corresponding field in Config/Enable document.
-// If that field is true, editing is enabled in legacy Tybalt and fold should be skipped.
-const collectionToEnableField: Record<string, string> = {
-  Jobs: "jobs",
-  Expenses: "expenses",
-};
-
 export async function foldCollection(
   sourceCollection: string,
   destCollection: string,
@@ -782,8 +788,10 @@ export async function foldCollection(
 ): Promise<void> {
   functions.logger.info(`Starting fold of ${sourceCollection} into ${destCollection}`);
 
+  const policy = getFoldPolicy(destCollection);
+
   // Check if editing is enabled for this collection in legacy Tybalt
-  const enableField = collectionToEnableField[destCollection];
+  const enableField = policy.enableField;
   if (enableField) {
     const enableDoc = await db.collection("Config").doc("Enable").get();
     const enableData = enableDoc.data() || {};
@@ -803,11 +811,7 @@ export async function foldCollection(
   }
   
   let replacedCount = 0, createdCount = 0, skippedCount = 0, errorCount = 0;
-  // Collection-specific export flag rule:
-  // Expenses changes must become eligible for MySQL re-export (exported:false).
-  // If more collection-specific fold behaviors are added, refactor this into
-  // a per-collection policy map instead of adding more `isXxx` booleans.
-  const isExpensesFold = destCollection === "Expenses";
+  const analyze = getFoldAnalyzer(destCollection);
 
   // Analyze all source docs concurrently (10 at a time) using existing
   // analyzeFoldAction. This turns N sequential Firestore reads into N/10
@@ -821,7 +825,7 @@ export async function foldCollection(
       chunk.map(async (doc) => ({
         ref: doc.ref,
         id: doc.id,
-        result: await analyzeFoldAction(db, destCollection, fieldPairs, doc.id, doc.data(), preserveFields),
+        result: await analyze(db, destCollection, fieldPairs, doc.id, doc.data(), preserveFields),
       }))
     );
     actions.push(...results);
@@ -833,6 +837,12 @@ export async function foldCollection(
     | { type: "delete"; ref: FirebaseFirestore.DocumentReference };
 
   const ops: Op[] = [];
+  const sourcePatchOps: Array<{
+    ref: FirebaseFirestore.DocumentReference;
+    id: string;
+    data: Record<string, unknown>;
+  }> = [];
+  let conflictCount = 0;
 
   for (const { ref, id, result } of actions) {
     switch (result.action) {
@@ -840,7 +850,7 @@ export async function foldCollection(
       ops.push({
         type: "set",
         ref: db.collection(destCollection).doc(result.destDocId),
-        data: isExpensesFold ? { ...result.data, exported: false } : result.data,
+        data: policy.resetExported ? { ...result.data, exported: false } : result.data,
       });
       ops.push({ type: "delete", ref });
       createdCount++;
@@ -858,7 +868,7 @@ export async function foldCollection(
         ops.push({
           type: "set",
           ref: db.collection(destCollection).doc(result.destDocId),
-          data: isExpensesFold ? { ...result.newData, exported: false } : result.newData,
+          data: policy.resetExported ? { ...result.newData, exported: false } : result.newData,
         });
         ops.push({ type: "delete", ref });
         replacedCount++;
@@ -869,7 +879,26 @@ export async function foldCollection(
       break;
     }
 
+    case "conflict":
+      sourcePatchOps.push({
+        ref,
+        id,
+        data: result.sourceDataPatch,
+      });
+      conflictCount++;
+      functions.logger.warn(`${result.reason} for source doc ${id}`, {
+        blockingDocId: result.blockingDocId,
+      });
+      break;
+
     case "error":
+      if (result.sourceDataPatch) {
+        sourcePatchOps.push({
+          ref,
+          id,
+          data: result.sourceDataPatch,
+        });
+      }
       functions.logger.error(`${result.reason} for source doc ${id}`);
       errorCount++;
       break;
@@ -886,8 +915,41 @@ export async function foldCollection(
     await batch.commit();
   }
 
+  for (const patchChunk of chunkArray(sourcePatchOps, CONCURRENCY)) {
+    await Promise.all(
+      patchChunk.map(async (patchOp) => {
+        try {
+          const snap = await patchOp.ref.get();
+          if (!snap.exists) {
+            functions.logger.debug(
+              `Skipped source metadata patch for ${sourceCollection} doc ${patchOp.id} (doc no longer exists)`
+            );
+            return;
+          }
+
+          await patchOp.ref.update(
+            patchOp.data as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
+          );
+        } catch (error) {
+          if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            (error as { code?: unknown }).code === 5
+          ) {
+            functions.logger.debug(
+              `Skipped source metadata patch for ${sourceCollection} doc ${patchOp.id} (doc disappeared before update)`
+            );
+            return;
+          }
+          throw error;
+        }
+      })
+    );
+  }
+
   functions.logger.info(
-    `Fold complete: ${replacedCount} replaced, ${createdCount} created, ${skippedCount} skipped (no changes), ${errorCount} errors`
+    `Fold complete: ${replacedCount} replaced, ${createdCount} created, ${skippedCount} skipped (no changes), ${conflictCount} conflicts, ${errorCount} errors`
   );
 }
 
