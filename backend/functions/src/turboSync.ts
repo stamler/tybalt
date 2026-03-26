@@ -821,6 +821,18 @@ export const scheduledTurboTimeSheetsWritebackSync = functions
   .pubsub
   .schedule("every 30 minutes")
   .onRun(async (context) => {
+    // Operational kill switch for the Turbo -> Firestore time writeback pull.
+    // This is intentionally separate from Config/Enable.time, which controls
+    // legacy time fold/export behavior but does not stop new Turbo data from
+    // being fetched into Firestore staging collections.
+    const enableSnap = await db.collection("Config").doc("Enable").get();
+    if (enableSnap.get("disableTurboTimeWriteback") === true) {
+      functions.logger.info(
+        "Turbo time writeback disabled via Config/Enable.disableTurboTimeWriteback"
+      );
+      return null;
+    }
+
     const weekEndings = getSaturdaysToSync(4);
     functions.logger.info("Starting scheduled Turbo time writeback sync", { weekEndings });
 

@@ -2,15 +2,20 @@ import "mocha";
 
 import * as chai from "chai";
 import * as sinon from "sinon";
+import * as test from "firebase-functions-test";
 import axios from "axios";
 import { zonedTimeToUtc } from "date-fns-tz";
 
 import { admin, projectId } from "./index.test";
 import { cleanupFirestore } from "./helpers";
 import { APP_NATIVE_TZ } from "../src/config";
-import { fetchAndSyncTimeSheetsWriteback } from "../src/turboSync";
+import {
+  fetchAndSyncTimeSheetsWriteback,
+  scheduledTurboTimeSheetsWritebackSync,
+} from "../src/turboSync";
 
 const assert: Chai.Assert = chai.assert;
+const tester = test();
 
 describe("turboSync time writeback staging", () => {
   const db = admin.firestore();
@@ -203,5 +208,22 @@ describe("turboSync time writeback staging", () => {
     assert.deepEqual(result, { timeSheets: 0, timeAmendments: 0 });
     assert.deepEqual(await collectionIds("TurboTimeSheetsWriteback"), []);
     assert.deepEqual(await collectionIds("TurboTimeAmendmentsWriteback"), []);
+  });
+
+  it("skips scheduled time staging when Config/Enable.disableTurboTimeWriteback is true", async () => {
+    const wrapped = tester.wrap(scheduledTurboTimeSheetsWritebackSync);
+
+    await db.collection("Config").doc("Enable").set({ disableTurboTimeWriteback: true });
+    await db.collection("TurboTimeSheetsWriteback").doc("existing-ts").set({ keep: true });
+    await db.collection("TurboTimeAmendmentsWriteback").doc("existing-ta").set({ keep: true });
+
+    const axiosGet = sandbox.stub(axios, "get");
+
+    const result = await wrapped({});
+
+    assert.isTrue(axiosGet.notCalled);
+    assert.isNull(result);
+    assert.deepEqual(await collectionIds("TurboTimeSheetsWriteback"), ["existing-ts"]);
+    assert.deepEqual(await collectionIds("TurboTimeAmendmentsWriteback"), ["existing-ta"]);
   });
 });
