@@ -42,7 +42,9 @@ Before staging, `turboSync.ts` normalizes date fields to Firestore `Timestamp` v
 - `weekEnding`: end-of-day in `APP_NATIVE_TZ`
 - `committedWeekEnding`: end-of-day in `APP_NATIVE_TZ`
 - `date`: noon in `APP_NATIVE_TZ`
-- `committed`: parsed from ISO datetime to Firestore `Timestamp`
+- `commitTime`: parsed from ISO datetime to Firestore `Timestamp`
+- `created`: parsed from ISO datetime to Firestore `Timestamp`
+- `committed`: staged as a boolean
 
 Other string, number, boolean, and nested payload fields are staged unchanged.
 

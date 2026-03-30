@@ -48,6 +48,8 @@ describe("sync foldCollection time writeback", () => {
   ): Record<string, unknown> {
     return {
       uid: "user-1",
+      created: admin.firestore.Timestamp.fromDate(new Date("2026-02-19T10:30:00.000Z")),
+      commitTime: admin.firestore.Timestamp.fromDate(new Date("2026-02-20T15:45:00.000Z")),
       weekEnding: weekEndingTimestamp("2026-02-14"),
       committedWeekEnding: weekEndingTimestamp("2026-02-21"),
       committed: true,
@@ -361,6 +363,52 @@ describe("sync foldCollection time writeback", () => {
     assert.equal(amendmentSnap.get("hours"), 12);
     assert.equal(amendmentSnap.get("exported"), false);
     assert.isFalse(stagingSnap.exists);
+  });
+
+  it("normalizes known amendment date fields during fold before writing legacy docs", async () => {
+    await db.collection("TurboTimeAmendmentsWriteback").doc("amendment-1").set({
+      uid: "user-1",
+      weekEnding: "2026-02-14",
+      committedWeekEnding: "2026-02-21",
+      date: "2026-02-18",
+      commitTime: "2026-02-20T15:45:00.000Z",
+      created: "2026-02-19T10:30:00.000Z",
+      committed: true,
+      exported: true,
+      hours: 12,
+    });
+
+    await foldCollection(
+      "TurboTimeAmendmentsWriteback",
+      "TimeAmendments",
+      [{ sourceField: "_id", destField: "_id" }],
+      ["exported"]
+    );
+
+    const amendmentSnap = await db.collection("TimeAmendments").doc("amendment-1").get();
+
+    assert.equal(
+      amendmentSnap.get("weekEnding").toMillis(),
+      weekEndingTimestamp("2026-02-14").toMillis()
+    );
+    assert.equal(
+      amendmentSnap.get("committedWeekEnding").toMillis(),
+      weekEndingTimestamp("2026-02-21").toMillis()
+    );
+    assert.equal(
+      amendmentSnap.get("date").toMillis(),
+      admin.firestore.Timestamp.fromDate(
+        zonedTimeToUtc("2026-02-18T12:00:00", APP_NATIVE_TZ)
+      ).toMillis()
+    );
+    assert.equal(
+      amendmentSnap.get("commitTime").toMillis(),
+      admin.firestore.Timestamp.fromDate(new Date("2026-02-20T15:45:00.000Z")).toMillis()
+    );
+    assert.equal(
+      amendmentSnap.get("created").toMillis(),
+      admin.firestore.Timestamp.fromDate(new Date("2026-02-19T10:30:00.000Z")).toMillis()
+    );
   });
 
   it("treats an identical time amendment as a no-op and preserves exported", async () => {

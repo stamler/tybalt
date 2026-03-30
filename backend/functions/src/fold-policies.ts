@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { FieldPair, FoldAction, analyzeFoldAction, objDiff } from "./fold-utils";
+import { normalizeTimeAmendmentWritebackData } from "./writebackDateUtils";
 
 export type FoldAnalyzer = (
   db: FirebaseFirestore.Firestore,
@@ -155,6 +156,24 @@ export async function analyzeTimeSheetFoldAction(
   };
 }
 
+export async function analyzeTimeAmendmentFoldAction(
+  db: FirebaseFirestore.Firestore,
+  destCollection: string,
+  fieldPairs: FieldPair[],
+  sourceDocId: string,
+  sourceData: Record<string, unknown>,
+  preserveFields: string[] = []
+): Promise<FoldAction> {
+  return analyzeFoldAction(
+    db,
+    destCollection,
+    fieldPairs,
+    sourceDocId,
+    normalizeTimeAmendmentWritebackData(sourceData),
+    preserveFields
+  );
+}
+
 /**
  * Per-collection fold policies.
  *
@@ -173,7 +192,8 @@ export async function analyzeTimeSheetFoldAction(
  * - Respects Config/Enable.time.
  *
  * TimeAmendments:
- * - Continues to use the generic matcher supplied by the caller, currently _id -> _id.
+ * - Normalizes known writeback date/datetime fields before matching.
+ * - Otherwise uses the generic matcher supplied by the caller, currently _id -> _id.
  * - Resets exported to false on create/replace.
  * - Respects Config/Enable.time.
  */
@@ -193,6 +213,7 @@ const collectionFoldPolicies: Record<string, FoldPolicy> = {
   TimeAmendments: {
     enableField: "time",
     resetExported: true,
+    analyze: analyzeTimeAmendmentFoldAction,
   },
 };
 

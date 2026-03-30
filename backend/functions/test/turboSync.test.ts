@@ -75,9 +75,11 @@ describe("turboSync time writeback staging", () => {
             weekEnding: "2026-02-14",
             committedWeekEnding: "2026-02-21",
             date: "2026-02-18",
-            committed: "2026-02-20T15:45:00.000Z",
-            committer: "user-1",
-            committerName: "Approver Name",
+            commitTime: "2026-02-20T15:45:00.000Z",
+            created: "2026-02-19T10:30:00.000Z",
+            committed: true,
+            commitUid: "user-1",
+            commitName: "Approver Name",
           },
         ],
       },
@@ -122,9 +124,14 @@ describe("turboSync time writeback staging", () => {
       noonTimestamp("2026-02-18").toMillis()
     );
     assert.equal(
-      amendmentSnap.get("committed").toMillis(),
+      amendmentSnap.get("commitTime").toMillis(),
       isoTimestamp("2026-02-20T15:45:00.000Z").toMillis()
     );
+    assert.equal(
+      amendmentSnap.get("created").toMillis(),
+      isoTimestamp("2026-02-19T10:30:00.000Z").toMillis()
+    );
+    assert.equal(amendmentSnap.get("committed"), true);
   });
 
   it("rejects malformed time writeback responses without clearing staged data", async () => {

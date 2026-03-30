@@ -11,10 +11,15 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions/v1";
 import { defineSecret } from "firebase-functions/params";
 import axios, { isAxiosError } from "axios";
-import { zonedTimeToUtc } from "date-fns-tz";
 import { format } from "date-fns";
-import { APP_NATIVE_TZ, TURBO_BASE_URL } from "./config";
+import { TURBO_BASE_URL } from "./config";
 import { foldCollection } from "./sync";
+import {
+  normalizeTimeAmendmentWritebackData,
+  toEndOfDayTimestamp,
+  toNoonEasternTimestamp,
+  toTimestampFromISO,
+} from "./writebackDateUtils";
 
 const db = admin.firestore();
 const FIRESTORE_BATCH_SIZE = 500;
@@ -103,35 +108,6 @@ const WRITEBACK_DATE_FIELDS = [
   "proposalSubmissionDueDate",
 ] as const;
 
-function toNoonEasternTimestamp(value: unknown): admin.firestore.Timestamp | unknown {
-  if (typeof value !== "string") {
-    return value;
-  }
-  const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return value;
-  }
-  const noonEastern = zonedTimeToUtc(`${trimmed}T12:00:00`, APP_NATIVE_TZ);
-  return admin.firestore.Timestamp.fromDate(noonEastern);
-}
-
-// For weekEnding fields: 23:59:59.999 Thunder Bay time
-function toEndOfDayTimestamp(value: unknown): admin.firestore.Timestamp | unknown {
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return value;
-  const endOfDay = zonedTimeToUtc(`${trimmed}T23:59:59.999`, APP_NATIVE_TZ);
-  return admin.firestore.Timestamp.fromDate(endOfDay);
-}
-
-// For commitTime: parse ISO datetime string
-function toTimestampFromISO(value: unknown): admin.firestore.Timestamp | unknown {
-  if (typeof value !== "string") return value;
-  const parsed = new Date(value);
-  if (isNaN(parsed.getTime())) return value;
-  return admin.firestore.Timestamp.fromDate(parsed);
-}
-
 function convertWritebackJobDates(job: Record<string, unknown>): Record<string, unknown> {
   const converted = { ...job };
   for (const field of WRITEBACK_DATE_FIELDS) {
@@ -187,24 +163,10 @@ function convertWritebackTimesheetDates(timesheet: Record<string, unknown>): Rec
   return converted;
 }
 
-const TIME_AMENDMENT_NOON_FIELDS = ["date"] as const;
-const TIME_AMENDMENT_END_OF_DAY_FIELDS = ["weekEnding", "committedWeekEnding"] as const;
-const TIME_AMENDMENT_ISO_DATETIME_FIELDS = ["committed"] as const;
-
 function convertWritebackTimeAmendmentDates(
   amendment: Record<string, unknown>
 ): Record<string, unknown> {
-  const converted = { ...amendment };
-  for (const field of TIME_AMENDMENT_NOON_FIELDS) {
-    if (field in converted) converted[field] = toNoonEasternTimestamp(converted[field]);
-  }
-  for (const field of TIME_AMENDMENT_END_OF_DAY_FIELDS) {
-    if (field in converted) converted[field] = toEndOfDayTimestamp(converted[field]);
-  }
-  for (const field of TIME_AMENDMENT_ISO_DATETIME_FIELDS) {
-    if (field in converted) converted[field] = toTimestampFromISO(converted[field]);
-  }
-  return converted;
+  return normalizeTimeAmendmentWritebackData(amendment);
 }
 
 function parseTimeWritebackResponse(url: string, data: unknown): TimeWritebackResponse {
