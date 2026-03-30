@@ -24,7 +24,7 @@ export const generateExpenseAttachmentArchive = functions
 
 export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
   const db = admin.firestore();
-    
+
   let trackingSnapshot: admin.firestore.DocumentSnapshot;
   let expensesSnapshot: admin.firestore.QuerySnapshot;
   let zipFilename: string;
@@ -59,7 +59,7 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
       .get();
 
     zipFilename = `attachments${weekEnding.toDate().getTime()}.zip`;
-    
+
     destination = "ExpenseTrackingExports/" + zipFilename;
 
     functions.logger.info(`generating ExpenseTracking attachment bundle for ${data.id}`);
@@ -84,7 +84,7 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
       .where("payPeriodEnding", "==", payPeriodEnding)
       .orderBy("attachment") // only docs where attachment exists
       .get();
-    
+
     zipFilename = `attachmentsPayroll${payPeriodEnding.toDate().getTime()}.zip`;
   
     destination = "PayrollExpenseExportsAttachmentCache/" + zipFilename;
@@ -111,6 +111,84 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
     throw new functions.https.HttpsError(
       "internal",
       "Could not determine storage bucket name"
+    );
+  }
+
+  // Build list of attachments to download
+  const attachmentsToDownload: { expenseId: string, attachment: string, filename: string }[] = [];
+  expensesSnapshot.forEach((expenseDoc) => {
+    const attachment = expenseDoc.get("attachment");
+
+    // Skip documents where attachment is null or undefined
+    if (!attachment || typeof attachment !== "string") {
+      functions.logger.warn(`Expense ${expenseDoc.id} has invalid attachment value: ${attachment}`);
+      return;
+    }
+    
+    const first8 = path.basename(attachment).substring(0, 8);
+    const paymentType = expenseDoc.get("paymentType") || "Unknown";
+    const surname = expenseDoc.get("surname") || "Unknown";
+    const givenName = expenseDoc.get("givenName") || "Unknown";
+    const date = expenseDoc.get("date");
+    const total = expenseDoc.get("total") || 0;
+    
+    let dateStr = "Unknown_Date";
+    if (date && typeof date.toDate === "function") {
+      dateStr = format(date.toDate(), "yyyy_MMM_dd");
+    }
+    
+    const filename = `${paymentType}-${surname},${givenName}-${dateStr}-${total}-${first8}${path.extname(attachment)}`;
+    attachmentsToDownload.push({ expenseId: expenseDoc.id, attachment, filename });
+  });
+
+  // If no valid attachments were found after filtering, skip archive generation
+  if (attachmentsToDownload.length === 0) {
+    functions.logger.info("No valid attachments found after filtering, skipping archive generation");
+    return;
+  }
+
+  // Download files as buffers (not streams) to avoid issues in the transitive
+  // streaming stack (which can vary by Node runtime and dependency versions).
+  // file.download() without destination returns [Buffer]
+  functions.logger.log(`downloading ${attachmentsToDownload.length} attachments as buffers`);
+  const downloadSettledResults = await Promise.allSettled(
+    attachmentsToDownload.map(async ({ expenseId, attachment, filename }) => {
+      const [buffer] = await bucket.file(attachment).download();
+      return { expenseId, attachment, filename, buffer };
+    })
+  );
+
+  const downloadResults = downloadSettledResults
+    .filter((result): result is PromiseFulfilledResult<{
+      expenseId: string,
+      attachment: string,
+      filename: string,
+      buffer: Buffer
+    }> => result.status === "fulfilled")
+    .map((result) => result.value);
+
+  downloadSettledResults.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      return;
+    }
+
+    const failedAttachment = attachmentsToDownload[index];
+    functions.logger.warn(
+      `Skipping missing or unreadable attachment for expense ${failedAttachment.expenseId}: ${failedAttachment.attachment}`,
+      { error: `${result.reason}` }
+    );
+  });
+
+  functions.logger.log(`downloaded ${downloadResults.length} attachments`);
+
+  if (downloadResults.length !== attachmentsToDownload.length) {
+    const failedCount = attachmentsToDownload.length - downloadResults.length;
+    functions.logger.warn(
+      `Skipping archive generation for ${zipFilename}: ${failedCount} attachment(s) could not be read`
+    );
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Could not generate attachment archive because ${failedCount} attachment(s) were missing or unreadable.`
     );
   }
 
@@ -156,51 +234,6 @@ export async function generateExpenseAttachmentArchiveUnwrapped(data: unknown) {
   // pipe archive data to the temp file
   archive.pipe(output);
   functions.logger.log("configured archiver to pipe to temp file");
-    
-  // Build list of attachments to download
-  const attachmentsToDownload: { attachment: string, filename: string }[] = [];
-  expensesSnapshot.forEach((expenseDoc) => {
-    const attachment = expenseDoc.get("attachment");
-    
-    // Skip documents where attachment is null or undefined
-    if (!attachment || typeof attachment !== "string") {
-      functions.logger.warn(`Expense ${expenseDoc.id} has invalid attachment value: ${attachment}`);
-      return;
-    }
-    
-    const first8 = path.basename(attachment).substring(0, 8);
-    const paymentType = expenseDoc.get("paymentType") || "Unknown";
-    const surname = expenseDoc.get("surname") || "Unknown";
-    const givenName = expenseDoc.get("givenName") || "Unknown";
-    const date = expenseDoc.get("date");
-    const total = expenseDoc.get("total") || 0;
-    
-    let dateStr = "Unknown_Date";
-    if (date && typeof date.toDate === "function") {
-      dateStr = format(date.toDate(), "yyyy_MMM_dd");
-    }
-    
-    const filename = `${paymentType}-${surname},${givenName}-${dateStr}-${total}-${first8}${path.extname(attachment)}`;
-    attachmentsToDownload.push({ attachment, filename });
-  });
-
-  // If no valid attachments were found after filtering, skip archive generation
-  if (attachmentsToDownload.length === 0) {
-    functions.logger.info("No valid attachments found after filtering, skipping archive generation");
-    return;
-  }
-
-  // Download files as buffers (not streams) to avoid issues in the transitive
-  // streaming stack (which can vary by Node runtime and dependency versions).
-  // file.download() without destination returns [Buffer]
-  functions.logger.log(`downloading ${attachmentsToDownload.length} attachments as buffers`);
-  const downloadResults = await Promise.all(
-    attachmentsToDownload.map(async ({ attachment, filename }) => {
-      const [buffer] = await bucket.file(attachment).download();
-      return { filename, buffer };
-    })
-  );
-  functions.logger.log(`downloaded ${downloadResults.length} attachments`);
 
   // Append buffers directly to archive (no streaming)
   downloadResults.forEach(({ filename, buffer }) => {

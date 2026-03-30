@@ -694,7 +694,6 @@ export async function generateAttachmentZip(
     functions,
     "generateExpenseAttachmentArchive"
   );
-  const payPeriodEnding = item.payPeriodEnding.toDate().getTime();
 
   // If the document already specifies a zip file, we don't need to generate it
   // again unless the user has requested a regeneration.
@@ -715,14 +714,19 @@ export async function generateAttachmentZip(
   });
   try {
     if (kind === "payPeriod") {
+      const payPeriodEnding = item.payPeriodEnding?.toDate?.().getTime?.();
+      if (typeof payPeriodEnding !== "number") {
+        throw new Error("Tracking document is missing payPeriodEnding");
+      }
       await generateExpenseAttachmentArchive({ payPeriodEnding });
     } else {
       await generateExpenseAttachmentArchive({ id: item.id });
     }
   } catch (error) {
-    alert(error);
+    alert(error instanceof Error ? error.message : String(error));
+  } finally {
+    store.endTask(`generateAttachments${item.id}`);
   }
-  store.endTask(`generateAttachments${item.id}`);
 }
 
 export function relativeTime(date: Timestamp | undefined): string {
