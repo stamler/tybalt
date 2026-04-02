@@ -7,12 +7,23 @@ import { APP_URL, APP_NATIVE_TZ } from "./config";
 import * as _ from "lodash";
 import { ChangeJson } from "firebase-functions/lib/common/change";
 
+async function emailNotificationsDisabled(
+  db: FirebaseFirestore.Firestore
+): Promise<boolean> {
+  const enableSnap = await db.collection("Config").doc("Enable").get();
+  return enableSnap.get("disableEmailNotifications") === true;
+}
+
 // Send reminder emails to users who haven't submitted a timesheet at 8am on Tue, Wed, Thu "0 12 * * 2,3,4"
 export const scheduledSubmitReminder = functions.pubsub
   .schedule("0 8 * * 2,3,4")
   .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const db = admin.firestore();
+    if (await emailNotificationsDisabled(db)) {
+      functions.logger.info("Submit reminder emails disabled via Config/Enable.disableEmailNotifications");
+      return null;
+    }
     const lastWeek = thisTimeLastWeekInTimeZone(nextSaturday(new Date()),APP_NATIVE_TZ);
     functions.logger.info(`creating reminders for week ending ${lastWeek}`);
     const profiles = await db.collection("Profiles").where("timeSheetExpected", "==", true).get();
@@ -36,6 +47,7 @@ export const scheduledSubmitReminder = functions.pubsub
         },
       });
     }
+    return null;
   });
 
 // Send reminder emails to managers who have submitted expenses they must approve at 9am on Thu and Fri "0 12 * * 4,5"
@@ -44,6 +56,10 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
   .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const db = admin.firestore();
+    if (await emailNotificationsDisabled(db)) {
+      functions.logger.info("Expense approval reminder emails disabled via Config/Enable.disableEmailNotifications");
+      return null;
+    }
     const pendingDocuments = await db.collection("Expenses")
       .where("submitted","==", true)
       .where("approved", "==", false)
@@ -74,6 +90,7 @@ export const scheduledExpenseApprovalReminder = functions.pubsub
         },
       });
     }
+    return null;
   });
 
 // Send reminder emails to managers who have submitted timesheets they must approve at 9am on Tue, Wed, Thu "0 12 * * 2,3,4"
@@ -82,6 +99,10 @@ export const scheduledTimeSheetApprovalReminder = functions.pubsub
   .timeZone(APP_NATIVE_TZ)
   .onRun(async (context) => {
     const db = admin.firestore();
+    if (await emailNotificationsDisabled(db)) {
+      functions.logger.info("Timesheet approval reminder emails disabled via Config/Enable.disableEmailNotifications");
+      return null;
+    }
     const pendingDocuments = await db.collection("TimeSheets")
       .where("submitted","==", true)
       .where("approved", "==", false)
@@ -110,6 +131,7 @@ export const scheduledTimeSheetApprovalReminder = functions.pubsub
         },
       });
     }
+    return null;
   });
 
 // delete emails more than OLD_AGE_DAYS old at midnight
@@ -156,6 +178,12 @@ export async function emailOnReject(
   )) { return; }
 
   const db = admin.firestore();
+  if (await emailNotificationsDisabled(db)) {
+    functions.logger.info(
+      `Rejection emails disabled via Config/Enable.disableEmailNotifications for ${collection}/${context.params?.timesheetId ?? context.params?.expenseId ?? "unknown"}`
+    );
+    return;
+  }
 
   if (collection === "TimeSheets") {
     const weekEndingString = format(utcToZonedTime(afterData.weekEnding.toDate(),APP_NATIVE_TZ), "MMMM d");
@@ -270,6 +298,12 @@ export async function emailOnShare(
   }
   
   const db = admin.firestore();
+  if (await emailNotificationsDisabled(db)) {
+    functions.logger.info(
+      `Share emails disabled via Config/Enable.disableEmailNotifications for ${collection}/${context.params?.timesheetId ?? "unknown"}`
+    );
+    return;
+  }
   const profile = await db.collection("Profiles").doc(afterData.uid).get();
 
   // For each new viewer, generate an email

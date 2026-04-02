@@ -75,19 +75,26 @@ export const syncToSQL = functions
       await writebackProfiles(mysqlConnection);
     } catch (error) {
       functions.logger.error(`Failed to writeback profiles: ${error}`);
-      await db.collection("Emails").add({
-        toUids: ["UAmV8K6DcXVhSrMAtZua0OmCUPu2"],
-        message: {
-          subject: "Profile writeback failed during syncToSQL()",
-          text: 
-            "Hi,\n\n" +
-            "The scheduled syncToSQL() taks failed to writeback profile changes. " +
-            `The error is\n ${
-              JSON.stringify(error)
-            }\n. Please solve this issue\n\n` +
-            "- Tybalt",
-        },
-      });
+      const enableSnap = await db.collection("Config").doc("Enable").get();
+      if (enableSnap.get("disableEmailNotifications") === true) {
+        functions.logger.info(
+          "Profile writeback failure email disabled via Config/Enable.disableEmailNotifications"
+        );
+      } else {
+        await db.collection("Emails").add({
+          toUids: ["UAmV8K6DcXVhSrMAtZua0OmCUPu2"],
+          message: {
+            subject: "Profile writeback failed during syncToSQL()",
+            text: 
+              "Hi,\n\n" +
+              "The scheduled syncToSQL() task failed to writeback profile changes. " +
+              `The error is\n ${
+                JSON.stringify(error)
+              }\n. Please solve this issue\n\n` +
+              "- Tybalt",
+          },
+        });
+      }
     }
     await exportJobs(mysqlConnection);
     // Export Turbo writeback data (clients before contacts/notes due to FK constraint)
