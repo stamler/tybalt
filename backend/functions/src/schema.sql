@@ -116,6 +116,8 @@ CREATE TABLE `Expenses` (
   `uid` varchar(128) NOT NULL DEFAULT '',
   `unitNumber` varchar(16) DEFAULT NULL,
   `vendorName` varchar(128) DEFAULT NULL,
+  `currency` varchar(3) DEFAULT NULL,
+  `settled_total` decimal(9,2) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

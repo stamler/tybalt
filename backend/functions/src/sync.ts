@@ -497,7 +497,7 @@ export async function exportExpenses(mysqlConnection: Connection) {
   // export cadence
   const batchSize = 499;
   const exportLocksDoc = db.collection("Locks").doc("exportInProgress");
-  const expensesFields = ["id", "category", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "payrollId", "total", "uid", "unitNumber", "vendorName", "immutableID"];
+  const expensesFields = ["id", "category", "attachment", "breakfast", "client", "ccLast4digits", "commitName", "commitTime", "commitUid", "committedWeekEnding", "date", "description", "dinner", "displayName", "distance", "division", "divisionName", "givenName", "job", "jobDescription", "lodging", "lunch", "managerName", "managerUid", "payPeriodEnding", "paymentType", "po", "surname", "payrollId", "total", "uid", "unitNumber", "vendorName", "immutableID", "currency", "settled_total"];
 
   // Build an ON DUPLICATE KEY UPDATE clause so re-exporting (exported=false)
   // doesn't fail with a duplicate primary key error. We update all columns
@@ -597,6 +597,13 @@ export async function exportExpenses(mysqlConnection: Connection) {
         expense.committedWeekEnding = format(utcToZonedTime(expense.committedWeekEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
         expense.payPeriodEnding = format(utcToZonedTime(expense.payPeriodEnding.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
         expense.date = format(utcToZonedTime(expense.date.toDate(),APP_NATIVE_TZ), "yyyy-MM-dd");
+        const currency = typeof expense.currency === "string" ? expense.currency.trim() : "";
+        const settledTotal = expense.settled_total;
+        expense.currency = currency === "" ? null : currency;
+        expense.settled_total =
+          expense.currency !== null && typeof settledTotal === "number" && Number.isFinite(settledTotal)
+            ? settledTotal
+            : null;
         // VALUEs were included in the data set for this doc, include it in success batch
         exportSuccessBatch.update(expenseSnap.ref, {
           exported: true,

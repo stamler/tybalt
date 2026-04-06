@@ -1,12 +1,13 @@
 import "mocha";
 
 import * as chai from "chai";
+import * as sinon from "sinon";
 import { zonedTimeToUtc } from "date-fns-tz";
 
 import { admin, projectId } from "./index.test";
 import { cleanupFirestore } from "./helpers";
 import { APP_NATIVE_TZ } from "../src/config";
-import { foldCollection } from "../src/sync";
+import { exportExpenses, foldCollection } from "../src/sync";
 import { getFoldAnalyzer } from "../src/fold-policies";
 
 const assert: Chai.Assert = chai.assert;
@@ -466,5 +467,163 @@ describe("sync foldCollection time writeback", () => {
         tybaltConflict: "legacy-ts",
       },
     });
+  });
+});
+
+describe("sync exportExpenses currency writeback", () => {
+  const db = admin.firestore();
+  const sandbox = sinon.createSandbox();
+
+  function expenseTimestamp(dateTime: string) {
+    return admin.firestore.Timestamp.fromDate(new Date(dateTime));
+  }
+
+  function baseExpense(
+    overrides: Record<string, unknown> = {}
+  ): Record<string, unknown> {
+    return {
+      immutableID: "immutable-expense-1",
+      committed: true,
+      exported: false,
+      category: "Travel",
+      attachment: "Expenses/user-1/hash.pdf",
+      breakfast: false,
+      client: "Example Client",
+      ccLast4digits: "1234",
+      commitName: "Approver Name",
+      commitTime: expenseTimestamp("2026-04-05T12:00:00.000Z"),
+      commitUid: "approver-1",
+      committedWeekEnding: expenseTimestamp("2026-04-11T23:59:59.999Z"),
+      date: expenseTimestamp("2026-04-03T12:00:00.000Z"),
+      description: "Hotel charge",
+      dinner: false,
+      displayName: "Alice Example",
+      distance: 0,
+      division: "OPS",
+      divisionName: "Operations",
+      givenName: "Alice",
+      job: "26-001",
+      jobDescription: "Example Job",
+      lodging: true,
+      lunch: false,
+      managerName: "Manager Example",
+      managerUid: "manager-1",
+      payPeriodEnding: expenseTimestamp("2026-04-11T23:59:59.999Z"),
+      paymentType: "Expense",
+      po: "2604-1001",
+      surname: "Example",
+      payrollId: "123456",
+      total: 123.45,
+      uid: "user-1",
+      unitNumber: "",
+      vendorName: "Example Vendor",
+      ...overrides,
+    };
+  }
+
+  function extractInsertedRow(queryCall: sinon.SinonSpyCall<[string, unknown[]]>) {
+    const [sql, params] = queryCall.args;
+    const match = sql.match(/INSERT INTO Expenses \((.+)\) VALUES \?/);
+    if (!match) {
+      throw new Error(`unexpected export query: ${sql}`);
+    }
+
+    const fields = match[1].split(",");
+    const rows = params[0] as unknown[][];
+    const row = rows[0];
+    return Object.fromEntries(fields.map((field, index) => [field, row[index]]));
+  }
+
+  beforeEach(async () => {
+    await cleanupFirestore(projectId);
+  });
+
+  afterEach(async () => {
+    sandbox.restore();
+    await cleanupFirestore(projectId);
+  });
+
+  it("writes currency and settled_total when an expense has explicit currency data", async () => {
+    await db.collection("Expenses").doc("expense-1").set(
+      baseExpense({
+        currency: "USD",
+        settled_total: 91.11,
+      })
+    );
+
+    const query = sandbox.stub().resolves([[], []]);
+    await exportExpenses({ query } as any);
+
+    assert.equal(query.callCount, 1);
+    const inserted = extractInsertedRow(query.getCall(0) as sinon.SinonSpyCall<[string, unknown[]]>);
+    assert.equal(inserted.currency, "USD");
+    assert.equal(inserted.settled_total, 91.11);
+
+    const exportedSnap = await db.collection("Expenses").doc("expense-1").get();
+    assert.isTrue(exportedSnap.get("exported"));
+    assert.isUndefined(exportedSnap.get("exportInProgress"));
+  });
+
+  it("writes null currency fields when the expense has no explicit currency", async () => {
+    await db.collection("Expenses").doc("expense-2").set(baseExpense({
+      immutableID: "immutable-expense-2",
+    }));
+
+    const query = sandbox.stub().resolves([[], []]);
+    await exportExpenses({ query } as any);
+
+    const inserted = extractInsertedRow(query.getCall(0) as sinon.SinonSpyCall<[string, unknown[]]>);
+    assert.strictEqual(inserted.currency, null);
+    assert.strictEqual(inserted.settled_total, null);
+  });
+
+  it("treats blank currency as missing and clears settled_total to null", async () => {
+    await db.collection("Expenses").doc("expense-3").set(baseExpense({
+      immutableID: "immutable-expense-3",
+      currency: "   ",
+      settled_total: 88.88,
+    }));
+
+    const query = sandbox.stub().resolves([[], []]);
+    await exportExpenses({ query } as any);
+
+    const inserted = extractInsertedRow(query.getCall(0) as sinon.SinonSpyCall<[string, unknown[]]>);
+    assert.strictEqual(inserted.currency, null);
+    assert.strictEqual(inserted.settled_total, null);
+  });
+
+  it("updates and later clears currency writeback fields on re-export", async () => {
+    const expenseRef = db.collection("Expenses").doc("expense-4");
+    await expenseRef.set(baseExpense({
+      immutableID: "immutable-expense-4",
+      currency: "USD",
+      settled_total: 91.11,
+    }));
+
+    const query = sandbox.stub().resolves([[], []]);
+
+    await exportExpenses({ query } as any);
+
+    await expenseRef.update({
+      exported: false,
+      currency: "EUR",
+      settled_total: 101.25,
+    });
+    await exportExpenses({ query } as any);
+
+    await expenseRef.update({
+      exported: false,
+      currency: " ",
+      settled_total: 77.77,
+    });
+    await exportExpenses({ query } as any);
+
+    const updated = extractInsertedRow(query.getCall(1) as sinon.SinonSpyCall<[string, unknown[]]>);
+    assert.equal(updated.currency, "EUR");
+    assert.equal(updated.settled_total, 101.25);
+
+    const cleared = extractInsertedRow(query.getCall(2) as sinon.SinonSpyCall<[string, unknown[]]>);
+    assert.strictEqual(cleared.currency, null);
+    assert.strictEqual(cleared.settled_total, null);
   });
 });
