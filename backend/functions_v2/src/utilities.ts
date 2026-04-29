@@ -10,6 +10,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
+const TRACKING_DOC_LOCK_COLLECTION = "_TrackingDocLocks";
 
 // This is the type of the data object that is passed to the chatEndpoint
 interface ChatPayload {
@@ -829,39 +830,56 @@ export async function getTrackingDoc(date: Date, collection: string, property: s
   }
 
   const db = admin.firestore();
+  const trackingDocLockRef = db
+    .collection(TRACKING_DOC_LOCK_COLLECTION)
+    .doc(`${encodeURIComponent(collection)}:${encodeURIComponent(property)}:${date.getTime()}`);
 
   // Get the Tracking doc if it exists, otherwise create it.
-  let querySnap;
-  if (EXACT_TIME_SEARCH) {
-    querySnap = await db
-      .collection(collection)
-      .where(property, "==", date)
-      .get();
-  } else {
-    querySnap = await db
-      .collection(collection)
-      .where(property, ">", subMilliseconds(date, WITHIN_MSEC))
-      .where(property, "<", addMilliseconds(date, WITHIN_MSEC))
-      .get();
-  }
+  return db.runTransaction(async (transaction) => {
+    await transaction.get(trackingDocLockRef);
 
-  let trackingDocRef;
-  if (querySnap.size > 1) {
-    throw new Error(
-      `There is more than one document in ${collection} for ${property} ${date}`
-    );
-  } else if (querySnap.size === 1) {
-    // retrieve existing tracking document
-    trackingDocRef = querySnap.docs[0].ref;
-  } else {
-    // create new tracking document
-    trackingDocRef = db.collection(collection).doc();
-    functions.logger.info(`creating new ${collection} document ${trackingDocRef.id}`);
-    await trackingDocRef.set({
-      [property]: date,
-      created: admin.firestore.FieldValue.serverTimestamp(),
-      ...otherProps,
-    });
-  }
-  return trackingDocRef;
+    let querySnap;
+    if (EXACT_TIME_SEARCH) {
+      querySnap = await transaction.get(
+        db
+          .collection(collection)
+          .where(property, "==", date)
+      );
+    } else {
+      querySnap = await transaction.get(
+        db
+          .collection(collection)
+          .where(property, ">", subMilliseconds(date, WITHIN_MSEC))
+          .where(property, "<", addMilliseconds(date, WITHIN_MSEC))
+      );
+    }
+
+    let trackingDocRef;
+    if (querySnap.size > 1) {
+      throw new Error(
+        `There is more than one document in ${collection} for ${property} ${date}`
+      );
+    } else if (querySnap.size === 1) {
+      // retrieve existing tracking document
+      trackingDocRef = querySnap.docs[0].ref;
+    } else {
+      // create new tracking document
+      trackingDocRef = db.collection(collection).doc();
+      functions.logger.info(`creating new ${collection} document ${trackingDocRef.id}`);
+      transaction.set(trackingDocRef, {
+        [property]: date,
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        ...otherProps,
+      });
+      transaction.set(trackingDocLockRef, {
+        collection,
+        property,
+        date,
+        trackingDocPath: trackingDocRef.path,
+        updated: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+
+    return trackingDocRef;
+  });
 }

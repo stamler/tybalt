@@ -131,6 +131,39 @@ describe("utilities.ts", () => {
       const docSnap = await docRef.get()      
       assert.isTrue(docSnap.get("weekEnding").toDate().getTime() === date.getTime());
     });
+    it("creates only one Tracking document when called concurrently for a new date", async function () {
+      this.timeout(10000);
+      const date = new Date("2021-01-09T23:59:59.999-05:00");
+      const docRefs = await Promise.all(
+        Array.from({ length: 12 }, () => getTrackingDoc(date, "ExpenseTracking","weekEnding", { expenses: {} }))
+      );
+      const ids = new Set(docRefs.map((docRef) => docRef.id));
+      const db = admin.firestore();
+      const querySnap = await db
+        .collection("ExpenseTracking")
+        .where("weekEnding", "==", date)
+        .get();
+
+      assert.strictEqual(ids.size, 1);
+      assert.strictEqual(querySnap.size, 1);
+      assert.deepEqual(querySnap.docs[0].get("expenses"), {});
+    });
+    it("returns an existing Tracking document when called concurrently", async function () {
+      this.timeout(10000);
+      const date = new Date("2021-01-09T23:59:59.999-05:00");
+      const existingDocRef = await getTrackingDoc(date, "ExpenseTracking","weekEnding", { expenses: {} });
+      const docRefs = await Promise.all(
+        Array.from({ length: 12 }, () => getTrackingDoc(date, "ExpenseTracking","weekEnding", { expenses: {} }))
+      );
+      const db = admin.firestore();
+      const querySnap = await db
+        .collection("ExpenseTracking")
+        .where("weekEnding", "==", date)
+        .get();
+
+      assert.deepEqual(docRefs.map((docRef) => docRef.id), Array.from({ length: 12 }, () => existingDocRef.id));
+      assert.strictEqual(querySnap.size, 1);
+    });
     it("returns the existing Tracking document when exactly one document exists in the collection for date arg", async () => {
       const date = new Date("2021-01-09T23:59:59.999-05:00");
       const db = admin.firestore();
