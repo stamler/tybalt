@@ -770,9 +770,9 @@ export const scheduledTurboExpensesWritebackSync = functions
 /**
  * Scheduled function that syncs staged time writeback data from Turbo every 30 minutes.
  *
- * Fetches the last 4 week endings from Turbo's export_legacy API:
- * - If today is Saturday: syncs today + previous 3 Saturdays
- * - Otherwise: syncs next Saturday + previous 3 Saturdays
+ * Fetches the last 5 week endings from Turbo's export_legacy API:
+ * - If today is Saturday: syncs today + previous 4 Saturdays
+ * - Otherwise: syncs next Saturday + previous 4 Saturdays
  *
  * Writes the validated snapshot to:
  * - timeSheets array to TurboTimeSheetsWriteback collection
@@ -795,7 +795,7 @@ export const scheduledTurboTimeSheetsWritebackSync = functions
       return null;
     }
 
-    const weekEndings = getSaturdaysToSync(4);
+    const weekEndings = getSaturdaysToSync(5);
     functions.logger.info("Starting scheduled Turbo time writeback sync", { weekEndings });
 
     try {
