@@ -11,6 +11,13 @@ import { functionsConfig } from "./secrets";
 const EXACT_TIME_SEARCH = false; // WAS true, but turned to false because firestore suddently stopped matching "==" Javascript Date Objects
 const WITHIN_MSEC = 1;
 const TRACKING_DOC_LOCK_COLLECTION = "_TrackingDocLocks";
+const TRACKING_DOC_DEFAULT_PROPS: Record<string, Record<string, unknown>> = {
+  TimeTracking: {
+    submitted: {},
+    pending: {},
+    timeSheets: {},
+  },
+};
 
 // This is the type of the data object that is passed to the chatEndpoint
 interface ChatPayload {
@@ -684,6 +691,10 @@ export function thisTimeNextWeekInTimeZone(datetime: Date, timezone: string) {
   return zonedTimeToUtc(addDays(zone_time, 7), timezone);
 }
 
+function getTrackingDocDefaultProps(collection: string): Record<string, unknown> {
+  return _.cloneDeep(TRACKING_DOC_DEFAULT_PROPS[collection] ?? {});
+}
+
 export async function getTrackingDoc(date: Date, collection: string, property: string, otherProps = {}) {
 
   // otherProps, an object containing property names and default values
@@ -737,6 +748,7 @@ export async function getTrackingDoc(date: Date, collection: string, property: s
       transaction.set(trackingDocRef, {
         [property]: date,
         created: admin.firestore.FieldValue.serverTimestamp(),
+        ...getTrackingDocDefaultProps(collection),
         ...otherProps,
       });
       transaction.set(trackingDocLockRef, {

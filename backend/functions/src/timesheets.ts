@@ -780,6 +780,14 @@ export const auditTimeTracking = functions.https.onCall(async (data: unknown, co
 
   functions.logger.info(`Auditing ${timeSheetsSnapshot.size} TimeSheets for weekEnding ${weekEndingTimeStamp.toDate()}`);
 
+  const getTrackingMap = (field: string): Record<string, unknown> => {
+    const value = trackingSnapshot.get(field);
+    return value !== null && typeof value === "object" ? value : {};
+  };
+  const submittedMap = getTrackingMap("submitted");
+  const pendingMap = getTrackingMap("pending");
+  const timeSheetsMap = getTrackingMap("timeSheets");
+
   // iterate over each TimeSheet document in the timesSheetsSnapshot verifying
   // that it is represented in the TimeTracking document in the correct map.
   // Maps are submitted (not approved), pending (submitted and approved), and
@@ -787,30 +795,20 @@ export const auditTimeTracking = functions.https.onCall(async (data: unknown, co
   const timeSheetsNotInTracking = timeSheetsSnapshot.docs.filter((timeSheetSnap) => {
     const timeSheet = timeSheetSnap.data();
     const id = timeSheetSnap.id;
-    // if the timesheet is submitted, check that it is represented in the
-    // submitted map on the TimeTracking document
-    if (timeSheet.submitted === true && timeSheet.approved === false) {
-      const submittedMap = trackingSnapshot.get("submitted");
-      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - submittedMap:${JSON.stringify(Object.keys(submittedMap))}`);
-      if (id in submittedMap) {
+    // Status flags are cumulative, so check the most specific state first.
+    if (timeSheet.locked === true) {
+      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - timeSheetsMap:${JSON.stringify(Object.keys(timeSheetsMap))}`);
+      if (id in timeSheetsMap) {
         return false;
       }
-    }
-    // if the timesheet is approved, check that it is represented in the
-    // pending map on the TimeTracking document
-    if (timeSheet.submitted === true && timeSheet.approved === true) {
-      const pendingMap = trackingSnapshot.get("pending");
+    } else if (timeSheet.submitted === true && timeSheet.approved === true) {
       // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - pendingMap:${JSON.stringify(Object.keys(pendingMap))}`);
       if (id in pendingMap) {
         return false;
       }
-    }
-    // if the timesheet is locked, check that it is represented in the
-    // timeSheets map on the TimeTracking document
-    if (timeSheet.locked === true) {
-      const timeSheetsMap = trackingSnapshot.get("timeSheets");
-      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - timeSheetsMap:${JSON.stringify(Object.keys(timeSheetsMap))}`);
-      if (id in timeSheetsMap) {
+    } else if (timeSheet.submitted === true && timeSheet.approved === false) {
+      // functions.logger.debug(`timeSheet: ${JSON.stringify(id)} - submittedMap:${JSON.stringify(Object.keys(submittedMap))}`);
+      if (id in submittedMap) {
         return false;
       }
     }

@@ -125,11 +125,14 @@ describe("utilities.ts", () => {
       await cleanupFirestore(projectId);
     });
     
-    it("creates a new Tracking document when no document exists in the collection for date arg", async () => {
+    it("creates a new TimeTracking document with default maps when no document exists in the collection for date arg", async () => {
       const date = new Date("2021-01-09T23:59:59.999-05:00");
       const docRef = await getTrackingDoc(date, "TimeTracking","weekEnding");
       const docSnap = await docRef.get()      
       assert.isTrue(docSnap.get("weekEnding").toDate().getTime() === date.getTime());
+      assert.deepEqual(docSnap.get("submitted"), {});
+      assert.deepEqual(docSnap.get("pending"), {});
+      assert.deepEqual(docSnap.get("timeSheets"), {});
     });
     it("creates only one Tracking document when called concurrently for a new date", async function () {
       this.timeout(10000);
